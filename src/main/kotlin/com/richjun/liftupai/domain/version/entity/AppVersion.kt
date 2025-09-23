@@ -4,13 +4,18 @@ import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "app_versions")
+@Table(
+    name = "app_versions",
+    uniqueConstraints = [
+        UniqueConstraint(columnNames = ["version", "platform"])
+    ]
+)
 class AppVersion(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     val version: String,  // ex: "1.0.0", "1.2.3"
 
     @Column(name = "version_code", nullable = false)
