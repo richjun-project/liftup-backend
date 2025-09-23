@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: liftupai
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/liftupai_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root
+    password: ${DB_PASSWORD:yourpassword}  # .env 파일에서 읽거나 기본값 사용
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # 개발 환경용, 운영환경에서는 validate 사용
+    properties:
+      hibernate:
+        format_sql: true
+        show_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        default_batch_fetch_size: 100
+    open-in-view: false
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+    default-property-inclusion: NON_NULL
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# JWT 설정
+jwt:
+  secret: ${JWT_SECRET:mySecretKeyForJWTTokenGenerationAndValidation12345678}  # .env 파일에서 읽거나 기본값 사용
+  access-token-expiration: 3600000  # 1시간 (밀리초)
+  refresh-token-expiration: 2592000000  # 30일 (밀리초)
+
+# Google Gemini API 설정
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  model: gemini-1.5-flash
+  max-tokens: 2048
+  temperature: 0.7
+
+# API 설정
+api:
+  rate-limit:
+    requests-per-minute: 100
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:5173
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+
+# 파일 업로드 설정
+spring.servlet.multipart:
+  max-file-size: 10MB
+  max-request-size: 10MB
+
+# Upload configuration
+upload:
+  use-s3: true
+  dir: uploads
+  base-url: http://localhost:8080
+
+# Logging
+logging:
+  level:
+    com.richjun.liftupai: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
+
+cloud:
+  aws:
+    s3:
+      bucket: dearglobe
+      folder: liftupai/
+    region:
+      static: ap-northeast-2
+    credentials:
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}

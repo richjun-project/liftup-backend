@@ -1,0 +1,236 @@
+Environment variables loaded from .env file
+DB_PASSWORD is set: true
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+Successfully loaded .env file with 42 environment variables
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2025-09-22T02:54:17.794+09:00  INFO 10938 --- [liftupai] [           main] c.r.liftupai.LiftupaiApplicationKt       : Starting LiftupaiApplicationKt v0.0.1-SNAPSHOT using Java 17.0.9 with PID 10938 (/Users/gimjunhyeong/Develop/liftupai/build/libs/liftupai-0.0.1-SNAPSHOT.jar started by gimjunhyeong in /Users/gimjunhyeong/Develop/liftupai)
+2025-09-22T02:54:17.796+09:00 DEBUG 10938 --- [liftupai] [           main] c.r.liftupai.LiftupaiApplicationKt       : Running with Spring Boot v3.5.5, Spring v6.2.10
+2025-09-22T02:54:17.796+09:00  INFO 10938 --- [liftupai] [           main] c.r.liftupai.LiftupaiApplicationKt       : No active profile set, falling back to 1 default profile: "default"
+2025-09-22T02:54:18.512+09:00  INFO 10938 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-09-22T02:54:18.513+09:00  INFO 10938 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-09-22T02:54:18.670+09:00  INFO 10938 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 150 ms. Found 25 JPA repository interfaces.
+2025-09-22T02:54:18.682+09:00  INFO 10938 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-09-22T02:54:18.683+09:00  INFO 10938 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-09-22T02:54:18.694+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.auth.repository.DeviceSessionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.694+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.auth.repository.UserRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.694+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.chat.repository.ChatMessageRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.notification.repository.NotificationDeviceRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.notification.repository.NotificationHistoryRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.notification.repository.NotificationSettingsRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.nutrition.repository.MealLogRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.recovery.repository.RecoveryActivityRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.social.repository.SharedWorkoutRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.subscription.repository.PaymentHistoryRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.subscription.repository.SubscriptionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.695+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.user.repository.UserProfileRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.696+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.user.repository.UserSettingsRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.696+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.AchievementRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.696+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.ExerciseRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.696+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.696+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.ExerciseTemplateRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.696+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.PersonalRecordRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.696+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.696+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.WorkoutLogRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.697+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.WorkoutPlanRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.697+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.697+09:00  INFO 10938 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.WorkoutStreakRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-22T02:54:18.697+09:00  INFO 10938 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 7 ms. Found 0 Redis repository interfaces.
+2025-09-22T02:54:19.171+09:00  INFO 10938 --- [liftupai] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2025-09-22T02:54:19.182+09:00  INFO 10938 --- [liftupai] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-09-22T02:54:19.182+09:00  INFO 10938 --- [liftupai] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.44]
+2025-09-22T02:54:19.208+09:00  INFO 10938 --- [liftupai] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-09-22T02:54:19.209+09:00  INFO 10938 --- [liftupai] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1378 ms
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+2025-09-22T02:54:19.315+09:00  INFO 10938 --- [liftupai] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-09-22T02:54:19.351+09:00  INFO 10938 --- [liftupai] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.26.Final
+2025-09-22T02:54:19.376+09:00  INFO 10938 --- [liftupai] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-09-22T02:54:19.618+09:00  INFO 10938 --- [liftupai] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-09-22T02:54:19.641+09:00  INFO 10938 --- [liftupai] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-09-22T02:54:19.772+09:00  INFO 10938 --- [liftupai] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@7a6e0f3c
+2025-09-22T02:54:19.773+09:00  INFO 10938 --- [liftupai] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-09-22T02:54:19.807+09:00  WARN 10938 --- [liftupai] [           main] org.hibernate.orm.deprecation            : HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-09-22T02:54:19.808+09:00  WARN 10938 --- [liftupai] [           main] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2025-09-22T02:54:19.818+09:00  INFO 10938 --- [liftupai] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 8.0
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-09-22T02:54:19.824+09:00 DEBUG 10938 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(12, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@38213efa) replaced previous registration(org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@73c1dda3)
+2025-09-22T02:54:19.824+09:00 DEBUG 10938 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(-9, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@c3c63c1) replaced previous registration(org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@5e75cf7a)
+2025-09-22T02:54:19.824+09:00 DEBUG 10938 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(-3, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@6f12fca0) replaced previous registration(org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@12c30824)
+2025-09-22T02:54:19.824+09:00 DEBUG 10938 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(4003, org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@7d0e43d6) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@df04d12)
+2025-09-22T02:54:19.824+09:00 DEBUG 10938 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(4001, org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@757f47f0) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@7ff7e353)
+2025-09-22T02:54:19.824+09:00 DEBUG 10938 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(4002, org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@70680f88) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@7f7f544a)
+2025-09-22T02:54:19.824+09:00 DEBUG 10938 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(2004, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@70b0dc92) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@309d54ac)
+2025-09-22T02:54:19.824+09:00 DEBUG 10938 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(2005, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@390978) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@561c031)
+2025-09-22T02:54:19.824+09:00 DEBUG 10938 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(2011, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@7343d843) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@29a1dab3)
+2025-09-22T02:54:20.782+09:00  INFO 10938 --- [liftupai] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-09-22T02:54:20.852+09:00 DEBUG 10938 --- [liftupai] [           main] org.hibernate.SQL                        : 
+    alter table workout_sessions 
+       modify column status enum ('ABANDONED','CANCELLED','COMPLETED','IN_PROGRESS','PLANNED')
+Hibernate: 
+    alter table workout_sessions 
+       modify column status enum ('ABANDONED','CANCELLED','COMPLETED','IN_PROGRESS','PLANNED')
+2025-09-22T02:54:20.878+09:00 DEBUG 10938 --- [liftupai] [           main] org.hibernate.SQL                        : 
+    alter table workout_sessions 
+       modify column workout_type enum ('ABS','ARMS','BACK','CARDIO','CHEST','FULL_BODY','LEGS','LOWER','PULL','PUSH','SHOULDERS','UPPER')
+Hibernate: 
+    alter table workout_sessions 
+       modify column workout_type enum ('ABS','ARMS','BACK','CARDIO','CHEST','FULL_BODY','LEGS','LOWER','PULL','PUSH','SHOULDERS','UPPER')
+2025-09-22T02:54:21.078+09:00  INFO 10938 --- [liftupai] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-09-22T02:54:21.405+09:00  INFO 10938 --- [liftupai] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-09-22T02:54:21.735+09:00 DEBUG 10938 --- [liftupai] [           main] c.r.l.g.s.JwtAuthenticationFilter        : Filter 'jwtAuthenticationFilter' configured for use
+2025-09-22T02:54:23.276+09:00  INFO 10938 --- [liftupai] [           main] c.r.l.g.c.FirebaseConfig$$SpringCGLIB$$0 : Firebase is disabled. FCM notifications will not be sent.
+2025-09-22T02:54:23.645+09:00  INFO 10938 --- [liftupai] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService
+2025-09-22T02:54:24.388+09:00  INFO 10938 --- [liftupai] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2025-09-22T02:54:24.409+09:00  INFO 10938 --- [liftupai] [           main] c.r.liftupai.LiftupaiApplicationKt       : Started LiftupaiApplicationKt in 7.164 seconds (process running for 7.625)
+2025-09-22T02:54:24.466+09:00 DEBUG 10938 --- [liftupai] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+Hibernate: 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+2025-09-22T02:54:24.492+09:00 DEBUG 10938 --- [liftupai] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+Hibernate: 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+2025-09-22T02:55:24.408+09:00 DEBUG 10938 --- [liftupai] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+Hibernate: 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+2025-09-22T02:55:24.505+09:00 DEBUG 10938 --- [liftupai] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+Hibernate: 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?

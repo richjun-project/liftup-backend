@@ -1,0 +1,1705 @@
+> Task :checkKotlinGradlePluginConfigurationErrors
+> Task :processResources UP-TO-DATE
+
+> Task :compileKotlin
+w: file:///Users/gimjunhyeong/Develop/liftupai/src/main/kotlin/com/richjun/liftupai/domain/ai/service/AIAnalysisService.kt:22:13 Variable 'user' is never used
+w: file:///Users/gimjunhyeong/Develop/liftupai/src/main/kotlin/com/richjun/liftupai/domain/ai/service/AIAnalysisService.kt:92:43 Parameter 'aiResponse' is never used
+w: file:///Users/gimjunhyeong/Develop/liftupai/src/main/kotlin/com/richjun/liftupai/domain/ai/service/AIAnalysisService.kt:109:46 Parameter 'aiResponse' is never used
+w: file:///Users/gimjunhyeong/Develop/liftupai/src/main/kotlin/com/richjun/liftupai/domain/ai/service/AIAnalysisService.kt:109:66 Parameter 'type' is never used
+
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+> Task :resolveMainClassName
+
+> Task :bootRun
+Environment variables loaded from .env file
+DB_PASSWORD is set: true
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+Successfully loaded .env file with 37 environment variables
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2025-09-16T19:50:25.986+09:00  INFO 97892 --- [liftupai] [           main] c.r.liftupai.LiftupaiApplicationKt       : Starting LiftupaiApplicationKt using Java 17.0.9 with PID 97892 (/Users/gimjunhyeong/Develop/liftupai/build/classes/kotlin/main started by gimjunhyeong in /Users/gimjunhyeong/Develop/liftupai)
+2025-09-16T19:50:25.987+09:00 DEBUG 97892 --- [liftupai] [           main] c.r.liftupai.LiftupaiApplicationKt       : Running with Spring Boot v3.5.5, Spring v6.2.10
+2025-09-16T19:50:25.988+09:00  INFO 97892 --- [liftupai] [           main] c.r.liftupai.LiftupaiApplicationKt       : No active profile set, falling back to 1 default profile: "default"
+2025-09-16T19:50:26.603+09:00  INFO 97892 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-09-16T19:50:26.605+09:00  INFO 97892 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-09-16T19:50:26.750+09:00  INFO 97892 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 140 ms. Found 24 JPA repository interfaces.
+2025-09-16T19:50:26.763+09:00  INFO 97892 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-09-16T19:50:26.764+09:00  INFO 97892 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2025-09-16T19:50:26.779+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.auth.repository.DeviceSessionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.779+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.auth.repository.UserRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.779+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.chat.repository.ChatMessageRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.779+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.notification.repository.NotificationDeviceRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.779+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.notification.repository.NotificationHistoryRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.779+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.779+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.notification.repository.NotificationSettingsRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.779+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.nutrition.repository.MealLogRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.779+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.779+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.recovery.repository.RecoveryActivityRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.780+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.social.repository.SharedWorkoutRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.780+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.subscription.repository.PaymentHistoryRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.780+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.subscription.repository.SubscriptionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.780+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.user.repository.UserProfileRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.780+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.user.repository.UserSettingsRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.780+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.AchievementRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.781+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.ExerciseRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.781+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.781+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.PersonalRecordRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.781+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.781+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.WorkoutLogRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.781+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.WorkoutPlanRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.781+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.781+09:00  INFO 97892 --- [liftupai] [           main] .RepositoryConfigurationExtensionSupport : Spring Data Redis - Could not safely identify store assignment for repository candidate interface com.richjun.liftupai.domain.workout.repository.WorkoutStreakRepository; If you want this repository to be a Redis repository, consider annotating your entities with one of these annotations: org.springframework.data.redis.core.RedisHash (preferred), or consider extending one of the following types with your repository: org.springframework.data.keyvalue.repository.KeyValueRepository
+2025-09-16T19:50:26.781+09:00  INFO 97892 --- [liftupai] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 10 ms. Found 0 Redis repository interfaces.
+2025-09-16T19:50:27.138+09:00  INFO 97892 --- [liftupai] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2025-09-16T19:50:27.147+09:00  INFO 97892 --- [liftupai] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-09-16T19:50:27.147+09:00  INFO 97892 --- [liftupai] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.44]
+2025-09-16T19:50:27.180+09:00  INFO 97892 --- [liftupai] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-09-16T19:50:27.180+09:00  INFO 97892 --- [liftupai] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1167 ms
+Standard Commons Logging discovery in action with spring-jcl: please remove commons-logging.jar from classpath in order to avoid potential conflicts
+2025-09-16T19:50:27.351+09:00  INFO 97892 --- [liftupai] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-09-16T19:50:27.544+09:00  INFO 97892 --- [liftupai] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.26.Final
+2025-09-16T19:50:27.616+09:00  INFO 97892 --- [liftupai] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2025-09-16T19:50:28.113+09:00  INFO 97892 --- [liftupai] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-09-16T19:50:28.145+09:00  INFO 97892 --- [liftupai] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-09-16T19:50:28.340+09:00  INFO 97892 --- [liftupai] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@49770ef9
+2025-09-16T19:50:28.341+09:00  INFO 97892 --- [liftupai] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-09-16T19:50:28.404+09:00  WARN 97892 --- [liftupai] [           main] org.hibernate.orm.deprecation            : HHH90000025: MySQL8Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-09-16T19:50:28.404+09:00  WARN 97892 --- [liftupai] [           main] org.hibernate.orm.deprecation            : HHH90000026: MySQL8Dialect has been deprecated; use org.hibernate.dialect.MySQLDialect instead
+2025-09-16T19:50:28.417+09:00  INFO 97892 --- [liftupai] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 8.0
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-09-16T19:50:28.421+09:00 DEBUG 97892 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(12, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@4987142d) replaced previous registration(org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@3e3bf77b)
+2025-09-16T19:50:28.422+09:00 DEBUG 97892 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(-9, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@41e76252) replaced previous registration(org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@16602333)
+2025-09-16T19:50:28.422+09:00 DEBUG 97892 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(-3, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@67376bae) replaced previous registration(org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@6d6d81c)
+2025-09-16T19:50:28.422+09:00 DEBUG 97892 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(4003, org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@7c59cf66) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@6bb71265)
+2025-09-16T19:50:28.422+09:00 DEBUG 97892 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(4001, org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@37816ea6) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@7a74672)
+2025-09-16T19:50:28.422+09:00 DEBUG 97892 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(4002, org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@35b79b1f) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@664083f6)
+2025-09-16T19:50:28.422+09:00 DEBUG 97892 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(2004, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@5a8835c6) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@67216c33)
+2025-09-16T19:50:28.422+09:00 DEBUG 97892 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(2005, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@6ec77cab) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@c7a1db6)
+2025-09-16T19:50:28.422+09:00 DEBUG 97892 --- [liftupai] [           main] o.h.t.d.sql.spi.DdlTypeRegistry          : addDescriptor(2011, org.hibernate.type.descriptor.sql.internal.CapacityDependentDdlType@17c72ffa) replaced previous registration(org.hibernate.type.descriptor.sql.internal.DdlTypeImpl@7b6b99c5)
+2025-09-16T19:50:29.842+09:00  INFO 97892 --- [liftupai] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-09-16T19:50:30.085+09:00  INFO 97892 --- [liftupai] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-09-16T19:50:30.406+09:00  INFO 97892 --- [liftupai] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-09-16T19:50:30.692+09:00 DEBUG 97892 --- [liftupai] [           main] c.r.l.g.s.JwtAuthenticationFilter        : Filter 'jwtAuthenticationFilter' configured for use
+2025-09-16T19:50:32.040+09:00  INFO 97892 --- [liftupai] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name customUserDetailsService
+2025-09-16T19:50:32.616+09:00  INFO 97892 --- [liftupai] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2025-09-16T19:50:32.625+09:00  INFO 97892 --- [liftupai] [           main] c.r.liftupai.LiftupaiApplicationKt       : Started LiftupaiApplicationKt in 7.026 seconds (process running for 7.268)
+2025-09-16T19:50:32.687+09:00 DEBUG 97892 --- [liftupai] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+Hibernate: 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+2025-09-16T19:51:17.165+09:00  INFO 97892 --- [liftupai] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-09-16T19:51:17.165+09:00  INFO 97892 --- [liftupai] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2025-09-16T19:51:17.166+09:00  INFO 97892 --- [liftupai] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2025-09-16T19:51:17.226+09:00 DEBUG 97892 --- [liftupai] [nio-8080-exec-1] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.device_id,
+        u1_0.device_info,
+        u1_0.email,
+        u1_0.email_verified,
+        u1_0.is_active,
+        u1_0.is_device_account,
+        u1_0.join_date,
+        u1_0.last_login_at,
+        u1_0.level,
+        u1_0.nickname,
+        u1_0.password,
+        u1_0.refresh_token 
+    from
+        users u1_0 
+    where
+        u1_0.email=?
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.device_id,
+        u1_0.device_info,
+        u1_0.email,
+        u1_0.email_verified,
+        u1_0.is_active,
+        u1_0.is_device_account,
+        u1_0.join_date,
+        u1_0.last_login_at,
+        u1_0.level,
+        u1_0.nickname,
+        u1_0.password,
+        u1_0.refresh_token 
+    from
+        users u1_0 
+    where
+        u1_0.email=?
+2025-09-16T19:51:17.236+09:00 DEBUG 97892 --- [liftupai] [nio-8080-exec-1] org.hibernate.SQL                        : 
+    select
+        up1_0.id,
+        up1_0.age,
+        up1_0.body_fat,
+        up1_0.height,
+        up1_0.muscle_mass,
+        up1_0.weight,
+        up1_0.created_at,
+        up1_0.current_program,
+        up1_0.current_week,
+        up1_0.estimated_maxes,
+        up1_0.experience_level,
+        up1_0.gender,
+        up1_0.gym_location,
+        up1_0.last_workout_date,
+        up1_0.muscle_recovery,
+        up1_0.nickname,
+        up1_0.notification_enabled,
+        up1_0.preferred_workout_time,
+        up1_0.pt_style,
+        up1_0.strength_level,
+        up1_0.strength_test_completed,
+        up1_0.updated_at,
+        up1_0.user_id,
+        up1_0.weekly_workout_days,
+        up1_0.working_weights,
+        up1_0.workout_duration,
+        up1_0.workout_split 
+    from
+        user_profiles up1_0 
+    where
+        up1_0.user_id=?
+Hibernate: 
+    select
+        up1_0.id,
+        up1_0.age,
+        up1_0.body_fat,
+        up1_0.height,
+        up1_0.muscle_mass,
+        up1_0.weight,
+        up1_0.created_at,
+        up1_0.current_program,
+        up1_0.current_week,
+        up1_0.estimated_maxes,
+        up1_0.experience_level,
+        up1_0.gender,
+        up1_0.gym_location,
+        up1_0.last_workout_date,
+        up1_0.muscle_recovery,
+        up1_0.nickname,
+        up1_0.notification_enabled,
+        up1_0.preferred_workout_time,
+        up1_0.pt_style,
+        up1_0.strength_level,
+        up1_0.strength_test_completed,
+        up1_0.updated_at,
+        up1_0.user_id,
+        up1_0.weekly_workout_days,
+        up1_0.working_weights,
+        up1_0.workout_duration,
+        up1_0.workout_split 
+    from
+        user_profiles up1_0 
+    where
+        up1_0.user_id=?
+DEBUG: getRecommendations called with userId=3, type=workout, muscleGroups=[]
+2025-09-16T19:51:17.285+09:00 DEBUG 97892 --- [liftupai] [nio-8080-exec-1] org.hibernate.SQL                        : 
+    select
+        u1_0.id,
+        u1_0.device_id,
+        u1_0.device_info,
+        u1_0.email,
+        u1_0.email_verified,
+        u1_0.is_active,
+        u1_0.is_device_account,
+        u1_0.join_date,
+        u1_0.last_login_at,
+        u1_0.level,
+        u1_0.nickname,
+        u1_0.password,
+        u1_0.refresh_token 
+    from
+        users u1_0 
+    where
+        u1_0.id=?
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.device_id,
+        u1_0.device_info,
+        u1_0.email,
+        u1_0.email_verified,
+        u1_0.is_active,
+        u1_0.is_device_account,
+        u1_0.join_date,
+        u1_0.last_login_at,
+        u1_0.level,
+        u1_0.nickname,
+        u1_0.password,
+        u1_0.refresh_token 
+    from
+        users u1_0 
+    where
+        u1_0.id=?
+2025-09-16T19:51:17.286+09:00 DEBUG 97892 --- [liftupai] [nio-8080-exec-1] org.hibernate.SQL                        : 
+    select
+        up1_0.id,
+        up1_0.age,
+        up1_0.body_fat,
+        up1_0.height,
+        up1_0.muscle_mass,
+        up1_0.weight,
+        up1_0.created_at,
+        up1_0.current_program,
+        up1_0.current_week,
+        up1_0.estimated_maxes,
+        up1_0.experience_level,
+        up1_0.gender,
+        up1_0.gym_location,
+        up1_0.last_workout_date,
+        up1_0.muscle_recovery,
+        up1_0.nickname,
+        up1_0.notification_enabled,
+        up1_0.preferred_workout_time,
+        up1_0.pt_style,
+        up1_0.strength_level,
+        up1_0.strength_test_completed,
+        up1_0.updated_at,
+        up1_0.user_id,
+        up1_0.weekly_workout_days,
+        up1_0.working_weights,
+        up1_0.workout_duration,
+        up1_0.workout_split 
+    from
+        user_profiles up1_0 
+    where
+        up1_0.user_id=?
+Hibernate: 
+    select
+        up1_0.id,
+        up1_0.age,
+        up1_0.body_fat,
+        up1_0.height,
+        up1_0.muscle_mass,
+        up1_0.weight,
+        up1_0.created_at,
+        up1_0.current_program,
+        up1_0.current_week,
+        up1_0.estimated_maxes,
+        up1_0.experience_level,
+        up1_0.gender,
+        up1_0.gym_location,
+        up1_0.last_workout_date,
+        up1_0.muscle_recovery,
+        up1_0.nickname,
+        up1_0.notification_enabled,
+        up1_0.preferred_workout_time,
+        up1_0.pt_style,
+        up1_0.strength_level,
+        up1_0.strength_test_completed,
+        up1_0.updated_at,
+        up1_0.user_id,
+        up1_0.weekly_workout_days,
+        up1_0.working_weights,
+        up1_0.workout_duration,
+        up1_0.workout_split 
+    from
+        user_profiles up1_0 
+    where
+        up1_0.user_id=?
+DEBUG: User found: test@example.com
+2025-09-16T19:51:17.300+09:00 DEBUG 97892 --- [liftupai] [nio-8080-exec-1] org.hibernate.SQL                        : 
+    select
+        up1_0.id,
+        up1_0.age,
+        up1_0.body_fat,
+        up1_0.height,
+        up1_0.muscle_mass,
+        up1_0.weight,
+        up1_0.created_at,
+        up1_0.current_program,
+        up1_0.current_week,
+        up1_0.estimated_maxes,
+        up1_0.experience_level,
+        up1_0.gender,
+        up1_0.gym_location,
+        up1_0.last_workout_date,
+        up1_0.muscle_recovery,
+        up1_0.nickname,
+        up1_0.notification_enabled,
+        up1_0.preferred_workout_time,
+        up1_0.pt_style,
+        up1_0.strength_level,
+        up1_0.strength_test_completed,
+        up1_0.updated_at,
+        up1_0.user_id,
+        up1_0.weekly_workout_days,
+        up1_0.working_weights,
+        up1_0.workout_duration,
+        up1_0.workout_split 
+    from
+        user_profiles up1_0 
+    left join
+        users u1_0 
+            on u1_0.id=up1_0.user_id 
+    where
+        u1_0.id=?
+Hibernate: 
+    select
+        up1_0.id,
+        up1_0.age,
+        up1_0.body_fat,
+        up1_0.height,
+        up1_0.muscle_mass,
+        up1_0.weight,
+        up1_0.created_at,
+        up1_0.current_program,
+        up1_0.current_week,
+        up1_0.estimated_maxes,
+        up1_0.experience_level,
+        up1_0.gender,
+        up1_0.gym_location,
+        up1_0.last_workout_date,
+        up1_0.muscle_recovery,
+        up1_0.nickname,
+        up1_0.notification_enabled,
+        up1_0.preferred_workout_time,
+        up1_0.pt_style,
+        up1_0.strength_level,
+        up1_0.strength_test_completed,
+        up1_0.updated_at,
+        up1_0.user_id,
+        up1_0.weekly_workout_days,
+        up1_0.working_weights,
+        up1_0.workout_duration,
+        up1_0.workout_split 
+    from
+        user_profiles up1_0 
+    left join
+        users u1_0 
+            on u1_0.id=up1_0.user_id 
+    where
+        u1_0.id=?
+jakarta.servlet.ServletException: Handler dispatch failed: java.lang.StackOverflowError
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1104)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:110)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:125)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:119)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131)
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at com.richjun.liftupai.global.security.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.kt:44)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:319)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$4(HandlerMappingIntrospector.java:267)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:240)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:116)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:398)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1769)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1189)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:658)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+Caused by: java.lang.StackOverflowError
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.auth.entity.User.toString(User.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+	at com.richjun.liftupai.domain.user.entity.UserProfile.toString(UserProfile.kt)
+	at java.base/java.lang.StringConcatHelper.stringOf(StringConcatHelper.java:453)
+2025-09-16T19:51:32.631+09:00 DEBUG 97892 --- [liftupai] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+Hibernate: 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+2025-09-16T19:52:32.630+09:00 DEBUG 97892 --- [liftupai] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+Hibernate: 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+2025-09-16T19:53:32.631+09:00 DEBUG 97892 --- [liftupai] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+Hibernate: 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+2025-09-16T19:54:32.625+09:00 DEBUG 97892 --- [liftupai] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+Hibernate: 
+    select
+        ns1_0.id,
+        ns1_0.created_at,
+        ns1_0.enabled,
+        ns1_0.message,
+        ns1_0.next_trigger_at,
+        ns1_0.notification_type,
+        ns1_0.schedule_name,
+        ns1_0.time,
+        ns1_0.updated_at,
+        ns1_0.user_id 
+    from
+        notification_schedules ns1_0 
+    where
+        ns1_0.enabled=1 
+        and ns1_0.next_trigger_at<=?
+
+> Task :bootRun FAILED
+
+[Incubating] Problems report is available at: file:///Users/gimjunhyeong/Develop/liftupai/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':bootRun'.
+> Process 'command '/Users/gimjunhyeong/Library/Java/JavaVirtualMachines/jbr-17.0.9/Contents/Home/bin/java'' finished with non-zero exit value 137
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 4m 26s
+5 actionable tasks: 4 executed, 1 up-to-date
