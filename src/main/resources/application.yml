@@ -30,7 +30,7 @@ spring:
     default-property-inclusion: NON_NULL
 
 server:
-  port: 8080
+  port: 8081
   error:
     include-message: always
     include-binding-errors: always
@@ -66,7 +66,7 @@ spring.servlet.multipart:
 upload:
   use-s3: true
   dir: uploads
-  base-url: http://localhost:8080
+  base-url: http://localhost:8081
 
 # Logging
 logging:

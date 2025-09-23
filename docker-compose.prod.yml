@@ -27,8 +27,9 @@ services:
       dockerfile: Dockerfile
     container_name: liftupai-app-prod
     ports:
-      - "80:8080"
+      - "8081:8081"
     environment:
+      SERVER_PORT: 8081
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/liftupai_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
