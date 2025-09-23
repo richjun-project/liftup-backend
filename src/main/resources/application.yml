@@ -3,7 +3,7 @@ spring:
     name: liftupai
 
   datasource:
-    url: jdbc:mysql://localhost:3307/liftupai_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3308/liftupai_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root
     password: ${DB_PASSWORD:yourpassword}  # .env 파일에서 읽거나 기본값 사용
     driver-class-name: com.mysql.cj.jdbc.Driver
