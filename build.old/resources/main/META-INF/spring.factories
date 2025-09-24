@@ -1,2 +1,0 @@
-org.springframework.boot.env.EnvironmentPostProcessor=\
-  com.richjun.liftupai.global.config.DotenvEnvironmentPostProcessor
