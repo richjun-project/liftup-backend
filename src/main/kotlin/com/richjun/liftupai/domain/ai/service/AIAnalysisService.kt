@@ -13,6 +13,7 @@ import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
 import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.entity.*
+import com.richjun.liftupai.domain.workout.util.ExerciseNameNormalizer
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.domain.ai.service.GeminiAIService
 import com.richjun.liftupai.domain.workout.service.WorkoutProgressTracker
@@ -37,7 +38,8 @@ class AIAnalysisService(
     private val workoutProgressTracker: WorkoutProgressTracker,
     private val workoutServiceV2: com.richjun.liftupai.domain.workout.service.WorkoutServiceV2,
     private val workoutSessionRepository: com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository,
-    private val chatMessageRepository: ChatMessageRepository
+    private val chatMessageRepository: ChatMessageRepository,
+    private val exerciseNameNormalizer: ExerciseNameNormalizer
 ) {
 
     fun analyzeForm(userId: Long, request: FormAnalysisRequest): FormAnalysisResponse {
@@ -589,57 +591,89 @@ class AIAnalysisService(
 
             val exercises = exercisesList.mapIndexedNotNull { index, exerciseMap ->
                 val exerciseName = exerciseMap["name"] as? String ?: "운동 ${index + 1}"
+                val targetMuscle = (jsonResponse["target_muscles"] as? List<String>)?.firstOrNull()
 
                 // 실제 운동 DB에서 매칭 시도
-                val matchedExercise = findMatchingExerciseByName(exerciseName)
+                var matchedExercise = findMatchingExerciseByName(exerciseName)
+                var isAlternative = false
 
-                val exerciseId = matchedExercise?.id?.toString() ?: "ai_${index + 1}"
-                val finalExerciseName = matchedExercise?.name ?: exerciseName
+                // 매칭 실패 시 대체 운동 찾기
+                if (matchedExercise == null) {
+                    println("운동 '$exerciseName' 매칭 실패, 대체 운동 검색 중...")
+                    matchedExercise = findAlternativeExercise(
+                        exerciseName,
+                        targetMuscle,
+                        equipment
+                    )
+                    isAlternative = true
+                }
+
+                // 여전히 매칭에 실패한 경우 로깅하고 제외
+                if (matchedExercise == null) {
+                    println("경고: 운동 '$exerciseName'을 찾을 수 없고 대체 운동도 찾을 수 없어 제외합니다.")
+                    return@mapIndexedNotNull null
+                }
+
+                val exerciseId = matchedExercise.id.toString()
+                val finalExerciseName = if (isAlternative) {
+                    "${matchedExercise.name} (대체: $exerciseName)"
+                } else {
+                    matchedExercise.name
+                }
 
                 // 중복 체크
-                if (exerciseId in usedExerciseIds || finalExerciseName.lowercase() in usedExerciseNames) {
-                    null // 중복된 경우 제외
-                } else {
-                    usedExerciseIds.add(exerciseId)
-                    usedExerciseNames.add(finalExerciseName.lowercase())
-
-                    // DB에서 운동 정보 가져오기
-                    val targetMuscles = if (matchedExercise != null) {
-                        // DB에서 타겟 근육 정보 가져오기
-                        getExerciseTargetMuscles(matchedExercise)
-                    } else emptyList()
-
-                    val equipmentNeeded = matchedExercise?.equipment?.name
-
-                    // Difficulty level은 현재 DB에 없으므로 null 처리
-                    val difficultyLevel: String? = null
-
-                    // 무게 계산 추가
-                    val suggestedWeight = if (matchedExercise != null) {
-                        try {
-                            workoutServiceV2.calculateSuggestedWeight(user, matchedExercise)
-                        } catch (e: Exception) {
-                            // 계산 실패시 운동명 기반 계산
-                            calculateWeightByExerciseName(user, exerciseName)
+                if (exerciseId in usedExerciseIds || matchedExercise.name.lowercase() in usedExerciseNames) {
+                    // 대체 운동 찾기 시도
+                    val alternativeExercise = if (matchedExercise.muscleGroups.isNotEmpty()) {
+                        exerciseRepository.findAlternativeExercises(
+                            matchedExercise.id,
+                            matchedExercise.category,
+                            matchedExercise.muscleGroups.toList()
+                        ).firstOrNull { alt ->
+                            alt.id.toString() !in usedExerciseIds &&
+                            alt.name.lowercase() !in usedExerciseNames
                         }
-                    } else {
-                        // 매칭 실패시 운동명 기반 계산
-                        calculateWeightByExerciseName(user, exerciseName)
-                    }
+                    } else null
 
-                    AIExerciseDetail(
-                        exerciseId = exerciseId,
-                        name = finalExerciseName,
-                        sets = (exerciseMap["sets"] as? Number)?.toInt() ?: 3,
-                        reps = exerciseMap["reps"] as? String ?: "10-12",
-                        rest = (exerciseMap["rest_seconds"] as? Number)?.toInt() ?: 60,
-                        order = (exerciseMap["order"] as? Number)?.toInt() ?: (index + 1),
-                        suggestedWeight = suggestedWeight,
-                        targetMuscles = targetMuscles,
-                        equipmentNeeded = equipmentNeeded,
-                        difficultyLevel = difficultyLevel
-                    )
+                    if (alternativeExercise != null) {
+                        matchedExercise = alternativeExercise
+                        println("중복 운동 '$finalExerciseName' 대신 '${alternativeExercise.name}' 사용")
+                    } else {
+                        return@mapIndexedNotNull null // 대체 운동도 없으면 제외
+                    }
                 }
+
+                usedExerciseIds.add(matchedExercise.id.toString())
+                usedExerciseNames.add(matchedExercise.name.lowercase())
+
+                // DB에서 운동 정보 가져오기
+                val targetMuscles = getExerciseTargetMuscles(matchedExercise)
+                val equipmentNeeded = matchedExercise.equipment?.name
+                val difficultyLevel: String? = null
+
+                // 무게 계산
+                val suggestedWeight = try {
+                    workoutServiceV2.calculateSuggestedWeight(user, matchedExercise)
+                } catch (e: Exception) {
+                    calculateWeightByExerciseName(user, matchedExercise.name)
+                }
+
+                AIExerciseDetail(
+                    exerciseId = matchedExercise.id.toString(),
+                    name = if (isAlternative) {
+                        "${matchedExercise.name} (대체)"
+                    } else {
+                        matchedExercise.name
+                    },
+                    sets = (exerciseMap["sets"] as? Number)?.toInt() ?: 3,
+                    reps = exerciseMap["reps"] as? String ?: "10-12",
+                    rest = (exerciseMap["rest_seconds"] as? Number)?.toInt() ?: 60,
+                    order = (exerciseMap["order"] as? Number)?.toInt() ?: (index + 1),
+                    suggestedWeight = suggestedWeight,
+                    targetMuscles = targetMuscles,
+                    equipmentNeeded = equipmentNeeded,
+                    difficultyLevel = difficultyLevel
+                )
             }.sortedBy { it.order }
 
             // 전체 운동 정보는 상위 레벨에서 가져옴
@@ -669,34 +703,62 @@ class AIAnalysisService(
     }
 
     private fun findMatchingExerciseByName(exerciseName: String): Exercise? {
-        // 운동 이름으로 검색
-        val exercises = exerciseRepository.findAll()
+        // 1. ExerciseNameNormalizer를 사용한 정규화
+        val normalizedName = exerciseNameNormalizer.normalize(exerciseName)
 
-        // 1. 정확한 이름 매칭
-        exercises.find { it.name.equals(exerciseName, ignoreCase = true) }?.let { return it }
-
-        // 2. 양방향 부분 매칭 (핵심 개선!)
-        exercises.find {
-            exerciseName.contains(it.name, ignoreCase = true) ||
-            it.name.contains(exerciseName, ignoreCase = true)
-        }?.let { return it }
-
-        // 3. 핵심 키워드 매칭
-        val keywords = extractKeywords(exerciseName)
-        if (keywords.isNotEmpty()) {
-            exercises.find { exercise ->
-                keywords.any { keyword ->
-                    exercise.name.contains(keyword, ignoreCase = true)
-                }
-            }?.let { return it }
+        // 2. 정확한 이름 매칭 (정규화된 이름으로)
+        exerciseRepository.findByNameIgnoreCase(normalizedName)?.let {
+            println("운동 매칭 성공 (정확한 매칭): AI 입력='$exerciseName' -> DB='${it.name}'")
+            return it
         }
 
-        // 4. 띄어쓰기 무시 매칭
-        val normalizedInput = exerciseName.replace(" ", "").lowercase()
-        exercises.find {
-            it.name.replace(" ", "").lowercase() == normalizedInput
-        }?.let { return it }
+        // 3. Repository의 정규화 쿼리 사용
+        exerciseRepository.findByNormalizedName(normalizedName).firstOrNull()?.let {
+            println("운동 매칭 성공 (정규화 쿼리): AI 입력='$exerciseName' -> DB='${it.name}'")
+            return it
+        }
 
+        // 4. 변형 생성 및 검색
+        val variations = exerciseNameNormalizer.generateVariations(exerciseName)
+        exerciseRepository.findByNameIn(variations.map { variation -> variation.lowercase() }).firstOrNull()?.let {
+            println("운동 매칭 성공 (변형 매칭): AI 입력='$exerciseName' -> DB='${it.name}'")
+            return it
+        }
+
+        // 5. 정확한/압축 이름 매칭
+        exerciseRepository.findByExactOrCompactName(normalizedName).firstOrNull()?.let {
+            println("운동 매칭 성공 (정확한/압축 매칭): AI 입력='$exerciseName' -> DB='${it.name}'")
+            return it
+        }
+
+        // 6. 부분 매칭 시도 (폴백)
+        val exercises = exerciseRepository.findAll()
+
+        // 양방향 부분 매칭
+        exercises.find { exercise ->
+            normalizedName.contains(exerciseNameNormalizer.normalize(exercise.name), ignoreCase = true) ||
+            exerciseNameNormalizer.normalize(exercise.name).contains(normalizedName, ignoreCase = true)
+        }?.let { foundExercise ->
+            println("운동 매칭 성공 (부분 매칭): AI 입력='$exerciseName' -> DB='${foundExercise.name}'")
+            return foundExercise
+        }
+
+        // 7. 핵심 키워드 매칭
+        val keywords = extractKeywords(normalizedName)
+        if (keywords.isNotEmpty()) {
+            exercises.find { exercise ->
+                val normalizedDbName = exerciseNameNormalizer.normalize(exercise.name)
+                keywords.any { keyword ->
+                    normalizedDbName.contains(keyword, ignoreCase = true)
+                }
+            }?.let { foundExercise ->
+                println("운동 매칭 성공 (키워드 매칭): AI 입력='$exerciseName' -> DB='${foundExercise.name}'")
+                return foundExercise
+            }
+        }
+
+        // 8. 최종 실패 로깅
+        println("운동 매칭 실패: AI 입력='$exerciseName' (정규화='$normalizedName')를 DB에서 찾을 수 없음")
         return null
     }
 
@@ -1069,5 +1131,169 @@ class AIAnalysisService(
         }
 
         return streak
+    }
+
+    /**
+     * 대체 운동을 찾는 메서드
+     * 운동 매칭에 실패했을 때 유사한 운동을 찾아 추천
+     */
+    private fun findAlternativeExercise(
+        exerciseName: String,
+        targetMuscle: String? = null,
+        equipment: String? = null
+    ): Exercise? {
+        println("대체 운동 검색 시작: 원본='$exerciseName', 타겟근육='$targetMuscle', 장비='$equipment'")
+
+        // 1. 운동명에서 근육 그룹 힌트 추출
+        val muscleGroups = extractMuscleGroupsFromName(exerciseName, targetMuscle)
+        val category = extractCategoryFromName(exerciseName, targetMuscle)
+
+        // 2. 카테고리와 근육 그룹으로 대체 운동 검색
+        if (category != null && muscleGroups.isNotEmpty()) {
+            val alternatives = exerciseRepository.findByCategoryAndMuscleGroups(category, muscleGroups)
+            if (alternatives.isNotEmpty()) {
+                val selected = alternatives.first()
+                println("대체 운동 찾음 (카테고리+근육): '$exerciseName' -> '${selected.name}'")
+                return selected
+            }
+        }
+
+        // 3. 근육 그룹만으로 검색
+        if (muscleGroups.isNotEmpty()) {
+            val alternatives = exerciseRepository.findByMuscleGroupsIn(muscleGroups)
+            if (alternatives.isNotEmpty()) {
+                // 가장 기본적인 운동 우선 선택 (이름이 짧은 것)
+                val selected = alternatives.minByOrNull { it.name.length } ?: alternatives.first()
+                println("대체 운동 찾음 (근육그룹): '$exerciseName' -> '${selected.name}'")
+                return selected
+            }
+        }
+
+        // 4. 카테고리만으로 검색 (폴백)
+        if (category != null) {
+            val alternatives = exerciseRepository.findByCategory(category)
+            if (alternatives.isNotEmpty()) {
+                val selected = alternatives.first()
+                println("대체 운동 찾음 (카테고리): '$exerciseName' -> '${selected.name}'")
+                return selected
+            }
+        }
+
+        // 5. 최종 폴백: 가장 기본적인 운동들
+        val fallbackExercises = mapOf(
+            "가슴" to "푸시업",
+            "등" to "풀업",
+            "하체" to "스쿼트",
+            "어깨" to "숄더프레스",
+            "팔" to "덤벨컬",
+            "코어" to "플랭크"
+        )
+
+        val fallbackName = fallbackExercises[targetMuscle] ?: "푸시업"
+        val fallbackExercise = exerciseRepository.findByNameIgnoreCase(fallbackName)
+
+        if (fallbackExercise != null) {
+            println("폴백 운동 사용: '$exerciseName' -> '${fallbackExercise.name}'")
+            return fallbackExercise
+        }
+
+        println("대체 운동 찾기 실패: '$exerciseName'")
+        return null
+    }
+
+    /**
+     * 운동명에서 근육 그룹 추출
+     */
+    private fun extractMuscleGroupsFromName(exerciseName: String, targetMuscle: String?): List<MuscleGroup> {
+        val groups = mutableListOf<MuscleGroup>()
+        val lowerName = exerciseName.lowercase()
+
+        // 운동명에서 힌트 찾기
+        when {
+            lowerName.contains("푸시") || lowerName.contains("푸쉬") ||
+            lowerName.contains("벤치") || lowerName.contains("플라이") -> {
+                groups.add(MuscleGroup.CHEST)
+                groups.add(MuscleGroup.TRICEPS)
+            }
+            lowerName.contains("풀") || lowerName.contains("로우") ||
+            lowerName.contains("데드") -> {
+                groups.add(MuscleGroup.BACK)
+                groups.add(MuscleGroup.BICEPS)
+            }
+            lowerName.contains("스쿼트") || lowerName.contains("런지") ||
+            lowerName.contains("레그") -> {
+                groups.add(MuscleGroup.LEGS)
+                groups.add(MuscleGroup.GLUTES)
+            }
+            lowerName.contains("숄더") || lowerName.contains("레이즈") ||
+            lowerName.contains("프레스") && targetMuscle?.contains("어깨") == true -> {
+                groups.add(MuscleGroup.SHOULDERS)
+            }
+            lowerName.contains("컬") || lowerName.contains("익스텐션") -> {
+                groups.add(MuscleGroup.BICEPS)
+                groups.add(MuscleGroup.TRICEPS)
+            }
+            lowerName.contains("플랭크") || lowerName.contains("크런치") -> {
+                groups.add(MuscleGroup.CORE)
+                groups.add(MuscleGroup.ABS)
+            }
+        }
+
+        // 타겟 근육 기반 추가
+        if (groups.isEmpty() && targetMuscle != null) {
+            when (targetMuscle.lowercase()) {
+                "가슴", "chest" -> groups.add(MuscleGroup.CHEST)
+                "등", "back" -> groups.add(MuscleGroup.BACK)
+                "하체", "다리", "legs" -> groups.add(MuscleGroup.LEGS)
+                "어깨", "shoulders" -> groups.add(MuscleGroup.SHOULDERS)
+                "팔", "arms" -> {
+                    groups.add(MuscleGroup.BICEPS)
+                    groups.add(MuscleGroup.TRICEPS)
+                }
+                "코어", "복근", "abs" -> {
+                    groups.add(MuscleGroup.CORE)
+                    groups.add(MuscleGroup.ABS)
+                }
+            }
+        }
+
+        return groups.distinct()
+    }
+
+    /**
+     * 운동명에서 카테고리 추출
+     */
+    private fun extractCategoryFromName(exerciseName: String, targetMuscle: String?): ExerciseCategory? {
+        val lowerName = exerciseName.lowercase()
+
+        return when {
+            lowerName.contains("푸시") || lowerName.contains("푸쉬") ||
+            lowerName.contains("벤치") || lowerName.contains("플라이") -> ExerciseCategory.CHEST
+
+            lowerName.contains("풀") || lowerName.contains("로우") ||
+            lowerName.contains("데드") && !lowerName.contains("레그") -> ExerciseCategory.BACK
+
+            lowerName.contains("스쿼트") || lowerName.contains("런지") ||
+            lowerName.contains("레그") -> ExerciseCategory.LEGS
+
+            lowerName.contains("숄더") || lowerName.contains("레이즈") -> ExerciseCategory.SHOULDERS
+
+            lowerName.contains("컬") || lowerName.contains("익스텐션") -> ExerciseCategory.ARMS
+
+            lowerName.contains("플랭크") || lowerName.contains("크런치") -> ExerciseCategory.CORE
+
+            else -> {
+                // 타겟 근육 기반 카테고리
+                when (targetMuscle?.lowercase()) {
+                    "가슴", "chest" -> ExerciseCategory.CHEST
+                    "등", "back" -> ExerciseCategory.BACK
+                    "하체", "다리", "legs" -> ExerciseCategory.LEGS
+                    "어깨", "shoulders" -> ExerciseCategory.SHOULDERS
+                    "팔", "arms" -> ExerciseCategory.ARMS
+                    "코어", "복근", "abs" -> ExerciseCategory.CORE
+                    else -> null
+                }
+            }
+        }
     }
 }

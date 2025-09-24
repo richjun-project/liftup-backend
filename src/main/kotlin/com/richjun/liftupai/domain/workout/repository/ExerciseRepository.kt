@@ -3,6 +3,7 @@ package com.richjun.liftupai.domain.workout.repository
 import com.richjun.liftupai.domain.workout.entity.Exercise
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.Equipment
+import com.richjun.liftupai.domain.workout.entity.MuscleGroup
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -52,4 +53,60 @@ interface ExerciseRepository : JpaRepository<Exercise, Long> {
         OR LOWER(REPLACE(e.name, ' ', '')) = LOWER(REPLACE(:name, ' ', ''))
     """)
     fun findByExactOrCompactName(@Param("name") name: String): List<Exercise>
+
+    /**
+     * 특정 근육 그룹을 포함하는 운동들을 조회합니다.
+     */
+    @Query("""
+        SELECT DISTINCT e FROM Exercise e
+        JOIN e.muscleGroups mg
+        WHERE mg IN :muscleGroups
+    """)
+    fun findByMuscleGroupsIn(@Param("muscleGroups") muscleGroups: List<MuscleGroup>): List<Exercise>
+
+    /**
+     * 특정 카테고리와 근육 그룹을 가진 운동들을 조회합니다.
+     */
+    @Query("""
+        SELECT DISTINCT e FROM Exercise e
+        JOIN e.muscleGroups mg
+        WHERE e.category = :category
+        AND mg IN :muscleGroups
+    """)
+    fun findByCategoryAndMuscleGroups(
+        @Param("category") category: ExerciseCategory,
+        @Param("muscleGroups") muscleGroups: List<MuscleGroup>
+    ): List<Exercise>
+
+    /**
+     * 특정 운동과 유사한 카테고리/근육 그룹을 가진 대체 운동을 찾습니다.
+     */
+    @Query("""
+        SELECT DISTINCT e FROM Exercise e
+        JOIN e.muscleGroups mg
+        WHERE e.id != :exerciseId
+        AND e.category = :category
+        AND mg IN :muscleGroups
+        ORDER BY e.name
+    """)
+    fun findAlternativeExercises(
+        @Param("exerciseId") exerciseId: Long,
+        @Param("category") category: ExerciseCategory,
+        @Param("muscleGroups") muscleGroups: List<MuscleGroup>
+    ): List<Exercise>
+
+    /**
+     * 장비와 근육 그룹으로 대체 운동을 찾습니다.
+     */
+    @Query("""
+        SELECT DISTINCT e FROM Exercise e
+        JOIN e.muscleGroups mg
+        WHERE e.equipment = :equipment
+        AND mg IN :muscleGroups
+        ORDER BY e.name
+    """)
+    fun findByEquipmentAndMuscleGroups(
+        @Param("equipment") equipment: Equipment,
+        @Param("muscleGroups") muscleGroups: List<MuscleGroup>
+    ): List<Exercise>
 }

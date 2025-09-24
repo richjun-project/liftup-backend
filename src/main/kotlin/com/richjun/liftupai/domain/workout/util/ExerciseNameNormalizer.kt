@@ -8,6 +8,7 @@ class ExerciseNameNormalizer {
     // 철자 변형 매핑
     private val spellingVariations = mapOf(
         "푸쉬" to "푸시",
+        "푸쉬업" to "푸시업",  // 푸쉬업 -> 푸시업 변환 추가
         "푸시" to "푸시",  // 정규화된 형태
         "래터럴" to "레터럴",
         "레터럴" to "레터럴",  // 정규화된 형태
@@ -26,6 +27,8 @@ class ExerciseNameNormalizer {
         "푸시다운" to "푸시다운",
         "푸쉬다운" to "푸시다운",
         "푸시 다운" to "푸시다운",
+        "푸쉬 업" to "푸시업",  // 띄어쓰기 있는 버전도 추가
+        "푸시 업" to "푸시업",
         "벤치프레스" to "벤치프레스",
         "벤치 프레스" to "벤치프레스",
         "레그프레스" to "레그프레스",
