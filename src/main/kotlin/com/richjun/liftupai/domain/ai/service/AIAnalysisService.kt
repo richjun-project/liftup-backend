@@ -39,7 +39,11 @@ class AIAnalysisService(
     private val workoutServiceV2: com.richjun.liftupai.domain.workout.service.WorkoutServiceV2,
     private val workoutSessionRepository: com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository,
     private val chatMessageRepository: ChatMessageRepository,
-    private val exerciseNameNormalizer: ExerciseNameNormalizer
+    private val exerciseNameNormalizer: ExerciseNameNormalizer,
+    private val vectorWorkoutRecommendationService: com.richjun.liftupai.domain.workout.service.vector.VectorWorkoutRecommendationService,
+    private val workoutExerciseRepository: com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository,
+    private val exerciseSetRepository: com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository,
+    private val muscleRecoveryRepository: com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository
 ) {
 
     fun analyzeForm(userId: Long, request: FormAnalysisRequest): FormAnalysisResponse {
@@ -299,7 +303,21 @@ class AIAnalysisService(
             targetMuscle
         }
 
-        // 구조화된 프롬프트 생성 with program context
+        // 1단계: 벡터 검색으로 후보 운동 가져오기 (DB에서만 선택)
+        val candidateExercises = vectorWorkoutRecommendationService.recommendExercises(
+            user = user,
+            profile = profile,
+            duration = duration,
+            targetMuscle = adjustedTargetMuscle,
+            equipment = equipment,
+            difficulty = difficulty,
+            workoutType = null,
+            limit = 20 // 충분한 후보 확보
+        )
+
+        println("📋 벡터 검색으로 ${candidateExercises.size}개 후보 운동 조회 완료")
+
+        // 2단계: 구조화된 프롬프트 생성 with 후보 운동 목록
         val prompt = buildStructuredWorkoutPrompt(
             user,
             profile,
@@ -308,10 +326,11 @@ class AIAnalysisService(
             adjustedTargetMuscle,
             difficulty,
             programPosition,
-            hasStartedToday
+            hasStartedToday,
+            candidateExercises // 후보 운동 목록 전달
         )
 
-        // AI 응답 받기
+        // 3단계: AI가 후보 중에서 선택
         val aiResponse = geminiAIService.generateRecommendations(prompt)
 
         // AI 응답을 WorkoutRecommendationDetail로 파싱
@@ -338,7 +357,8 @@ class AIAnalysisService(
         targetMuscle: String?,
         difficulty: String?,
         programPosition: WorkoutProgramPosition? = null,
-        hasStartedToday: Boolean = false
+        hasStartedToday: Boolean = false,
+        candidateExercises: List<Exercise> = emptyList()
     ): String {
         val workoutDuration = duration ?: 30
         val targetDifficulty = difficulty ?: "intermediate"
@@ -385,6 +405,20 @@ class AIAnalysisService(
 
         val equipmentText = equipment?.let { "장비: $it" } ?: "장비: 모든 장비 사용 가능"
         val muscleText = targetMuscle?.let { "목표 근육: $it" } ?: "목표 근육: 전신"
+
+        // 후보 운동 목록 생성
+        val candidateExercisesText = if (candidateExercises.isNotEmpty()) {
+            """
+
+            **반드시 아래 목록에서만 운동을 선택하세요 (DB에 존재하는 운동만):**
+            ${candidateExercises.mapIndexed { index, ex ->
+                "  ${index + 1}. [ID: ${ex.id}] ${ex.name} - ${ex.category.name} - 근육: ${ex.muscleGroups.joinToString(", ")} - 장비: ${ex.equipment?.name ?: "없음"}"
+            }.joinToString("\n")}
+
+            """.trimIndent()
+        } else {
+            ""
+        }
 
         // PT 스타일별 지침 추가
         val styleGuidance = when (ptStyle) {
@@ -500,12 +534,77 @@ class AIAnalysisService(
             "첫 운동을 시작합니다!"
         }
 
+        // 헬스 트레이너 관점 분석 추가
+        val weeklyVolume = getWeeklyVolumeMap(user)
+        val volumeAnalysis = """
+
+            주간 볼륨 현황 (근육군별 세트 수):
+            ${weeklyVolume.entries.sortedByDescending { it.value }.joinToString("\n") { (muscle, sets) ->
+                val status = when {
+                    sets < 10 -> "부족 ⚠️ (권장: 10-20 sets)"
+                    sets > 20 -> "과다 ⚠️ (과훈련 위험)"
+                    else -> "적정 ✅"
+                }
+                "  - $muscle: ${sets} sets ($status)"
+            }}
+        """.trimIndent()
+
+        val recentlyWorkedMuscles = getRecentlyWorkedMuscles(user, 48)
+        val recoveringMuscles = getRecoveringMuscles(user)
+        val recoveryAnalysis = if (recentlyWorkedMuscles.isNotEmpty() || recoveringMuscles.isNotEmpty()) {
+            """
+
+            회복 상태 분석:
+            ${if (recentlyWorkedMuscles.isNotEmpty()) {
+                "  - 최근 48시간 이내 운동한 근육: ${recentlyWorkedMuscles.joinToString(", ")} ⚠️ 피하기"
+            } else "  - 모든 근육 회복 완료 ✅"}
+            ${if (recoveringMuscles.isNotEmpty()) {
+                "  - 회복 중인 근육 (80% 미만): ${recoveringMuscles.joinToString(", ")} ⚠️ 피하기"
+            } else ""}
+            """.trimIndent()
+        } else {
+            """
+
+            회복 상태 분석:
+              - 모든 근육 회복 완료 ✅
+            """.trimIndent()
+        }
+
+        val balanceWarnings = checkMuscleBalance(user)
+        val balanceAnalysis = if (balanceWarnings.isNotEmpty()) {
+            """
+
+            근육 불균형 경고:
+            ${balanceWarnings.joinToString("\n") { "  $it" }}
+            """.trimIndent()
+        } else {
+            ""
+        }
+
+        val plateaus = getAllPlateaus(user)
+        val plateauAnalysis = if (plateaus.isNotEmpty()) {
+            """
+
+            정체기 운동 (3주 이상 무게 변화 없음):
+            ${plateaus.joinToString("\n") { plateau ->
+                "  - ${plateau.exercise.name}: ${plateau.weeks}주 정체 (${plateau.currentWeight}kg)"
+                "    → ${plateau.recommendation}"
+            }}
+            """.trimIndent()
+        } else {
+            ""
+        }
+
         return """
             운동 프로그램을 JSON 형식으로 추천해주세요.
 
             $profileInfo
             $workoutHistoryInfo
             $recentAchievements
+            $volumeAnalysis
+            $recoveryAnalysis
+            $balanceAnalysis
+            $plateauAnalysis
 
             $styleGuidance
 
@@ -515,12 +614,22 @@ class AIAnalysisService(
             - $muscleText
             - 난이도: $targetDifficulty
 
+            $candidateExercisesText
+
+            **헬스 트레이너 지침 (필수 준수):**
+            1. 회복 중인 근육(최근 48시간 또는 회복률 80% 미만)은 절대 사용 금지
+            2. 주간 볼륨 20세트 이상인 근육은 피하기 (과훈련 방지)
+            3. 주간 볼륨 10세트 이하인 근육 우선 선택
+            4. 근육 불균형 경고가 있으면 부족한 근육 집중 (예: 등 운동 부족 시 등 운동 추가)
+            5. 정체기 운동이 있으면 변형 운동 추천 (예: 바벨 → 덤벨, 각도 변경)
+            6. 운동 순서: 큰 근육 → 작은 근육, 복합운동 → 고립운동 (예: 스쿼트 → 런지 → 레그컬)
+
             다음 JSON 형식으로만 응답해주세요:
             {
               "workout_name": "맞춤 운동 프로그램",
               "exercises": [
                 {
-                  "name": "한글 운동명 (예: 벤치프레스, 스쿼트, 데드리프트)",
+                  "id": 운동 ID (위 목록의 ID 중 하나, 숫자),
                   "sets": 세트 수(숫자),
                   "reps": "반복 횟수(예: 8-12)",
                   "rest_seconds": 휴식 시간(초),
@@ -541,17 +650,19 @@ class AIAnalysisService(
             }
 
             주의사항:
-            1. 모든 텍스트는 한글로 작성
-            2. ${workoutDuration}분에 맞는 운동 개수 (4-8개)
-            3. 같은 운동 중복 금지
-            4. 복합관절 운동을 먼저, 단일관절 운동을 나중에
-            5. 개인화된 메시지 (일반론 금지!)
-            6. ${ptStyle} 스타일에 맞는 톤과 메시지
-            7. workout_name에는 사용자 이름이나 일차를 포함하지 않음
-            8. 모든 추천과 조언에는 구체적인 이유와 근거를 포함
-            9. 사용자의 현재 상태, 목표, 최근 운동 패턴을 고려한 맞춤형 분석
-            10. ai_insights의 3개 필드 (workout_rationale, key_point, next_step) 모두 필수로 작성
-            11. JSON만 응답 (다른 텍스트 없이)
+            1. **필수: exercises 배열의 각 운동은 반드시 위에 제공된 목록의 ID를 사용해야 함**
+            2. 위 목록에 없는 운동 ID는 절대 사용 금지
+            3. 모든 텍스트는 한글로 작성
+            4. ${workoutDuration}분에 맞는 운동 개수 (4-8개)
+            5. 같은 운동 중복 금지 (ID 중복 금지)
+            6. 복합관절 운동을 먼저, 단일관절 운동을 나중에
+            7. 개인화된 메시지 (일반론 금지!)
+            8. ${ptStyle} 스타일에 맞는 톤과 메시지
+            9. workout_name에는 사용자 이름이나 일차를 포함하지 않음
+            10. 모든 추천과 조언에는 구체적인 이유와 근거를 포함
+            11. 사용자의 현재 상태, 목표, 최근 운동 패턴을 고려한 맞춤형 분석
+            12. ai_insights의 3개 필드 (workout_rationale, key_point, next_step) 모두 필수로 작성
+            13. JSON만 응답 (다른 텍스트 없이)
         """.trimIndent()
     }
 
@@ -586,65 +697,45 @@ class AIAnalysisService(
             val aiInsightsMap = jsonResponse["ai_insights"] as? Map<String, Any>
 
             // 중복 제거를 위한 Set
-            val usedExerciseIds = mutableSetOf<String>()
-            val usedExerciseNames = mutableSetOf<String>()
+            val usedExerciseIds = mutableSetOf<Long>()
 
             val exercises = exercisesList.mapIndexedNotNull { index, exerciseMap ->
-                val exerciseName = exerciseMap["name"] as? String ?: "운동 ${index + 1}"
-                val targetMuscle = (jsonResponse["target_muscles"] as? List<String>)?.firstOrNull()
-
-                // 실제 운동 DB에서 매칭 시도
-                var matchedExercise = findMatchingExerciseByName(exerciseName)
-                var isAlternative = false
-
-                // 매칭 실패 시 대체 운동 찾기
-                if (matchedExercise == null) {
-                    println("운동 '$exerciseName' 매칭 실패, 대체 운동 검색 중...")
-                    matchedExercise = findAlternativeExercise(
-                        exerciseName,
-                        targetMuscle,
-                        equipment
-                    )
-                    isAlternative = true
+                // AI가 반환한 운동 ID 추출 (Long 타입)
+                val exerciseId = when (val idValue = exerciseMap["id"]) {
+                    is Number -> idValue.toLong()
+                    is String -> idValue.toLongOrNull()
+                    else -> null
                 }
 
-                // 여전히 매칭에 실패한 경우 로깅하고 제외
-                if (matchedExercise == null) {
-                    println("경고: 운동 '$exerciseName'을 찾을 수 없고 대체 운동도 찾을 수 없어 제외합니다.")
+                if (exerciseId == null) {
+                    println("⚠️ 운동 #${index + 1}: ID가 없거나 잘못됨 (${exerciseMap["id"]}), 스킵")
                     return@mapIndexedNotNull null
                 }
 
-                val exerciseId = matchedExercise.id.toString()
-                val finalExerciseName = if (isAlternative) {
-                    "${matchedExercise.name} (대체: $exerciseName)"
-                } else {
-                    matchedExercise.name
+                // DB에서 운동 조회 (ID로 직접)
+                val matchedExercise = try {
+                    exerciseRepository.findById(exerciseId).orElse(null)
+                } catch (e: Exception) {
+                    println("⚠️ 운동 ID $exerciseId 조회 실패: ${e.message}")
+                    null
                 }
 
-                // 중복 체크
-                if (exerciseId in usedExerciseIds || matchedExercise.name.lowercase() in usedExerciseNames) {
-                    // 대체 운동 찾기 시도
-                    val alternativeExercise = if (matchedExercise.muscleGroups.isNotEmpty()) {
-                        exerciseRepository.findAlternativeExercises(
-                            matchedExercise.id,
-                            matchedExercise.category,
-                            matchedExercise.muscleGroups.toList()
-                        ).firstOrNull { alt ->
-                            alt.id.toString() !in usedExerciseIds &&
-                            alt.name.lowercase() !in usedExerciseNames
-                        }
-                    } else null
-
-                    if (alternativeExercise != null) {
-                        matchedExercise = alternativeExercise
-                        println("중복 운동 '$finalExerciseName' 대신 '${alternativeExercise.name}' 사용")
-                    } else {
-                        return@mapIndexedNotNull null // 대체 운동도 없으면 제외
-                    }
+                if (matchedExercise == null) {
+                    println("⚠️ 운동 ID ${exerciseId}가 DB에 없음, 스킵")
+                    return@mapIndexedNotNull null
                 }
 
-                usedExerciseIds.add(matchedExercise.id.toString())
-                usedExerciseNames.add(matchedExercise.name.lowercase())
+                println("✅ 운동 #${index + 1}: ${matchedExercise.name} (ID: $exerciseId)")
+                val exerciseIdStr = matchedExercise.id.toString()
+                val finalExerciseName = matchedExercise.name
+
+                // 중복 체크 (AI가 같은 ID를 두 번 반환한 경우)
+                if (exerciseId in usedExerciseIds) {
+                    println("⚠️ 운동 ID $exerciseId (${matchedExercise.name}) 중복, 스킵")
+                    return@mapIndexedNotNull null
+                }
+
+                usedExerciseIds.add(exerciseId)
 
                 // DB에서 운동 정보 가져오기
                 val targetMuscles = getExerciseTargetMuscles(matchedExercise)
@@ -660,11 +751,7 @@ class AIAnalysisService(
 
                 AIExerciseDetail(
                     exerciseId = matchedExercise.id.toString(),
-                    name = if (isAlternative) {
-                        "${matchedExercise.name} (대체)"
-                    } else {
-                        matchedExercise.name
-                    },
+                    name = matchedExercise.name,
                     sets = (exerciseMap["sets"] as? Number)?.toInt() ?: 3,
                     reps = exerciseMap["reps"] as? String ?: "10-12",
                     rest = (exerciseMap["rest_seconds"] as? Number)?.toInt() ?: 60,
@@ -1134,7 +1221,124 @@ class AIAnalysisService(
     }
 
     /**
-     * 대체 운동을 찾는 메서드
+     * 벡터 검색을 활용한 대체 운동 찾기
+     * - 절대 null을 반환하지 않음 (보장됨)
+     * - 벡터 검색 -> 기존 방식 폴백 -> 카테고리 기본 운동 순으로 시도
+     */
+    private fun findAlternativeExerciseByVector(
+        exerciseName: String,
+        targetMuscle: String? = null,
+        equipment: String? = null
+    ): Exercise {
+        return try {
+            // 운동명을 포함한 검색 쿼리 생성
+            val queryText = buildString {
+                append("운동명: $exerciseName")
+                targetMuscle?.let { append(". 타겟 근육: $it") }
+                equipment?.let { append(". 장비: $it") }
+            }
+
+            // 벡터 임베딩 생성
+            val exerciseVectorService = com.richjun.liftupai.domain.workout.service.vector.ExerciseVectorService(objectMapper)
+            val embedding = exerciseVectorService.generateEmbedding(queryText)
+
+            // Qdrant 서비스 가져오기 (이미 빈으로 등록됨)
+            val qdrantService = com.richjun.liftupai.domain.workout.service.vector.ExerciseQdrantService(
+                com.richjun.liftupai.global.config.QdrantConfig().qdrantClient()
+            )
+
+            // 1차 시도: 벡터 검색 (임계값 0.1로 낮춰서 더 많은 매칭 허용)
+            var results = qdrantService.searchSimilarExercises(
+                queryVector = embedding,
+                limit = 5,
+                scoreThreshold = 0.1f
+            )
+
+            // 2차 시도: 임계값을 더 낮춰서 재시도
+            if (results.isEmpty()) {
+                println("벡터 검색 1차 실패, 임계값을 0.05로 낮춰서 재시도")
+                results = qdrantService.searchSimilarExercises(
+                    queryVector = embedding,
+                    limit = 5,
+                    scoreThreshold = 0.05f
+                )
+            }
+
+            // 결과가 있으면 첫 번째 반환
+            results.firstOrNull()?.let { (exerciseId, score) ->
+                exerciseRepository.findById(exerciseId).orElse(null)?.also {
+                    println("✅ 벡터 검색 성공: '$exerciseName' -> '${it.name}' (score: $score)")
+                    return it
+                }
+            }
+
+            // 3차 시도: 기존 방식으로 폴백
+            println("벡터 검색으로도 찾지 못함, 기존 방식으로 폴백")
+            val fallbackExercise = findAlternativeExercise(exerciseName, targetMuscle, equipment)
+            if (fallbackExercise != null) {
+                println("✅ 기존 방식으로 대체 운동 찾음: '$exerciseName' -> '${fallbackExercise.name}'")
+                return fallbackExercise
+            }
+
+            // 4차 시도: 카테고리 기반 기본 운동 (최후의 보루)
+            println("모든 방식 실패, 카테고리 기반 기본 운동 반환")
+            return getDefaultExerciseByCategory(targetMuscle, equipment)
+
+        } catch (e: Exception) {
+            println("❌ 벡터 검색 중 오류 발생: ${e.message}")
+            e.printStackTrace()
+
+            // 오류 발생 시에도 기본 운동 반환
+            try {
+                return findAlternativeExercise(exerciseName, targetMuscle, equipment)
+                    ?: getDefaultExerciseByCategory(targetMuscle, equipment)
+            } catch (e2: Exception) {
+                println("❌ 폴백도 실패: ${e2.message}")
+                return getDefaultExerciseByCategory(targetMuscle, equipment)
+            }
+        }
+    }
+
+    /**
+     * 카테고리 기반 기본 운동 반환 (최후의 보루)
+     * 절대 null을 반환하지 않음
+     */
+    private fun getDefaultExerciseByCategory(targetMuscle: String?, equipment: String?): Exercise {
+        // 타겟 근육에 따른 기본 운동명
+        val defaultExerciseName = when (targetMuscle?.lowercase()) {
+            "가슴", "chest" -> "푸시업"
+            "등", "back" -> "바디로우"
+            "하체", "다리", "legs" -> "스쿼트"
+            "어깨", "shoulders" -> "파이크푸시업"
+            "팔", "이두", "arms", "biceps" -> "푸시업"
+            "삼두", "triceps" -> "딥스"
+            "코어", "복근", "abs", "core" -> "플랭크"
+            else -> "푸시업" // 최종 디폴트
+        }
+
+        // DB에서 찾기 시도 (여러 단계로 폴백)
+        val exercise = exerciseRepository.findByNameIgnoreCase(defaultExerciseName)
+            ?: exerciseRepository.findAll().firstOrNull { it.name.contains("푸시업", ignoreCase = true) }
+            ?: exerciseRepository.findAll().firstOrNull { it.name.contains("스쿼트", ignoreCase = true) }
+            ?: exerciseRepository.findAll().firstOrNull { it.name.contains("플랭크", ignoreCase = true) }
+            ?: exerciseRepository.findByCategory(ExerciseCategory.CHEST).firstOrNull()
+            ?: exerciseRepository.findByCategory(ExerciseCategory.LEGS).firstOrNull()
+            ?: exerciseRepository.findByCategory(ExerciseCategory.CORE).firstOrNull()
+            ?: exerciseRepository.findAll().firstOrNull()
+
+        if (exercise != null) {
+            println("⚠️ 기본 운동 반환: '$targetMuscle' -> '${exercise.name}' (id: ${exercise.id})")
+            return exercise
+        }
+
+        // 정말 극단적인 경우: DB가 완전히 비어있으면 에러
+        val errorMsg = "🚨 치명적 오류: DB에 운동이 하나도 없습니다. 최소 1개 이상의 운동을 DB에 추가해주세요."
+        println(errorMsg)
+        throw IllegalStateException(errorMsg)
+    }
+
+    /**
+     * 대체 운동을 찾는 메서드 (기존 방식 - 폴백용)
      * 운동 매칭에 실패했을 때 유사한 운동을 찾아 추천
      */
     private fun findAlternativeExercise(
@@ -1295,5 +1499,279 @@ class AIAnalysisService(
                 }
             }
         }
+    }
+
+    // ========================================
+    // 헬스 트레이너 관점 공통 유틸리티 메서드
+    // ========================================
+
+    /**
+     * 복합운동 여부 판별
+     * 2개 이상의 관절이 움직이거나 여러 근육군이 함께 사용되는 운동
+     */
+    private fun isCompoundExercise(exercise: Exercise): Boolean {
+        // 여러 근육군 사용
+        if (exercise.muscleGroups.size >= 2) return true
+
+        // 운동명으로 판별
+        val name = exercise.name.lowercase()
+        val compoundKeywords = listOf(
+            "프레스", "스쿼트", "데드리프트", "로우", "풀업", "친업",
+            "딥", "런지", "푸쉬업", "벤치", "밀리터리"
+        )
+
+        return compoundKeywords.any { name.contains(it) }
+    }
+
+    /**
+     * 운동 우선순위 정렬
+     * 1. 큰 근육 → 작은 근육
+     * 2. 복합운동 → 고립운동
+     */
+    private fun orderExercisesByPriority(exercises: List<Exercise>): List<Exercise> {
+        return exercises.sortedWith(
+            compareBy<Exercise> { exercise ->
+                // 카테고리별 우선순위 (큰 근육 먼저)
+                when (exercise.category) {
+                    ExerciseCategory.LEGS -> 1      // 하체 (가장 큰 근육군)
+                    ExerciseCategory.BACK -> 2      // 등
+                    ExerciseCategory.CHEST -> 3     // 가슴
+                    ExerciseCategory.SHOULDERS -> 4 // 어깨
+                    ExerciseCategory.ARMS -> 5      // 팔
+                    ExerciseCategory.CORE -> 6      // 코어 (마지막)
+                    else -> 7
+                }
+            }.thenBy { exercise ->
+                // 같은 카테고리 내에서는 복합운동 우선
+                if (isCompoundExercise(exercise)) 0 else 1
+            }
+        )
+    }
+
+    /**
+     * 최근 N시간 이내에 운동한 근육군 조회
+     */
+    private fun getRecentlyWorkedMuscles(user: com.richjun.liftupai.domain.auth.entity.User, hours: Int): Set<MuscleGroup> {
+        val cutoffTime = LocalDateTime.now().minusHours(hours.toLong())
+
+        return workoutSessionRepository
+            .findByUserAndStartTimeAfter(user, cutoffTime)
+            .flatMap { session ->
+                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                    .flatMap { it.exercise.muscleGroups }
+            }
+            .toSet()
+    }
+
+    /**
+     * 회복 중인 근육군 조회 (회복률 80% 미만)
+     * MuscleRecovery 엔티티 활용
+     */
+    private fun getRecoveringMuscles(user: com.richjun.liftupai.domain.auth.entity.User): Set<MuscleGroup> {
+        return try {
+            muscleRecoveryRepository.findByUser(user)
+                .filter { it.recoveryPercentage < 80 }
+                .mapNotNull { recovery ->
+                    // String을 MuscleGroup enum으로 변환
+                    try {
+                        MuscleGroup.valueOf(recovery.muscleGroup.uppercase())
+                    } catch (e: IllegalArgumentException) {
+                        null
+                    }
+                }
+                .toSet()
+        } catch (e: Exception) {
+            println("⚠️ MuscleRecovery 조회 실패: ${e.message}")
+            emptySet()
+        }
+    }
+
+    /**
+     * 특정 근육군의 주간 볼륨 계산 (주간 총 세트 수)
+     */
+    private fun calculateWeeklyVolume(user: com.richjun.liftupai.domain.auth.entity.User, muscleGroup: MuscleGroup): Int {
+        val oneWeekAgo = LocalDateTime.now().minusDays(7)
+
+        return workoutSessionRepository
+            .findByUserAndStartTimeAfter(user, oneWeekAgo)
+            .flatMap { session ->
+                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                    .filter { it.exercise.muscleGroups.contains(muscleGroup) }
+            }
+            .sumOf { exerciseSetRepository.findByWorkoutExerciseId(it.id).size }
+    }
+
+    /**
+     * 모든 주요 근육군의 주간 볼륨 맵
+     */
+    private fun getWeeklyVolumeMap(user: com.richjun.liftupai.domain.auth.entity.User): Map<String, Int> {
+        val majorMuscleGroups = listOf(
+            MuscleGroup.CHEST, MuscleGroup.BACK, MuscleGroup.LEGS,
+            MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS,
+            MuscleGroup.CORE
+        )
+
+        return majorMuscleGroups.associate { muscleGroup ->
+            val koreanName = when (muscleGroup) {
+                MuscleGroup.CHEST -> "가슴"
+                MuscleGroup.BACK -> "등"
+                MuscleGroup.LEGS -> "하체"
+                MuscleGroup.SHOULDERS -> "어깨"
+                MuscleGroup.BICEPS -> "이두"
+                MuscleGroup.TRICEPS -> "삼두"
+                MuscleGroup.CORE -> "코어"
+                else -> muscleGroup.name
+            }
+            koreanName to calculateWeeklyVolume(user, muscleGroup)
+        }
+    }
+
+    /**
+     * 길항근 균형 체크
+     * 가슴:등 = 1:1.5, 대퇴사두:햄스트링 = 1:1 권장
+     */
+    private fun checkMuscleBalance(user: com.richjun.liftupai.domain.auth.entity.User): List<String> {
+        val weeklyVolume = getWeeklyVolumeMap(user)
+        val warnings = mutableListOf<String>()
+
+        // 가슴:등 비율 체크
+        val chestVolume = weeklyVolume["가슴"] ?: 0
+        val backVolume = weeklyVolume["등"] ?: 0
+
+        if (backVolume > 0) {
+            val chestToBackRatio = chestVolume.toDouble() / backVolume
+            if (chestToBackRatio > 0.8) { // 등이 가슴의 1.25배 미만
+                warnings.add("⚠️ 가슴 대비 등 운동 부족 (가슴:등 비율 ${String.format("%.1f", chestToBackRatio)}:1, 권장 1:1.5)")
+                warnings.add("   → 자세 불균형 및 라운드 숄더 위험")
+            }
+        }
+
+        // 이두:삼두 비율 체크 (큰 의미는 없지만 참고)
+        val bicepsVolume = weeklyVolume["이두"] ?: 0
+        val tricepsVolume = weeklyVolume["삼두"] ?: 0
+
+        if (tricepsVolume > 0 && bicepsVolume > tricepsVolume * 1.5) {
+            warnings.add("⚠️ 삼두 대비 이두 운동 과다 (균형 권장)")
+        }
+
+        return warnings
+    }
+
+    /**
+     * 정체기 정보 데이터 클래스
+     */
+    data class PlateauInfo(
+        val exercise: Exercise,
+        val weeks: Int,
+        val currentWeight: Double,
+        val recommendation: String
+    )
+
+    /**
+     * 특정 운동의 정체기 탐지 (3주 이상 무게 변화 < 2.5kg)
+     */
+    private fun detectPlateau(user: com.richjun.liftupai.domain.auth.entity.User, exercise: Exercise): PlateauInfo? {
+        val threeWeeksAgo = LocalDateTime.now().minusDays(21)
+
+        val recentSets = workoutSessionRepository
+            .findByUserAndStartTimeAfter(user, threeWeeksAgo)
+            .flatMap { session ->
+                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                    .filter { it.exercise.id == exercise.id }
+                    .flatMap { exerciseSetRepository.findByWorkoutExerciseId(it.id) }
+            }
+            .sortedBy { it.completedAt }
+
+        if (recentSets.size < 9) return null // 최소 9세트 (3주 * 3세트) 필요
+
+        // 주차별 최대 무게 계산
+        val weeklyMaxWeights = recentSets
+            .groupBy {
+                java.time.Duration.between(threeWeeksAgo, it.completedAt ?: LocalDateTime.now()).toDays() / 7
+            }
+            .mapValues { (_, sets) -> sets.maxOfOrNull { it.weight } ?: 0.0 }
+            .values
+            .toList()
+
+        if (weeklyMaxWeights.size < 3) return null
+
+        // 주차별 무게 변화 체크
+        val weightChanges = weeklyMaxWeights.zipWithNext { prev, next ->
+            kotlin.math.abs(next - prev)
+        }
+
+        val isStagnant = weightChanges.all { it < 2.5 } // 모든 주차 변화가 2.5kg 미만
+
+        return if (isStagnant) {
+            val currentWeight = weeklyMaxWeights.last()
+            PlateauInfo(
+                exercise = exercise,
+                weeks = 3,
+                currentWeight = currentWeight,
+                recommendation = "무게 5kg 증량 또는 운동 변형 시도 (예: 바벨 → 덤벨, 각도 변경)"
+            )
+        } else null
+    }
+
+    /**
+     * 모든 정체기 운동 조회
+     */
+    private fun getAllPlateaus(user: com.richjun.liftupai.domain.auth.entity.User): List<PlateauInfo> {
+        val oneMonthAgo = LocalDateTime.now().minusDays(30)
+
+        // 최근 한 달간 한 운동들
+        val recentExercises = workoutSessionRepository
+            .findByUserAndStartTimeAfter(user, oneMonthAgo)
+            .flatMap { session ->
+                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                    .map { it.exercise }
+            }
+            .distinctBy { it.id }
+
+        return recentExercises.mapNotNull { exercise ->
+            detectPlateau(user, exercise)
+        }
+    }
+
+    /**
+     * 운동 다양성 보장 (최근 N주 동안 하지 않은 운동 우선)
+     */
+    private fun ensureExerciseVariety(
+        user: com.richjun.liftupai.domain.auth.entity.User,
+        candidates: List<Exercise>,
+        weeks: Int = 4
+    ): List<Exercise> {
+        val cutoffDate = LocalDateTime.now().minusDays((weeks * 7).toLong())
+
+        // 최근 N주간 한 운동 ID 목록
+        val recentExerciseIds = workoutSessionRepository
+            .findByUserAndStartTimeAfter(user, cutoffDate)
+            .flatMap { session ->
+                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                    .map { it.exercise.id }
+            }
+            .toSet()
+
+        // 1순위: 최근 N주 동안 하지 않은 운동
+        val freshExercises = candidates.filter { it.id !in recentExerciseIds }
+
+        // 2순위: 최근 한 운동 중 같은 카테고리지만 다른 변형
+        val recentExerciseNames = workoutSessionRepository
+            .findByUserAndStartTimeAfter(user, cutoffDate)
+            .flatMap { session ->
+                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                    .map { it.exercise.name }
+            }
+            .toSet()
+
+        val variations = candidates.filter { candidate ->
+            val baseName = candidate.name.split(" ").lastOrNull() ?: candidate.name
+            !recentExerciseNames.any { recent ->
+                recent.contains(baseName) || baseName in recent
+            }
+        }
+
+        // 신선한 운동 우선, 그 다음 변형, 마지막으로 최근 한 운동
+        return (freshExercises + variations + candidates).distinctBy { it.id }
     }
 }

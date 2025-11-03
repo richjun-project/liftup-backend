@@ -62,4 +62,6 @@ interface WorkoutSessionRepository : JpaRepository<WorkoutSession, Long> {
     fun findFirstByUserOrderByStartTimeDesc(user: User): Optional<WorkoutSession>
 
     fun countByUserAndStartTimeAfter(user: User, startTime: LocalDateTime): Long
+
+    fun findByUserAndStartTimeAfter(user: User, startTime: LocalDateTime): List<WorkoutSession>
 }

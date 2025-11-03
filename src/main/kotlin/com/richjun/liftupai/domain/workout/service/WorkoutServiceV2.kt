@@ -1098,8 +1098,8 @@ class WorkoutServiceV2(
             else -> "intermediate" // default
         }
 
-        // Get suitable exercises based on filters
-        val exercises = getFilteredExercises(equipment, targetMuscle, workoutDuration)
+        // Get suitable exercises based on filters (user 정보 포함)
+        val exercises = getFilteredExercises(equipment, targetMuscle, workoutDuration, user)
 
         // Create quick exercise details
         val quickExercises = exercises.take(6).mapIndexed { index, exercise ->
@@ -1187,10 +1187,43 @@ class WorkoutServiceV2(
         return alternatives.take(2)
     }
 
-    private fun getFilteredExercises(equipment: String?, targetMuscle: String?, duration: Int): List<Exercise> {
+    /**
+     * 헬스 트레이너 관점으로 개선된 운동 필터링 및 선택
+     * - 회복 중인 근육 제외
+     * - 주간 볼륨 고려
+     * - 운동 다양성 보장
+     * - 운동 순서 정렬 (복합운동 → 고립운동, 큰 근육 → 작은 근육)
+     */
+    private fun getFilteredExercises(
+        equipment: String?,
+        targetMuscle: String?,
+        duration: Int,
+        user: com.richjun.liftupai.domain.auth.entity.User? = null
+    ): List<Exercise> {
         var exercises = exerciseRepository.findAll().toList()
 
-        // Filter by equipment
+        // 사용자 정보가 있으면 헬스 트레이너 관점 필터링 적용
+        user?.let { u ->
+            // 1. 회복 중인 근육 제외 (48시간 이내 운동한 근육)
+            val recentlyWorkedMuscles = getRecentlyWorkedMusclesV2(u, 48)
+            exercises = exercises.filter { exercise ->
+                exercise.muscleGroups.none { it in recentlyWorkedMuscles }
+            }
+            println("회복 필터링 후: ${exercises.size}개 운동 (제외된 근육: $recentlyWorkedMuscles)")
+
+            // 2. 주간 볼륨 과다 근육 제외 (20세트 이상)
+            val weeklyVolume = getWeeklyVolumeMapV2(u)
+            val overtrainedMuscles = weeklyVolume.filter { it.value > 20 }.keys
+            exercises = exercises.filter { exercise ->
+                exercise.muscleGroups.none { mg ->
+                    val koreanName = translateMuscleGroupToKorean(mg)
+                    koreanName in overtrainedMuscles
+                }
+            }
+            println("볼륨 필터링 후: ${exercises.size}개 운동 (제외된 과다 근육: $overtrainedMuscles)")
+        }
+
+        // 3. 장비 필터링
         equipment?.let { eq ->
             val equipmentEnum = try {
                 Equipment.valueOf(eq.uppercase().replace(" ", "_"))
@@ -1200,7 +1233,7 @@ class WorkoutServiceV2(
             equipmentEnum?.let { exercises = exercises.filter { it.equipment == equipmentEnum } }
         }
 
-        // Filter by target muscle
+        // 4. 타겟 근육 필터링
         targetMuscle?.let { muscle ->
             val muscleEnum = try {
                 when (muscle.lowercase()) {
@@ -1222,7 +1255,28 @@ class WorkoutServiceV2(
             }
         }
 
-        return exercises.shuffled().take(10)
+        // 5. 운동 다양성 보장 (사용자 정보가 있을 때만)
+        user?.let { u ->
+            val userProfile = userProfileRepository.findByUser(u).orElse(null)
+            val experienceLevel = userProfile?.experienceLevel ?: ExperienceLevel.INTERMEDIATE
+
+            // 경험 수준별 익숙한 운동 vs 새로운 운동 비율
+            val (familiarCount, newCount) = when (experienceLevel) {
+                ExperienceLevel.BEGINNER -> Pair(8, 2)      // 초보자: 80% 익숙한 운동
+                ExperienceLevel.INTERMEDIATE -> Pair(6, 4)   // 중급: 60% 익숙한 운동
+                ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT -> Pair(4, 6) // 고급: 40% 익숙한 운동
+                else -> Pair(6, 4)
+            }
+
+            exercises = ensureExerciseVarietyV2(u, exercises, familiarCount, newCount)
+            println("다양성 보장 후: ${exercises.size}개 운동 (익숙: $familiarCount, 새로운: $newCount)")
+        }
+
+        // 6. 운동 순서 정렬 ⭐ 가장 중요!
+        exercises = orderExercisesByPriorityV2(exercises)
+        println("최종 정렬 완료: 복합운동 우선, 큰 근육 → 작은 근육")
+
+        return exercises.take(10)
     }
 
     private fun getWorkoutFromRecommendationId(recommendationId: String): WorkoutRecommendationDetail {
@@ -2377,6 +2431,142 @@ class WorkoutServiceV2(
             }
             userProfile.muscleRecovery = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(muscleRecoveryJson)
             userProfileRepository.save(userProfile)
+        }
+    }
+
+    // ========================================
+    // 헬스 트레이너 관점 유틸리티 메서드 (WorkoutServiceV2 전용)
+    // ========================================
+
+    /**
+     * 복합운동 여부 판별
+     */
+    private fun isCompoundExerciseV2(exercise: Exercise): Boolean {
+        if (exercise.muscleGroups.size >= 2) return true
+
+        val name = exercise.name.lowercase()
+        val compoundKeywords = listOf(
+            "프레스", "스쿼트", "데드리프트", "로우", "풀업", "친업",
+            "딥", "런지", "푸쉬업", "벤치", "밀리터리"
+        )
+
+        return compoundKeywords.any { name.contains(it) }
+    }
+
+    /**
+     * 운동 우선순위 정렬
+     */
+    private fun orderExercisesByPriorityV2(exercises: List<Exercise>): List<Exercise> {
+        return exercises.sortedWith(
+            compareBy<Exercise> { exercise ->
+                when (exercise.category) {
+                    ExerciseCategory.LEGS -> 1
+                    ExerciseCategory.BACK -> 2
+                    ExerciseCategory.CHEST -> 3
+                    ExerciseCategory.SHOULDERS -> 4
+                    ExerciseCategory.ARMS -> 5
+                    ExerciseCategory.CORE -> 6
+                    else -> 7
+                }
+            }.thenBy { exercise ->
+                if (isCompoundExerciseV2(exercise)) 0 else 1
+            }
+        )
+    }
+
+    /**
+     * 최근 N시간 이내에 운동한 근육군 조회
+     */
+    private fun getRecentlyWorkedMusclesV2(user: com.richjun.liftupai.domain.auth.entity.User, hours: Int): Set<MuscleGroup> {
+        val cutoffTime = LocalDateTime.now().minusHours(hours.toLong())
+
+        return workoutSessionRepository
+            .findByUserAndStartTimeAfter(user, cutoffTime)
+            .flatMap { session ->
+                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                    .flatMap { it.exercise.muscleGroups }
+            }
+            .toSet()
+    }
+
+    /**
+     * 특정 근육군의 주간 볼륨 계산
+     */
+    private fun calculateWeeklyVolumeV2(user: com.richjun.liftupai.domain.auth.entity.User, muscleGroup: MuscleGroup): Int {
+        val oneWeekAgo = LocalDateTime.now().minusDays(7)
+
+        return workoutSessionRepository
+            .findByUserAndStartTimeAfter(user, oneWeekAgo)
+            .flatMap { session ->
+                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                    .filter { it.exercise.muscleGroups.contains(muscleGroup) }
+            }
+            .sumOf { exerciseSetRepository.findByWorkoutExerciseId(it.id).size }
+    }
+
+    /**
+     * 모든 주요 근육군의 주간 볼륨 맵
+     */
+    private fun getWeeklyVolumeMapV2(user: com.richjun.liftupai.domain.auth.entity.User): Map<String, Int> {
+        val majorMuscleGroups = listOf(
+            MuscleGroup.CHEST, MuscleGroup.BACK, MuscleGroup.LEGS,
+            MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS,
+            MuscleGroup.CORE
+        )
+
+        return majorMuscleGroups.associate { muscleGroup ->
+            translateMuscleGroupToKorean(muscleGroup) to calculateWeeklyVolumeV2(user, muscleGroup)
+        }
+    }
+
+    /**
+     * MuscleGroup을 한글로 변환
+     */
+    private fun translateMuscleGroupToKorean(muscleGroup: MuscleGroup): String {
+        return when (muscleGroup) {
+            MuscleGroup.CHEST -> "가슴"
+            MuscleGroup.BACK -> "등"
+            MuscleGroup.LEGS -> "하체"
+            MuscleGroup.SHOULDERS -> "어깨"
+            MuscleGroup.BICEPS -> "이두"
+            MuscleGroup.TRICEPS -> "삼두"
+            MuscleGroup.CORE -> "코어"
+            else -> muscleGroup.name
+        }
+    }
+
+    /**
+     * 운동 다양성 보장 (익숙한 운동 vs 새로운 운동 비율)
+     */
+    private fun ensureExerciseVarietyV2(
+        user: com.richjun.liftupai.domain.auth.entity.User,
+        candidates: List<Exercise>,
+        familiarCount: Int,
+        newCount: Int
+    ): List<Exercise> {
+        val twoWeeksAgo = LocalDateTime.now().minusDays(14)
+
+        // 최근 2주간 한 운동 ID 목록
+        val recentExerciseIds = workoutSessionRepository
+            .findByUserAndStartTimeAfter(user, twoWeeksAgo)
+            .flatMap { session ->
+                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                    .map { it.exercise.id }
+            }
+            .toSet()
+
+        // 익숙한 운동 vs 새로운 운동 분리
+        val familiarExercises = candidates.filter { it.id in recentExerciseIds }
+        val newExercises = candidates.filter { it.id !in recentExerciseIds }
+
+        // 요청된 비율대로 선택
+        val selected = familiarExercises.take(familiarCount) + newExercises.take(newCount)
+
+        // 부족하면 나머지로 채우기
+        return if (selected.size < (familiarCount + newCount)) {
+            (selected + candidates.filter { it !in selected }).take(familiarCount + newCount)
+        } else {
+            selected
         }
     }
 }

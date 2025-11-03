@@ -28,5 +28,8 @@ data class Exercise(
     val instructions: String? = null,
 
     @Column
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+
+    @Column(name = "vector_id")
+    var vectorId: String? = null
 )

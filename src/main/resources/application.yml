@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create  # 개발 환경용, 운영환경에서는 validate 사용
+      ddl-auto: update  # 기존 데이터 유지하면서 스키마만 변경
     properties:
       hibernate:
         format_sql: true
@@ -22,7 +22,7 @@ spring:
 
   sql:
     init:
-      mode: always
+      mode: never  # 기존 데이터가 있으면 data.sql 실행 안 함
       data-locations: classpath:data.sql
 
   jackson:
@@ -47,6 +47,16 @@ gemini:
   model: gemini-2.0-flash-lite
   max-tokens: 2048
   temperature: 0.7
+
+# Qdrant Vector DB 설정
+qdrant:
+  host: ${QDRANT_HOST:localhost}
+  port: ${QDRANT_PORT:6334}
+
+# Vector 마이그레이션 설정
+vector:
+  migration:
+    enabled: true  # 프로덕션에서는 false로 설정 권장
 
 # API 설정
 api:
