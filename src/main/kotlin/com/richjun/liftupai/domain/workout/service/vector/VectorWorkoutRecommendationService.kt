@@ -99,9 +99,9 @@ class VectorWorkoutRecommendationService(
             }
 
             // 헬스 트레이너 정보: 회복 중인 근육, 주간 볼륨
-            val recentlyWorkedMuscles = getRecentlyWorkedMusclesVector(user, 48)
+            // 최근 운동 필터링은 제거 (너무 엄격함)
             val recoveringMuscles = getRecoveringMusclesVector(user)
-            val avoidMuscles = (recentlyWorkedMuscles + recoveringMuscles).map { translateMuscleGroupToKoreanVector(it) }
+            val avoidMuscles = recoveringMuscles.map { translateMuscleGroupToKoreanVector(it) }
 
             val weeklyVolume = getWeeklyVolumeMapVector(user)
 
@@ -137,11 +137,14 @@ class VectorWorkoutRecommendationService(
                 }
             }
 
-            // 회복 중인 근육 필터링
+            // 회복 중인 근육 필터링 (너무 엄격하지 않게: 주요 근육만 체크)
+            val initialSize = exercises.size
             exercises = exercises.filter { exercise ->
-                exercise.muscleGroups.none { it in recentlyWorkedMuscles || it in recoveringMuscles }
+                // 주요 근육 그룹(첫 번째)만 회복 체크
+                val primaryMuscle = exercise.muscleGroups.firstOrNull()
+                primaryMuscle == null || (primaryMuscle !in recoveringMuscles)
             }
-            println("After recovery filtering: ${exercises.size} exercises")
+            println("After recovery filtering: ${exercises.size} exercises (filtered ${initialSize - exercises.size} recovering muscles)")
 
             // 운동 순서 정렬 (복합운동 → 고립운동, 큰 근육 → 작은 근육)
             exercises = orderExercisesByPriorityVector(exercises)
@@ -169,40 +172,50 @@ class VectorWorkoutRecommendationService(
         limit: Int
     ): List<Exercise> {
         var exercises = exerciseRepository.findAll()
+        println("Fallback: Total exercises in DB: ${exercises.size}")
 
-        // 1. 회복 중인 근육 필터링
-        val recentlyWorkedMuscles = getRecentlyWorkedMusclesVector(user, 48)
+        // 1. 회복 중인 근육만 필터링 (최근 운동 제외)
         val recoveringMuscles = getRecoveringMusclesVector(user)
-        exercises = exercises.filter { exercise ->
-            exercise.muscleGroups.none { it in recentlyWorkedMuscles || it in recoveringMuscles }
-        }
-
-        // 2. 주간 볼륨 필터링 (20세트 이상인 근육 회피)
-        val weeklyVolume = getWeeklyVolumeMapVector(user)
-        val overtrainedMuscles = weeklyVolume.filter { it.value > 20 }.keys
-        exercises = exercises.filter { exercise ->
-            exercise.muscleGroups.none { muscle ->
-                overtrainedMuscles.contains(translateMuscleGroupToKoreanVector(muscle))
-            }
-        }
-
-        // 3. 타겟 근육 필터링
-        if (targetMuscle != null) {
+        if (recoveringMuscles.isNotEmpty()) {
             exercises = exercises.filter { exercise ->
+                val primaryMuscle = exercise.muscleGroups.firstOrNull()
+                primaryMuscle == null || (primaryMuscle !in recoveringMuscles)
+            }
+            println("Fallback: After recovery filtering: ${exercises.size}")
+        }
+
+        // 2. 타겟 근육 필터링 (있으면)
+        if (targetMuscle != null) {
+            val filtered = exercises.filter { exercise ->
                 exercise.muscleGroups.any { muscle ->
                     muscle.name.contains(targetMuscle, ignoreCase = true)
                 }
             }
+            // 필터 결과가 있으면 적용, 없으면 무시
+            if (filtered.isNotEmpty()) {
+                exercises = filtered
+                println("Fallback: After target muscle filtering: ${exercises.size}")
+            } else {
+                println("Fallback: Target muscle filter too strict, keeping all exercises")
+            }
         }
 
-        // 4. 장비 필터링
+        // 3. 장비 필터링 (있으면)
         if (equipment != null) {
-            exercises = exercises.filter { it.equipment?.name == equipment }
+            val filtered = exercises.filter { it.equipment?.name == equipment }
+            // 필터 결과가 있으면 적용, 없으면 무시
+            if (filtered.isNotEmpty()) {
+                exercises = filtered
+                println("Fallback: After equipment filtering: ${exercises.size}")
+            } else {
+                println("Fallback: Equipment filter too strict, keeping all exercises")
+            }
         }
 
-        // 5. 운동 순서 정렬 (복합운동 → 고립운동, 큰 근육 → 작은 근육)
+        // 4. 운동 순서 정렬 (복합운동 → 고립운동, 큰 근육 → 작은 근육)
         exercises = orderExercisesByPriorityVector(exercises)
 
+        println("Fallback: Returning ${exercises.take(limit).size} exercises")
         return exercises.take(limit)
     }
 

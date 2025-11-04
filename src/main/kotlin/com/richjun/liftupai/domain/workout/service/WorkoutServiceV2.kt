@@ -1202,25 +1202,10 @@ class WorkoutServiceV2(
     ): List<Exercise> {
         var exercises = exerciseRepository.findAll().toList()
 
-        // 사용자 정보가 있으면 헬스 트레이너 관점 필터링 적용
+        // 사용자 정보가 있으면 헬스 트레이너 관점 필터링 적용 (완화됨)
         user?.let { u ->
-            // 1. 회복 중인 근육 제외 (48시간 이내 운동한 근육)
-            val recentlyWorkedMuscles = getRecentlyWorkedMusclesV2(u, 48)
-            exercises = exercises.filter { exercise ->
-                exercise.muscleGroups.none { it in recentlyWorkedMuscles }
-            }
-            println("회복 필터링 후: ${exercises.size}개 운동 (제외된 근육: $recentlyWorkedMuscles)")
-
-            // 2. 주간 볼륨 과다 근육 제외 (20세트 이상)
-            val weeklyVolume = getWeeklyVolumeMapV2(u)
-            val overtrainedMuscles = weeklyVolume.filter { it.value > 20 }.keys
-            exercises = exercises.filter { exercise ->
-                exercise.muscleGroups.none { mg ->
-                    val koreanName = translateMuscleGroupToKorean(mg)
-                    koreanName in overtrainedMuscles
-                }
-            }
-            println("볼륨 필터링 후: ${exercises.size}개 운동 (제외된 과다 근육: $overtrainedMuscles)")
+            // 회복 필터링 제거 (너무 엄격함 - 매일 운동하는 사람에게 추천 불가능)
+            println("회복 필터링 스킵 (너무 엄격하여 제거)")
         }
 
         // 3. 장비 필터링
