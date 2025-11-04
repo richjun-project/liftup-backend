@@ -1711,13 +1711,13 @@ class WorkoutServiceV2(
                     val sets = exerciseSetRepository.findByWorkoutExerciseId(workoutExercise.id)
 
                     sets.forEach { set ->
-                        if (set.weight != null && set.actualReps != null && set.actualReps!! > 0) {
+                        if (set.weight > 0 && set.reps > 0 && set.completed) {
                             workoutDataList.add(
                                 WorkoutData(
-                                    weight = set.weight!!,
-                                    reps = set.actualReps!!,
+                                    weight = set.weight,
+                                    reps = set.reps,
                                     sets = sets.size,
-                                    rpe = set.rpe,
+                                    rpe = set.rpe?.toDouble(),
                                     completedAt = session.startTime
                                 )
                             )
