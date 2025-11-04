@@ -16,7 +16,7 @@ COPY src ./src
 RUN ./gradlew bootJar --no-daemon
 
 # Runtime stage
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # Copy built jar from builder stage
