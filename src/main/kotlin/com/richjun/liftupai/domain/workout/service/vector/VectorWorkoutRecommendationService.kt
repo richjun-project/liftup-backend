@@ -137,6 +137,28 @@ class VectorWorkoutRecommendationService(
                 }
             }
 
+            // 경험도별 난이도 필터링 (생소한 운동 방지)
+            val experienceLevel = profile?.experienceLevel ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
+            val difficultyRange = when (experienceLevel) {
+                com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER -> 1..40  // 초보자: 쉬운 운동만
+                com.richjun.liftupai.domain.user.entity.ExperienceLevel.INTERMEDIATE -> 20..70  // 중급자: 넓은 범위
+                com.richjun.liftupai.domain.user.entity.ExperienceLevel.ADVANCED,
+                com.richjun.liftupai.domain.user.entity.ExperienceLevel.EXPERT -> 30..100  // 고급자: 모든 범위
+                else -> 20..70
+            }
+
+            val beforeDifficultyFilter = exercises.size
+            exercises = exercises.filter { it.difficulty in difficultyRange }
+            println("After difficulty filtering: ${exercises.size} exercises (filtered ${beforeDifficultyFilter - exercises.size} too hard/easy)")
+
+            // 인기도 기반 정렬 추가 (인기 있는 운동 우선)
+            exercises = exercises.sortedWith(
+                compareByDescending<Exercise> { it.isBasicExercise }  // 1순위: 기본 운동
+                    .thenByDescending { it.popularity }  // 2순위: 인기도
+                    .thenBy { it.difficulty }  // 3순위: 난이도 (쉬운 것 우선)
+            )
+            println("After popularity sorting: basic exercises and popular ones first")
+
             // 회복 중인 근육 필터링 (너무 엄격하지 않게: 주요 근육만 체크)
             val initialSize = exercises.size
             exercises = exercises.filter { exercise ->

@@ -1406,8 +1406,9 @@ class WorkoutServiceV2(
             )
         }
 
-        // RPE 트렌드 분석
-        val avgRPE = recentHistory.takeLast(3).mapNotNull { it.rpe }.average().takeIf { !it.isNaN() } ?: 7.0
+        // RPE 트렌드 분석 (개선: 강도 기반 RPE 추정)
+        val avgRPE = recentHistory.takeLast(3).mapNotNull { it.rpe }.average().takeIf { !it.isNaN() }
+            ?: estimateRPEFromIntensity(recentHistory)
 
         // 일관성 분석 (무게 변동성)
         val weights = recentHistory.map { it.weight }
@@ -1465,20 +1466,60 @@ class WorkoutServiceV2(
     }
 
     /**
-     * 주기화 단계 결정
+     * 주기화 단계 결정 (실제 주간 운동 일정 기반)
+     *
+     * 과학적 근거: Block Periodization (Vladimir Issurin)
+     * - 4주 메소사이클: 3주 로딩 + 1주 디로드
+     * - 실제 날짜 기반 계산으로 휴식 기간 반영
      */
     private fun determinePeriodizationPhase(user: com.richjun.liftupai.domain.auth.entity.User, recentHistory: List<WorkoutData>): PeriodizationPhase {
-        val totalWorkouts = workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED)
-        val weeksTraining = (totalWorkouts / 3).toInt() // 주 3회 기준
+        val now = LocalDateTime.now()
 
-        // 4주 메소사이클 기준
-        val cycleWeek = (weeksTraining % 4) + 1
+        // 최근 8주간의 주별 운동 빈도 계산
+        val last8Weeks = (0..7).map { weekOffset ->
+            val weekStart = now.minusWeeks(weekOffset.toLong()).with(java.time.DayOfWeek.MONDAY)
+            val weekEnd = weekStart.plusDays(6)
+
+            val workoutsThisWeek = workoutSessionRepository.findByUserAndStartTimeAfter(user, weekStart)
+                .count { it.startTime <= weekEnd && it.status == SessionStatus.COMPLETED }
+
+            workoutsThisWeek
+        }
+
+        // 평균 주간 운동 빈도
+        val avgWorkoutsPerWeek = last8Weeks.average().takeIf { !it.isNaN() } ?: 3.0
+
+        // 마지막 운동 이후 경과 일수
+        val daysSinceLastWorkout = recentHistory.firstOrNull()?.let { lastWorkout ->
+            java.time.Duration.between(lastWorkout.completedAt, now).toDays()
+        } ?: 0L
+
+        // 디트레이닝 체크 (2주 이상 쉼)
+        if (daysSinceLastWorkout >= 14) {
+            return PeriodizationPhase.DELOAD // 복귀 시 가볍게 시작
+        }
+
+        // 실제 주간 운동 횟수로 사이클 주차 계산
+        val totalWeeks = workoutSessionRepository.findAll()
+            .filter { it.user.id == user.id && it.status == SessionStatus.COMPLETED }
+            .map { it.startTime.toLocalDate().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)) }
+            .distinct()
+            .count()
+
+        // 4주 메소사이클 (주차 기준)
+        val cycleWeek = ((totalWeeks % 4) + 1).toInt()
+
+        // 과훈련 체크 (최근 4주 평균이 주 5회 이상)
+        val recentAvg = last8Weeks.take(4).average()
+        if (recentAvg >= 5.0) {
+            return PeriodizationPhase.DELOAD // 과훈련 방지
+        }
 
         return when (cycleWeek) {
-            1 -> PeriodizationPhase.ACCUMULATION  // 볼륨 증가
-            2 -> PeriodizationPhase.INTENSIFICATION  // 강도 증가
-            3 -> PeriodizationPhase.REALIZATION  // 피크
-            4 -> PeriodizationPhase.DELOAD  // 회복주
+            1 -> PeriodizationPhase.ACCUMULATION  // 1주차: 볼륨 증가 (65-75% 1RM)
+            2 -> PeriodizationPhase.INTENSIFICATION  // 2주차: 강도 증가 (75-85% 1RM)
+            3 -> PeriodizationPhase.REALIZATION  // 3주차: 피크 (85-95% 1RM)
+            4 -> PeriodizationPhase.DELOAD  // 4주차: 회복주 (50-60% 1RM)
             else -> PeriodizationPhase.ACCUMULATION
         }
     }
@@ -1527,17 +1568,33 @@ class WorkoutServiceV2(
             RecoveryStatus.DETRAINED -> 0.85
         }
 
-        // 최종 무게 계산 (NaN 방지)
+        // 최종 무게 계산 (NaN 방지 + 안전 마진 강화)
         var targetWeight = if (lastWeight > 0 && lastWeight.isFinite()) {
             lastWeight * progressionMultiplier * recoveryMultiplier
         } else {
             prWeight * 0.7 // 기본값: PR의 70%
         }
 
-        // 범위 제한 적용
+        // 안전 마진 적용 (과학적 근거: NSCA Guidelines)
         if (targetWeight.isFinite() && prWeight > 0) {
-            targetWeight = (prWeight * intensityRange.endInclusive).coerceAtMost(targetWeight)
-            targetWeight = (prWeight * intensityRange.start).coerceAtLeast(targetWeight)
+            // 1. 주기화 범위 내로 제한
+            targetWeight = targetWeight.coerceIn(
+                prWeight * intensityRange.start,
+                prWeight * intensityRange.endInclusive
+            )
+
+            // 2. 급격한 증가 방지 (주당 최대 5% 증가)
+            val maxWeeklyIncrease = lastWeight * 1.05
+            if (progressionMultiplier > 1.0 && targetWeight > maxWeeklyIncrease) {
+                targetWeight = maxWeeklyIncrease
+                println("⚠️ 안전을 위해 증가율 제한: 최대 5%/주")
+            }
+
+            // 3. 절대 최소값 보장 (2.5kg)
+            targetWeight = targetWeight.coerceAtLeast(2.5)
+
+            // 4. PR 대비 안전 상한선 (110% 제한)
+            targetWeight = targetWeight.coerceAtMost(prWeight * 1.1)
         }
 
         // 반복 횟수 및 세트 추천
@@ -1636,8 +1693,98 @@ class WorkoutServiceV2(
     }
 
     private fun getRecentWorkoutHistory(user: com.richjun.liftupai.domain.auth.entity.User, exercise: Exercise, days: Int): List<WorkoutData> {
-        // 실제 구현 시 repository에서 조회
-        return emptyList() // TODO: Implement
+        return try {
+            val cutoffDate = LocalDateTime.now().minusDays(days.toLong())
+
+            // 최근 N일 이내의 완료된 세션 조회
+            val recentSessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoffDate)
+                .filter { it.status == SessionStatus.COMPLETED }
+
+            // 해당 운동의 세트 기록 수집
+            val workoutDataList = mutableListOf<WorkoutData>()
+
+            recentSessions.forEach { session ->
+                val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                    .filter { it.exercise.id == exercise.id }
+
+                workoutExercises.forEach { workoutExercise ->
+                    val sets = exerciseSetRepository.findByWorkoutExerciseId(workoutExercise.id)
+
+                    sets.forEach { set ->
+                        if (set.weight != null && set.actualReps != null && set.actualReps!! > 0) {
+                            workoutDataList.add(
+                                WorkoutData(
+                                    weight = set.weight!!,
+                                    reps = set.actualReps!!,
+                                    sets = sets.size,
+                                    rpe = set.rpe,
+                                    completedAt = session.startTime
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 최신순 정렬 및 이상치 필터링
+            workoutDataList
+                .sortedByDescending { it.completedAt }
+                .let { filterOutliers(it) }
+
+        } catch (e: Exception) {
+            println("⚠️ 최근 운동 기록 조회 실패: ${e.message}")
+            emptyList()
+        }
+    }
+
+    /**
+     * 이상치 필터링 (IQR 방법)
+     * 통계적으로 비정상적인 기록 제거
+     */
+    private fun filterOutliers(data: List<WorkoutData>): List<WorkoutData> {
+        if (data.size < 4) return data
+
+        val weights = data.map { it.weight }.sorted()
+        val q1Index = (weights.size * 0.25).toInt()
+        val q3Index = (weights.size * 0.75).toInt()
+
+        val q1 = weights[q1Index]
+        val q3 = weights[q3Index]
+        val iqr = q3 - q1
+
+        val lowerBound = q1 - 1.5 * iqr
+        val upperBound = q3 + 1.5 * iqr
+
+        return data.filter { it.weight in lowerBound..upperBound }
+    }
+
+    /**
+     * 강도 기반 RPE 추정
+     *
+     * 과학적 근거: Zourdos et al. (2016) - RPE-based Load Prescription
+     * - RIR (Reps in Reserve) 개념 사용
+     * - 반복 횟수로 RPE 역산
+     *
+     * @param history 최근 운동 기록
+     * @return 추정 RPE (6.0-9.0)
+     */
+    private fun estimateRPEFromIntensity(history: List<WorkoutData>): Double {
+        if (history.isEmpty()) return 7.0
+
+        // 최근 3회 평균 반복수
+        val avgReps = history.takeLast(3).map { it.reps }.average()
+
+        // 반복수 기반 RPE 추정 (RIR 표 기반)
+        val estimatedRPE = when {
+            avgReps <= 3 -> 9.0  // 1-3 reps = RPE 9 (1-2 RIR)
+            avgReps <= 5 -> 8.5  // 4-5 reps = RPE 8.5 (2-3 RIR)
+            avgReps <= 8 -> 8.0  // 6-8 reps = RPE 8 (3-4 RIR)
+            avgReps <= 10 -> 7.5  // 9-10 reps = RPE 7.5 (4-5 RIR)
+            avgReps <= 12 -> 7.0  // 11-12 reps = RPE 7 (5+ RIR)
+            else -> 6.5  // 13+ reps = RPE 6.5 (근지구력 영역)
+        }
+
+        return estimatedRPE
     }
 
     private fun roundToPlate(weight: Double): Double {
@@ -2167,8 +2314,34 @@ class WorkoutServiceV2(
         } else 0.0
     }
 
+    /**
+     * Brzycki 공식을 사용한 1RM 계산
+     * 1RM = weight / (1.0278 - 0.0278 × reps)
+     *
+     * 과학적 근거: Journal of Strength and Conditioning Research
+     * 정확도: ±2% (1-10 reps 범위)
+     *
+     * @param weight 수행한 무게 (kg)
+     * @param reps 반복 횟수 (1-10 권장, 최대 15)
+     * @return 추정 1RM (kg)
+     */
     private fun calculate1RM(weight: Double, reps: Int): Double {
-        return weight * (1 + reps / 30.0)
+        if (reps == 1) return weight
+        if (reps > 15) {
+            // 15회 이상은 근지구력 영역으로 1RM 추정 부정확
+            // Epley 공식 사용 (Brzycki보다 보수적)
+            return weight * (1 + reps / 30.0)
+        }
+
+        // Brzycki 공식 (가장 정확)
+        val oneRM = weight / (1.0278 - 0.0278 * reps)
+
+        // NaN 체크 및 범위 검증
+        return if (oneRM.isNaN() || oneRM.isInfinite() || oneRM < weight) {
+            weight // 계산 오류 시 최소한 수행 무게 반환
+        } else {
+            oneRM.coerceAtMost(weight * 2.0) // 안전 상한선: 수행 무게의 2배
+        }
     }
 
     private fun generateGifUrl(exercise: Exercise): String {
@@ -2521,7 +2694,12 @@ class WorkoutServiceV2(
     }
 
     /**
-     * 운동 다양성 보장 (익숙한 운동 vs 새로운 운동 비율)
+     * 운동 다양성 보장 (익숙한 운동 vs 새로운 운동 비율 조정)
+     *
+     * 개선사항:
+     * - 친숙도 판단 기간: 2주 → 4주로 확장
+     * - 인기도/난이도 고려하여 새로운 운동 선택
+     * - 기본 운동 우선 추천
      */
     private fun ensureExerciseVarietyV2(
         user: com.richjun.liftupai.domain.auth.entity.User,
@@ -2529,27 +2707,50 @@ class WorkoutServiceV2(
         familiarCount: Int,
         newCount: Int
     ): List<Exercise> {
-        val twoWeeksAgo = LocalDateTime.now().minusDays(14)
+        val fourWeeksAgo = LocalDateTime.now().minusDays(28)  // 2주 → 4주로 확장
 
-        // 최근 2주간 한 운동 ID 목록
-        val recentExerciseIds = workoutSessionRepository
-            .findByUserAndStartTimeAfter(user, twoWeeksAgo)
+        // 최근 4주간 한 운동 ID 목록 + 횟수
+        val recentExerciseStats = workoutSessionRepository
+            .findByUserAndStartTimeAfter(user, fourWeeksAgo)
             .flatMap { session ->
                 workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
                     .map { it.exercise.id }
             }
-            .toSet()
+            .groupingBy { it }
+            .eachCount()
 
-        // 익숙한 운동 vs 새로운 운동 분리
-        val familiarExercises = candidates.filter { it.id in recentExerciseIds }
-        val newExercises = candidates.filter { it.id !in recentExerciseIds }
+        // 익숙한 운동 (4주 내 2회 이상), 새로운 운동, 기본 운동 분리
+        val veryFamiliarExercises = candidates.filter { (recentExerciseStats[it.id] ?: 0) >= 2 }
+            .sortedByDescending { recentExerciseStats[it.id] ?: 0 }  // 많이 한 운동 우선
 
-        // 요청된 비율대로 선택
-        val selected = familiarExercises.take(familiarCount) + newExercises.take(newCount)
+        val somewhatFamiliarExercises = candidates.filter { (recentExerciseStats[it.id] ?: 0) == 1 }
 
-        // 부족하면 나머지로 채우기
+        val newExercises = candidates.filter { it.id !in recentExerciseStats.keys }
+            .sortedWith(
+                compareByDescending<Exercise> { it.isBasicExercise }  // 기본 운동 우선
+                    .thenByDescending { it.popularity }  // 인기도 높은 것 우선
+                    .thenBy { it.difficulty }  // 쉬운 것 우선
+            )
+
+        // 익숙한 운동 먼저 선택 (매우 익숙 → 약간 익숙)
+        val familiarExercises = (veryFamiliarExercises + somewhatFamiliarExercises)
+            .distinctBy { it.id }
+            .take(familiarCount)
+
+        // 새로운 운동은 인기도/난이도 고려하여 선택
+        val selectedNewExercises = newExercises
+            .distinctBy { it.id }
+            .filter { it !in familiarExercises }
+            .take(newCount)
+
+        val selected = familiarExercises + selectedNewExercises
+
+        // 부족하면 나머지로 채우기 (인기도 높은 것 우선)
         return if (selected.size < (familiarCount + newCount)) {
-            (selected + candidates.filter { it !in selected }).take(familiarCount + newCount)
+            val remaining = candidates
+                .filter { it !in selected }
+                .sortedByDescending { it.popularity }
+            (selected + remaining).take(familiarCount + newCount)
         } else {
             selected
         }
