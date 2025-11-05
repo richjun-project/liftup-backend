@@ -1,5 +1,5 @@
 # Build stage
-FROM gradle:8.5-jdk17 AS builder
+FROM gradle:8.5-jdk21 AS builder
 WORKDIR /app
 
 # Copy gradle wrapper and dependencies files
@@ -16,7 +16,7 @@ COPY src ./src
 RUN ./gradlew bootJar --no-daemon
 
 # Runtime stage
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Copy built jar from builder stage
