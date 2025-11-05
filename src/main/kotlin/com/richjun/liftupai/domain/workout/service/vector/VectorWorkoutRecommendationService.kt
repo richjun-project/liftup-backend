@@ -137,32 +137,14 @@ class VectorWorkoutRecommendationService(
                 }
             }
 
-            // 추천 등급 필터링 (ESSENTIAL, STANDARD만 추천, 나머지는 검색 전용)
-            val experienceLevel = profile?.experienceLevel ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
-            val allowedTiers = when (experienceLevel) {
-                com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER ->
-                    // 초보자: ESSENTIAL만 (30-40개 핵심 운동)
-                    listOf(com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL)
-                com.richjun.liftupai.domain.user.entity.ExperienceLevel.INTERMEDIATE,
-                com.richjun.liftupai.domain.user.entity.ExperienceLevel.ADVANCED,
-                com.richjun.liftupai.domain.user.entity.ExperienceLevel.EXPERT ->
-                    // 중급자 이상: ESSENTIAL + STANDARD (110-140개 일반적인 운동)
-                    // ADVANCED, SPECIALIZED는 검색 시에만 노출
-                    listOf(
-                        com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL,
-                        com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
-                    )
-                else -> listOf(
-                    com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL,
-                    com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
-                )
-            }
-
+            // 추천 등급 필터링 (ESSENTIAL만 추천, 나머지는 검색 전용)
+            // STANDARD, ADVANCED, SPECIALIZED는 검색에서만 노출
             val beforeTierFilter = exercises.size
-            exercises = exercises.filter { it.recommendationTier in allowedTiers }
-            println("After recommendation tier filtering: ${exercises.size} exercises (filtered ${beforeTierFilter - exercises.size} non-standard exercises)")
+            exercises = exercises.filter { it.recommendationTier == com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL }
+            println("After recommendation tier filtering (ESSENTIAL only): ${exercises.size} exercises (filtered ${beforeTierFilter - exercises.size} non-essential exercises)")
 
             // 경험도별 난이도 필터링 (생소한 운동 방지)
+            val experienceLevel = profile?.experienceLevel ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
             val difficultyRange = when (experienceLevel) {
                 com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER -> 1..40  // 초보자: 쉬운 운동만
                 com.richjun.liftupai.domain.user.entity.ExperienceLevel.INTERMEDIATE -> 20..70  // 중급자: 넓은 범위
