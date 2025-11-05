@@ -246,10 +246,11 @@ class WorkoutService(
         }
         val nextWorkoutType = sequence.getOrNull(programPosition.day - 1) ?: WorkoutType.FULL_BODY
 
-        // 다음 운동 설명
-        val nextWorkoutDescription = workoutProgressTracker.getProgramSequenceDescription(
-            programType,
-            programPosition.day
+        // 다음 운동 설명 - nextWorkoutType과 동일한 시퀀스 사용하여 불일치 방지
+        val nextWorkoutDescription = workoutProgressTracker.getProgramSequenceDescriptionFromSequence(
+            sequence,
+            programPosition.day,
+            programDays
         )
 
         // 최근 운동 기록 조회

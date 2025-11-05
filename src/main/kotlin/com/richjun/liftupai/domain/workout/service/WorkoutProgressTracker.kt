@@ -156,6 +156,34 @@ class WorkoutProgressTracker(
 
         return "주 ${totalDays}회 프로그램 중 ${currentDay}회차: $workoutName"
     }
+
+    /**
+     * 주어진 운동 시퀀스로부터 프로그램 설명을 생성합니다.
+     * nextWorkoutType과 nextWorkoutDescription이 일치하도록 동일한 시퀀스를 사용해야 합니다.
+     */
+    fun getProgramSequenceDescriptionFromSequence(
+        sequence: List<WorkoutType>,
+        currentDay: Int,
+        totalDays: Int
+    ): String {
+        val currentWorkout = sequence.getOrNull(currentDay - 1)
+
+        val workoutName = when (currentWorkout) {
+            WorkoutType.PUSH -> "밀기 운동 (가슴/삼두/어깨)"
+            WorkoutType.PULL -> "당기기 운동 (등/이두)"
+            WorkoutType.LEGS -> "하체 운동"
+            WorkoutType.UPPER -> "상체 운동"
+            WorkoutType.LOWER -> "하체 운동"
+            WorkoutType.CHEST -> "가슴 운동"
+            WorkoutType.BACK -> "등 운동"
+            WorkoutType.SHOULDERS -> "어깨 운동"
+            WorkoutType.ARMS -> "팔 운동"
+            WorkoutType.FULL_BODY -> "전신 운동"
+            else -> "운동"
+        }
+
+        return "주 ${totalDays}회 프로그램 중 ${currentDay}회차: $workoutName"
+    }
 }
 
 data class WorkoutProgramPosition(

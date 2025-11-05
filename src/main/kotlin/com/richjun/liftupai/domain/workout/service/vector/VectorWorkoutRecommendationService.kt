@@ -137,8 +137,32 @@ class VectorWorkoutRecommendationService(
                 }
             }
 
-            // 경험도별 난이도 필터링 (생소한 운동 방지)
+            // 추천 등급 필터링 (ESSENTIAL, STANDARD만 추천, 나머지는 검색 전용)
             val experienceLevel = profile?.experienceLevel ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
+            val allowedTiers = when (experienceLevel) {
+                com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER ->
+                    // 초보자: ESSENTIAL만 (30-40개 핵심 운동)
+                    listOf(com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL)
+                com.richjun.liftupai.domain.user.entity.ExperienceLevel.INTERMEDIATE,
+                com.richjun.liftupai.domain.user.entity.ExperienceLevel.ADVANCED,
+                com.richjun.liftupai.domain.user.entity.ExperienceLevel.EXPERT ->
+                    // 중급자 이상: ESSENTIAL + STANDARD (110-140개 일반적인 운동)
+                    // ADVANCED, SPECIALIZED는 검색 시에만 노출
+                    listOf(
+                        com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL,
+                        com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
+                    )
+                else -> listOf(
+                    com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL,
+                    com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
+                )
+            }
+
+            val beforeTierFilter = exercises.size
+            exercises = exercises.filter { it.recommendationTier in allowedTiers }
+            println("After recommendation tier filtering: ${exercises.size} exercises (filtered ${beforeTierFilter - exercises.size} non-standard exercises)")
+
+            // 경험도별 난이도 필터링 (생소한 운동 방지)
             val difficultyRange = when (experienceLevel) {
                 com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER -> 1..40  // 초보자: 쉬운 운동만
                 com.richjun.liftupai.domain.user.entity.ExperienceLevel.INTERMEDIATE -> 20..70  // 중급자: 넓은 범위
@@ -171,6 +195,10 @@ class VectorWorkoutRecommendationService(
             // 운동 순서 정렬 (복합운동 → 고립운동, 큰 근육 → 작은 근육)
             exercises = orderExercisesByPriorityVector(exercises)
             println("After ordering: exercises sorted by priority")
+
+            // 유사 운동 필터링 (중복 방지)
+            exercises = filterSimilarExercises(exercises)
+            println("After similar exercise filtering: ${exercises.size} exercises (removed similar variants)")
 
             // 중복 제거 및 제한
             return exercises.distinctBy { it.id }.take(limit)
@@ -411,5 +439,116 @@ class VectorWorkoutRecommendationService(
                 if (isCompoundExerciseVector(exercise)) 0 else 1
             }
         )
+    }
+
+    /**
+     * 유사한 운동들을 필터링하여 중복 방지
+     * 예: "스모 데드리프트"와 "데드리프트"가 동시에 추천되지 않도록
+     *
+     * 전략:
+     * 1. 기본 운동을 우선 선택
+     * 2. 변형 운동은 기본 운동이 없을 때만 선택
+     */
+    private fun filterSimilarExercises(exercises: List<Exercise>): List<Exercise> {
+        val result = mutableListOf<Exercise>()
+        val usedBaseNames = mutableSetOf<String>()
+
+        // 1단계: 기본 운동을 우선 선택
+        exercises.filter { it.isBasicExercise }.forEach { exercise ->
+            val baseName = extractBaseName(exercise.name)
+            if (baseName !in usedBaseNames) {
+                result.add(exercise)
+                usedBaseNames.add(baseName)
+            }
+        }
+
+        // 2단계: 남은 운동 중 중복되지 않은 것만 추가
+        exercises.filterNot { it.isBasicExercise }.forEach { exercise ->
+            val baseName = extractBaseName(exercise.name)
+            if (baseName !in usedBaseNames) {
+                result.add(exercise)
+                usedBaseNames.add(baseName)
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * 운동명에서 기본 이름 추출 (변형어 제거)
+     * 예: "인클라인 바벨 벤치프레스" → "벤치프레스"
+     *
+     * 총 70개 이상의 변형어를 인식하여 중복 방지
+     */
+    private fun extractBaseName(name: String): String {
+        // 변형어 목록 (카테고리별 정리)
+        val modifiers = listOf(
+            // 각도/위치 변형 (9개)
+            "인클라인", "디클라인", "플로어", "45도", "90도",
+            "하이", "로우", "미드", "업라이트",
+
+            // 그립 변형 (13개)
+            "클로즈그립", "와이드그립", "클로즈", "와이드",
+            "오버핸드", "언더핸드", "리버스", "해머", "뉴트럴",
+            "언더그립", "오버그립", "그립", "넓은",
+
+            // 스탠스/포지션 변형 (14개)
+            "스모", "컨벤셔널", "하이바", "로우바", "프론트", "백",
+            "불가리안", "스플릿", "벤트오버", "시티드", "스탠딩",
+            "싱글", "원레그", "포즈",
+
+            // 장비 종류 (12개)
+            "바벨", "덤벨", "케이블", "머신", "스미스머신", "케틀벨",
+            "EZ-바", "T-바", "V-바", "로프", "체인", "밴드",
+
+            // 데드리프트 변형 (4개)
+            "루마니안", "스티프", "랙", "스내치",
+
+            // 스쿼트 변형 (6개)
+            "고블릿", "제르처", "오버헤드", "펜들럼", "해킹", "해크",
+            "박스", "점프", "점핑",
+
+            // 로우 변형 (5개)
+            "펜들레이", "시일", "메도우", "크록", "체스트 서포티드",
+
+            // 프레스 변형 (6개)
+            "밀리터리", "비하인드 넥", "푸시", "저크", "아놀드", "길로틴",
+
+            // 컬/익스텐션 변형 (7개)
+            "프리처", "드래그", "컨센트레이션", "스파이더",
+            "스컬크러셔", "얼터네이팅", "킥백",
+
+            // 팔/다리 관련 (8개)
+            "원암", "투암", "싱글암", "싱글레그", "레그",
+            "동키", "피스톨", "시시",
+
+            // 어깨/등 특수 (5개)
+            "페이스", "리어", "사이드", "프론트", "래터럴",
+
+            // 기타 변형 (10개)
+            "글루트 햄", "어덕터", "어브덕터", "티비알",
+            "해머스트렝스", "슈러그", "슈퍼맨", "인버티드",
+            "리컴번트", "어시스티드", "월", "행", "에어"
+        )
+
+        var baseName = name
+
+        // 괄호 제거 (예: "벤치프레스 (바벨)")
+        baseName = baseName.replace(Regex("\\([^)]*\\)"), "").trim()
+
+        // 변형어 제거
+        modifiers.forEach { modifier ->
+            baseName = baseName.replace(modifier, "", ignoreCase = true).trim()
+        }
+
+        // 연속된 공백 제거
+        baseName = baseName.replace(Regex("\\s+"), " ").trim()
+
+        // 빈 문자열이면 원본 반환
+        if (baseName.isEmpty()) {
+            return name.lowercase()
+        }
+
+        return baseName.lowercase()
     }
 }

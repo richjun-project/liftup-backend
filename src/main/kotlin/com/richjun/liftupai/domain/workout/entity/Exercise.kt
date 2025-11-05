@@ -60,5 +60,18 @@ data class Exercise(
      * - 기초 운동: 모든 초보자가 배워야 하는 운동
      */
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
-    val isBasicExercise: Boolean = false
+    val isBasicExercise: Boolean = false,
+
+    /**
+     * 운동 추천 등급
+     * - ESSENTIAL: 필수 기본 운동 (30-40개) - 모든 사용자에게 추천
+     * - STANDARD: 표준 운동 (80-100개) - 중급자 이상 추천
+     * - ADVANCED: 고급 운동 (50-70개) - 고급자 이상 추천
+     * - SPECIALIZED: 전문/특수 운동 - 검색 시에만 노출
+     *
+     * 추천 로직에서만 사용되며 데이터는 모두 보존됨
+     */
+    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'STANDARD'")
+    @Enumerated(EnumType.STRING)
+    val recommendationTier: RecommendationTier = RecommendationTier.STANDARD
 )
