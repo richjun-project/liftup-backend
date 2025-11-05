@@ -1202,7 +1202,11 @@ class WorkoutServiceV2(
     ): List<Exercise> {
         var exercises = exerciseRepository.findAll().toList()
 
-        // 사용자 정보가 있으면 헬스 트레이너 관점 필터링 적용 (완화됨)
+        // 1. ESSENTIAL 운동만 추천 (STANDARD, ADVANCED, SPECIALIZED 제외)
+        exercises = exercises.filter { it.recommendationTier == com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL }
+        println("After ESSENTIAL filtering: ${exercises.size} exercises")
+
+        // 2. 사용자 정보가 있으면 헬스 트레이너 관점 필터링 적용 (완화됨)
         user?.let { u ->
             // 회복 필터링 제거 (너무 엄격함 - 매일 운동하는 사람에게 추천 불가능)
             println("회복 필터링 스킵 (너무 엄격하여 제거)")
