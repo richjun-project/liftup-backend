@@ -412,7 +412,8 @@ class AIAnalysisService(
 
             **반드시 아래 목록에서만 운동을 선택하세요 (DB에 존재하는 운동만):**
             ${candidateExercises.mapIndexed { index, ex ->
-                "  ${index + 1}. [ID: ${ex.id}] ${ex.name} - ${ex.category.name} - 근육: ${ex.muscleGroups.joinToString(", ")} - 장비: ${ex.equipment?.name ?: "없음"}"
+                val basicLabel = if (ex.isBasicExercise) " ⭐기본운동" else ""
+                "  ${index + 1}. [ID: ${ex.id}] ${ex.name}${basicLabel} - ${ex.category.name} - 근육: ${ex.muscleGroups.joinToString(", ")} - 장비: ${ex.equipment?.name ?: "없음"}"
             }.joinToString("\n")}
 
             """.trimIndent()
@@ -652,17 +653,18 @@ class AIAnalysisService(
             주의사항:
             1. **필수: exercises 배열의 각 운동은 반드시 위에 제공된 목록의 ID를 사용해야 함**
             2. 위 목록에 없는 운동 ID는 절대 사용 금지
-            3. 모든 텍스트는 한글로 작성
-            4. ${workoutDuration}분에 맞는 운동 개수 (4-8개)
-            5. 같은 운동 중복 금지 (ID 중복 금지)
-            6. 복합관절 운동을 먼저, 단일관절 운동을 나중에
-            7. 개인화된 메시지 (일반론 금지!)
-            8. ${ptStyle} 스타일에 맞는 톤과 메시지
-            9. workout_name에는 사용자 이름이나 일차를 포함하지 않음
-            10. 모든 추천과 조언에는 구체적인 이유와 근거를 포함
-            11. 사용자의 현재 상태, 목표, 최근 운동 패턴을 고려한 맞춤형 분석
-            12. ai_insights의 3개 필드 (workout_rationale, key_point, next_step) 모두 필수로 작성
-            13. JSON만 응답 (다른 텍스트 없이)
+            3. ⭐기본운동 표시가 있는 운동을 우선적으로 선택 (전체 운동의 70% 이상은 기본운동으로 구성)
+            4. 모든 텍스트는 한글로 작성
+            5. **반드시 ${workoutDuration}분에 맞는 운동 개수를 추천: 30분은 5-6개, 45분은 6-7개, 60분은 7-8개**
+            6. 같은 운동 중복 금지 (ID 중복 금지)
+            7. 복합관절 운동을 먼저, 단일관절 운동을 나중에
+            8. 개인화된 메시지 (일반론 금지!)
+            9. ${ptStyle} 스타일에 맞는 톤과 메시지
+            10. workout_name에는 사용자 이름이나 일차를 포함하지 않음
+            11. 모든 추천과 조언에는 구체적인 이유와 근거를 포함
+            12. 사용자의 현재 상태, 목표, 최근 운동 패턴을 고려한 맞춤형 분석
+            13. ai_insights의 3개 필드 (workout_rationale, key_point, next_step) 모두 필수로 작성
+            14. JSON만 응답 (다른 텍스트 없이)
         """.trimIndent()
     }
 
@@ -762,6 +764,22 @@ class AIAnalysisService(
                     difficultyLevel = difficultyLevel
                 )
             }.sortedBy { it.order }
+
+            // 운동 개수 검증
+            val workoutDuration = duration ?: 30
+            val minExercises = when {
+                workoutDuration <= 20 -> 3
+                workoutDuration <= 30 -> 5
+                workoutDuration <= 45 -> 6
+                else -> 7
+            }
+
+            if (exercises.size < minExercises) {
+                println("⚠️ AI가 반환한 운동 개수 부족 (${exercises.size}개 < ${minExercises}개), 폴백 사용")
+                throw IllegalStateException("AI returned insufficient exercises: ${exercises.size} < $minExercises")
+            }
+
+            println("✅ AI 운동 추천 완료: ${exercises.size}개 운동")
 
             // 전체 운동 정보는 상위 레벨에서 가져옴
             val musclesList = (jsonResponse["target_muscles"] as? List<String>) ?: emptyList()

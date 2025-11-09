@@ -76,7 +76,11 @@ data class ExerciseSetV2(
     val completedAt: String? = null,
 
     @JsonProperty("rest_taken")
-    val restTaken: Int? = null
+    val restTaken: Int? = null,
+
+    // Rate of Perceived Exertion (1-10)
+    // 1-3: 매우 쉬움, 4-6: 적당함, 7-8: 힘듦, 9: 매우 힘듦, 10: 최대 노력
+    val rpe: Int? = null
 )
 
 data class CompleteWorkoutResponseV2(
@@ -150,7 +154,10 @@ data class UpdateSetRequest(
     val completed: Boolean,
 
     @JsonProperty("completed_at")
-    val completedAt: String
+    val completedAt: String,
+
+    // Rate of Perceived Exertion (1-10)
+    val rpe: Int? = null
 )
 
 data class UpdateSetResponse(
@@ -430,5 +437,8 @@ data class SetInfo(
     val completed: Boolean = false,
 
     @JsonProperty("completed_at")
-    val completedAt: String? = null
+    val completedAt: String? = null,
+
+    // Rate of Perceived Exertion (1-10)
+    val rpe: Int? = null
 )

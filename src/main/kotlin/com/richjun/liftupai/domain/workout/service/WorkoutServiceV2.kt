@@ -417,7 +417,8 @@ class WorkoutServiceV2(
                         weight = set.weight,
                         reps = set.reps,
                         completed = set.completed,
-                        completedAt = set.completedAt?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                        completedAt = set.completedAt?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        rpe = set.rpe  // RPE 추가
                     )
                 }.ifEmpty {
                     // 세트가 없으면 기본 세트 생성 (일반적으로 3세트)
@@ -492,6 +493,7 @@ class WorkoutServiceV2(
                     weight = setDto.weight,
                     reps = setDto.reps,
                     restTime = setDto.restTaken,
+                    rpe = setDto.rpe,  // RPE 추가
                     completed = true,  // 이미 filter로 completed=true인 것만 처리
                     completedAt = LocalDateTime.now()
                 )
@@ -595,7 +597,8 @@ class WorkoutServiceV2(
             workoutExercise = workoutExercise,
             setNumber = request.setNumber,
             weight = request.weight,
-            reps = request.reps
+            reps = request.reps,
+            rpe = request.rpe  // RPE 추가
         )
 
         workoutExercise.sets.add(exerciseSet)
@@ -1208,8 +1211,36 @@ class WorkoutServiceV2(
 
         // 2. 사용자 정보가 있으면 헬스 트레이너 관점 필터링 적용 (완화됨)
         user?.let { u ->
-            // 회복 필터링 제거 (너무 엄격함 - 매일 운동하는 사람에게 추천 불가능)
-            println("회복 필터링 스킵 (너무 엄격하여 제거)")
+            // 완화된 회복 필터링: 24시간 이내 + 회복률 50% 미만만 제외 (48시간 + 80% 보다 완화)
+            try {
+                val recentlyWorked = getRecentlyWorkedMusclesV2(u, 24) // 48시간 → 24시간으로 완화
+                val recovering = muscleRecoveryRepository.findByUser(u)
+                    .filter { it.recoveryPercentage < 50 } // 80% → 50%로 완화
+                    .mapNotNull { recovery ->
+                        try {
+                            MuscleGroup.valueOf(recovery.muscleGroup.uppercase())
+                        } catch (e: IllegalArgumentException) {
+                            null
+                        }
+                    }
+                    .toSet()
+
+                val avoidMuscles = recentlyWorked + recovering
+
+                if (avoidMuscles.isNotEmpty()) {
+                    val beforeRecovery = exercises.size
+                    exercises = exercises.filter { exercise ->
+                        // 주요 근육(첫 번째)만 체크 (전체 근육 체크는 너무 엄격)
+                        val primaryMuscle = exercise.muscleGroups.firstOrNull()
+                        primaryMuscle == null || (primaryMuscle !in avoidMuscles)
+                    }
+                    println("완화된 회복 필터링: ${avoidMuscles.joinToString()}를 제외, ${beforeRecovery - exercises.size}개 운동 제외")
+                } else {
+                    println("회복 필터링: 모든 근육 회복 완료, 필터링 없음")
+                }
+            } catch (e: Exception) {
+                println("회복 필터링 실패: ${e.message}, 스킵")
+            }
         }
 
         // 3. 장비 필터링
