@@ -7,10 +7,7 @@
 -- ADVANCED: 40-50 exercises (Olympic lifts, advanced techniques requiring coaching)
 -- SPECIALIZED: 30-50 exercises (rare equipment, dangerous without supervision)
 
--- First, ensure the column exists
-ALTER TABLE exercises ADD COLUMN IF NOT EXISTS recommendation_tier VARCHAR(20) NOT NULL DEFAULT 'STANDARD';
-
--- Reset all to STANDARD first
+-- Reset all to STANDARD first (column should already exist from V20250205001)
 UPDATE exercises SET recommendation_tier = 'STANDARD';
 
 -- ============================================
