@@ -1,5 +1,5 @@
 -- 앱 버전 관리 테이블 생성
-CREATE TABLE app_versions (
+CREATE TABLE IF NOT EXISTS app_versions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     version VARCHAR(20) NOT NULL,
     version_code INT NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE app_versions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 초기 버전 데이터 삽입
-INSERT INTO app_versions (version, version_code, platform, release_notes, is_active) VALUES
+INSERT IGNORE INTO app_versions (version, version_code, platform, release_notes, is_active) VALUES
 ('1.0.0', 100, 'IOS', '초기 릴리즈', true),
 ('1.0.0', 100, 'ANDROID', '초기 릴리즈', true),
 ('1.0.0', 100, 'WEB', '초기 릴리즈', true);

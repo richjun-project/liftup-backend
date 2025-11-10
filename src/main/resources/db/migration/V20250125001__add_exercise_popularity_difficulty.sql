@@ -1,8 +1,34 @@
 -- 운동 인기도 및 난이도 컬럼 추가
-ALTER TABLE exercises
-ADD COLUMN IF NOT EXISTS popularity INT NOT NULL DEFAULT 50,
-ADD COLUMN IF NOT EXISTS difficulty INT NOT NULL DEFAULT 50,
-ADD COLUMN IF NOT EXISTS is_basic_exercise BOOLEAN NOT NULL DEFAULT false;
+
+-- Add popularity column if not exists
+SET @exist := (SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = 'liftupai_db' AND TABLE_NAME = 'exercises' AND COLUMN_NAME = 'popularity');
+SET @sqlstmt := IF(@exist = 0,
+    'ALTER TABLE exercises ADD COLUMN popularity INT NOT NULL DEFAULT 50',
+    'SELECT ''popularity already exists'' AS message');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add difficulty column if not exists
+SET @exist := (SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = 'liftupai_db' AND TABLE_NAME = 'exercises' AND COLUMN_NAME = 'difficulty');
+SET @sqlstmt := IF(@exist = 0,
+    'ALTER TABLE exercises ADD COLUMN difficulty INT NOT NULL DEFAULT 50',
+    'SELECT ''difficulty already exists'' AS message');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add is_basic_exercise column if not exists
+SET @exist := (SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = 'liftupai_db' AND TABLE_NAME = 'exercises' AND COLUMN_NAME = 'is_basic_exercise');
+SET @sqlstmt := IF(@exist = 0,
+    'ALTER TABLE exercises ADD COLUMN is_basic_exercise BOOLEAN NOT NULL DEFAULT false',
+    'SELECT ''is_basic_exercise already exists'' AS message');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 기본 운동 (Big 3 + 핵심 운동) 설정
 -- Big 3: 매우 높은 인기도, 중간 난이도
