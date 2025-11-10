@@ -152,12 +152,7 @@ class WorkoutPlanService(
         val aiResponse = "AI 생성 프로그램" // Simplified for now
         val exercises = parseAIResponseToExercises(aiResponse, targetMuscles)
 
-        val reason = buildReasonMessage(
-            request.lastWorkoutDate,
-            readyMuscles,
-            request.weeklyWorkoutDays,
-            request.workoutSplit
-        )
+        val reason = "프로그램 진행: ${programPosition.cycle}주차 ${programPosition.day}회차 - $workoutName"
 
         return TodayWorkoutResponse(
             workoutName = workoutName,
@@ -747,6 +742,12 @@ class WorkoutPlanService(
 
             com.richjun.liftupai.domain.workout.entity.WorkoutType.ARMS ->
                 "팔 운동" to listOf("이두", "삼두", "전완근")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.ABS ->
+                "복근 운동" to listOf("복근", "코어")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.CARDIO ->
+                "유산소 운동" to listOf("전신")
 
             com.richjun.liftupai.domain.workout.entity.WorkoutType.FULL_BODY ->
                 "전신 운동" to listOf("가슴", "등", "다리", "어깨")
