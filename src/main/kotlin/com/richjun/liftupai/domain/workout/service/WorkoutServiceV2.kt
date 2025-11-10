@@ -979,25 +979,35 @@ class WorkoutServiceV2(
         val programPosition = workoutProgressTracker.getNextWorkoutInProgram(user, programDays)
 
         // Determine target muscle based on program position
-        val adjustedTargetMuscle = if (!hasStartedToday && targetMuscle == null) {
-            // Get program type from user profile
-            val programType = userProfile?.workoutSplit ?: "PPL"
-            val sequence = workoutProgressTracker.getWorkoutTypeSequence(programType)
-            val workoutType = sequence.getOrNull(programPosition.day - 1) ?: WorkoutType.FULL_BODY
+        // 사용자가 명시적으로 근육을 지정하지 않으면 프로그램 상태를 따름
+        val adjustedTargetMuscle = if (!hasStartedToday) {
+            // targetMuscle이 null이거나 "auto"면 프로그램 상태 사용
+            if (targetMuscle == null || targetMuscle == "auto") {
+                // Get program type from user profile
+                val programType = userProfile?.workoutSplit ?: "PPL"
+                val sequence = workoutProgressTracker.getWorkoutTypeSequence(programType)
+                val workoutType = sequence.getOrNull(programPosition.day - 1) ?: WorkoutType.FULL_BODY
 
-            when (workoutType) {
-                WorkoutType.PUSH -> "chest"
-                WorkoutType.PULL -> "back"
-                WorkoutType.LEGS -> "legs"
-                WorkoutType.UPPER -> "upper"
-                WorkoutType.LOWER -> "lower"
-                WorkoutType.CHEST -> "chest"
-                WorkoutType.BACK -> "back"
-                WorkoutType.ARMS -> "arms"
-                WorkoutType.SHOULDERS -> "shoulders"
-                else -> "full_body"
+                val programMuscle = when (workoutType) {
+                    WorkoutType.PUSH -> "chest"
+                    WorkoutType.PULL -> "back"
+                    WorkoutType.LEGS -> "legs"
+                    WorkoutType.UPPER -> "upper"
+                    WorkoutType.LOWER -> "lower"
+                    WorkoutType.CHEST -> "chest"
+                    WorkoutType.BACK -> "back"
+                    WorkoutType.ARMS -> "arms"
+                    WorkoutType.SHOULDERS -> "shoulders"
+                    else -> "full_body"
+                }
+                println("✅ 프로그램 상태에 따른 근육 선택: $programMuscle (WorkoutType: $workoutType)")
+                programMuscle
+            } else {
+                println("ℹ️ 사용자 지정 근육 사용: $targetMuscle")
+                targetMuscle
             }
         } else {
+            println("ℹ️ 오늘 이미 운동 시작함, 요청된 근육 사용: ${targetMuscle ?: "전체"}")
             targetMuscle
         }
 
@@ -1211,11 +1221,12 @@ class WorkoutServiceV2(
 
         // 2. 사용자 정보가 있으면 헬스 트레이너 관점 필터링 적용 (완화됨)
         user?.let { u ->
-            // 완화된 회복 필터링: 24시간 이내 + 회복률 50% 미만만 제외 (48시간 + 80% 보다 완화)
+            // 완화된 회복 필터링: 24시간 이내 + 회복률 30% 미만만 제외
+            // ⚠️ 너무 엄격하면 추천할 운동이 없어지므로 최소 운동 개수 보장
             try {
-                val recentlyWorked = getRecentlyWorkedMusclesV2(u, 24) // 48시간 → 24시간으로 완화
+                val recentlyWorked = getRecentlyWorkedMusclesV2(u, 24) // 24시간 이내
                 val recovering = muscleRecoveryRepository.findByUser(u)
-                    .filter { it.recoveryPercentage < 50 } // 80% → 50%로 완화
+                    .filter { it.recoveryPercentage < 30 } // 30% 미만 (매우 심한 피로만 제외)
                     .mapNotNull { recovery ->
                         try {
                             MuscleGroup.valueOf(recovery.muscleGroup.uppercase())
@@ -1229,12 +1240,19 @@ class WorkoutServiceV2(
 
                 if (avoidMuscles.isNotEmpty()) {
                     val beforeRecovery = exercises.size
-                    exercises = exercises.filter { exercise ->
+                    val filteredExercises = exercises.filter { exercise ->
                         // 주요 근육(첫 번째)만 체크 (전체 근육 체크는 너무 엄격)
                         val primaryMuscle = exercise.muscleGroups.firstOrNull()
                         primaryMuscle == null || (primaryMuscle !in avoidMuscles)
                     }
-                    println("완화된 회복 필터링: ${avoidMuscles.joinToString()}를 제외, ${beforeRecovery - exercises.size}개 운동 제외")
+
+                    // 최소 6개 운동 보장: 필터링 후 너무 적으면 회복 필터 무시
+                    if (filteredExercises.size >= 6) {
+                        exercises = filteredExercises
+                        println("완화된 회복 필터링: ${avoidMuscles.joinToString()}를 제외, ${beforeRecovery - exercises.size}개 운동 제외")
+                    } else {
+                        println("⚠️ 회복 필터링 스킵: 필터링 시 운동 부족 (${filteredExercises.size}개 < 6개), 모든 운동 포함")
+                    }
                 } else {
                     println("회복 필터링: 모든 근육 회복 완료, 필터링 없음")
                 }
