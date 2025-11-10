@@ -1114,8 +1114,20 @@ class WorkoutServiceV2(
         // Get suitable exercises based on filters (user 정보 포함)
         val exercises = getFilteredExercises(equipment, targetMuscle, workoutDuration, user)
 
+        // Calculate optimal exercise count based on duration
+        // 운동당 평균 소요 시간: 워밍업(2분) + 세트당 시간(휴식 포함) 계산
+        // 일반적으로 30분: 3-4개, 45분: 4-5개, 60분: 5-7개
+        val targetExerciseCount = when {
+            workoutDuration <= 30 -> 4
+            workoutDuration <= 45 -> 5
+            workoutDuration <= 60 -> 6
+            workoutDuration <= 75 -> 7
+            else -> 8
+        }
+        println("⏱️ Duration: ${workoutDuration}분 → 목표 운동 개수: $targetExerciseCount")
+
         // Create quick exercise details
-        val quickExercises = exercises.take(6).mapIndexed { index, exercise ->
+        val quickExercises = exercises.take(targetExerciseCount).mapIndexed { index, exercise ->
             // Calculate suggested weight for each exercise
             val suggestedWeight = calculateSuggestedWeight(user, exercise)
 
@@ -1215,9 +1227,12 @@ class WorkoutServiceV2(
     ): List<Exercise> {
         var exercises = exerciseRepository.findAll().toList()
 
-        // 1. ESSENTIAL 운동만 추천 (STANDARD, ADVANCED, SPECIALIZED 제외)
-        exercises = exercises.filter { it.recommendationTier == com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL }
-        println("After ESSENTIAL filtering: ${exercises.size} exercises")
+        // 1. ESSENTIAL + STANDARD + ADVANCED 운동 추천 (SPECIALIZED만 제외)
+        // SPECIALIZED는 특수 장비/위험한 운동이므로 일반 추천에서 제외
+        exercises = exercises.filter {
+            it.recommendationTier != com.richjun.liftupai.domain.workout.entity.RecommendationTier.SPECIALIZED
+        }
+        println("After filtering (SPECIALIZED 제외): ${exercises.size} exercises")
 
         // 2. 사용자 정보가 있으면 헬스 트레이너 관점 필터링 적용 (완화됨)
         user?.let { u ->
