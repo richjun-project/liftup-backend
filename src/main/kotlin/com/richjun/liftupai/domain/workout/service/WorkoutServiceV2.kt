@@ -40,7 +40,8 @@ class WorkoutServiceV2(
     private val workoutStreakRepository: WorkoutStreakRepository,
     private val workoutProgressTracker: WorkoutProgressTracker,
     private val recoveryService: RecoveryService,
-    private val muscleRecoveryRepository: MuscleRecoveryRepository
+    private val muscleRecoveryRepository: MuscleRecoveryRepository,
+    private val exercisePatternClassifier: ExercisePatternClassifier
 ) {
 
     // 기존 메서드 (호환성 유지) - 진행 중인 세션이 있으면 반환, 없으면 새로 생성
@@ -1327,7 +1328,11 @@ class WorkoutServiceV2(
             println("다양성 보장 후: ${exercises.size}개 운동 (익숙: $familiarCount, 새로운: $newCount)")
         }
 
-        // 6. 운동 순서 정렬 ⭐ 가장 중요!
+        // 6. 운동 패턴 중복 제거 (전문 PT 방식) ⭐ 핵심 기능!
+        exercises = removeDuplicatePatterns(exercises)
+        println("패턴 중복 제거 후: ${exercises.size}개 운동 (같은 패턴 제거)")
+
+        // 7. 운동 순서 정렬 ⭐ 가장 중요!
         exercises = orderExercisesByPriorityV2(exercises)
         println("최종 정렬 완료: 복합운동 우선, 큰 근육 → 작은 근육")
 
@@ -2824,5 +2829,52 @@ class WorkoutServiceV2(
         } else {
             selected
         }
+    }
+
+    /**
+     * 운동 패턴 중복 제거 (전문 PT 방식)
+     *
+     * 같은 패턴의 운동이 여러 개 있으면, 가장 쉬운 운동(difficulty 낮은 것) 1개만 선택
+     *
+     * 예: 하체 운동
+     * - 스쿼트 패턴: 백스쿼트(50), 프론트스쿼트(65), 박스스쿼트(40) → 박스스쿼트(40) 선택
+     * - 런지 패턴: 런지(45), 불가리안(60), 리버스 런지(50) → 런지(45) 선택
+     * - 힙 힌지 패턴: 데드리프트(70), RDL(55) → RDL(55) 선택
+     *
+     * 결과: 박스스쿼트, 런지, RDL, 레그 컬, 카프 레이즈 (패턴 다양화)
+     */
+    private fun removeDuplicatePatterns(exercises: List<Exercise>): List<Exercise> {
+        val patternGroups = mutableMapOf<ExercisePatternClassifier.MovementPattern, MutableList<Exercise>>()
+
+        // 1. 패턴별로 그룹화
+        exercises.forEach { exercise ->
+            val pattern = exercisePatternClassifier.classifyExercise(exercise)
+            patternGroups.getOrPut(pattern) { mutableListOf() }.add(exercise)
+        }
+
+        // 2. 각 패턴에서 가장 쉬운 운동 1개만 선택
+        val selectedExercises = mutableListOf<Exercise>()
+
+        patternGroups.forEach { (pattern, groupExercises) ->
+            // 같은 패턴 내에서 난이도가 낮은 것(쉬운 것) 우선
+            // 난이도 동일하면 인기도 높은 것 선택
+            val bestExercise = groupExercises
+                .sortedWith(
+                    compareBy<Exercise> { it.difficulty }  // 1순위: 난이도 낮은 것 (쉬운 것)
+                        .thenByDescending { it.popularity }  // 2순위: 인기도 높은 것
+                        .thenByDescending { it.isBasicExercise } // 3순위: 기본 운동
+                )
+                .firstOrNull()
+
+            bestExercise?.let { selectedExercises.add(it) }
+
+            // 디버깅: 패턴별 선택 결과
+            if (groupExercises.size > 1) {
+                val skipped = groupExercises.filter { it != bestExercise }.map { it.name }
+                println("  [$pattern] ${bestExercise?.name} 선택 (난이도: ${bestExercise?.difficulty}), 제외: ${skipped.joinToString(", ")}")
+            }
+        }
+
+        return selectedExercises
     }
 }

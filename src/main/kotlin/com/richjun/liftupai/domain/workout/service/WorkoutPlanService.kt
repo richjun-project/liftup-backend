@@ -38,7 +38,8 @@ class WorkoutPlanService(
     val exerciseTemplateRepository: ExerciseTemplateRepository,
     val personalRecordRepository: PersonalRecordRepository,
     val exerciseSetRepository: ExerciseSetRepository,
-    private val exerciseNameNormalizer: ExerciseNameNormalizer
+    private val exerciseNameNormalizer: ExerciseNameNormalizer,
+    private val workoutProgressTracker: WorkoutProgressTracker
 ) {
 
     fun updateWorkoutPlan(userId: Long, request: WorkoutPlanRequest): WorkoutPlanResponse {
@@ -115,18 +116,29 @@ class WorkoutPlanService(
     }
 
     fun getTodayWorkoutRecommendation(userId: Long, request: TodayWorkoutRequest): TodayWorkoutResponse {
+        val user = userRepository.findById(userId)
+            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+
         val profile = userProfileRepository.findByUser_Id(userId)
             .orElseThrow { ResourceNotFoundException("프로필을 찾을 수 없습니다") }
 
-        // Determine what muscle groups are ready for training
-        val readyMuscles = determineReadyMuscles(request.muscleRecovery)
-
-        // Generate workout based on split and recovery
-        val (workoutName, targetMuscles) = determineWorkout(
-            request.workoutSplit,
-            readyMuscles,
-            request.lastWorkoutDate
+        // 프로그램 진행 상황 가져오기 (고정 순서 사용)
+        val programPosition = workoutProgressTracker.getNextWorkoutInProgram(
+            user,
+            profile.weeklyWorkoutDays ?: 3
         )
+
+        // 프로그램 타입에 따른 운동 타입 시퀀스 가져오기
+        val workoutSequence = workoutProgressTracker.getWorkoutTypeSequence(
+            request.workoutSplit
+        )
+
+        // 오늘의 운동 타입 결정 (고정 순서)
+        val workoutType = workoutSequence.getOrNull(programPosition.day - 1)
+            ?: com.richjun.liftupai.domain.workout.entity.WorkoutType.FULL_BODY
+
+        // 운동 타입에 따른 타겟 근육 결정
+        val (workoutName, targetMuscles) = getWorkoutDetailsFromType(workoutType)
 
         // Use AI to get exercises
         val prompt = buildWorkoutPrompt(
@@ -700,6 +712,44 @@ class WorkoutPlanService(
             today.plusDays(1).toString()
         } else {
             todayString
+        }
+    }
+
+    /**
+     * 운동 타입에 따른 운동 이름과 타겟 근육 반환
+     * WorkoutProgressTracker의 determineWorkoutType()와 역방향 매핑
+     */
+    private fun getWorkoutDetailsFromType(workoutType: com.richjun.liftupai.domain.workout.entity.WorkoutType): Pair<String, List<String>> {
+        return when (workoutType) {
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.PUSH ->
+                "밀기 운동 (Push)" to listOf("가슴", "삼두", "어깨")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.PULL ->
+                "당기기 운동 (Pull)" to listOf("등", "이두")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.LEGS ->
+                "하체 운동 (Legs)" to listOf("다리", "대퇴사두근", "햄스트링", "엉덩이")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.UPPER ->
+                "상체 운동" to listOf("가슴", "등", "어깨", "팔")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.LOWER ->
+                "하체 운동" to listOf("다리", "엉덩이", "복근")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.CHEST ->
+                "가슴 운동" to listOf("가슴", "삼두")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.BACK ->
+                "등 운동" to listOf("등", "이두")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.SHOULDERS ->
+                "어깨 운동" to listOf("어깨", "삼두")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.ARMS ->
+                "팔 운동" to listOf("이두", "삼두", "전완근")
+
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.FULL_BODY ->
+                "전신 운동" to listOf("가슴", "등", "다리", "어깨")
         }
     }
 }

@@ -17,7 +17,8 @@ class VectorWorkoutRecommendationService(
     private val workoutSessionRepository: com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository,
     private val workoutExerciseRepository: com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository,
     private val exerciseSetRepository: com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository,
-    private val muscleRecoveryRepository: com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository
+    private val muscleRecoveryRepository: com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository,
+    private val exercisePatternClassifier: com.richjun.liftupai.domain.workout.service.ExercisePatternClassifier
 ) {
 
     /**
@@ -178,13 +179,13 @@ class VectorWorkoutRecommendationService(
             }
             println("After recovery filtering: ${exercises.size} exercises (filtered ${initialSize - exercises.size} recovering muscles)")
 
+            // 운동 패턴 중복 제거 (전문 PT 방식) ⭐ 핵심 기능!
+            exercises = removeDuplicatePatternsVector(exercises)
+            println("After pattern deduplication: ${exercises.size} exercises (removed duplicate patterns)")
+
             // 운동 순서 정렬 (복합운동 → 고립운동, 큰 근육 → 작은 근육)
             exercises = orderExercisesByPriorityVector(exercises)
             println("After ordering: exercises sorted by priority")
-
-            // 유사 운동 필터링 (중복 방지)
-            exercises = filterSimilarExercises(exercises)
-            println("After similar exercise filtering: ${exercises.size} exercises (removed similar variants)")
 
             // 중복 제거 및 제한
             return exercises.distinctBy { it.id }.take(limit)
@@ -536,5 +537,43 @@ class VectorWorkoutRecommendationService(
         }
 
         return baseName.lowercase()
+    }
+
+    /**
+     * 운동 패턴 중복 제거 (전문 PT 방식)
+     * WorkoutServiceV2와 동일한 로직
+     */
+    private fun removeDuplicatePatternsVector(exercises: List<Exercise>): List<Exercise> {
+        val patternGroups = mutableMapOf<com.richjun.liftupai.domain.workout.service.ExercisePatternClassifier.MovementPattern, MutableList<Exercise>>()
+
+        // 1. 패턴별로 그룹화
+        exercises.forEach { exercise ->
+            val pattern = exercisePatternClassifier.classifyExercise(exercise)
+            patternGroups.getOrPut(pattern) { mutableListOf() }.add(exercise)
+        }
+
+        // 2. 각 패턴에서 가장 쉬운 운동 1개만 선택
+        val selectedExercises = mutableListOf<Exercise>()
+
+        patternGroups.forEach { (pattern, groupExercises) ->
+            // 같은 패턴 내에서 난이도가 낮은 것(쉬운 것) 우선
+            val bestExercise = groupExercises
+                .sortedWith(
+                    compareBy<Exercise> { it.difficulty }  // 1순위: 난이도 낮은 것
+                        .thenByDescending { it.popularity }  // 2순위: 인기도 높은 것
+                        .thenByDescending { it.isBasicExercise } // 3순위: 기본 운동
+                )
+                .firstOrNull()
+
+            bestExercise?.let { selectedExercises.add(it) }
+
+            // 디버깅
+            if (groupExercises.size > 1) {
+                val skipped = groupExercises.filter { it != bestExercise }.map { it.name }
+                println("  [Vector/$pattern] ${bestExercise?.name} 선택 (난이도: ${bestExercise?.difficulty}), 제외: ${skipped.joinToString(", ")}")
+            }
+        }
+
+        return selectedExercises
     }
 }
