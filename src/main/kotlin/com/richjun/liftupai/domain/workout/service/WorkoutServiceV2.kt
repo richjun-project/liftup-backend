@@ -971,20 +971,38 @@ class WorkoutServiceV2(
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
 
-        // Check if user has started a workout today
-        val hasStartedToday = workoutProgressTracker.hasStartedWorkoutToday(user)
+        // Check if user has an active session
+        val activeSession = workoutSessionRepository.findFirstByUserAndStatusOrderByStartTimeDesc(user, SessionStatus.IN_PROGRESS).orElse(null)
 
         // Get user's program type and position
         val userProfile = userProfileRepository.findByUser_Id(userId).orElse(null)
         val programDays = userProfile?.weeklyWorkoutDays ?: 3
         val programPosition = workoutProgressTracker.getNextWorkoutInProgram(user, programDays)
 
-        // Determine target muscle based on program position
-        // 사용자가 명시적으로 근육을 지정하지 않으면 프로그램 상태를 따름
-        val adjustedTargetMuscle = if (!hasStartedToday) {
-            // targetMuscle이 null이거나 "auto"면 프로그램 상태 사용
-            if (targetMuscle == null || targetMuscle == "auto") {
-                // Get program type from user profile
+        // Determine target muscle based on current session or program position
+        // 사용자가 명시적으로 근육을 지정하지 않으면 현재 세션 또는 프로그램 상태를 따름
+        val adjustedTargetMuscle = if (targetMuscle == null || targetMuscle == "auto") {
+            if (activeSession != null) {
+                // 현재 진행 중인 세션이 있으면 그 세션의 workout type을 따름
+                val currentWorkoutType = activeSession.workoutType ?: WorkoutType.FULL_BODY
+                val sessionMuscle = when (currentWorkoutType) {
+                    WorkoutType.PUSH -> "chest"
+                    WorkoutType.PULL -> "back"
+                    WorkoutType.LEGS -> "legs"
+                    WorkoutType.UPPER -> "upper"
+                    WorkoutType.LOWER -> "lower"
+                    WorkoutType.CHEST -> "chest"
+                    WorkoutType.BACK -> "back"
+                    WorkoutType.ARMS -> "arms"
+                    WorkoutType.SHOULDERS -> "shoulders"
+                    WorkoutType.ABS -> "core"
+                    WorkoutType.CARDIO -> "full_body"
+                    WorkoutType.FULL_BODY -> "full_body"
+                }
+                println("✅ 현재 세션에 맞는 근육 선택: $sessionMuscle (현재 진행 중: $currentWorkoutType)")
+                sessionMuscle
+            } else {
+                // 진행 중인 세션이 없으면 프로그램 위치에 따라 선택
                 val programType = userProfile?.workoutSplit ?: "PPL"
                 val sequence = workoutProgressTracker.getWorkoutTypeSequence(programType)
                 val workoutType = sequence.getOrNull(programPosition.day - 1) ?: WorkoutType.FULL_BODY
@@ -999,16 +1017,15 @@ class WorkoutServiceV2(
                     WorkoutType.BACK -> "back"
                     WorkoutType.ARMS -> "arms"
                     WorkoutType.SHOULDERS -> "shoulders"
-                    else -> "full_body"
+                    WorkoutType.ABS -> "core"
+                    WorkoutType.CARDIO -> "full_body"
+                    WorkoutType.FULL_BODY -> "full_body"
                 }
-                println("✅ 프로그램 상태에 따른 근육 선택: $programMuscle (WorkoutType: $workoutType)")
+                println("✅ 프로그램 상태에 따른 근육 선택: $programMuscle (다음 예정: $workoutType, Day ${programPosition.day})")
                 programMuscle
-            } else {
-                println("ℹ️ 사용자 지정 근육 사용: $targetMuscle")
-                targetMuscle
             }
         } else {
-            println("ℹ️ 오늘 이미 운동 시작함, 요청된 근육 사용: ${targetMuscle ?: "전체"}")
+            println("ℹ️ 사용자 지정 근육 사용: $targetMuscle")
             targetMuscle
         }
 
@@ -1291,27 +1308,74 @@ class WorkoutServiceV2(
 
         // 4. 타겟 근육 필터링
         targetMuscle?.let { muscle ->
-            val muscleEnum = try {
-                when (muscle.lowercase()) {
-                    "full_body" -> null // Don't filter for full body
-                    "chest" -> MuscleGroup.CHEST
-                    "back" -> MuscleGroup.BACK
-                    "legs" -> MuscleGroup.QUADRICEPS // Representative for legs
-                    "shoulders" -> MuscleGroup.SHOULDERS
-                    "arms" -> MuscleGroup.BICEPS // Representative for arms
-                    "core" -> MuscleGroup.ABS
-                    else -> null
+            when (muscle.lowercase()) {
+                "full_body" -> {
+                    // Don't filter for full body
                 }
-            } catch (e: IllegalArgumentException) {
-                null
-            }
-
-            if (muscleEnum != null && muscle.lowercase() != "full_body") {
-                exercises = exercises.filter { it.muscleGroups.contains(muscleEnum) }
+                "legs", "lower" -> {
+                    // 하체 운동: 대퇴사두근, 햄스트링, 엉덩이, 종아리 중 하나라도 포함되면 OK
+                    val legMuscles = setOf(
+                        MuscleGroup.QUADRICEPS,
+                        MuscleGroup.HAMSTRINGS,
+                        MuscleGroup.GLUTES,
+                        MuscleGroup.CALVES
+                    )
+                    exercises = exercises.filter { exercise ->
+                        exercise.muscleGroups.any { it in legMuscles }
+                    }
+                    println("하체 근육 필터링: ${legMuscles.joinToString()} 중 하나라도 포함, ${exercises.size}개 운동")
+                }
+                "upper" -> {
+                    // 상체 운동: 가슴, 등, 어깨, 팔 근육 중 하나라도 포함
+                    val upperMuscles = setOf(
+                        MuscleGroup.CHEST,
+                        MuscleGroup.BACK,
+                        MuscleGroup.LATS,
+                        MuscleGroup.SHOULDERS,
+                        MuscleGroup.BICEPS,
+                        MuscleGroup.TRICEPS,
+                        MuscleGroup.FOREARMS
+                    )
+                    exercises = exercises.filter { exercise ->
+                        exercise.muscleGroups.any { it in upperMuscles }
+                    }
+                    println("상체 근육 필터링: ${upperMuscles.joinToString()} 중 하나라도 포함, ${exercises.size}개 운동")
+                }
+                "chest" -> {
+                    exercises = exercises.filter { it.muscleGroups.contains(MuscleGroup.CHEST) }
+                    println("가슴 근육 필터링: CHEST 포함, ${exercises.size}개 운동")
+                }
+                "back" -> {
+                    val backMuscles = setOf(MuscleGroup.BACK, MuscleGroup.LATS)
+                    exercises = exercises.filter { exercise ->
+                        exercise.muscleGroups.any { it in backMuscles }
+                    }
+                    println("등 근육 필터링: BACK, LATS 중 하나라도 포함, ${exercises.size}개 운동")
+                }
+                "shoulders" -> {
+                    exercises = exercises.filter { it.muscleGroups.contains(MuscleGroup.SHOULDERS) }
+                    println("어깨 근육 필터링: SHOULDERS 포함, ${exercises.size}개 운동")
+                }
+                "arms" -> {
+                    val armMuscles = setOf(MuscleGroup.BICEPS, MuscleGroup.TRICEPS, MuscleGroup.FOREARMS)
+                    exercises = exercises.filter { exercise ->
+                        exercise.muscleGroups.any { it in armMuscles }
+                    }
+                    println("팔 근육 필터링: BICEPS, TRICEPS, FOREARMS 중 하나라도 포함, ${exercises.size}개 운동")
+                }
+                "core" -> {
+                    exercises = exercises.filter { it.muscleGroups.contains(MuscleGroup.ABS) }
+                    println("코어 근육 필터링: ABS 포함, ${exercises.size}개 운동")
+                }
             }
         }
 
-        // 5. 운동 다양성 보장 (사용자 정보가 있을 때만)
+        // 5. 운동 패턴 중복 제거 (전문 PT 방식) ⭐ 핵심 기능! - 다양성 보장보다 먼저!
+        exercises = removeDuplicatePatterns(exercises)
+        println("패턴 중복 제거 후: ${exercises.size}개 운동 (같은 패턴 제거)")
+
+        // 6. 운동 다양성 보장 (사용자 정보가 있을 때만)
+        // 패턴 중복 제거 후에 실행하여 중복 패턴이 다시 추가되지 않도록 함
         user?.let { u ->
             val userProfile = userProfileRepository.findByUser(u).orElse(null)
             val experienceLevel = userProfile?.experienceLevel ?: ExperienceLevel.INTERMEDIATE
@@ -1327,10 +1391,6 @@ class WorkoutServiceV2(
             exercises = ensureExerciseVarietyV2(u, exercises, familiarCount, newCount)
             println("다양성 보장 후: ${exercises.size}개 운동 (익숙: $familiarCount, 새로운: $newCount)")
         }
-
-        // 6. 운동 패턴 중복 제거 (전문 PT 방식) ⭐ 핵심 기능!
-        exercises = removeDuplicatePatterns(exercises)
-        println("패턴 중복 제거 후: ${exercises.size}개 운동 (같은 패턴 제거)")
 
         // 7. 운동 순서 정렬 ⭐ 가장 중요!
         exercises = orderExercisesByPriorityV2(exercises)
