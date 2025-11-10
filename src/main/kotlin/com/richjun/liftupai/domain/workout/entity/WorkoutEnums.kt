@@ -56,10 +56,10 @@ enum class MuscleGroup {
  *
  * 데이터는 모두 보존되며, 추천 시스템에서만 필터링에 사용됨
  *
- * 추천 정책:
- * - 초보자: ESSENTIAL만 추천
- * - 중급자 이상: ESSENTIAL + STANDARD 추천
- * - ADVANCED, SPECIALIZED: 추천에서 제외, 검색 시에만 노출
+ * 추천 정책 (총 567개 운동):
+ * - 일반 추천: ESSENTIAL(57개) + STANDARD(222개) = 279개
+ * - 제외: ADVANCED(112개) + SPECIALIZED(176개) = 288개
+ * - ADVANCED/SPECIALIZED는 검색 시에만 노출, 자동 추천에서는 제외
  */
 enum class RecommendationTier {
     /**

@@ -137,11 +137,15 @@ class VectorWorkoutRecommendationService(
                 }
             }
 
-            // 추천 등급 필터링 (SPECIALIZED만 제외)
-            // SPECIALIZED는 특수 장비/위험한 운동이므로 일반 추천에서 제외
+            // 추천 등급 필터링 (ESSENTIAL + STANDARD만)
+            // ADVANCED: 올림픽 리프팅, 고급 기법 제외
+            // SPECIALIZED: 특수 장비/희귀/위험한 운동 제외
             val beforeTierFilter = exercises.size
-            exercises = exercises.filter { it.recommendationTier != com.richjun.liftupai.domain.workout.entity.RecommendationTier.SPECIALIZED }
-            println("After recommendation tier filtering (SPECIALIZED 제외): ${exercises.size} exercises (filtered ${beforeTierFilter - exercises.size} specialized exercises)")
+            exercises = exercises.filter {
+                it.recommendationTier == com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL ||
+                it.recommendationTier == com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
+            }
+            println("After recommendation tier filtering (ESSENTIAL + STANDARD만): ${exercises.size} exercises (filtered ${beforeTierFilter - exercises.size} advanced/specialized exercises)")
 
             // 경험도별 난이도 필터링 (생소한 운동 방지)
             val experienceLevel = profile?.experienceLevel ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER

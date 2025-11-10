@@ -1227,12 +1227,14 @@ class WorkoutServiceV2(
     ): List<Exercise> {
         var exercises = exerciseRepository.findAll().toList()
 
-        // 1. ESSENTIAL + STANDARD + ADVANCED 운동 추천 (SPECIALIZED만 제외)
-        // SPECIALIZED는 특수 장비/위험한 운동이므로 일반 추천에서 제외
+        // 1. ESSENTIAL + STANDARD만 추천 (ADVANCED, SPECIALIZED 제외)
+        // ADVANCED: 올림픽 리프팅, 고급 기법 등
+        // SPECIALIZED: 특수 장비/희귀/위험한 운동
         exercises = exercises.filter {
-            it.recommendationTier != com.richjun.liftupai.domain.workout.entity.RecommendationTier.SPECIALIZED
+            it.recommendationTier == com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL ||
+            it.recommendationTier == com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
         }
-        println("After filtering (SPECIALIZED 제외): ${exercises.size} exercises")
+        println("After filtering (ESSENTIAL + STANDARD만): ${exercises.size} exercises")
 
         // 2. 사용자 정보가 있으면 헬스 트레이너 관점 필터링 적용 (완화됨)
         user?.let { u ->
