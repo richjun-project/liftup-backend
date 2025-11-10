@@ -14,6 +14,11 @@ import com.richjun.liftupai.domain.workout.repository.ExerciseTemplateRepository
 import com.richjun.liftupai.domain.workout.repository.PersonalRecordRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
+import com.richjun.liftupai.domain.workout.entity.Exercise
+import com.richjun.liftupai.domain.workout.entity.MuscleGroup
+import com.richjun.liftupai.domain.workout.entity.RecommendationTier
+import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.domain.user.entity.UserProfile
 import com.richjun.liftupai.domain.user.entity.ExperienceLevel
 import com.richjun.liftupai.domain.workout.entity.WorkoutGoal
 import com.richjun.liftupai.domain.workout.util.ExerciseNameNormalizer
@@ -39,7 +44,8 @@ class WorkoutPlanService(
     val personalRecordRepository: PersonalRecordRepository,
     val exerciseSetRepository: ExerciseSetRepository,
     private val exerciseNameNormalizer: ExerciseNameNormalizer,
-    private val workoutProgressTracker: WorkoutProgressTracker
+    private val workoutProgressTracker: WorkoutProgressTracker,
+    private val exercisePatternClassifier: ExercisePatternClassifier
 ) {
 
     fun updateWorkoutPlan(userId: Long, request: WorkoutPlanRequest): WorkoutPlanResponse {
@@ -140,17 +146,14 @@ class WorkoutPlanService(
         // 운동 타입에 따른 타겟 근육 결정
         val (workoutName, targetMuscles) = getWorkoutDetailsFromType(workoutType)
 
-        // Use AI to get exercises
-        val prompt = buildWorkoutPrompt(
-            workoutName,
-            targetMuscles,
-            request.experienceLevel,
-            request.goals,
-            profile.availableEquipment.toList()
+        // DB에서 실제 운동 데이터 필터링해서 가져오기
+        val targetMuscleForFilter = mapWorkoutTypeToTargetMuscle(workoutType)
+        val exercises = getExercisesFromDatabase(
+            user,
+            profile,
+            targetMuscleForFilter,
+            profile.workoutDuration ?: 60
         )
-
-        val aiResponse = "AI 생성 프로그램" // Simplified for now
-        val exercises = parseAIResponseToExercises(aiResponse, targetMuscles)
 
         val reason = "프로그램 진행: ${programPosition.cycle}주차 ${programPosition.day}회차 - $workoutName"
 
@@ -751,6 +754,210 @@ class WorkoutPlanService(
 
             com.richjun.liftupai.domain.workout.entity.WorkoutType.FULL_BODY ->
                 "전신 운동" to listOf("가슴", "등", "다리", "어깨")
+        }
+    }
+
+    /**
+     * 운동 타입을 필터링용 타겟 근육 문자열로 매핑
+     * WorkoutServiceV2의 필터링 로직과 호환되도록 영어로 반환
+     */
+    private fun mapWorkoutTypeToTargetMuscle(workoutType: com.richjun.liftupai.domain.workout.entity.WorkoutType): String {
+        return when (workoutType) {
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.PUSH -> "chest"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.PULL -> "back"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.LEGS -> "legs"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.UPPER -> "upper"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.LOWER -> "lower"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.CHEST -> "chest"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.BACK -> "back"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.SHOULDERS -> "shoulders"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.ARMS -> "arms"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.ABS -> "core"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.CARDIO -> "full_body"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.FULL_BODY -> "full_body"
+        }
+    }
+
+    /**
+     * DB에서 운동 데이터를 필터링해서 가져오기
+     * WorkoutServiceV2의 로직을 재사용하여 일관성 유지
+     */
+    private fun getExercisesFromDatabase(
+        user: User,
+        profile: UserProfile,
+        targetMuscle: String,
+        duration: Int
+    ): List<ExerciseDetailV4> {
+        // WorkoutServiceV2의 필터링 로직을 사용
+        var exercises = exerciseRepository.findAll().toList()
+
+        // 1. Recommendation tier 필터링
+        exercises = exercises.filter {
+            it.recommendationTier == RecommendationTier.ESSENTIAL ||
+            it.recommendationTier == RecommendationTier.STANDARD
+        }
+
+        // 2. 장비 필터링 (프로필의 availableEquipment 사용)
+        val availableEquipment = profile.availableEquipment
+        if (availableEquipment.isNotEmpty()) {
+            exercises = exercises.filter { exercise ->
+                exercise.equipment?.let { availableEquipment.contains(it.name) } ?: false
+            }
+        }
+
+        // 3. 타겟 근육 필터링
+        exercises = filterByTargetMuscle(exercises, targetMuscle)
+
+        // 4. 운동 패턴 중복 제거
+        exercises = exercisePatternClassifier.let { classifier ->
+            val patternGroups = mutableMapOf<ExercisePatternClassifier.MovementPattern, MutableList<Exercise>>()
+            exercises.forEach { exercise ->
+                val pattern = classifier.classifyExercise(exercise)
+                patternGroups.getOrPut(pattern) { mutableListOf() }.add(exercise)
+            }
+
+            val selectedExercises = mutableListOf<Exercise>()
+            patternGroups.forEach { (_, groupExercises) ->
+                val bestExercise = groupExercises
+                    .sortedWith(
+                        compareBy<Exercise> { it.difficulty }
+                            .thenByDescending { it.popularity }
+                            .thenByDescending { it.isBasicExercise }
+                    )
+                    .firstOrNull()
+                bestExercise?.let { selectedExercises.add(it) }
+            }
+            selectedExercises
+        }
+
+        // 5. 운동 정렬 (복합운동 우선, 큰 근육 우선)
+        exercises = exercises.sortedWith(
+            compareBy<Exercise> { exercise ->
+                when (exercise.category) {
+                    ExerciseCategory.LEGS -> 1
+                    ExerciseCategory.BACK -> 2
+                    ExerciseCategory.CHEST -> 3
+                    ExerciseCategory.SHOULDERS -> 4
+                    ExerciseCategory.ARMS -> 5
+                    ExerciseCategory.CORE -> 6
+                    ExerciseCategory.CARDIO -> 7
+                    else -> 8
+                }
+            }
+        )
+
+        // 6. 운동 개수 결정 (duration 기반)
+        val targetExerciseCount = when {
+            duration <= 30 -> 4
+            duration <= 45 -> 5
+            duration <= 60 -> 6
+            duration <= 75 -> 7
+            else -> 8
+        }
+
+        // 7. Exercise를 ExerciseDetailV4로 변환
+        return exercises.take(targetExerciseCount).map { exercise ->
+            ExerciseDetailV4(
+                id = exercise.id.toString(),
+                name = exercise.name,
+                targetMuscle = targetMuscle,
+                sets = generateDefaultSets(exercise, profile.experienceLevel),
+                restTime = calculateRestTime(exercise),
+                tips = "올바른 자세로 수행하세요"
+            )
+        }
+    }
+
+    /**
+     * 타겟 근육으로 운동 필터링
+     * WorkoutServiceV2의 로직과 동일
+     */
+    private fun filterByTargetMuscle(exercises: List<Exercise>, targetMuscle: String): List<Exercise> {
+        return when (targetMuscle.lowercase()) {
+            "full_body" -> exercises
+            "legs", "lower" -> {
+                val legMuscles = setOf(
+                    MuscleGroup.QUADRICEPS,
+                    MuscleGroup.HAMSTRINGS,
+                    MuscleGroup.GLUTES,
+                    MuscleGroup.CALVES
+                )
+                exercises.filter { exercise ->
+                    exercise.muscleGroups.any { it in legMuscles }
+                }
+            }
+            "upper" -> {
+                val upperMuscles = setOf(
+                    MuscleGroup.CHEST,
+                    MuscleGroup.BACK,
+                    MuscleGroup.LATS,
+                    MuscleGroup.SHOULDERS,
+                    MuscleGroup.BICEPS,
+                    MuscleGroup.TRICEPS,
+                    MuscleGroup.FOREARMS
+                )
+                exercises.filter { exercise ->
+                    exercise.muscleGroups.any { it in upperMuscles }
+                }
+            }
+            "chest" -> exercises.filter { it.muscleGroups.contains(MuscleGroup.CHEST) }
+            "back" -> {
+                val backMuscles = setOf(MuscleGroup.BACK, MuscleGroup.LATS)
+                exercises.filter { exercise ->
+                    exercise.muscleGroups.any { it in backMuscles }
+                }
+            }
+            "shoulders" -> exercises.filter { it.muscleGroups.contains(MuscleGroup.SHOULDERS) }
+            "arms" -> {
+                val armMuscles = setOf(MuscleGroup.BICEPS, MuscleGroup.TRICEPS, MuscleGroup.FOREARMS)
+                exercises.filter { exercise ->
+                    exercise.muscleGroups.any { it in armMuscles }
+                }
+            }
+            "core" -> exercises.filter { it.muscleGroups.contains(MuscleGroup.ABS) }
+            else -> exercises
+        }
+    }
+
+    /**
+     * 경험 수준에 따른 기본 세트 생성
+     */
+    private fun generateDefaultSets(exercise: Exercise, experienceLevel: ExperienceLevel?): List<SetDetail> {
+        val level = experienceLevel ?: ExperienceLevel.INTERMEDIATE
+
+        return when (level) {
+            ExperienceLevel.NOVICE, ExperienceLevel.BEGINNER -> listOf(
+                SetDetail(1, 12, 0.0, "warm_up"),
+                SetDetail(2, 10, 40.0, "working"),
+                SetDetail(3, 10, 40.0, "working")
+            )
+            ExperienceLevel.INTERMEDIATE -> listOf(
+                SetDetail(1, 12, 0.0, "warm_up"),
+                SetDetail(2, 10, 60.0, "working"),
+                SetDetail(3, 8, 70.0, "working"),
+                SetDetail(4, 8, 70.0, "working")
+            )
+            ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT -> listOf(
+                SetDetail(1, 10, 40.0, "warm_up"),
+                SetDetail(2, 8, 70.0, "working"),
+                SetDetail(3, 6, 80.0, "working"),
+                SetDetail(4, 6, 85.0, "working"),
+                SetDetail(5, 4, 90.0, "working")
+            )
+        }
+    }
+
+    /**
+     * 운동 유형에 따른 휴식 시간 계산
+     */
+    private fun calculateRestTime(exercise: Exercise): Int {
+        return when (exercise.category) {
+            ExerciseCategory.LEGS -> 180  // 하체는 3분
+            ExerciseCategory.BACK, ExerciseCategory.CHEST -> 150  // 상체 큰 근육 2분 30초
+            ExerciseCategory.SHOULDERS -> 120  // 어깨 2분
+            ExerciseCategory.ARMS -> 90  // 팔 1분 30초
+            ExerciseCategory.CORE -> 60  // 코어 1분
+            else -> 120  // 기본 2분
         }
     }
 }

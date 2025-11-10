@@ -186,6 +186,8 @@ class ExercisePatternClassifier {
     }
 
     private fun isLegPressPattern(name: String): Boolean {
+        // 카프 레이즈는 제외 (CALF 패턴으로 분류되어야 함)
+        if (name.contains("카프") || name.contains("종아리")) return false
         return name.contains("레그 프레스") || name.contains("레그프레스") ||
                (name.contains("해크") && name.contains("머신"))
     }

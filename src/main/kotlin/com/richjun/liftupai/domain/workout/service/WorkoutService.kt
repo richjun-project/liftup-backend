@@ -30,7 +30,8 @@ class WorkoutService(
     private val exerciseSetRepository: ExerciseSetRepository,
     private val personalRecordRepository: PersonalRecordRepository,
     private val workoutProgressTracker: WorkoutProgressTracker,
-    private val autoProgramSelector: AutoProgramSelector
+    private val autoProgramSelector: AutoProgramSelector,
+    private val exercisePatternClassifier: ExercisePatternClassifier
 ) {
 
     @Deprecated("Use WorkoutServiceV2.startNewWorkout() instead")
@@ -869,7 +870,7 @@ class WorkoutService(
         }
 
         // 장비 필터링
-        val filteredExercises = if (availableEquipment.isNotEmpty()) {
+        var filteredExercises = if (availableEquipment.isNotEmpty()) {
             exercises.filter { exercise ->
                 val equipmentName = exercise.equipment?.name
                 equipmentName == null ||
@@ -878,6 +879,9 @@ class WorkoutService(
         } else {
             exercises
         }
+
+        // 패턴 중복 제거 - 같은 패턴의 운동 중 하나만 선택
+        filteredExercises = removeDuplicatePatterns(filteredExercises)
 
         // 경험 레벨에 따른 운동 개수 및 세트/렙 조정
         data class WorkoutConfig(val exerciseCount: Pair<Int, Int>, val setsRange: Pair<Int, Int>, val repsRange: String, val rpeTarget: Int)
@@ -1213,5 +1217,35 @@ class WorkoutService(
             "복근" -> listOf(MuscleGroup.ABS, MuscleGroup.CORE)
             else -> emptyList()
         }
+    }
+
+    /**
+     * 패턴 중복 제거 - 같은 패턴의 운동 중 가장 쉬운 운동 하나만 선택
+     */
+    private fun removeDuplicatePatterns(exercises: List<Exercise>): List<Exercise> {
+        val patternGroups = mutableMapOf<ExercisePatternClassifier.MovementPattern, MutableList<Exercise>>()
+
+        // 1. 패턴별로 그룹화
+        exercises.forEach { exercise ->
+            val pattern = exercisePatternClassifier.classifyExercise(exercise)
+            patternGroups.getOrPut(pattern) { mutableListOf() }.add(exercise)
+        }
+
+        // 2. 각 패턴에서 가장 쉬운 운동 1개만 선택
+        val selectedExercises = mutableListOf<Exercise>()
+
+        patternGroups.forEach { (pattern, groupExercises) ->
+            val bestExercise = groupExercises
+                .sortedWith(
+                    compareBy<Exercise> { it.difficulty }
+                        .thenByDescending { it.popularity }
+                        .thenByDescending { it.isBasicExercise }
+                )
+                .firstOrNull()
+
+            bestExercise?.let { selectedExercises.add(it) }
+        }
+
+        return selectedExercises
     }
 }
