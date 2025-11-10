@@ -763,8 +763,8 @@ class WorkoutPlanService(
      */
     private fun mapWorkoutTypeToTargetMuscle(workoutType: com.richjun.liftupai.domain.workout.entity.WorkoutType): String {
         return when (workoutType) {
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.PUSH -> "chest"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.PULL -> "back"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.PUSH -> "push"
+            com.richjun.liftupai.domain.workout.entity.WorkoutType.PULL -> "pull"
             com.richjun.liftupai.domain.workout.entity.WorkoutType.LEGS -> "legs"
             com.richjun.liftupai.domain.workout.entity.WorkoutType.UPPER -> "upper"
             com.richjun.liftupai.domain.workout.entity.WorkoutType.LOWER -> "lower"
@@ -884,6 +884,29 @@ class WorkoutPlanService(
                 )
                 exercises.filter { exercise ->
                     exercise.muscleGroups.any { it in legMuscles }
+                }
+            }
+            "push" -> {
+                // 밀기 운동: 가슴, 어깨, 삼두
+                val pushMuscles = setOf(
+                    MuscleGroup.CHEST,
+                    MuscleGroup.SHOULDERS,
+                    MuscleGroup.TRICEPS
+                )
+                exercises.filter { exercise ->
+                    exercise.muscleGroups.any { it in pushMuscles }
+                }
+            }
+            "pull" -> {
+                // 당기기 운동: 등, 이두
+                val pullMuscles = setOf(
+                    MuscleGroup.BACK,
+                    MuscleGroup.LATS,
+                    MuscleGroup.BICEPS,
+                    MuscleGroup.FOREARMS
+                )
+                exercises.filter { exercise ->
+                    exercise.muscleGroups.any { it in pullMuscles }
                 }
             }
             "upper" -> {
