@@ -41,8 +41,10 @@ class WorkoutServiceV2(
     private val workoutProgressTracker: WorkoutProgressTracker,
     private val recoveryService: RecoveryService,
     private val muscleRecoveryRepository: MuscleRecoveryRepository,
-    private val exercisePatternClassifier: ExercisePatternClassifier
+    private val exercisePatternClassifier: ExercisePatternClassifier,
+    private val exerciseRecommendationService: ExerciseRecommendationService
 ) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     // 기존 메서드 (호환성 유지) - 진행 중인 세션이 있으면 반환, 없으면 새로 생성
     fun startWorkout(userId: Long, request: StartWorkoutRequestV2): StartWorkoutResponseV2 {
@@ -1129,20 +1131,19 @@ class WorkoutServiceV2(
             else -> "intermediate" // default
         }
 
-        // Get suitable exercises based on filters (user 정보 포함)
-        val exercises = getFilteredExercises(equipment, targetMuscle, workoutDuration, user)
-
         // Calculate optimal exercise count based on duration
-        // 운동당 평균 소요 시간: 워밍업(2분) + 세트당 시간(휴식 포함) 계산
-        // 일반적으로 30분: 3-4개, 45분: 4-5개, 60분: 5-7개
-        val targetExerciseCount = when {
-            workoutDuration <= 30 -> 4
-            workoutDuration <= 45 -> 5
-            workoutDuration <= 60 -> 6
-            workoutDuration <= 75 -> 7
-            else -> 8
-        }
-        println("⏱️ Duration: ${workoutDuration}분 → 목표 운동 개수: $targetExerciseCount")
+        val targetExerciseCount = getTargetExerciseCount(workoutDuration)
+
+        // 새로운 추천 서비스 사용
+        val exercises = exerciseRecommendationService.getRecommendedExercises(
+            user = user,
+            targetMuscle = targetMuscle,
+            equipment = equipment,
+            duration = workoutDuration,
+            limit = targetExerciseCount
+        )
+
+        logger.info("운동 추천 완료: ${exercises.size}개 (목표: $targetExerciseCount)")
 
         // Create quick exercise details
         val quickExercises = exercises.take(targetExerciseCount).mapIndexed { index, exercise ->
@@ -1231,172 +1232,16 @@ class WorkoutServiceV2(
     }
 
     /**
-     * 헬스 트레이너 관점으로 개선된 운동 필터링 및 선택
-     * - 회복 중인 근육 제외
-     * - 주간 볼륨 고려
-     * - 운동 다양성 보장
-     * - 운동 순서 정렬 (복합운동 → 고립운동, 큰 근육 → 작은 근육)
+     * 운동 시간에 따른 목표 운동 개수 계산
      */
-    private fun getFilteredExercises(
-        equipment: String?,
-        targetMuscle: String?,
-        duration: Int,
-        user: com.richjun.liftupai.domain.auth.entity.User? = null
-    ): List<Exercise> {
-        var exercises = exerciseRepository.findAll().toList()
-
-        // 1. ESSENTIAL + STANDARD만 추천 (ADVANCED, SPECIALIZED 제외)
-        // ADVANCED: 올림픽 리프팅, 고급 기법 등
-        // SPECIALIZED: 특수 장비/희귀/위험한 운동
-        exercises = exercises.filter {
-            it.recommendationTier == com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL ||
-            it.recommendationTier == com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
+    private fun getTargetExerciseCount(duration: Int): Int {
+        return when {
+            duration <= 30 -> 4
+            duration <= 45 -> 5
+            duration <= 60 -> 6
+            duration <= 75 -> 7
+            else -> 8
         }
-        println("After filtering (ESSENTIAL + STANDARD만): ${exercises.size} exercises")
-
-        // 2. 사용자 정보가 있으면 헬스 트레이너 관점 필터링 적용 (완화됨)
-        user?.let { u ->
-            // 완화된 회복 필터링: 24시간 이내 + 회복률 30% 미만만 제외
-            // ⚠️ 너무 엄격하면 추천할 운동이 없어지므로 최소 운동 개수 보장
-            try {
-                val recentlyWorked = getRecentlyWorkedMusclesV2(u, 24) // 24시간 이내
-                val recovering = muscleRecoveryRepository.findByUser(u)
-                    .filter { it.recoveryPercentage < 30 } // 30% 미만 (매우 심한 피로만 제외)
-                    .mapNotNull { recovery ->
-                        try {
-                            MuscleGroup.valueOf(recovery.muscleGroup.uppercase())
-                        } catch (e: IllegalArgumentException) {
-                            null
-                        }
-                    }
-                    .toSet()
-
-                val avoidMuscles = recentlyWorked + recovering
-
-                if (avoidMuscles.isNotEmpty()) {
-                    val beforeRecovery = exercises.size
-                    val filteredExercises = exercises.filter { exercise ->
-                        // 주요 근육(첫 번째)만 체크 (전체 근육 체크는 너무 엄격)
-                        val primaryMuscle = exercise.muscleGroups.firstOrNull()
-                        primaryMuscle == null || (primaryMuscle !in avoidMuscles)
-                    }
-
-                    // 최소 6개 운동 보장: 필터링 후 너무 적으면 회복 필터 무시
-                    if (filteredExercises.size >= 6) {
-                        exercises = filteredExercises
-                        println("완화된 회복 필터링: ${avoidMuscles.joinToString()}를 제외, ${beforeRecovery - exercises.size}개 운동 제외")
-                    } else {
-                        println("⚠️ 회복 필터링 스킵: 필터링 시 운동 부족 (${filteredExercises.size}개 < 6개), 모든 운동 포함")
-                    }
-                } else {
-                    println("회복 필터링: 모든 근육 회복 완료, 필터링 없음")
-                }
-            } catch (e: Exception) {
-                println("회복 필터링 실패: ${e.message}, 스킵")
-            }
-        }
-
-        // 3. 장비 필터링
-        equipment?.let { eq ->
-            val equipmentEnum = try {
-                Equipment.valueOf(eq.uppercase().replace(" ", "_"))
-            } catch (e: IllegalArgumentException) {
-                null
-            }
-            equipmentEnum?.let { exercises = exercises.filter { it.equipment == equipmentEnum } }
-        }
-
-        // 4. 타겟 근육 필터링
-        targetMuscle?.let { muscle ->
-            when (muscle.lowercase()) {
-                "full_body" -> {
-                    // Don't filter for full body
-                }
-                "legs", "lower" -> {
-                    // 하체 운동: 대퇴사두근, 햄스트링, 엉덩이, 종아리 중 하나라도 포함되면 OK
-                    val legMuscles = setOf(
-                        MuscleGroup.QUADRICEPS,
-                        MuscleGroup.HAMSTRINGS,
-                        MuscleGroup.GLUTES,
-                        MuscleGroup.CALVES
-                    )
-                    exercises = exercises.filter { exercise ->
-                        exercise.muscleGroups.any { it in legMuscles }
-                    }
-                    println("하체 근육 필터링: ${legMuscles.joinToString()} 중 하나라도 포함, ${exercises.size}개 운동")
-                }
-                "upper" -> {
-                    // 상체 운동: 가슴, 등, 어깨, 팔 근육 중 하나라도 포함
-                    val upperMuscles = setOf(
-                        MuscleGroup.CHEST,
-                        MuscleGroup.BACK,
-                        MuscleGroup.LATS,
-                        MuscleGroup.SHOULDERS,
-                        MuscleGroup.BICEPS,
-                        MuscleGroup.TRICEPS,
-                        MuscleGroup.FOREARMS
-                    )
-                    exercises = exercises.filter { exercise ->
-                        exercise.muscleGroups.any { it in upperMuscles }
-                    }
-                    println("상체 근육 필터링: ${upperMuscles.joinToString()} 중 하나라도 포함, ${exercises.size}개 운동")
-                }
-                "chest" -> {
-                    exercises = exercises.filter { it.muscleGroups.contains(MuscleGroup.CHEST) }
-                    println("가슴 근육 필터링: CHEST 포함, ${exercises.size}개 운동")
-                }
-                "back" -> {
-                    val backMuscles = setOf(MuscleGroup.BACK, MuscleGroup.LATS)
-                    exercises = exercises.filter { exercise ->
-                        exercise.muscleGroups.any { it in backMuscles }
-                    }
-                    println("등 근육 필터링: BACK, LATS 중 하나라도 포함, ${exercises.size}개 운동")
-                }
-                "shoulders" -> {
-                    exercises = exercises.filter { it.muscleGroups.contains(MuscleGroup.SHOULDERS) }
-                    println("어깨 근육 필터링: SHOULDERS 포함, ${exercises.size}개 운동")
-                }
-                "arms" -> {
-                    val armMuscles = setOf(MuscleGroup.BICEPS, MuscleGroup.TRICEPS, MuscleGroup.FOREARMS)
-                    exercises = exercises.filter { exercise ->
-                        exercise.muscleGroups.any { it in armMuscles }
-                    }
-                    println("팔 근육 필터링: BICEPS, TRICEPS, FOREARMS 중 하나라도 포함, ${exercises.size}개 운동")
-                }
-                "core" -> {
-                    exercises = exercises.filter { it.muscleGroups.contains(MuscleGroup.ABS) }
-                    println("코어 근육 필터링: ABS 포함, ${exercises.size}개 운동")
-                }
-            }
-        }
-
-        // 5. 운동 패턴 중복 제거 (전문 PT 방식) ⭐ 핵심 기능! - 다양성 보장보다 먼저!
-        exercises = removeDuplicatePatterns(exercises)
-        println("패턴 중복 제거 후: ${exercises.size}개 운동 (같은 패턴 제거)")
-
-        // 6. 운동 다양성 보장 (사용자 정보가 있을 때만)
-        // 패턴 중복 제거 후에 실행하여 중복 패턴이 다시 추가되지 않도록 함
-        user?.let { u ->
-            val userProfile = userProfileRepository.findByUser(u).orElse(null)
-            val experienceLevel = userProfile?.experienceLevel ?: ExperienceLevel.INTERMEDIATE
-
-            // 경험 수준별 익숙한 운동 vs 새로운 운동 비율
-            val (familiarCount, newCount) = when (experienceLevel) {
-                ExperienceLevel.BEGINNER -> Pair(8, 2)      // 초보자: 80% 익숙한 운동
-                ExperienceLevel.INTERMEDIATE -> Pair(6, 4)   // 중급: 60% 익숙한 운동
-                ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT -> Pair(4, 6) // 고급: 40% 익숙한 운동
-                else -> Pair(6, 4)
-            }
-
-            exercises = ensureExerciseVarietyV2(u, exercises, familiarCount, newCount)
-            println("다양성 보장 후: ${exercises.size}개 운동 (익숙: $familiarCount, 새로운: $newCount)")
-        }
-
-        // 7. 운동 순서 정렬 ⭐ 가장 중요!
-        exercises = orderExercisesByPriorityV2(exercises)
-        println("최종 정렬 완료: 복합운동 우선, 큰 근육 → 작은 근육")
-
-        return exercises.take(10)
     }
 
     private fun getWorkoutFromRecommendationId(recommendationId: String): WorkoutRecommendationDetail {
@@ -2727,214 +2572,4 @@ class WorkoutServiceV2(
         }
     }
 
-    // ========================================
-    // 헬스 트레이너 관점 유틸리티 메서드 (WorkoutServiceV2 전용)
-    // ========================================
-
-    /**
-     * 복합운동 여부 판별
-     */
-    private fun isCompoundExerciseV2(exercise: Exercise): Boolean {
-        if (exercise.muscleGroups.size >= 2) return true
-
-        val name = exercise.name.lowercase()
-        val compoundKeywords = listOf(
-            "프레스", "스쿼트", "데드리프트", "로우", "풀업", "친업",
-            "딥", "런지", "푸쉬업", "벤치", "밀리터리"
-        )
-
-        return compoundKeywords.any { name.contains(it) }
-    }
-
-    /**
-     * 운동 우선순위 정렬
-     */
-    private fun orderExercisesByPriorityV2(exercises: List<Exercise>): List<Exercise> {
-        return exercises.sortedWith(
-            compareBy<Exercise> { exercise ->
-                when (exercise.category) {
-                    ExerciseCategory.LEGS -> 1
-                    ExerciseCategory.BACK -> 2
-                    ExerciseCategory.CHEST -> 3
-                    ExerciseCategory.SHOULDERS -> 4
-                    ExerciseCategory.ARMS -> 5
-                    ExerciseCategory.CORE -> 6
-                    else -> 7
-                }
-            }.thenBy { exercise ->
-                if (isCompoundExerciseV2(exercise)) 0 else 1
-            }
-        )
-    }
-
-    /**
-     * 최근 N시간 이내에 운동한 근육군 조회
-     */
-    private fun getRecentlyWorkedMusclesV2(user: com.richjun.liftupai.domain.auth.entity.User, hours: Int): Set<MuscleGroup> {
-        val cutoffTime = LocalDateTime.now().minusHours(hours.toLong())
-
-        return workoutSessionRepository
-            .findByUserAndStartTimeAfter(user, cutoffTime)
-            .flatMap { session ->
-                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-                    .flatMap { it.exercise.muscleGroups }
-            }
-            .toSet()
-    }
-
-    /**
-     * 특정 근육군의 주간 볼륨 계산
-     */
-    private fun calculateWeeklyVolumeV2(user: com.richjun.liftupai.domain.auth.entity.User, muscleGroup: MuscleGroup): Int {
-        val oneWeekAgo = LocalDateTime.now().minusDays(7)
-
-        return workoutSessionRepository
-            .findByUserAndStartTimeAfter(user, oneWeekAgo)
-            .flatMap { session ->
-                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-                    .filter { it.exercise.muscleGroups.contains(muscleGroup) }
-            }
-            .sumOf { exerciseSetRepository.findByWorkoutExerciseId(it.id).size }
-    }
-
-    /**
-     * 모든 주요 근육군의 주간 볼륨 맵
-     */
-    private fun getWeeklyVolumeMapV2(user: com.richjun.liftupai.domain.auth.entity.User): Map<String, Int> {
-        val majorMuscleGroups = listOf(
-            MuscleGroup.CHEST, MuscleGroup.BACK, MuscleGroup.LEGS,
-            MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS,
-            MuscleGroup.CORE
-        )
-
-        return majorMuscleGroups.associate { muscleGroup ->
-            translateMuscleGroupToKorean(muscleGroup) to calculateWeeklyVolumeV2(user, muscleGroup)
-        }
-    }
-
-    /**
-     * MuscleGroup을 한글로 변환
-     */
-    private fun translateMuscleGroupToKorean(muscleGroup: MuscleGroup): String {
-        return when (muscleGroup) {
-            MuscleGroup.CHEST -> "가슴"
-            MuscleGroup.BACK -> "등"
-            MuscleGroup.LEGS -> "하체"
-            MuscleGroup.SHOULDERS -> "어깨"
-            MuscleGroup.BICEPS -> "이두"
-            MuscleGroup.TRICEPS -> "삼두"
-            MuscleGroup.CORE -> "코어"
-            else -> muscleGroup.name
-        }
-    }
-
-    /**
-     * 운동 다양성 보장 (익숙한 운동 vs 새로운 운동 비율 조정)
-     *
-     * 개선사항:
-     * - 친숙도 판단 기간: 2주 → 4주로 확장
-     * - 인기도/난이도 고려하여 새로운 운동 선택
-     * - 기본 운동 우선 추천
-     */
-    private fun ensureExerciseVarietyV2(
-        user: com.richjun.liftupai.domain.auth.entity.User,
-        candidates: List<Exercise>,
-        familiarCount: Int,
-        newCount: Int
-    ): List<Exercise> {
-        val fourWeeksAgo = LocalDateTime.now().minusDays(28)  // 2주 → 4주로 확장
-
-        // 최근 4주간 한 운동 ID 목록 + 횟수
-        val recentExerciseStats = workoutSessionRepository
-            .findByUserAndStartTimeAfter(user, fourWeeksAgo)
-            .flatMap { session ->
-                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-                    .map { it.exercise.id }
-            }
-            .groupingBy { it }
-            .eachCount()
-
-        // 익숙한 운동 (4주 내 2회 이상), 새로운 운동, 기본 운동 분리
-        val veryFamiliarExercises = candidates.filter { (recentExerciseStats[it.id] ?: 0) >= 2 }
-            .sortedByDescending { recentExerciseStats[it.id] ?: 0 }  // 많이 한 운동 우선
-
-        val somewhatFamiliarExercises = candidates.filter { (recentExerciseStats[it.id] ?: 0) == 1 }
-
-        val newExercises = candidates.filter { it.id !in recentExerciseStats.keys }
-            .sortedWith(
-                compareByDescending<Exercise> { it.isBasicExercise }  // 기본 운동 우선
-                    .thenByDescending { it.popularity }  // 인기도 높은 것 우선
-                    .thenBy { it.difficulty }  // 쉬운 것 우선
-            )
-
-        // 익숙한 운동 먼저 선택 (매우 익숙 → 약간 익숙)
-        val familiarExercises = (veryFamiliarExercises + somewhatFamiliarExercises)
-            .distinctBy { it.id }
-            .take(familiarCount)
-
-        // 새로운 운동은 인기도/난이도 고려하여 선택
-        val selectedNewExercises = newExercises
-            .distinctBy { it.id }
-            .filter { it !in familiarExercises }
-            .take(newCount)
-
-        val selected = familiarExercises + selectedNewExercises
-
-        // 부족하면 나머지로 채우기 (인기도 높은 것 우선)
-        return if (selected.size < (familiarCount + newCount)) {
-            val remaining = candidates
-                .filter { it !in selected }
-                .sortedByDescending { it.popularity }
-            (selected + remaining).take(familiarCount + newCount)
-        } else {
-            selected
-        }
-    }
-
-    /**
-     * 운동 패턴 중복 제거 (전문 PT 방식)
-     *
-     * 같은 패턴의 운동이 여러 개 있으면, 가장 쉬운 운동(difficulty 낮은 것) 1개만 선택
-     *
-     * 예: 하체 운동
-     * - 스쿼트 패턴: 백스쿼트(50), 프론트스쿼트(65), 박스스쿼트(40) → 박스스쿼트(40) 선택
-     * - 런지 패턴: 런지(45), 불가리안(60), 리버스 런지(50) → 런지(45) 선택
-     * - 힙 힌지 패턴: 데드리프트(70), RDL(55) → RDL(55) 선택
-     *
-     * 결과: 박스스쿼트, 런지, RDL, 레그 컬, 카프 레이즈 (패턴 다양화)
-     */
-    private fun removeDuplicatePatterns(exercises: List<Exercise>): List<Exercise> {
-        val patternGroups = mutableMapOf<ExercisePatternClassifier.MovementPattern, MutableList<Exercise>>()
-
-        // 1. 패턴별로 그룹화
-        exercises.forEach { exercise ->
-            val pattern = exercisePatternClassifier.classifyExercise(exercise)
-            patternGroups.getOrPut(pattern) { mutableListOf() }.add(exercise)
-        }
-
-        // 2. 각 패턴에서 가장 쉬운 운동 1개만 선택
-        val selectedExercises = mutableListOf<Exercise>()
-
-        patternGroups.forEach { (pattern, groupExercises) ->
-            // 같은 패턴 내에서 난이도가 낮은 것(쉬운 것) 우선
-            // 난이도 동일하면 인기도 높은 것 선택
-            val bestExercise = groupExercises
-                .sortedWith(
-                    compareBy<Exercise> { it.difficulty }  // 1순위: 난이도 낮은 것 (쉬운 것)
-                        .thenByDescending { it.popularity }  // 2순위: 인기도 높은 것
-                        .thenByDescending { it.isBasicExercise } // 3순위: 기본 운동
-                )
-                .firstOrNull()
-
-            bestExercise?.let { selectedExercises.add(it) }
-
-            // 디버깅: 패턴별 선택 결과
-            if (groupExercises.size > 1) {
-                val skipped = groupExercises.filter { it != bestExercise }.map { it.name }
-                println("  [$pattern] ${bestExercise?.name} 선택 (난이도: ${bestExercise?.difficulty}), 제외: ${skipped.joinToString(", ")}")
-            }
-        }
-
-        return selectedExercises
-    }
 }
