@@ -5,12 +5,12 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3308/liftupai_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: root
-    password: rootpassword  # .env 파일에서 읽거나 기본값 사용
+    password: ${DB_PASSWORD:yourpassword}  # .env 파일에서 읽거나 기본값 사용
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create  # Flyway가 모든 스키마 관리
+      ddl-auto: update  # Flyway가 모든 스키마 관리
     properties:
       hibernate:
         format_sql: false
