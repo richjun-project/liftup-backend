@@ -3,17 +3,31 @@ package com.richjun.liftupai.domain.workout.entity
 import jakarta.persistence.*
 
 @Entity
-@Table(name = "exercises")
+@Table(
+    name = "exercises",
+    uniqueConstraints = [
+        UniqueConstraint(name = "uk_exercises_slug", columnNames = ["slug"])
+    ]
+)
 data class Exercise(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
+    @Column(nullable = false, length = 191)
+    val slug: String,
+
     @Column(nullable = false)
     val name: String,
 
+    @Column(name = "default_locale", nullable = false, length = 10)
+    val defaultLocale: String = "en",
+
     @Enumerated(EnumType.STRING)
     val category: ExerciseCategory,
+
+    @Column(name = "movement_pattern")
+    val movementPattern: String? = null,
 
     @ElementCollection(targetClass = MuscleGroup::class, fetch = FetchType.EAGER)
     @CollectionTable(name = "exercise_muscle_groups", joinColumns = [JoinColumn(name = "exercise_id")])
@@ -23,6 +37,12 @@ data class Exercise(
 
     @Enumerated(EnumType.STRING)
     val equipment: Equipment? = null,
+
+    @Column(name = "equipment_detail")
+    val equipmentDetail: String? = null,
+
+    @Column(name = "source_category")
+    val sourceCategory: String? = null,
 
     @Column(columnDefinition = "TEXT")
     val instructions: String? = null,

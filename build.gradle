@@ -11,8 +11,8 @@ version = '0.0.1-SNAPSHOT'
 description = 'iftupai'
 
 java {
-	sourceCompatibility = '21'
-	targetCompatibility = '21'
+	sourceCompatibility = '17'
+	targetCompatibility = '17'
 }
 
 configurations {
@@ -60,7 +60,7 @@ dependencies {
 kotlin {
 	compilerOptions {
 		freeCompilerArgs.addAll '-Xjsr305=strict'
-		jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+		jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
 	}
 }
 

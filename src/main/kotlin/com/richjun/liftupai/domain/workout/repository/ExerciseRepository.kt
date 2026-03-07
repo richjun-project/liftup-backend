@@ -17,10 +17,27 @@ interface ExerciseRepository : JpaRepository<Exercise, Long> {
 
     fun findByCategoryAndEquipment(category: ExerciseCategory, equipment: Equipment): List<Exercise>
 
-    @Query("SELECT e FROM Exercise e WHERE LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    @Query(
+        """
+        SELECT DISTINCT e
+        FROM Exercise e
+        LEFT JOIN ExerciseTranslation t ON t.exercise = e
+        WHERE LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%'))
+           OR LOWER(t.displayName) LIKE LOWER(CONCAT('%', :name, '%'))
+        """
+    )
     fun searchByName(name: String): List<Exercise>
 
-    fun findByNameIgnoreCase(name: String): Exercise?
+    @Query(
+        """
+        SELECT DISTINCT e
+        FROM Exercise e
+        LEFT JOIN ExerciseTranslation t ON t.exercise = e
+        WHERE LOWER(e.name) = LOWER(:name)
+           OR LOWER(t.displayName) = LOWER(:name)
+        """
+    )
+    fun findByNameIgnoreCase(@Param("name") name: String): Exercise?
 
     /**
      * 정규화된 이름으로 운동을 검색합니다.
@@ -40,7 +57,9 @@ interface ExerciseRepository : JpaRepository<Exercise, Long> {
      */
     @Query("""
         SELECT DISTINCT e FROM Exercise e
+        LEFT JOIN ExerciseTranslation t ON t.exercise = e
         WHERE LOWER(e.name) IN :names
+           OR LOWER(t.displayName) IN :names
     """)
     fun findByNameIn(@Param("names") names: List<String>): List<Exercise>
 
@@ -48,9 +67,12 @@ interface ExerciseRepository : JpaRepository<Exercise, Long> {
      * 정확한 이름 매칭을 시도하고, 없으면 부분 매칭을 시도합니다.
      */
     @Query("""
-        SELECT e FROM Exercise e
+        SELECT DISTINCT e FROM Exercise e
+        LEFT JOIN ExerciseTranslation t ON t.exercise = e
         WHERE LOWER(TRIM(e.name)) = LOWER(TRIM(:name))
         OR LOWER(REPLACE(e.name, ' ', '')) = LOWER(REPLACE(:name, ' ', ''))
+        OR LOWER(TRIM(t.displayName)) = LOWER(TRIM(:name))
+        OR LOWER(REPLACE(t.displayName, ' ', '')) = LOWER(REPLACE(:name, ' ', ''))
     """)
     fun findByExactOrCompactName(@Param("name") name: String): List<Exercise>
 

@@ -1,1 +1,0 @@
-USE liftupai_db;
