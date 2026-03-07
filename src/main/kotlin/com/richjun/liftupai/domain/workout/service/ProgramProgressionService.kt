@@ -1,15 +1,19 @@
 package com.richjun.liftupai.domain.workout.service
 
 import com.richjun.liftupai.domain.auth.entity.User
-import com.richjun.liftupai.domain.user.entity.ExperienceLevel
 import com.richjun.liftupai.domain.user.entity.UserProfile
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
+import com.richjun.liftupai.domain.workout.entity.WorkoutType
 import com.richjun.liftupai.domain.workout.entity.WorkoutSession
 import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
+import com.richjun.liftupai.domain.workout.util.WorkoutFocus
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
+import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -21,6 +25,7 @@ import kotlin.math.roundToInt
 class ProgramProgressionService(
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val userProfileRepository: UserProfileRepository,
+    private val userSettingsRepository: UserSettingsRepository,
     private val exerciseSetRepository: ExerciseSetRepository,
     private val workoutExerciseRepository: WorkoutExerciseRepository
 ) {
@@ -28,7 +33,8 @@ class ProgramProgressionService(
     /**
      * 프로그램 진급 추천 분석
      */
-    fun analyzeProgression(user: User): ProgramProgressionAnalysis {
+    fun analyzeProgression(user: User, localeOverride: String? = null): ProgramProgressionAnalysis {
+        val locale = resolveLocale(user.id, localeOverride)
         val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
         val recentSessions = getRecentCompletedSessions(user, 20)
 
@@ -53,7 +59,8 @@ class ProgramProgressionService(
             completedCycles = completedCycles,
             performanceMetrics = performanceMetrics,
             consistencyRate = consistencyRate,
-            recoveryStatus = recoveryStatus
+            recoveryStatus = recoveryStatus,
+            locale = locale
         )
 
         return ProgramProgressionAnalysis(
@@ -72,13 +79,14 @@ class ProgramProgressionService(
     /**
      * 볼륨 최적화 추천
      */
-    fun optimizeVolume(user: User): VolumeOptimizationRecommendation {
+    fun optimizeVolume(user: User, localeOverride: String? = null): VolumeOptimizationRecommendation {
+        val locale = resolveLocale(user.id, localeOverride)
         val recentSessions = getRecentCompletedSessions(user, 10)
         if (recentSessions.isEmpty()) {
             return VolumeOptimizationRecommendation(
                 currentVolume = VolumeMetrics(),
                 recommendedVolume = VolumeMetrics(),
-                adjustmentReason = "운동 기록이 부족합니다",
+                adjustmentReason = WorkoutLocalization.message("progression.insufficient_history", locale),
                 muscleGroupVolumes = emptyMap()
             )
         }
@@ -93,12 +101,12 @@ class ProgramProgressionService(
             rpe = rpeAverage
         )
 
-        val muscleGroupVolumes = analyzeMuscleGroupVolume(recentSessions)
+        val muscleGroupVolumes = analyzeMuscleGroupVolume(recentSessions, locale)
 
         return VolumeOptimizationRecommendation(
             currentVolume = currentVolume,
             recommendedVolume = recommendedVolume,
-            adjustmentReason = generateVolumeAdjustmentReason(currentVolume, recommendedVolume, rpeAverage),
+            adjustmentReason = generateVolumeAdjustmentReason(currentVolume, recommendedVolume, rpeAverage, locale),
             muscleGroupVolumes = muscleGroupVolumes,
             mevReached = checkMEVStatus(muscleGroupVolumes),
             mavExceeded = checkMAVStatus(muscleGroupVolumes)
@@ -108,14 +116,24 @@ class ProgramProgressionService(
     /**
      * 회복 상태 분석
      */
-    fun analyzeRecovery(user: User): RecoveryAnalysis {
+    fun analyzeRecovery(user: User, localeOverride: String? = null): RecoveryAnalysis {
+        val locale = resolveLocale(user.id, localeOverride)
         val recentSessions = getRecentCompletedSessions(user, 14)
-        val muscleRecoveryMap = mutableMapOf<String, MuscleRecoveryStatusProgression>()
+        if (recentSessions.isEmpty()) {
+            return RecoveryAnalysis(
+                muscleGroups = emptyMap(),
+                overallRecoveryScore = 100,
+                needsDeloadWeek = false,
+                nextRecommendedMuscles = emptyList()
+            )
+        }
+
+        val recoveryByFocus = mutableMapOf<WorkoutFocus, MuscleRecoveryStatusProgression>()
 
         val now = LocalDateTime.now()
 
         // 근육군별 마지막 운동 시간 계산
-        val muscleLastWorkout = mutableMapOf<String, LocalDateTime>()
+        val muscleLastWorkout = mutableMapOf<WorkoutFocus, LocalDateTime>()
         recentSessions.forEach { session ->
             session.workoutType?.let { type ->
                 val muscles = getMusclesFromWorkoutType(type.toString())
@@ -129,37 +147,42 @@ class ProgramProgressionService(
         }
 
         // 각 근육군 회복 상태 계산
-        muscleLastWorkout.forEach { (muscle, lastWorkout) ->
+        muscleLastWorkout.forEach { (focus, lastWorkout) ->
             val hoursSinceWorkout = ChronoUnit.HOURS.between(lastWorkout, now)
             val recoveryPercentage = calculateRecoveryPercentage(hoursSinceWorkout)
-            val readyForNextSession = hoursSinceWorkout >= getOptimalRecoveryHours(muscle)
+            val optimalRecoveryHours = getOptimalRecoveryHours(focus)
+            val readyForNextSession = hoursSinceWorkout >= optimalRecoveryHours
 
-            muscleRecoveryMap[muscle] = MuscleRecoveryStatusProgression(
-                muscleName = muscle,
+            recoveryByFocus[focus] = MuscleRecoveryStatusProgression(
+                muscleName = WorkoutTargetResolver.displayName(focus, locale),
                 lastWorkout = lastWorkout,
                 hoursSinceWorkout = hoursSinceWorkout.toInt(),
                 recoveryPercentage = recoveryPercentage,
                 readyForNextSession = readyForNextSession,
-                recommendedRestHours = getOptimalRecoveryHours(muscle) - hoursSinceWorkout.toInt()
+                recommendedRestHours = maxOf(0, optimalRecoveryHours - hoursSinceWorkout.toInt())
             )
         }
 
         val needsDeload = checkDeloadNeed(recentSessions)
-        val overallRecovery = muscleRecoveryMap.values.map { it.recoveryPercentage }.average().roundToInt()
+        val overallRecovery = recoveryByFocus.values.map { it.recoveryPercentage }.average().roundToInt()
+        val muscleRecoveryMap = recoveryByFocus.mapKeys { (focus, _) ->
+            WorkoutTargetResolver.displayName(focus, locale)
+        }
 
         return RecoveryAnalysis(
             muscleGroups = muscleRecoveryMap,
             overallRecoveryScore = overallRecovery,
             needsDeloadWeek = needsDeload,
-            deloadReason = if (needsDeload) generateDeloadReason(recentSessions) else null,
-            nextRecommendedMuscles = recommendNextMuscles(muscleRecoveryMap)
+            deloadReason = if (needsDeload) generateDeloadReason(recentSessions, locale) else null,
+            nextRecommendedMuscles = recommendNextMuscles(recoveryByFocus, locale)
         )
     }
 
     /**
      * 프로그램 전환 타이밍 체크
      */
-    fun checkProgramTransition(user: User): ProgramTransitionRecommendation {
+    fun checkProgramTransition(user: User, localeOverride: String? = null): ProgramTransitionRecommendation {
+        val locale = resolveLocale(user.id, localeOverride)
         val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
         val recentSessions = getRecentCompletedSessions(user, 30)
 
@@ -167,7 +190,7 @@ class ProgramProgressionService(
             return ProgramTransitionRecommendation(
                 shouldTransition = false,
                 currentProgramWeeks = 0,
-                reason = "운동 기록이 부족합니다",
+                reason = WorkoutLocalization.message("progression.insufficient_history", locale),
                 suggestedPrograms = emptyList()
             )
         }
@@ -180,7 +203,7 @@ class ProgramProgressionService(
         val shouldTransition = weeksOnProgram >= 6 || plateauDetected || goalProgress >= 90
 
         val suggestedPrograms = if (shouldTransition) {
-            generateProgramSuggestions(profile, recentSessions)
+            generateProgramSuggestions(profile, locale)
         } else {
             emptyList()
         }
@@ -189,7 +212,7 @@ class ProgramProgressionService(
             shouldTransition = shouldTransition,
             currentProgramWeeks = weeksOnProgram,
             plateauDetected = plateauDetected,
-            reason = generateTransitionReason(weeksOnProgram, plateauDetected, goalProgress),
+            reason = generateTransitionReason(weeksOnProgram, plateauDetected, goalProgress, locale),
             suggestedPrograms = suggestedPrograms,
             goalCompletionRate = goalProgress
         )
@@ -287,7 +310,8 @@ class ProgramProgressionService(
         completedCycles: Int,
         performanceMetrics: PerformanceMetrics,
         consistencyRate: Double,
-        recoveryStatus: RecoveryStatus
+        recoveryStatus: RecoveryStatus,
+        locale: String
     ): ProgressionRecommendation? {
 
         // 진급 조건 체크
@@ -308,11 +332,11 @@ class ProgramProgressionService(
                 ProgressionRecommendation(
                     newProgram = "UPPER_LOWER",
                     newDaysPerWeek = 4,
-                    reason = "일관성과 볼륨 증가를 보여 4일 프로그램으로 진급 준비가 되었습니다",
+                    reason = WorkoutLocalization.message("progression.recommendation.upper_lower.reason", locale),
                     expectedBenefits = listOf(
-                        "주당 운동 빈도 증가로 더 많은 볼륨 처리 가능",
-                        "근육군별 더 집중적인 트레이닝",
-                        "회복 시간 최적화"
+                        WorkoutLocalization.message("progression.recommendation.upper_lower.benefit.1", locale),
+                        WorkoutLocalization.message("progression.recommendation.upper_lower.benefit.2", locale),
+                        WorkoutLocalization.message("progression.recommendation.upper_lower.benefit.3", locale)
                     )
                 )
             }
@@ -320,11 +344,11 @@ class ProgramProgressionService(
                 ProgressionRecommendation(
                     newProgram = "BRO_SPLIT",
                     newDaysPerWeek = 5,
-                    reason = "충분한 운동 역량을 보여 5일 분할 프로그램 진급 가능",
+                    reason = WorkoutLocalization.message("progression.recommendation.bro_split.reason", locale),
                     expectedBenefits = listOf(
-                        "각 근육군별 전문화된 트레이닝",
-                        "최대 볼륨 처리 가능",
-                        "세부 근육 발달 극대화"
+                        WorkoutLocalization.message("progression.recommendation.bro_split.benefit.1", locale),
+                        WorkoutLocalization.message("progression.recommendation.bro_split.benefit.2", locale),
+                        WorkoutLocalization.message("progression.recommendation.bro_split.benefit.3", locale)
                     )
                 )
             }
@@ -414,20 +438,21 @@ class ProgramProgressionService(
     private fun generateVolumeAdjustmentReason(
         current: VolumeMetrics,
         recommended: VolumeMetrics,
-        rpe: Double
+        rpe: Double,
+        locale: String
     ): String {
         return when {
             recommended.weeklyVolume > current.weeklyVolume -> {
-                "RPE가 낮고 회복이 양호하여 볼륨 증가 권장"
+                WorkoutLocalization.message("progression.volume.adjust.increase", locale)
             }
             recommended.weeklyVolume < current.weeklyVolume -> {
-                "피로도가 높아 일시적 볼륨 감소 권장"
+                WorkoutLocalization.message("progression.volume.adjust.decrease", locale)
             }
-            else -> "현재 볼륨이 적절합니다"
+            else -> WorkoutLocalization.message("progression.volume.adjust.maintain", locale)
         }
     }
 
-    private fun analyzeMuscleGroupVolume(sessions: List<WorkoutSession>): Map<String, Int> {
+    private fun analyzeMuscleGroupVolume(sessions: List<WorkoutSession>, locale: String): Map<String, Int> {
         val volumeMap = mutableMapOf<String, Int>()
 
         sessions.forEach { session ->
@@ -438,7 +463,7 @@ class ProgramProgressionService(
 
                 // 운동별 타겟 근육군 가져오기
                 exercise.exercise.muscleGroups.forEach { muscleGroup ->
-                    val muscleName = muscleGroup.name
+                    val muscleName = WorkoutLocalization.muscleGroupName(muscleGroup, locale)
                     volumeMap[muscleName] = volumeMap.getOrDefault(muscleName, 0) + setCount
                 }
             }
@@ -447,15 +472,10 @@ class ProgramProgressionService(
         return volumeMap
     }
 
-    private fun getMusclesFromWorkoutType(type: String): List<String> {
-        return when (type) {
-            "PUSH" -> listOf("가슴", "삼두", "어깨")
-            "PULL" -> listOf("등", "이두")
-            "LEGS" -> listOf("대퇴", "햄스트링", "종아리")
-            "UPPER" -> listOf("가슴", "등", "어깨", "팔")
-            "LOWER" -> listOf("대퇴", "햄스트링", "둔근", "종아리")
-            else -> listOf("전신")
-        }
+    private fun getMusclesFromWorkoutType(type: String): List<WorkoutFocus> {
+        val workoutType = runCatching { WorkoutType.valueOf(type) }.getOrNull()
+            ?: return listOf(WorkoutFocus.FULL_BODY)
+        return WorkoutTargetResolver.targetsForWorkoutType(workoutType)
     }
 
     private fun checkMEVStatus(volumes: Map<String, Int>): Boolean {
@@ -477,13 +497,8 @@ class ProgramProgressionService(
         }
     }
 
-    private fun getOptimalRecoveryHours(muscle: String): Int {
-        return when (muscle) {
-            "대퇴", "햄스트링", "등" -> 72
-            "가슴", "어깨" -> 48
-            "팔", "종아리" -> 24
-            else -> 48
-        }
+    private fun getOptimalRecoveryHours(focus: WorkoutFocus): Int {
+        return WorkoutTargetResolver.recoveryHours(focus)
     }
 
     private fun checkDeloadNeed(sessions: List<WorkoutSession>): Boolean {
@@ -495,19 +510,20 @@ class ProgramProgressionService(
         return twoWeeksSessions.size >= 8
     }
 
-    private fun generateDeloadReason(sessions: List<WorkoutSession>): String {
+    private fun generateDeloadReason(sessions: List<WorkoutSession>, locale: String): String {
         val recentCount = sessions.filter {
             it.startTime.isAfter(LocalDateTime.now().minusWeeks(2))
         }.size
 
-        return "최근 2주간 $recentCount 회 운동으로 누적 피로도가 높습니다. 강도를 50% 줄인 회복 주를 권장합니다."
+        return WorkoutLocalization.message("progression.deload.reason", locale, recentCount)
     }
 
-    private fun recommendNextMuscles(recoveryMap: Map<String, MuscleRecoveryStatusProgression>): List<String> {
+    private fun recommendNextMuscles(recoveryMap: Map<WorkoutFocus, MuscleRecoveryStatusProgression>, locale: String): List<String> {
         return recoveryMap
             .filter { it.value.readyForNextSession }
-            .map { it.key }
-            .sortedByDescending { recoveryMap[it]?.recoveryPercentage ?: 0 }
+            .entries
+            .sortedByDescending { it.value.recoveryPercentage }
+            .map { (focus, _) -> WorkoutTargetResolver.displayName(focus, locale) }
             .take(3)
     }
 
@@ -555,65 +571,80 @@ class ProgramProgressionService(
         return ((consistencyProgress + volumeProgress) / 2).roundToInt()
     }
 
-    private fun generateTransitionReason(weeks: Int, plateau: Boolean, goalProgress: Int): String {
+    private fun generateTransitionReason(weeks: Int, plateau: Boolean, goalProgress: Int, locale: String): String {
         return when {
-            plateau -> "3주 이상 진전이 없어 새로운 자극이 필요합니다"
-            weeks >= 6 -> "$weeks 주간 같은 프로그램을 수행하여 변화가 필요합니다"
-            goalProgress >= 90 -> "목표 달성에 근접하여 새로운 목표 설정이 필요합니다"
-            else -> "현재 프로그램을 유지하세요"
+            plateau -> WorkoutLocalization.message("progression.transition.reason.plateau", locale)
+            weeks >= 6 -> WorkoutLocalization.message("progression.transition.reason.weeks", locale, weeks)
+            goalProgress >= 90 -> WorkoutLocalization.message("progression.transition.reason.goal", locale)
+            else -> WorkoutLocalization.message("progression.transition.reason.maintain", locale)
         }
     }
 
-    private fun generateProgramSuggestions(
-        profile: UserProfile?,
-        sessions: List<WorkoutSession>
-    ): List<ProgramSuggestion> {
+    private fun generateProgramSuggestions(profile: UserProfile?, locale: String): List<ProgramSuggestion> {
         val currentProgram = profile?.workoutSplit ?: "PPL"
-        val experienceLevel = profile?.experienceLevel ?: ExperienceLevel.BEGINNER
 
         val suggestions = mutableListOf<ProgramSuggestion>()
 
-        // 현재 프로그램과 경험에 따른 추천
         when (currentProgram) {
             "PPL" -> {
                 suggestions.add(ProgramSuggestion(
-                    programName = "Upper/Lower Split",
+                    programCode = "UPPER_LOWER",
+                    programName = WorkoutLocalization.splitName("upper_lower", locale),
                     daysPerWeek = 4,
-                    description = "상체/하체 분할로 근육 회복 최적화",
-                    benefits = listOf("균형잡힌 발달", "충분한 회복 시간"),
-                    difficulty = "중급"
+                    description = WorkoutLocalization.message("progression.suggestion.upper_lower.description", locale),
+                    benefits = listOf(
+                        WorkoutLocalization.message("progression.suggestion.upper_lower.benefit.1", locale),
+                        WorkoutLocalization.message("progression.suggestion.upper_lower.benefit.2", locale)
+                    ),
+                    difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale)
                 ))
                 suggestions.add(ProgramSuggestion(
-                    programName = "PPLUL",
+                    programCode = "PPLUL",
+                    programName = WorkoutLocalization.splitName("pplul", locale),
                     daysPerWeek = 5,
-                    description = "PPL + 상체/하체 혼합 프로그램",
-                    benefits = listOf("높은 빈도", "다양한 자극"),
-                    difficulty = "중상급"
+                    description = WorkoutLocalization.message("progression.suggestion.pplul.description", locale),
+                    benefits = listOf(
+                        WorkoutLocalization.message("progression.suggestion.pplul.benefit.1", locale),
+                        WorkoutLocalization.message("progression.suggestion.pplul.benefit.2", locale)
+                    ),
+                    difficulty = WorkoutLocalization.difficultyDisplayName("advanced", locale)
                 ))
             }
             "UPPER_LOWER" -> {
                 suggestions.add(ProgramSuggestion(
-                    programName = "5-Day Bro Split",
+                    programCode = "BRO_SPLIT",
+                    programName = WorkoutLocalization.splitName("bro_split", locale),
                     daysPerWeek = 5,
-                    description = "근육군별 집중 트레이닝",
-                    benefits = listOf("최대 볼륨", "세밀한 발달"),
-                    difficulty = "상급"
+                    description = WorkoutLocalization.message("progression.suggestion.bro_split.description", locale),
+                    benefits = listOf(
+                        WorkoutLocalization.message("progression.suggestion.bro_split.benefit.1", locale),
+                        WorkoutLocalization.message("progression.suggestion.bro_split.benefit.2", locale)
+                    ),
+                    difficulty = WorkoutLocalization.difficultyDisplayName("advanced", locale)
                 ))
                 suggestions.add(ProgramSuggestion(
-                    programName = "PPL x2",
+                    programCode = "PPL_X2",
+                    programName = WorkoutLocalization.splitName("ppl_x2", locale),
                     daysPerWeek = 6,
-                    description = "주 2회 PPL 반복",
-                    benefits = listOf("높은 빈도", "빠른 성장"),
-                    difficulty = "상급"
+                    description = WorkoutLocalization.message("progression.suggestion.ppl_x2.description", locale),
+                    benefits = listOf(
+                        WorkoutLocalization.message("progression.suggestion.ppl_x2.benefit.1", locale),
+                        WorkoutLocalization.message("progression.suggestion.ppl_x2.benefit.2", locale)
+                    ),
+                    difficulty = WorkoutLocalization.difficultyDisplayName("advanced", locale)
                 ))
             }
             else -> {
                 suggestions.add(ProgramSuggestion(
-                    programName = "PPL",
+                    programCode = "PPL",
+                    programName = WorkoutLocalization.splitName("ppl", locale),
                     daysPerWeek = 3,
-                    description = "밀기/당기기/하체 기본 분할",
-                    benefits = listOf("균형잡힌 프로그램", "충분한 회복"),
-                    difficulty = "초중급"
+                    description = WorkoutLocalization.message("progression.suggestion.ppl.description", locale),
+                    benefits = listOf(
+                        WorkoutLocalization.message("progression.suggestion.ppl.benefit.1", locale),
+                        WorkoutLocalization.message("progression.suggestion.ppl.benefit.2", locale)
+                    ),
+                    difficulty = WorkoutLocalization.difficultyDisplayName("beginner", locale)
                 ))
             }
         }
@@ -662,6 +693,15 @@ class ProgramProgressionService(
         return if (olderAvg > 0) {
             ((recentAvg - olderAvg) / olderAvg * 100).roundToInt().coerceIn(0, 50)
         } else 0
+    }
+
+    private fun resolveLocale(userId: Long, localeOverride: String?): String {
+        if (!localeOverride.isNullOrBlank()) {
+            return WorkoutLocalization.normalizeLocale(localeOverride)
+        }
+
+        val userLocale = userSettingsRepository.findByUser_Id(userId).orElse(null)?.language
+        return WorkoutLocalization.normalizeLocale(userLocale)
     }
 }
 

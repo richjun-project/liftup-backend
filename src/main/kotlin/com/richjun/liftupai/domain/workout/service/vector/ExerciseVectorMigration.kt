@@ -16,16 +16,13 @@ class ExerciseVectorMigration(
     private var migrationEnabled: Boolean = true
 
     /**
-     * 애플리케이션 시작 시 자동으로 모든 운동을 Qdrant에 인덱싱
-     * - 이미 인덱싱된 운동은 스킵 (vectorId != null)
-     * - 새로운 운동만 추가
-     * - application.yml에서 vector.migration.enabled=false로 비활성화 가능
+     * Indexes exercises into Qdrant on startup.
      */
     @PostConstruct
     @Transactional
     fun initializeExerciseVectors() {
         if (!migrationEnabled) {
-            println("⏭️  벡터 마이그레이션이 비활성화되어 있습니다 (vector.migration.enabled=false)")
+            println("Vector migration is disabled (vector.migration.enabled=false)")
             return
         }
 
@@ -35,30 +32,29 @@ class ExerciseVectorMigration(
             val unindexedCount = exerciseRepository.findAll().count { it.vectorId == null }
 
             if (unindexedCount == 0) {
-                println("✅ 모든 운동이 이미 인덱싱되어 있습니다 (${totalExercises}개)")
+                println("All exercises are already indexed ($totalExercises)")
                 return
             }
 
             println("=" * 60)
-            println("🚀 운동 벡터 인덱싱 시작...")
-            println("   전체: ${totalExercises}개, 인덱싱 필요: ${unindexedCount}개")
+            println("Starting exercise vector indexing...")
+            println("   Total: $totalExercises, pending: $unindexedCount")
             println("=" * 60)
 
             vectorWorkoutRecommendationService.indexAllExercises()
 
             println("=" * 60)
-            println("✅ 운동 벡터 인덱싱 완료!")
+            println("Exercise vector indexing completed")
             println("=" * 60)
         } catch (e: Exception) {
-            println("⚠️ 운동 벡터 인덱싱 실패: ${e.message}")
-            println("   Qdrant 서버가 실행 중인지 확인하세요.")
+            println("Exercise vector indexing failed: ${e.message}")
+            println("   Verify that the Qdrant server is running.")
             println("   docker-compose up -d qdrant")
             println("   ")
-            println("   마이그레이션을 비활성화하려면 application.yml에 다음을 추가:")
+            println("   To disable migration, add the following to application.yml:")
             println("   vector:")
             println("     migration:")
             println("       enabled: false")
-            // 실패해도 애플리케이션은 계속 실행
         }
     }
 

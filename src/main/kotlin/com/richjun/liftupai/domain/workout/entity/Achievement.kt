@@ -15,6 +15,9 @@ data class Achievement(
     @JoinColumn(name = "user_id", nullable = false)
     val user: User,
 
+    @Column(length = 100)
+    val code: String? = null,
+
     @Column(nullable = false)
     val name: String,
 

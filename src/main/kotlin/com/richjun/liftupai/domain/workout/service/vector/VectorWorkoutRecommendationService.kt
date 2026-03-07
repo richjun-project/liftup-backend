@@ -11,6 +11,8 @@ import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.domain.workout.service.ExercisePatternClassifier
 import com.richjun.liftupai.domain.workout.service.ExerciseRecommendationService
+import com.richjun.liftupai.domain.workout.service.RecommendationExerciseRanking
+import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -177,7 +179,7 @@ class VectorWorkoutRecommendationService(
     )
 
     private fun buildUserContext(user: User, profile: UserProfile?, targetMuscle: String?, workoutType: WorkoutType?): UserContext {
-        val goals = profile?.goals?.joinToString(", ") { it.name } ?: "전반적인 체력 향상"
+        val goals = profile?.goals?.joinToString(", ") { it.name } ?: "general fitness"
         val level = profile?.experienceLevel?.name ?: "BEGINNER"
 
         val targetMuscles = when {
@@ -196,8 +198,7 @@ class VectorWorkoutRecommendationService(
     // === 필터링 메서드 ===
 
     private fun filterByTier(exercises: List<Exercise>): List<Exercise> {
-        val allowedTiers = setOf(RecommendationTier.ESSENTIAL, RecommendationTier.STANDARD)
-        return exercises.filter { it.recommendationTier in allowedTiers }
+        return exercises.filter { RecommendationExerciseRanking.isGeneralCandidate(it) }
     }
 
     private fun filterByDifficulty(exercises: List<Exercise>, level: ExperienceLevel?): List<Exercise> {
@@ -211,11 +212,7 @@ class VectorWorkoutRecommendationService(
     }
 
     private fun sortByRelevance(exercises: List<Exercise>): List<Exercise> {
-        return exercises.sortedWith(
-            compareByDescending<Exercise> { it.isBasicExercise }
-                .thenByDescending { it.popularity }
-                .thenBy { it.difficulty }
-        )
+        return exercises.sortedWith(RecommendationExerciseRanking.patternSelectionComparator())
     }
 
     private fun filterByRecovery(exercises: List<Exercise>, recoveringMuscles: Set<MuscleGroup>): List<Exercise> {
@@ -230,19 +227,12 @@ class VectorWorkoutRecommendationService(
         return exercises
             .groupBy { exercisePatternClassifier.classifyExercise(it) }
             .mapNotNull { (_, group) ->
-                group.minWithOrNull(
-                    compareBy<Exercise> { it.difficulty }
-                        .thenByDescending { it.popularity }
-                        .thenByDescending { it.isBasicExercise }
-                )
+                group.minWithOrNull(RecommendationExerciseRanking.patternSelectionComparator())
             }
     }
 
     private fun orderByPriority(exercises: List<Exercise>): List<Exercise> {
-        return exercises.sortedWith(
-            compareBy<Exercise> { getCategoryPriority(it.category) }
-                .thenBy { if (isCompound(it)) 0 else 1 }
-        )
+        return exercises.sortedWith(RecommendationExerciseRanking.displayOrderComparator())
     }
 
     // === 헬퍼 메서드 ===
@@ -251,9 +241,7 @@ class VectorWorkoutRecommendationService(
         return try {
             muscleRecoveryRepository.findByUser(user)
                 .filter { it.recoveryPercentage < RECOVERY_THRESHOLD }
-                .mapNotNull { r ->
-                    try { MuscleGroup.valueOf(r.muscleGroup.uppercase()) } catch (e: Exception) { null }
-                }
+                .flatMap { recovery -> WorkoutTargetResolver.muscleGroupsFor(recovery.muscleGroup) }
                 .toSet()
         } catch (e: Exception) {
             logger.warn("Failed to get recovering muscles: ${e.message}")
@@ -284,55 +272,10 @@ class VectorWorkoutRecommendationService(
     }
 
     private fun getTargetMusclesForWorkoutType(type: WorkoutType): List<String> {
-        return when (type) {
-            WorkoutType.PUSH -> listOf("가슴", "어깨", "삼두")
-            WorkoutType.PULL -> listOf("등", "이두")
-            WorkoutType.LEGS -> listOf("하체", "대퇴사두", "햄스트링", "둔근")
-            WorkoutType.UPPER -> listOf("가슴", "등", "어깨", "팔")
-            WorkoutType.LOWER -> listOf("하체", "대퇴사두", "햄스트링", "둔근", "종아리")
-            WorkoutType.CHEST -> listOf("가슴")
-            WorkoutType.BACK -> listOf("등")
-            WorkoutType.SHOULDERS -> listOf("어깨")
-            WorkoutType.ARMS -> listOf("이두", "삼두")
-            else -> emptyList()
-        }
+        return WorkoutTargetResolver.displayNamesForWorkoutType(type, locale = "ko")
     }
 
     private fun translateMuscleGroup(muscle: MuscleGroup): String {
-        return when (muscle) {
-            MuscleGroup.CHEST -> "가슴"
-            MuscleGroup.BACK -> "등"
-            MuscleGroup.SHOULDERS -> "어깨"
-            MuscleGroup.BICEPS -> "이두"
-            MuscleGroup.TRICEPS -> "삼두"
-            MuscleGroup.LEGS -> "다리"
-            MuscleGroup.CORE, MuscleGroup.ABS -> "코어"
-            MuscleGroup.GLUTES -> "둔근"
-            MuscleGroup.CALVES -> "종아리"
-            MuscleGroup.FOREARMS -> "전완"
-            MuscleGroup.QUADRICEPS -> "대퇴사두"
-            MuscleGroup.HAMSTRINGS -> "햄스트링"
-            MuscleGroup.LATS -> "광배근"
-            MuscleGroup.TRAPS -> "승모근"
-            else -> muscle.name
-        }
-    }
-
-    private fun getCategoryPriority(category: ExerciseCategory): Int {
-        return when (category) {
-            ExerciseCategory.LEGS -> 1
-            ExerciseCategory.BACK -> 2
-            ExerciseCategory.CHEST -> 3
-            ExerciseCategory.SHOULDERS -> 4
-            ExerciseCategory.ARMS -> 5
-            ExerciseCategory.CORE -> 6
-            else -> 7
-        }
-    }
-
-    private fun isCompound(exercise: Exercise): Boolean {
-        if (exercise.muscleGroups.size >= 2) return true
-        val keywords = listOf("프레스", "스쿼트", "데드리프트", "로우", "풀업", "친업", "딥스", "런지")
-        return keywords.any { exercise.name.lowercase().contains(it) }
+        return WorkoutTargetResolver.displayName(muscle, locale = "ko")
     }
 }

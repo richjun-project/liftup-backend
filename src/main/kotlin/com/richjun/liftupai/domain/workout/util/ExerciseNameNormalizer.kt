@@ -1,53 +1,21 @@
 package com.richjun.liftupai.domain.workout.util
 
+import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
+import com.richjun.liftupai.domain.workout.entity.MuscleGroup
 import org.springframework.stereotype.Component
 
 @Component
 class ExerciseNameNormalizer {
-
-    // 철자 변형 매핑
-    private val spellingVariations = mapOf(
-        "푸쉬" to "푸시",
-        "푸쉬업" to "푸시업",  // 푸쉬업 -> 푸시업 변환 추가
-        "푸시" to "푸시",  // 정규화된 형태
-        "래터럴" to "레터럴",
-        "레터럴" to "레터럴",  // 정규화된 형태
-        "프래스" to "프레스",
-        "프레스" to "프레스",  // 정규화된 형태
-        "플레이" to "플라이",
-        "플라이" to "플라이",  // 정규화된 형태
-        "덤밸" to "덤벨",
-        "덤벨" to "덤벨",  // 정규화된 형태
-        "로오" to "로우",
-        "로우" to "로우",  // 정규화된 형태
-        "데드리프" to "데드리프트",
-        "데드리프트" to "데드리프트",  // 정규화된 형태
-        "풀다운" to "풀다운",
-        "풀 다운" to "풀다운",
-        "푸시다운" to "푸시다운",
-        "푸쉬다운" to "푸시다운",
-        "푸시 다운" to "푸시다운",
-        "푸쉬 업" to "푸시업",  // 띄어쓰기 있는 버전도 추가
-        "푸시 업" to "푸시업",
-        "벤치프레스" to "벤치프레스",
-        "벤치 프레스" to "벤치프레스",
-        "레그프레스" to "레그프레스",
-        "레그 프레스" to "레그프레스",
-        "숄더프레스" to "숄더프레스",
-        "숄더 프레스" to "숄더프레스",
-        "체스트프레스" to "체스트프레스",
-        "체스트 프레스" to "체스트프레스"
-    )
-
-    // 일반적인 운동명 약어/변형
-    private val commonAbbreviations = mapOf(
-        "db" to "덤벨",
-        "bb" to "바벨",
-        "ez" to "이지바",
-        "ohp" to "오버헤드프레스",
-        "rdl" to "루마니안데드리프트",
-        "sldl" to "스티프레그데드리프트"
-    )
+    private val spellingVariations = WorkoutAliasCatalog.mapping("normalizer.spelling")
+    private val commonAbbreviations = WorkoutAliasCatalog.mapping("normalizer.abbreviation")
+    private val chestKeywords = WorkoutAliasCatalog.list("normalizer.keyword.chest")
+    private val backKeywords = WorkoutAliasCatalog.list("normalizer.keyword.back")
+    private val legKeywords = WorkoutAliasCatalog.list("normalizer.keyword.legs")
+    private val shoulderKeywords = WorkoutAliasCatalog.list("normalizer.keyword.shoulders")
+    private val armKeywords = WorkoutAliasCatalog.list("normalizer.keyword.arms")
+    private val coreKeywords = WorkoutAliasCatalog.list("normalizer.keyword.core")
+    private val compoundKeywords = WorkoutAliasCatalog.list("normalizer.keyword.compound")
+    private val coreExerciseKeywords = WorkoutAliasCatalog.list("normalizer.keyword.core_exercise")
 
     /**
      * 운동명을 정규화합니다.
@@ -121,6 +89,79 @@ class ExerciseNameNormalizer {
         return variations.toList()
     }
 
+    fun extractCoreKeywords(name: String): List<String> {
+        val normalized = name.lowercase()
+        return coreExerciseKeywords.filter { keyword -> normalized.contains(keyword.lowercase()) }
+    }
+
+    fun inferMuscleGroups(exerciseName: String, targetMuscle: String?): List<MuscleGroup> {
+        val lowerName = exerciseName.lowercase()
+        val groups = mutableListOf<MuscleGroup>()
+
+        when {
+            containsAnyKeyword(lowerName, chestKeywords) -> {
+                groups.add(MuscleGroup.CHEST)
+                groups.add(MuscleGroup.TRICEPS)
+            }
+            containsAnyKeyword(lowerName, backKeywords) -> {
+                groups.add(MuscleGroup.BACK)
+                groups.add(MuscleGroup.BICEPS)
+            }
+            containsAnyKeyword(lowerName, legKeywords) -> {
+                groups.add(MuscleGroup.LEGS)
+                groups.add(MuscleGroup.GLUTES)
+            }
+            containsAnyKeyword(lowerName, shoulderKeywords) && WorkoutTargetResolver.recommendationKey(targetMuscle) == "shoulders" -> {
+                groups.add(MuscleGroup.SHOULDERS)
+            }
+            containsAnyKeyword(lowerName, shoulderKeywords) -> {
+                groups.add(MuscleGroup.SHOULDERS)
+            }
+            containsAnyKeyword(lowerName, armKeywords) -> {
+                groups.add(MuscleGroup.BICEPS)
+                groups.add(MuscleGroup.TRICEPS)
+            }
+            containsAnyKeyword(lowerName, coreKeywords) -> {
+                groups.add(MuscleGroup.CORE)
+                groups.add(MuscleGroup.ABS)
+            }
+        }
+
+        if (groups.isEmpty() && !targetMuscle.isNullOrBlank()) {
+            groups.addAll(WorkoutTargetResolver.muscleGroupsFor(targetMuscle))
+        }
+
+        return groups.distinct()
+    }
+
+    fun inferCategory(exerciseName: String, targetMuscle: String?): ExerciseCategory? {
+        val lowerName = exerciseName.lowercase()
+
+        return when {
+            containsAnyKeyword(lowerName, chestKeywords) -> ExerciseCategory.CHEST
+            containsAnyKeyword(lowerName, backKeywords) && !containsAnyKeyword(lowerName, legKeywords) -> ExerciseCategory.BACK
+            containsAnyKeyword(lowerName, legKeywords) -> ExerciseCategory.LEGS
+            containsAnyKeyword(lowerName, shoulderKeywords) -> ExerciseCategory.SHOULDERS
+            containsAnyKeyword(lowerName, armKeywords) -> ExerciseCategory.ARMS
+            containsAnyKeyword(lowerName, coreKeywords) -> ExerciseCategory.CORE
+            else -> when (WorkoutTargetResolver.recommendationKey(targetMuscle)) {
+                "chest" -> ExerciseCategory.CHEST
+                "back" -> ExerciseCategory.BACK
+                "legs" -> ExerciseCategory.LEGS
+                "shoulders" -> ExerciseCategory.SHOULDERS
+                "arms" -> ExerciseCategory.ARMS
+                "core" -> ExerciseCategory.CORE
+                "full_body" -> ExerciseCategory.FULL_BODY
+                else -> null
+            }
+        }
+    }
+
+    fun isCompoundHint(exerciseName: String): Boolean {
+        val lowerName = exerciseName.lowercase()
+        return containsAnyKeyword(lowerName, compoundKeywords)
+    }
+
     /**
      * Levenshtein 편집 거리를 계산합니다.
      */
@@ -170,5 +211,9 @@ class ExerciseNameNormalizer {
         }
 
         return bestMatch?.let { Pair(it, bestDistance) }
+    }
+
+    private fun containsAnyKeyword(value: String, keywords: List<String>): Boolean {
+        return keywords.any { keyword -> value.contains(keyword.lowercase()) }
     }
 }

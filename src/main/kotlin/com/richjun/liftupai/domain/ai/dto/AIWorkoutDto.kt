@@ -11,7 +11,10 @@ data class AIWorkoutRecommendationResponse(
     val alternatives: List<AIAlternativeWorkout> = emptyList(),
 
     @JsonProperty("ai_insights")
-    val aiInsights: AIWorkoutInsights? = null
+    val aiInsights: AIWorkoutInsights? = null,
+
+    @JsonProperty("recommendation_type")
+    val recommendationType: String = "AI"
 )
 
 data class AIWorkoutDetail(

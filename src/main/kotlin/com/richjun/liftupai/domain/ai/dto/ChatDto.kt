@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank
 
 // AI 채팅용 DTOs - domain/chat/dto/ChatDto.kt와는 별개
 data class ChatRequest(
-    @field:NotBlank(message = "메시지는 필수입니다")
+    @field:NotBlank(message = "Message is required")
     val message: String,
 
     val context: ChatContext? = null

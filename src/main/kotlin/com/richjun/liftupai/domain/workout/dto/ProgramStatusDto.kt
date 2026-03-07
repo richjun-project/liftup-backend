@@ -17,7 +17,7 @@ data class ProgramStatusResponse(
     val nextWorkoutType: String,  // 다음 운동 유형 (PUSH, PULL, LEGS 등)
 
     @JsonProperty("next_workout_description")
-    val nextWorkoutDescription: String,  // "주 3회 프로그램 중 2회차: 당기기 운동 (등/이두)"
+    val nextWorkoutDescription: String,  // Example: "Day 2 of a 3-day program: pull workout (back/biceps)"
 
     @JsonProperty("program_type")
     val programType: String,  // PPL, UPPER_LOWER, BRO_SPLIT 등

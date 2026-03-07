@@ -7,6 +7,7 @@ import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.workout.entity.WorkoutType
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -26,6 +27,8 @@ class AutoProgramSelector(
     )
 
     fun selectProgram(user: User): ProgramRecommendation {
+        val locale = resolveLocale(user.id)
+
         // 사용자 프로필 및 설정 조회
         val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
         val settings = userSettingsRepository.findByUser_Id(user.id).orElse(null)
@@ -52,7 +55,7 @@ class AutoProgramSelector(
                         WorkoutType.FULL_BODY,
                         WorkoutType.FULL_BODY
                     ),
-                    reason = "초보자에게는 전신 운동이 기초 체력과 폼을 익히는데 최적입니다",
+                    reason = WorkoutLocalization.message("auto_program.reason.beginner_full_body", locale),
                     confidence = 0.9
                 )
             }
@@ -69,7 +72,7 @@ class AutoProgramSelector(
                                 WorkoutType.PULL,
                                 WorkoutType.LEGS
                             ),
-                            reason = "주 ${weeklyDays}회 운동에는 밀기/당기기/하체 분할이 효율적입니다",
+                            reason = WorkoutLocalization.message("auto_program.reason.intermediate_ppl", locale, weeklyDays),
                             confidence = 0.85
                         )
                     }
@@ -82,7 +85,7 @@ class AutoProgramSelector(
                                 WorkoutType.FULL_BODY,
                                 WorkoutType.FULL_BODY
                             ),
-                            reason = "주 ${weeklyDays}회 운동으로 전신을 균형있게 발달시킬 수 있습니다",
+                            reason = WorkoutLocalization.message("auto_program.reason.low_frequency_full_body", locale, weeklyDays),
                             confidence = 0.8
                         )
                     }
@@ -99,7 +102,7 @@ class AutoProgramSelector(
                         WorkoutType.UPPER,
                         WorkoutType.LOWER
                     ),
-                    reason = "주 4회 운동에는 상하체 분할이 회복과 볼륨 관리에 이상적입니다",
+                    reason = WorkoutLocalization.message("auto_program.reason.upper_lower", locale),
                     confidence = 0.9
                 )
             }
@@ -115,7 +118,7 @@ class AutoProgramSelector(
                         WorkoutType.ARMS,
                         WorkoutType.LEGS
                     ),
-                    reason = "고급자의 주 ${weeklyDays}회 운동에는 5분할이 각 부위 집중에 효과적입니다",
+                    reason = WorkoutLocalization.message("auto_program.reason.advanced_bro_split", locale, weeklyDays),
                     confidence = 0.85
                 )
             }
@@ -130,7 +133,7 @@ class AutoProgramSelector(
                         WorkoutType.PULL,
                         WorkoutType.LEGS
                     ),
-                    reason = "주 ${weeklyDays}회 운동은 밀기/당기기/하체를 반복하며 충분한 볼륨을 확보할 수 있습니다",
+                    reason = WorkoutLocalization.message("auto_program.reason.high_frequency_ppl", locale, weeklyDays),
                     confidence = 0.8
                 )
             }
@@ -144,7 +147,7 @@ class AutoProgramSelector(
                         WorkoutType.FULL_BODY,
                         WorkoutType.FULL_BODY
                     ),
-                    reason = "불규칙한 운동 패턴에는 전신 운동이 유연하게 대응할 수 있습니다",
+                    reason = WorkoutLocalization.message("auto_program.reason.irregular_full_body", locale),
                     confidence = 0.7
                 )
             }
@@ -158,11 +161,19 @@ class AutoProgramSelector(
                         WorkoutType.PULL,
                         WorkoutType.LEGS
                     ),
-                    reason = "균형잡힌 근육 발달을 위한 표준 밀기/당기기/하체 프로그램입니다",
+                    reason = WorkoutLocalization.message("auto_program.reason.default_ppl", locale),
                     confidence = 0.75
                 )
             }
         }
+    }
+
+    private fun resolveLocale(userId: Long): String {
+        val language = userSettingsRepository.findByUser_Id(userId)
+            .orElse(null)
+            ?.language
+
+        return WorkoutLocalization.normalizeLocale(language)
     }
 
     private fun estimateWeeklyDaysFromHistory(user: User): Int {

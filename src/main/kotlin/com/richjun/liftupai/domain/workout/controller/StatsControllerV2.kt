@@ -22,9 +22,10 @@ class StatsControllerV2(
     @GetMapping("/workout-completion")
     fun getWorkoutCompletionStats(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @RequestParam(required = false) sessionId: Long?
+        @RequestParam(required = false) sessionId: Long?,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<WorkoutCompletionStats>> {
-        val response = workoutServiceV2.getWorkoutCompletionStats(userDetails.getId(), sessionId)
+        val response = workoutServiceV2.getWorkoutCompletionStats(userDetails.getId(), sessionId, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -32,9 +33,10 @@ class StatsControllerV2(
     fun getWorkoutCalendar(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @RequestParam year: Int,
-        @RequestParam month: Int
+        @RequestParam month: Int,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<WorkoutCalendarResponse>> {
-        val response = workoutServiceV2.getWorkoutCalendar(userDetails.getId(), year, month)
+        val response = workoutServiceV2.getWorkoutCalendar(userDetails.getId(), year, month, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -100,9 +102,10 @@ class StatsControllerV2(
     // 근육 회복도 조회
     @GetMapping("/muscle-recovery")
     fun getMuscleRecovery(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<com.richjun.liftupai.domain.recovery.dto.RecoveryStatusResponse>> {
-        val response = recoveryService.getRecoveryStatus(userDetails.getId())
+        val response = recoveryService.getRecoveryStatus(userDetails.getId(), locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -110,12 +113,13 @@ class StatsControllerV2(
     @GetMapping("/dashboard")
     fun getStatsDashboard(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @RequestParam(defaultValue = "week") period: String
+        @RequestParam(defaultValue = "week") period: String,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<StatsDashboardResponse>> {
         val overview = statsService.getOverview(userDetails.getId(), period)
         val volumeStats = statsService.getVolumeStats(userDetails.getId(), period, null)
         val muscleDistribution = statsService.getMuscleDistribution(userDetails.getId(), period)
-        val recovery = recoveryService.getRecoveryStatus(userDetails.getId())
+        val recovery = recoveryService.getRecoveryStatus(userDetails.getId(), locale)
 
         val dashboard = StatsDashboardResponse(
             overview = overview,

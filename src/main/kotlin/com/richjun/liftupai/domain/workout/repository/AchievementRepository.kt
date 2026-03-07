@@ -16,5 +16,7 @@ interface AchievementRepository : JpaRepository<Achievement, Long> {
 
     fun findByUserAndType(user: User, type: AchievementType): List<Achievement>
 
+    fun existsByUserAndCode(user: User, code: String): Boolean
+
     fun existsByUserAndName(user: User, name: String): Boolean
 }

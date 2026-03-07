@@ -4,18 +4,25 @@ import io.qdrant.client.QdrantClient
 import io.qdrant.client.grpc.Collections.*
 import io.qdrant.client.grpc.Points.*
 import jakarta.annotation.PostConstruct
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
 class ExerciseQdrantService(
-    private val qdrantClient: QdrantClient
+    private val qdrantClient: QdrantClient,
+    @Value("\${qdrant.enabled:true}") private val qdrantEnabled: Boolean = true
 ) {
     private val collectionName = "exercises"
     private val vectorSize = 768 // Gemini text-embedding-004 dimension
 
     @PostConstruct
     fun initialize() {
+        if (!qdrantEnabled) {
+            println("Qdrant initialization is disabled (qdrant.enabled=false)")
+            return
+        }
+
         try {
             createCollectionIfNotExists()
         } catch (e: Exception) {

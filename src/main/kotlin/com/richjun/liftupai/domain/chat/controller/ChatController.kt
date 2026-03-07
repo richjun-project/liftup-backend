@@ -51,14 +51,16 @@ class ChatController(
         @RequestParam(required = false) duration: Int?,
         @RequestParam(required = false) equipment: String?,
         @RequestParam(required = false, name = "target_muscle") targetMuscle: String?,
-        @RequestParam(required = false) difficulty: String?
+        @RequestParam(required = false) difficulty: String?,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ChatWorkoutRecommendationResponse>> {
         val response = chatService.getAIWorkoutRecommendation(
             userDetails.getId(),
             duration,
             equipment,
             targetMuscle,
-            difficulty
+            difficulty,
+            locale
         )
         return ResponseEntity.ok(ApiResponse.success(response))
     }

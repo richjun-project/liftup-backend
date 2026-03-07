@@ -15,13 +15,16 @@ import com.richjun.liftupai.domain.workout.repository.PersonalRecordRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.Exercise
+import com.richjun.liftupai.domain.workout.entity.ExerciseTemplate
 import com.richjun.liftupai.domain.workout.entity.MuscleGroup
-import com.richjun.liftupai.domain.workout.entity.RecommendationTier
+import com.richjun.liftupai.domain.workout.entity.WorkoutType
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.user.entity.UserProfile
 import com.richjun.liftupai.domain.user.entity.ExperienceLevel
 import com.richjun.liftupai.domain.workout.entity.WorkoutGoal
-import com.richjun.liftupai.domain.workout.util.ExerciseNameNormalizer
+import com.richjun.liftupai.domain.workout.util.WorkoutAliasCatalog
+import com.richjun.liftupai.domain.workout.util.WorkoutFocus
+import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -43,14 +46,13 @@ class WorkoutPlanService(
     val exerciseTemplateRepository: ExerciseTemplateRepository,
     val personalRecordRepository: PersonalRecordRepository,
     val exerciseSetRepository: ExerciseSetRepository,
-    private val exerciseNameNormalizer: ExerciseNameNormalizer,
     private val workoutProgressTracker: WorkoutProgressTracker,
     private val exercisePatternClassifier: ExercisePatternClassifier
 ) {
 
     fun updateWorkoutPlan(userId: Long, request: WorkoutPlanRequest): WorkoutPlanResponse {
         val profile = userProfileRepository.findByUser_Id(userId)
-            .orElseThrow { ResourceNotFoundException("프로필을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("Profile not found") }
 
         // Update profile with plan details
         profile.weeklyWorkoutDays = request.weeklyWorkoutDays
@@ -85,17 +87,17 @@ class WorkoutPlanService(
 
     fun generateProgram(userId: Long, request: GenerateProgramRequest): GeneratedProgramResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
         // Use AI to generate personalized program
         val prompt = buildProgramPrompt(request)
-        val aiResponse = "AI 생성 프로그램" // Simplified for now
+        val aiResponse = "AI generated program"
 
         // Parse AI response to create program schedule
         val schedule = parseAIResponseToSchedule(aiResponse, request)
 
         // Save as workout plan
-        val programName = "${request.weeklyWorkoutDays}일 ${translateSplit(request.workoutSplit)} ${translateGoals(request.goals)} 프로그램"
+        val programName = "${request.weeklyWorkoutDays}-day ${translateSplit(request.workoutSplit)} ${translateGoals(request.goals)} program"
 
         val workoutPlan = WorkoutPlan(
             user = user,
@@ -123,10 +125,10 @@ class WorkoutPlanService(
 
     fun getTodayWorkoutRecommendation(userId: Long, request: TodayWorkoutRequest): TodayWorkoutResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
         val profile = userProfileRepository.findByUser_Id(userId)
-            .orElseThrow { ResourceNotFoundException("프로필을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("Profile not found") }
 
         // 프로그램 진행 상황 가져오기 (고정 순서 사용)
         val programPosition = workoutProgressTracker.getNextWorkoutInProgram(
@@ -155,7 +157,7 @@ class WorkoutPlanService(
             profile.workoutDuration ?: 60
         )
 
-        val reason = "프로그램 진행: ${programPosition.cycle}주차 ${programPosition.day}회차 - $workoutName"
+        val reason = "Program progression: cycle ${programPosition.cycle}, day ${programPosition.day} - $workoutName"
 
         return TodayWorkoutResponse(
             workoutName = workoutName,
@@ -169,7 +171,7 @@ class WorkoutPlanService(
     @Transactional(readOnly = true)
     fun getWeeklyStats(userId: Long): WeeklyStatsResponse {
         val profile = userProfileRepository.findByUser_Id(userId)
-            .orElseThrow { ResourceNotFoundException("프로필을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("Profile not found") }
 
         val weekStart = LocalDate.now().with(DayOfWeek.MONDAY).atStartOfDay()
         val weekEnd = weekStart.plusDays(6).plusHours(23).plusMinutes(59)
@@ -209,23 +211,23 @@ class WorkoutPlanService(
 
     private fun determineRecommendedProgram(days: Int, split: String, level: String): String {
         return when {
-            days <= 2 -> "전신 운동 프로그램"
-            days == 3 && split == "full_body" -> "3일 전신 운동 프로그램"
-            days == 3 && split == "ppl" -> "초급 밀기/당기기/하체 프로그램"
-            days == 4 && split == "upper_lower" -> "중급 상하체 분할 프로그램"
-            days == 5 && split == "ppl" -> "고급 밀기/당기기/하체 프로그램"
-            days >= 6 && split == "bro_split" -> "보디빌딩 분할 프로그램"
-            else -> "${days}일 ${translateSplit(split)} 프로그램"
+            days <= 2 -> "Full-body program"
+            days == 3 && split == "full_body" -> "3-day full-body program"
+            days == 3 && split == "ppl" -> "Beginner push/pull/legs program"
+            days == 4 && split == "upper_lower" -> "Intermediate upper/lower split program"
+            days == 5 && split == "ppl" -> "Advanced push/pull/legs program"
+            days >= 6 && split == "bro_split" -> "Bodybuilding split program"
+            else -> "$days-day ${translateSplit(split)} program"
         }
     }
 
     private fun translateSplit(split: String): String {
         return when (split.lowercase()) {
-            "full_body" -> "전신"
-            "upper_lower" -> "상하체 분할"
-            "ppl", "push_pull_legs" -> "밀기/당기기/하체"
-            "push_pull" -> "밀기/당기기"
-            "bro_split" -> "부위별 분할"
+            "full_body" -> "full body"
+            "upper_lower" -> "upper/lower split"
+            "ppl", "push_pull_legs" -> "push/pull/legs"
+            "push_pull" -> "push/pull"
+            "bro_split" -> "body-part split"
             else -> split
         }
     }
@@ -233,10 +235,10 @@ class WorkoutPlanService(
     private fun translateGoals(goals: List<String>): String {
         val translated = goals.map {
             when (it.uppercase()) {
-                "MUSCLE_GAIN" -> "근육량 증가"
-                "FAT_LOSS" -> "체지방 감소"
-                "STRENGTH" -> "근력 향상"
-                "ENDURANCE" -> "지구력 향상"
+                "MUSCLE_GAIN" -> "muscle gain"
+                "FAT_LOSS" -> "fat loss"
+                "STRENGTH" -> "strength"
+                "ENDURANCE" -> "endurance"
                 else -> it
             }
         }
@@ -245,13 +247,13 @@ class WorkoutPlanService(
 
     private fun determineReadyMuscles(muscleRecovery: Map<String, String>?): List<String> {
         if (muscleRecovery.isNullOrEmpty()) {
-            return listOf("가슴", "등", "다리", "어깨", "팔", "복근")
+            return listOf("chest", "back", "legs", "shoulders", "arms", "core")
         }
 
         val now = LocalDateTime.now()
         val readyMuscles = mutableListOf<String>()
 
-        val allMuscles = listOf("가슴", "등", "다리", "어깨", "팔", "복근")
+        val allMuscles = listOf("chest", "back", "legs", "shoulders", "arms", "core")
 
         allMuscles.forEach { muscle ->
             val lastWorkout = muscleRecovery[muscle]?.let {
@@ -277,36 +279,36 @@ class WorkoutPlanService(
     ): Pair<String, List<String>> {
         return when (split) {
             "upper_lower" -> {
-                if (readyMuscles.containsAll(listOf("가슴", "등", "어깨"))) {
-                    "상체 운동" to listOf("가슴", "등", "어깨", "팔")
+                if (readyMuscles.containsAll(listOf("chest", "back", "shoulders"))) {
+                    "Upper body workout" to listOf("chest", "back", "shoulders", "arms")
                 } else {
-                    "하체 운동" to listOf("다리", "엉덩이", "복근")
+                    "Lower body workout" to listOf("legs", "glutes", "core")
                 }
             }
             "ppl", "push_pull_legs" -> {
                 when {
-                    readyMuscles.containsAll(listOf("가슴", "어깨")) -> "Push Day" to listOf("가슴", "어깨", "삼두")
-                    readyMuscles.contains("등") -> "Pull Day" to listOf("등", "이두")
-                    readyMuscles.contains("다리") -> "Leg Day" to listOf("다리", "엉덩이")
-                    else -> "전신 운동" to readyMuscles
+                    readyMuscles.containsAll(listOf("chest", "shoulders")) -> "Push Day" to listOf("chest", "shoulders", "triceps")
+                    readyMuscles.contains("back") -> "Pull Day" to listOf("back", "biceps")
+                    readyMuscles.contains("legs") -> "Leg Day" to listOf("legs", "glutes")
+                    else -> "Full body workout" to readyMuscles
                 }
             }
-            "full_body" -> "전신 운동" to listOf("가슴", "등", "다리", "어깨")
-            else -> "전신 운동" to readyMuscles.take(3)
+            "full_body" -> "Full body workout" to listOf("chest", "back", "legs", "shoulders")
+            else -> "Full body workout" to readyMuscles.take(3)
         }
     }
 
     private fun buildProgramPrompt(request: GenerateProgramRequest): String {
         return """
-            운동 프로그램을 생성해주세요:
-            - 주당 운동 일수: ${request.weeklyWorkoutDays}일
-            - 분할: ${translateSplit(request.workoutSplit)}
-            - 경험 수준: ${request.experienceLevel}
-            - 목표: ${request.goals.joinToString(", ")}
-            - 사용 가능 장비: ${request.availableEquipment.joinToString(", ")}
-            - 운동 시간: ${request.duration}분
+            Generate a workout program:
+            - Weekly training days: ${request.weeklyWorkoutDays}
+            - Split: ${translateSplit(request.workoutSplit)}
+            - Experience level: ${request.experienceLevel}
+            - Goals: ${request.goals.joinToString(", ")}
+            - Available equipment: ${request.availableEquipment.joinToString(", ")}
+            - Duration: ${request.duration} minutes
 
-            각 요일별로 구체적인 운동 종목, 세트, 반복수, 휴식시간을 포함해주세요.
+            Include exercise selection, sets, reps, and rest for each training day.
         """.trimIndent()
     }
 
@@ -318,123 +320,77 @@ class WorkoutPlanService(
         equipment: List<String>
     ): String {
         return """
-            오늘의 운동: $workoutName
-            타겟 근육: ${targetMuscles.joinToString(", ")}
-            경험 수준: $level
-            목표: ${goals.joinToString(", ")}
-            사용 가능 장비: ${equipment.joinToString(", ")}
+            Today's workout: $workoutName
+            Target muscles: ${targetMuscles.joinToString(", ")}
+            Experience level: $level
+            Goals: ${goals.joinToString(", ")}
+            Available equipment: ${equipment.joinToString(", ")}
 
-            5-7개의 운동을 추천해주세요. 각 운동에 대해:
-            - 운동 이름
-            - 세트 수와 반복수
-            - 휴식 시간
-            - 수행 팁
+            Recommend 5-7 exercises with:
+            - Exercise name
+            - Sets and reps
+            - Rest time
+            - Execution tips
         """.trimIndent()
     }
 
     private fun parseAIResponseToSchedule(aiResponse: String, request: GenerateProgramRequest): ProgramSchedule {
-        // Simple parsing - in production, use more sophisticated parsing
+        val experienceLevel = resolveExperienceLevel(request.experienceLevel)
+        val workoutGoal = resolveWorkoutGoal(request.goals)
+        val availableEquipment = request.availableEquipment.map { it.uppercase() }.toSet()
+        val workoutTypes = workoutProgressTracker.getWorkoutTypeSequence(request.workoutSplit)
+        val exerciseLimit = when {
+            request.duration <= 30 -> 4
+            request.duration <= 60 -> 5
+            else -> 6
+        }
+
         return ProgramSchedule(
-            monday = if (request.weeklyWorkoutDays >= 1) WorkoutDay(
-                name = "Day 1",
-                exercises = listOf(
-                    ExercisePlan("벤치프레스", 4, "8-10", 120),
-                    ExercisePlan("인클라인 덤벨프레스", 3, "10-12", 90),
-                    ExercisePlan("케이블 플라이", 3, "12-15", 60)
-                )
-            ) else null,
-            tuesday = if (request.weeklyWorkoutDays >= 2) WorkoutDay(
-                name = "Day 2",
-                exercises = listOf(
-                    ExercisePlan("스쿼트", 4, "8-10", 120),
-                    ExercisePlan("레그프레스", 3, "10-12", 90)
-                )
-            ) else null,
+            monday = buildWorkoutDay(1, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit),
+            tuesday = buildWorkoutDay(2, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit),
             wednesday = null,
-            thursday = if (request.weeklyWorkoutDays >= 3) WorkoutDay(
-                name = "Day 3",
-                exercises = listOf(
-                    ExercisePlan("데드리프트", 4, "6-8", 180),
-                    ExercisePlan("풀업", 3, "8-10", 90)
-                )
-            ) else null,
-            friday = if (request.weeklyWorkoutDays >= 4) WorkoutDay(
-                name = "Day 4",
-                exercises = listOf(
-                    ExercisePlan("숄더프레스", 4, "8-10", 90)
-                )
-            ) else null,
-            saturday = if (request.weeklyWorkoutDays >= 5) WorkoutDay(
-                name = "Day 5",
-                exercises = listOf(
-                    ExercisePlan("바벨컬", 3, "10-12", 60)
-                )
-            ) else null,
+            thursday = buildWorkoutDay(3, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit),
+            friday = buildWorkoutDay(4, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit),
+            saturday = buildWorkoutDay(5, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit),
             sunday = null
         )
     }
 
-    // 운동 이름으로 DB에서 운동 찾기 (개선된 버전)
-    private fun findExerciseByName(name: String): Long? {
-        // 1. 정규화된 이름으로 먼저 검색
-        val normalizedName = exerciseNameNormalizer.normalize(name)
+    private fun buildWorkoutDay(
+        dayNumber: Int,
+        weeklyWorkoutDays: Int,
+        workoutTypes: List<WorkoutType>,
+        availableEquipment: Set<String>,
+        experienceLevel: ExperienceLevel,
+        workoutGoal: WorkoutGoal,
+        exerciseLimit: Int
+    ): WorkoutDay? {
+        if (dayNumber > weeklyWorkoutDays) return null
 
-        // 정확한 매칭 시도
-        exerciseRepository.findByExactOrCompactName(normalizedName).firstOrNull()?.let {
-            return it.id
+        val workoutType = workoutTypes.getOrElse((dayNumber - 1) % workoutTypes.size) {
+            WorkoutType.FULL_BODY
         }
+        val (workoutName, targetMuscles) = getWorkoutDetailsFromType(workoutType)
 
-        // 2. 정규화된 쿼리로 검색 (철자 변형 처리)
-        exerciseRepository.findByNormalizedName(normalizedName).firstOrNull()?.let {
-            return it.id
-        }
-
-        // 3. 생성된 변형들로 검색
-        val variations = exerciseNameNormalizer.generateVariations(name)
-        val lowercaseVariations = variations.map { it.lowercase() }
-
-        exerciseRepository.findByNameIn(lowercaseVariations).firstOrNull()?.let {
-            return it.id
-        }
-
-        // 4. 기존 로직 유지 (폴백)
-        for (variation in variations) {
-            val exercise = exerciseRepository.findByNameIgnoreCase(variation)
-            if (exercise != null) {
-                return exercise.id
+        return WorkoutDay(
+            name = "Day $dayNumber",
+            exercises = buildExercisePlans(
+                targetMuscles = targetMuscles,
+                availableEquipment = availableEquipment,
+                experienceLevel = experienceLevel,
+                workoutGoal = workoutGoal,
+                limit = exerciseLimit
+            ).ifEmpty {
+                listOf(
+                    ExercisePlan(
+                        name = workoutName,
+                        sets = defaultSetCount(experienceLevel),
+                        reps = "8-12",
+                        rest = 90
+                    )
+                )
             }
-        }
-
-        // 5. 영어 이름으로도 찾기 (확장된 매핑)
-        val englishNames = mapOf(
-            "스쿼트" to "squat",
-            "레그프레스" to "leg press",
-            "런지" to "lunge",
-            "벤치프레스" to "bench press",
-            "인클라인 덤벨프레스" to "incline dumbbell press",
-            "풀업" to "pull up",
-            "바벨로우" to "barbell row",
-            "사이드레터럴레이즈" to "lateral raise",
-            "플랭크" to "plank",
-            "푸시업" to "push up",
-            "푸시다운" to "pushdown",
-            "푸쉬다운" to "pushdown",
-            "풀다운" to "pulldown",
-            "랫풀다운" to "lat pulldown",
-            "덤벨플라이" to "dumbbell fly",
-            "데드리프트" to "deadlift"
         )
-
-        englishNames[normalizedName]?.let { englishName ->
-            return findExerciseByName(englishName) // 재귀 호출로 영어 이름도 정규화 처리
-        }
-
-        // 6. 부분 매칭 시도 (마지막 수단)
-        exerciseRepository.searchByName(normalizedName).firstOrNull()?.let {
-            return it.id
-        }
-
-        return null
     }
 
     private fun parseAIResponseToExercises(aiResponse: String, targetMuscles: List<String>): List<ExerciseDetailV4> {
@@ -450,228 +406,226 @@ class WorkoutPlanService(
         experienceLevel: String?,
         goals: List<String>?
     ): List<ExerciseDetailV4> {
-        // 타겟 근육에 따라 적절한 운동 선택
-        val exercises = mutableListOf<ExerciseDetailV4>()
-
-        targetMuscles.forEach { muscle ->
-            when (muscle.lowercase()) {
-                "다리", "하체", "legs", "대퇴사두근", "햄스트링", "엉덩이" -> {
-                    // 스쿼트 추가
-                    val squatId = findExerciseByName("스쿼트") ?: findExerciseByName("squat")
-                    squatId?.let {
-                        exercises.add(
-                            ExerciseDetailV4(
-                                id = it.toString(),
-                                name = "스쿼트",
-                                    targetMuscle = muscle,
-                                sets = listOf(
-                                SetDetail(1, 15, 0.0, "warm_up"),
-                                SetDetail(2, 12, 40.0, "working"),
-                                SetDetail(3, 10, 60.0, "working"),
-                                SetDetail(4, 8, 80.0, "working")
-                                ),
-                                restTime = 150,
-                                tips = "무릎이 발끝을 넘지 않도록 주의하며 엉덩이를 뒤로 빼며 앉아주세요"
-                                )
-                        )
-                    }
-
-                    // 레그프레스 추가
-                    val legPressId = findExerciseByName("레그프레스") ?: findExerciseByName("leg press")
-                    legPressId?.let {
-                        exercises.add(
-                            ExerciseDetailV4(
-                                id = it.toString(),
-                                name = "레그프레스",
-                                targetMuscle = muscle,
-                                sets = listOf(
-                                SetDetail(1, 15, 40.0, "working"),
-                                SetDetail(2, 12, 60.0, "working"),
-                                SetDetail(3, 10, 80.0, "working")
-                                ),
-                                restTime = 120,
-                                tips = "발을 어깨너비로 벌리고 무릎을 90도까지 굽혀주세요"
-                                )
-                        )
-                    }
-
-                    // 런지 추가
-                    val lungeId = findExerciseByName("런지") ?: findExerciseByName("lunge")
-                    lungeId?.let {
-                        exercises.add(
-                            ExerciseDetailV4(
-                                id = it.toString(),
-                                name = "런지",
-                                targetMuscle = muscle,
-                                sets = listOf(
-                                SetDetail(1, 12, 0.0, "working"),
-                                SetDetail(2, 10, 10.0, "working"),
-                                SetDetail(3, 10, 10.0, "working")
-                                ),
-                                restTime = 90,
-                                tips = "앞무릎이 90도가 되도록 내려가고 균형을 유지하세요"
-                            )
-                        )
-                    }
-                }
-                "가슴", "chest", "대흉근", "삼두" -> {
-                    // 벤치프레스 추가
-                    val benchPressId = findExerciseByName("벤치프레스") ?: findExerciseByName("bench press")
-                    benchPressId?.let {
-                        exercises.add(
-                            ExerciseDetailV4(
-                                id = it.toString(),
-                                name = "벤치프레스",
-                                targetMuscle = muscle,
-                                sets = listOf(
-                                SetDetail(1, 12, 20.0, "warm_up"),
-                                SetDetail(2, 10, 60.0, "working"),
-                                SetDetail(3, 8, 70.0, "working"),
-                                SetDetail(4, 8, 70.0, "working")
-                                ),
-                                restTime = 120,
-                                tips = "가슴 근육에 집중하며 천천히 내리고 폭발적으로 밀어올리세요"
-                            )
-                        )
-                    }
-
-                    // 인클라인 덤벨프레스 추가
-                    val inclineDbPressId = findExerciseByName("인클라인 덤벨프레스") ?: findExerciseByName("incline dumbbell press")
-                    inclineDbPressId?.let {
-                        exercises.add(
-                            ExerciseDetailV4(
-                                id = it.toString(),
-                                name = "인클라인 덤벨프레스",
-                                targetMuscle = muscle,
-                                sets = listOf(
-                                SetDetail(1, 12, 15.0, "working"),
-                                SetDetail(2, 10, 20.0, "working"),
-                                SetDetail(3, 10, 20.0, "working")
-                                ),
-                                restTime = 90,
-                                tips = "상부 가슴에 집중하며 덤벨을 아치형으로 밀어주세요"
-                            )
-                        )
-                    }
-                }
-                "등", "back", "광배근", "이두" -> {
-                    // 풀업 추가
-                    val pullUpId = findExerciseByName("풀업") ?: findExerciseByName("pull up")
-                    pullUpId?.let {
-                        exercises.add(
-                            ExerciseDetailV4(
-                                id = it.toString(),
-                                name = "풀업",
-                                targetMuscle = muscle,
-                                sets = listOf(
-                                SetDetail(1, 8, 0.0, "working"),
-                                SetDetail(2, 6, 0.0, "working"),
-                                SetDetail(3, 6, 0.0, "working")
-                                ),
-                                restTime = 120,
-                                tips = "등 근육으로 당긴다는 느낌으로 천천히 올라가세요"
-                            )
-                        )
-                    }
-
-                    // 바벨로우 추가
-                    val barbellRowId = findExerciseByName("바벨로우") ?: findExerciseByName("barbell row")
-                    barbellRowId?.let {
-                        exercises.add(
-                            ExerciseDetailV4(
-                                id = it.toString(),
-                                name = "바벨로우",
-                                targetMuscle = muscle,
-                                sets = listOf(
-                                SetDetail(1, 12, 30.0, "working"),
-                                SetDetail(2, 10, 40.0, "working"),
-                                SetDetail(3, 10, 40.0, "working")
-                                ),
-                                restTime = 90,
-                                tips = "허리를 곧게 펴고 등 중앙으로 당기세요"
-                            )
-                        )
-                    }
-                }
-                "어깨", "shoulders", "삼각근" -> {
-                    // 숄더프레스 추가
-                    val shoulderPressId = findExerciseByName("숄더프레스") ?: findExerciseByName("shoulder press")
-                    shoulderPressId?.let {
-                        exercises.add(
-                            ExerciseDetailV4(
-                                id = it.toString(),
-                                name = "숄더프레스",
-                                targetMuscle = muscle,
-                                sets = listOf(
-                                SetDetail(1, 12, 10.0, "warm_up"),
-                                SetDetail(2, 10, 20.0, "working"),
-                                SetDetail(3, 8, 25.0, "working")
-                                ),
-                                restTime = 90,
-                                tips = "코어에 힘을 주고 안정적으로 밀어올리세요"
-                            )
-                        )
-                    }
-
-                    // 사이드레터럴레이즈 추가
-                    val lateralRaiseId = findExerciseByName("사이드레터럴레이즈") ?: findExerciseByName("lateral raise")
-                    lateralRaiseId?.let {
-                        exercises.add(
-                            ExerciseDetailV4(
-                                id = it.toString(),
-                                name = "사이드 레터럴 레이즈",
-                                targetMuscle = muscle,
-                                sets = listOf(
-                                SetDetail(1, 15, 5.0, "working"),
-                                SetDetail(2, 12, 7.0, "working"),
-                                SetDetail(3, 12, 7.0, "working")
-                                ),
-                                restTime = 60,
-                                tips = "팔꿈치를 살짝 굽히고 어깨 높이까지만 올리세요"
-                            )
-                        )
-                    }
-                }
-                "복근", "abs", "코어" -> {
-                    // 플랭크 추가
-                    val plankId = findExerciseByName("플랭크") ?: findExerciseByName("plank")
-                    plankId?.let {
-                        exercises.add(
-                            ExerciseDetailV4(
-                                id = it.toString(),
-                                name = "플랭크",
-                                targetMuscle = muscle,
-                                sets = listOf(
-                                SetDetail(1, 30, 0.0, "working"),  // 30초
-                                SetDetail(2, 45, 0.0, "working"),  // 45초
-                                SetDetail(3, 60, 0.0, "working")   // 60초
-                                ),
-                                restTime = 60,
-                                tips = "몸을 일직선으로 유지하고 코어에 집중하세요"
-                            )
-                        )
-                    }
-                }
-            }
+        val user = userId?.let { id ->
+            userRepository.findById(id).orElse(null)
+        }
+        val profile = userId?.let { id ->
+            userProfileRepository.findByUser_Id(id).orElse(null)
+        }
+        val resolvedExperience = resolveExperienceLevel(experienceLevel ?: profile?.experienceLevel?.name)
+        val resolvedGoal = resolveWorkoutGoal(goals ?: profile?.goals?.map { it.name })
+        val availableEquipment = profile?.availableEquipment?.map { it.uppercase() }?.toSet() ?: emptySet()
+        val bodyWeight = profile?.bodyInfo?.weight ?: 70.0
+        val exerciseLimit = when {
+            targetMuscles.size <= 1 -> 4
+            targetMuscles.size == 2 -> 5
+            else -> 6
         }
 
-        return exercises.ifEmpty {
-            // 운동이 없으면 기본 전신 운동 반환
-            val pushUpId = findExerciseByName("푸시업") ?: findExerciseByName("push up") ?: 1L
-            listOf(
-                ExerciseDetailV4(
-                    id = pushUpId.toString(),
-                    name = "푸시업",
-                    targetMuscle = targetMuscles.firstOrNull() ?: "가슴",
-                    sets = listOf(
-                        SetDetail(1, 15, 0.0, "working"),
-                        SetDetail(2, 12, 0.0, "working"),
-                        SetDetail(3, 10, 0.0, "working")
-                    ),
-                    restTime = 60,
-                    tips = "코어에 힘을 주고 일직선을 유지하세요"
-                )
+        return buildExerciseDetails(
+            targetMuscles = targetMuscles,
+            user = user,
+            bodyWeight = bodyWeight,
+            availableEquipment = availableEquipment,
+            experienceLevel = resolvedExperience,
+            workoutGoal = resolvedGoal,
+            limit = exerciseLimit
+        ).ifEmpty {
+            buildExerciseDetails(
+                targetMuscles = listOf("full_body"),
+                user = user,
+                bodyWeight = bodyWeight,
+                availableEquipment = availableEquipment,
+                experienceLevel = resolvedExperience,
+                workoutGoal = resolvedGoal,
+                limit = 3
             )
+        }
+    }
+
+    private fun buildExercisePlans(
+        targetMuscles: List<String>,
+        availableEquipment: Set<String>,
+        experienceLevel: ExperienceLevel,
+        workoutGoal: WorkoutGoal,
+        limit: Int
+    ): List<ExercisePlan> {
+        return selectExercisesForTargets(targetMuscles, availableEquipment, limit).map { exercise ->
+            val template = resolveExerciseTemplate(exercise, experienceLevel, workoutGoal)
+
+            ExercisePlan(
+                name = exercise.name,
+                sets = template?.sets ?: defaultSetCount(experienceLevel),
+                reps = template?.let { "${it.minReps}-${it.maxReps}" } ?: defaultRepRange(exercise, experienceLevel),
+                rest = template?.restSeconds ?: calculateRestTime(exercise)
+            )
+        }
+    }
+
+    private fun buildExerciseDetails(
+        targetMuscles: List<String>,
+        user: User?,
+        bodyWeight: Double,
+        availableEquipment: Set<String>,
+        experienceLevel: ExperienceLevel,
+        workoutGoal: WorkoutGoal,
+        limit: Int
+    ): List<ExerciseDetailV4> {
+        return selectExercisesForTargets(targetMuscles, availableEquipment, limit).map { exercise ->
+            val template = resolveExerciseTemplate(exercise, experienceLevel, workoutGoal)
+            val sets = template?.let {
+                val workingWeight = calculateWeightForUser(user, exercise, it, bodyWeight)
+                createSetsFromTemplate(it, workingWeight)
+            } ?: generateDefaultSets(exercise, experienceLevel)
+
+            ExerciseDetailV4(
+                id = exercise.id.toString(),
+                name = exercise.name,
+                targetMuscle = resolveTargetLabel(exercise, targetMuscles),
+                sets = sets,
+                restTime = template?.restSeconds ?: calculateRestTime(exercise),
+                tips = extractPrimaryTip(exercise)
+            )
+        }
+    }
+
+    private fun selectExercisesForTargets(
+        targetMuscles: List<String>,
+        availableEquipment: Set<String>,
+        limit: Int
+    ): List<Exercise> {
+        val normalizedTargets = if (targetMuscles.isEmpty()) listOf("full_body") else targetMuscles
+        val equipmentFiltered = exerciseRepository.findAll()
+            .filter { exercise -> matchesAvailableEquipment(exercise, availableEquipment) }
+        val perTargetLimit = maxOf(1, limit / normalizedTargets.size)
+
+        val selected = normalizedTargets.flatMap { target ->
+            val targetMuscleGroups = resolveMuscleGroups(target)
+            val targetCandidates = equipmentFiltered.filter { exercise ->
+                targetMuscleGroups.isEmpty() || exercise.muscleGroups.any { it in targetMuscleGroups }
+            }
+            prioritizeExercises(targetCandidates).take(perTargetLimit)
+        }
+
+        val distinctSelected = selected.distinctBy { it.id }
+        if (distinctSelected.size >= limit) {
+            return distinctSelected.take(limit)
+        }
+
+        val fallback = prioritizeExercises(
+            equipmentFiltered.filterNot { candidate ->
+                distinctSelected.any { it.id == candidate.id }
+            }
+        )
+
+        return (distinctSelected + fallback)
+            .distinctBy { it.id }
+            .take(limit)
+    }
+
+    private fun prioritizeExercises(exercises: List<Exercise>): List<Exercise> {
+        val coreExercises = removeDuplicatePatterns(
+            exercises.filter { RecommendationExerciseRanking.isCoreCandidate(it) }
+        ).sortedWith(RecommendationExerciseRanking.displayOrderComparator())
+
+        val fallbackExercises = removeDuplicatePatterns(
+            exercises.filter { RecommendationExerciseRanking.isGeneralCandidate(it) }
+                .filterNot { candidate -> coreExercises.any { it.id == candidate.id } }
+        ).sortedWith(RecommendationExerciseRanking.displayOrderComparator())
+
+        return (coreExercises + fallbackExercises).distinctBy { it.id }
+    }
+
+    private fun resolveExerciseTemplate(
+        exercise: Exercise,
+        experienceLevel: ExperienceLevel,
+        workoutGoal: WorkoutGoal
+    ): ExerciseTemplate? {
+        return exerciseTemplateRepository.findTemplate(exercise.id, experienceLevel, workoutGoal)
+            ?: exerciseTemplateRepository.findByExerciseAndExperienceLevel(exercise, experienceLevel).firstOrNull()
+    }
+
+    private fun matchesAvailableEquipment(exercise: Exercise, availableEquipment: Set<String>): Boolean {
+        if (availableEquipment.isEmpty()) return true
+        val equipmentName = exercise.equipment?.name ?: return true
+        return equipmentName == "BODYWEIGHT" || availableEquipment.contains(equipmentName)
+    }
+
+    private fun resolveMuscleGroups(targetMuscle: String): Set<MuscleGroup> {
+        return WorkoutTargetResolver.muscleGroupsFor(targetMuscle)
+    }
+
+    private fun resolveTargetLabel(exercise: Exercise, targetMuscles: List<String>): String {
+        val matchedTarget = targetMuscles.firstOrNull { target ->
+            val targetMuscleGroups = resolveMuscleGroups(target)
+            targetMuscleGroups.isEmpty() || exercise.muscleGroups.any { it in targetMuscleGroups }
+        }
+
+        val focus = WorkoutTargetResolver.resolveFocus(matchedTarget ?: targetMuscles.firstOrNull())
+        return focus?.let { WorkoutTargetResolver.displayName(it, locale = "ko") }
+            ?: matchedTarget
+            ?: WorkoutTargetResolver.displayName(WorkoutFocus.FULL_BODY, locale = "ko")
+    }
+
+    private fun resolveExperienceLevel(value: String?): ExperienceLevel {
+        return runCatching {
+            ExperienceLevel.valueOf(value?.trim()?.uppercase() ?: ExperienceLevel.INTERMEDIATE.name)
+        }.getOrDefault(ExperienceLevel.INTERMEDIATE)
+    }
+
+    private fun resolveWorkoutGoal(goals: List<String>?): WorkoutGoal {
+        val normalizedGoals = goals.orEmpty().joinToString(" ").lowercase()
+
+        return when {
+            WorkoutAliasCatalog.list("goal.alias.strength").any { normalizedGoals.contains(it.lowercase()) } -> WorkoutGoal.STRENGTH
+            WorkoutAliasCatalog.list("goal.alias.fat_loss").any { normalizedGoals.contains(it.lowercase()) } -> WorkoutGoal.FAT_LOSS
+            WorkoutAliasCatalog.list("goal.alias.endurance").any { normalizedGoals.contains(it.lowercase()) } -> WorkoutGoal.ENDURANCE
+            WorkoutAliasCatalog.list("goal.alias.muscle_gain").any { normalizedGoals.contains(it.lowercase()) } -> WorkoutGoal.MUSCLE_GAIN
+            else -> WorkoutGoal.GENERAL_FITNESS
+        }
+    }
+
+    private fun extractPrimaryTip(exercise: Exercise): String {
+        return exercise.instructions
+            ?.split("\n", ".")
+            ?.map { it.trim() }
+            ?.firstOrNull { it.isNotEmpty() }
+            ?: when (exercise.category) {
+                ExerciseCategory.LEGS -> "Brace the trunk and keep the range of motion controlled"
+                ExerciseCategory.BACK -> "Prioritize full contraction and controlled eccentric work"
+                ExerciseCategory.CHEST -> "Keep the scapula stable and maintain chest tension"
+                ExerciseCategory.SHOULDERS -> "Reduce trap dominance and lead with the shoulder"
+                ExerciseCategory.ARMS -> "Fix the joints and focus on peak contraction"
+                ExerciseCategory.CORE -> "Maintain breathing and trunk pressure throughout the set"
+                else -> "Maintain clean technique and a consistent tempo"
+            }
+    }
+
+    private fun defaultSetCount(experienceLevel: ExperienceLevel): Int {
+        return when (experienceLevel) {
+            ExperienceLevel.NOVICE, ExperienceLevel.BEGINNER -> 3
+            ExperienceLevel.INTERMEDIATE -> 4
+            ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT -> 5
+        }
+    }
+
+    private fun defaultRepRange(exercise: Exercise, experienceLevel: ExperienceLevel): String {
+        return when (experienceLevel) {
+            ExperienceLevel.NOVICE, ExperienceLevel.BEGINNER -> when (exercise.category) {
+                ExerciseCategory.CORE -> "12-20"
+                ExerciseCategory.ARMS, ExerciseCategory.SHOULDERS -> "10-15"
+                else -> "10-12"
+            }
+            ExperienceLevel.INTERMEDIATE -> when (exercise.category) {
+                ExerciseCategory.CORE -> "15-20"
+                ExerciseCategory.ARMS, ExerciseCategory.SHOULDERS -> "10-12"
+                else -> "8-10"
+            }
+            ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT -> when (exercise.category) {
+                ExerciseCategory.CORE -> "15-20"
+                ExerciseCategory.ARMS, ExerciseCategory.SHOULDERS -> "8-10"
+                else -> "5-8"
+            }
         }
     }
 
@@ -686,9 +640,9 @@ class WorkoutPlanService(
         } ?: 0
 
         return when {
-            daysSinceLastWorkout == 0L -> "오늘 이미 운동하셨네요! 충분한 휴식을 취하세요."
-            daysSinceLastWorkout >= 3 -> "마지막 운동으로부터 ${daysSinceLastWorkout}일이 경과했습니다. 오늘 운동하기 좋은 날입니다!"
-            else -> "주 ${weeklyDays}일 ${translateSplit(split)} 프로그램에 따라 오늘은 ${readyMuscles.take(2).joinToString(", ")} 운동일입니다."
+            daysSinceLastWorkout == 0L -> "You already trained today. Prioritize recovery."
+            daysSinceLastWorkout >= 3 -> "$daysSinceLastWorkout days have passed since your last workout. Today is a good day to train."
+            else -> "Based on your $weeklyDays-day ${translateSplit(split)} plan, today is a ${readyMuscles.take(2).joinToString(", ")} day."
         }
     }
 
@@ -718,43 +672,14 @@ class WorkoutPlanService(
      * WorkoutProgressTracker의 determineWorkoutType()와 역방향 매핑
      */
     private fun getWorkoutDetailsFromType(workoutType: com.richjun.liftupai.domain.workout.entity.WorkoutType): Pair<String, List<String>> {
-        return when (workoutType) {
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.PUSH ->
-                "밀기 운동 (Push)" to listOf("가슴", "삼두", "어깨")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.PULL ->
-                "당기기 운동 (Pull)" to listOf("등", "이두")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.LEGS ->
-                "하체 운동 (Legs)" to listOf("다리", "대퇴사두근", "햄스트링", "엉덩이")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.UPPER ->
-                "상체 운동" to listOf("가슴", "등", "어깨", "팔")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.LOWER ->
-                "하체 운동" to listOf("다리", "엉덩이", "복근")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.CHEST ->
-                "가슴 운동" to listOf("가슴", "삼두")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.BACK ->
-                "등 운동" to listOf("등", "이두")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.SHOULDERS ->
-                "어깨 운동" to listOf("어깨", "삼두")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.ARMS ->
-                "팔 운동" to listOf("이두", "삼두", "전완근")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.ABS ->
-                "복근 운동" to listOf("복근", "코어")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.CARDIO ->
-                "유산소 운동" to listOf("전신")
-
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.FULL_BODY ->
-                "전신 운동" to listOf("가슴", "등", "다리", "어깨")
+        val primaryFocus = WorkoutTargetResolver.primaryFocusForWorkoutType(workoutType)
+        val focusTargets = WorkoutTargetResolver.targetsForWorkoutType(workoutType)
+        val workoutName = "${WorkoutTargetResolver.displayName(primaryFocus, locale = "en")} workout"
+        val targetLabels = focusTargets.map { focus ->
+            WorkoutTargetResolver.displayName(focus, locale = "en")
         }
+
+        return workoutName to targetLabels
     }
 
     /**
@@ -762,19 +687,10 @@ class WorkoutPlanService(
      * WorkoutServiceV2의 필터링 로직과 호환되도록 영어로 반환
      */
     private fun mapWorkoutTypeToTargetMuscle(workoutType: com.richjun.liftupai.domain.workout.entity.WorkoutType): String {
-        return when (workoutType) {
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.PUSH -> "push"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.PULL -> "pull"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.LEGS -> "legs"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.UPPER -> "upper"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.LOWER -> "lower"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.CHEST -> "chest"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.BACK -> "back"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.SHOULDERS -> "shoulders"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.ARMS -> "arms"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.ABS -> "core"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.CARDIO -> "full_body"
-            com.richjun.liftupai.domain.workout.entity.WorkoutType.FULL_BODY -> "full_body"
+        val focus = WorkoutTargetResolver.primaryFocusForWorkoutType(workoutType)
+        return when (focus) {
+            WorkoutFocus.CARDIO -> WorkoutTargetResolver.key(WorkoutFocus.FULL_BODY)
+            else -> WorkoutTargetResolver.key(focus)
         }
     }
 
@@ -791,13 +707,7 @@ class WorkoutPlanService(
         // WorkoutServiceV2의 필터링 로직을 사용
         var exercises = exerciseRepository.findAll().toList()
 
-        // 1. Recommendation tier 필터링
-        exercises = exercises.filter {
-            it.recommendationTier == RecommendationTier.ESSENTIAL ||
-            it.recommendationTier == RecommendationTier.STANDARD
-        }
-
-        // 2. 장비 필터링 (프로필의 availableEquipment 사용)
+        // 1. 장비 필터링 (프로필의 availableEquipment 사용)
         val availableEquipment = profile.availableEquipment
         if (availableEquipment.isNotEmpty()) {
             exercises = exercises.filter { exercise ->
@@ -805,48 +715,22 @@ class WorkoutPlanService(
             }
         }
 
-        // 3. 타겟 근육 필터링
+        // 2. 타겟 근육 필터링
         exercises = filterByTargetMuscle(exercises, targetMuscle)
 
-        // 4. 운동 패턴 중복 제거
-        exercises = exercisePatternClassifier.let { classifier ->
-            val patternGroups = mutableMapOf<ExercisePatternClassifier.MovementPattern, MutableList<Exercise>>()
-            exercises.forEach { exercise ->
-                val pattern = classifier.classifyExercise(exercise)
-                patternGroups.getOrPut(pattern) { mutableListOf() }.add(exercise)
-            }
+        // 3. 핵심 운동 우선 추천, 부족할 때만 일반 운동으로 보충
+        val coreExercises = removeDuplicatePatterns(
+            exercises.filter { RecommendationExerciseRanking.isCoreCandidate(it) }
+        ).sortedWith(RecommendationExerciseRanking.displayOrderComparator())
 
-            val selectedExercises = mutableListOf<Exercise>()
-            patternGroups.forEach { (_, groupExercises) ->
-                val bestExercise = groupExercises
-                    .sortedWith(
-                        compareBy<Exercise> { it.difficulty }
-                            .thenByDescending { it.popularity }
-                            .thenByDescending { it.isBasicExercise }
-                    )
-                    .firstOrNull()
-                bestExercise?.let { selectedExercises.add(it) }
-            }
-            selectedExercises
-        }
+        val fallbackExercises = removeDuplicatePatterns(
+            exercises.filter { RecommendationExerciseRanking.isGeneralCandidate(it) }
+                .filterNot { candidate -> coreExercises.any { it.id == candidate.id } }
+        ).sortedWith(RecommendationExerciseRanking.displayOrderComparator())
 
-        // 5. 운동 정렬 (복합운동 우선, 큰 근육 우선)
-        exercises = exercises.sortedWith(
-            compareBy<Exercise> { exercise ->
-                when (exercise.category) {
-                    ExerciseCategory.LEGS -> 1
-                    ExerciseCategory.BACK -> 2
-                    ExerciseCategory.CHEST -> 3
-                    ExerciseCategory.SHOULDERS -> 4
-                    ExerciseCategory.ARMS -> 5
-                    ExerciseCategory.CORE -> 6
-                    ExerciseCategory.CARDIO -> 7
-                    else -> 8
-                }
-            }
-        )
+        exercises = (coreExercises + fallbackExercises).distinctBy { it.id }
 
-        // 6. 운동 개수 결정 (duration 기반)
+        // 4. 운동 개수 결정 (duration 기반)
         val targetExerciseCount = when {
             duration <= 30 -> 4
             duration <= 45 -> 5
@@ -855,7 +739,7 @@ class WorkoutPlanService(
             else -> 8
         }
 
-        // 7. Exercise를 ExerciseDetailV4로 변환
+        // 5. Exercise를 ExerciseDetailV4로 변환
         return exercises.take(targetExerciseCount).map { exercise ->
             ExerciseDetailV4(
                 id = exercise.id.toString(),
@@ -863,7 +747,7 @@ class WorkoutPlanService(
                 targetMuscle = targetMuscle,
                 sets = generateDefaultSets(exercise, profile.experienceLevel),
                 restTime = calculateRestTime(exercise),
-                tips = "올바른 자세로 수행하세요"
+                tips = "Use controlled technique throughout the set"
             )
         }
     }
@@ -982,5 +866,16 @@ class WorkoutPlanService(
             ExerciseCategory.CORE -> 60  // 코어 1분
             else -> 120  // 기본 2분
         }
+    }
+
+    /**
+     * 패턴 중복 제거 - 같은 패턴의 운동 중 핵심도와 활용도가 높은 운동 하나만 선택
+     */
+    private fun removeDuplicatePatterns(exercises: List<Exercise>): List<Exercise> {
+        return exercises
+            .groupBy { exercisePatternClassifier.classifyExercise(it) }
+            .mapNotNull { (_, groupExercises) ->
+                groupExercises.minWithOrNull(RecommendationExerciseRanking.patternSelectionComparator())
+            }
     }
 }

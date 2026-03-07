@@ -174,6 +174,9 @@ data class ProgramTransitionRecommendation(
  * 프로그램 제안
  */
 data class ProgramSuggestion(
+    @JsonProperty("program_code")
+    val programCode: String? = null,
+
     @JsonProperty("program_name")
     val programName: String,
 

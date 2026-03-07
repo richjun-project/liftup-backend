@@ -2,12 +2,15 @@ package com.richjun.liftupai.domain.workout.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
-// Quick workout recommendation DTOs for V3 requirements
+// Basic workout recommendation DTOs
 
-// GET /api/workouts/recommendations/quick Response
+// GET /api/v2/workouts/recommendations/basic Response
 data class QuickWorkoutRecommendationResponse(
     val recommendation: WorkoutRecommendationDetail,
-    val alternatives: List<AlternativeWorkout> = emptyList()
+    val alternatives: List<AlternativeWorkout> = emptyList(),
+
+    @JsonProperty("recommendation_type")
+    val recommendationType: String = "BASIC"
 )
 
 data class WorkoutRecommendationDetail(
@@ -50,14 +53,6 @@ data class AlternativeWorkout(
     val duration: Int
 )
 
-// POST /api/workouts/start-recommended Request/Response
-data class StartRecommendedWorkoutRequest(
-    @JsonProperty("recommendation_id")
-    val recommendationId: String,
-
-    val adjustments: WorkoutAdjustments = WorkoutAdjustments()
-)
-
 data class WorkoutAdjustments(
     val duration: Int? = null,
 
@@ -66,41 +61,4 @@ data class WorkoutAdjustments(
 
     @JsonProperty("substitute_exercises")
     val substituteExercises: Map<String, String> = emptyMap()
-)
-
-data class StartRecommendedWorkoutResponse(
-    @JsonProperty("session_id")
-    val sessionId: String,
-
-    @JsonProperty("workout_name")
-    val workoutName: String,
-
-    @JsonProperty("start_time")
-    val startTime: String,
-
-    val exercises: List<RecommendedWorkoutExercise>,
-
-    @JsonProperty("estimated_duration")
-    val estimatedDuration: Int,
-
-    val started: Boolean
-)
-
-data class RecommendedWorkoutExercise(
-    @JsonProperty("exercise_id")
-    val exerciseId: String,
-
-    val name: String,
-
-    @JsonProperty("planned_sets")
-    val plannedSets: Int,
-
-    @JsonProperty("planned_reps")
-    val plannedReps: String,
-
-    @JsonProperty("suggested_weight")
-    val suggestedWeight: Double,
-
-    @JsonProperty("rest_timer")
-    val restTimer: Int
 )

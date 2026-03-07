@@ -5,6 +5,7 @@ import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.service.ProgramProgressionService
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.user.service.UserService
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.security.CustomUserDetails
@@ -22,62 +23,79 @@ class ProgramProgressionController(
 
     @GetMapping("/analysis")
     fun analyzeProgression(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ProgramProgressionAnalysis>> {
         val user = userRepository.findById(userDetails.getId())
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
-        val analysis = programProgressionService.analyzeProgression(user)
+        val analysis = programProgressionService.analyzeProgression(user, locale)
         return ResponseEntity.ok(ApiResponse.success(analysis))
     }
 
     @GetMapping("/volume/optimization")
     fun getVolumeOptimization(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<VolumeOptimizationRecommendation>> {
         val user = userRepository.findById(userDetails.getId())
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
-        val recommendation = programProgressionService.optimizeVolume(user)
+        val recommendation = programProgressionService.optimizeVolume(user, locale)
         return ResponseEntity.ok(ApiResponse.success(recommendation))
     }
 
     @GetMapping("/recovery")
     fun analyzeRecovery(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<RecoveryAnalysis>> {
         val user = userRepository.findById(userDetails.getId())
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
-        val analysis = programProgressionService.analyzeRecovery(user)
+        val analysis = programProgressionService.analyzeRecovery(user, locale)
         return ResponseEntity.ok(ApiResponse.success(analysis))
     }
 
     @GetMapping("/transition/check")
     fun checkProgramTransition(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ProgramTransitionRecommendation>> {
         val user = userRepository.findById(userDetails.getId())
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
-        val recommendation = programProgressionService.checkProgramTransition(user)
+        val recommendation = programProgressionService.checkProgramTransition(user, locale)
         return ResponseEntity.ok(ApiResponse.success(recommendation))
     }
 
     @GetMapping("/summary")
     fun getProgressionSummary(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ProgressionSummary>> {
         val user = userRepository.findById(userDetails.getId())
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val normalizedLocale = WorkoutLocalization.normalizeLocale(locale)
 
-        // 진급 분석 데이터를 기반으로 요약 생성
-        val analysis = programProgressionService.analyzeProgression(user)
+        val analysis = programProgressionService.analyzeProgression(user, normalizedLocale)
+        val currentProgramName = WorkoutLocalization.splitName(analysis.currentProgram, normalizedLocale)
+        val nextMilestone = analysis.recommendation?.newProgram
+            ?.let { WorkoutLocalization.splitName(it, normalizedLocale) }
+            ?: WorkoutLocalization.message(
+                "progression.summary.next_milestone.remaining_cycles",
+                normalizedLocale,
+                3 - analysis.completedCycles
+            )
 
         val summary = ProgressionSummary(
-            currentLevel = "${analysis.currentProgram} - 주 ${analysis.currentDaysPerWeek}회",
-            nextMilestone = analysis.recommendation?.newProgram
-                ?: "현재 프로그램 ${3 - analysis.completedCycles}사이클 더 완료",
+            currentLevel = WorkoutLocalization.message(
+                "progression.summary.current_level",
+                normalizedLocale,
+                currentProgramName,
+                analysis.currentDaysPerWeek
+            ),
+            nextMilestone = nextMilestone,
             progressPercentage = minOf(
                 (analysis.completedCycles * 100 / 3),
                 (analysis.consistencyRate.toInt())
@@ -93,19 +111,26 @@ class ProgramProgressionController(
     @PostMapping("/apply-recommendation")
     fun applyProgressionRecommendation(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @RequestBody request: ApplyProgressionRequest
+        @RequestBody request: ApplyProgressionRequest,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ApplyProgressionResponse>> {
         val userId = userDetails.getId()
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val normalizedLocale = WorkoutLocalization.normalizeLocale(locale)
 
-        // 사용자 프로필 업데이트
         userService.updateWorkoutProgram(userId, request.newProgram, request.newDaysPerWeek)
+        val programName = WorkoutLocalization.splitName(request.newProgram, normalizedLocale)
 
         return ResponseEntity.ok(ApiResponse.success(
             ApplyProgressionResponse(
                 success = true,
-                message = "프로그램이 ${request.newProgram}(주 ${request.newDaysPerWeek}회)로 업그레이드되었습니다",
+                message = WorkoutLocalization.message(
+                    "progression.apply.success",
+                    normalizedLocale,
+                    programName,
+                    request.newDaysPerWeek
+                ),
                 newProgram = request.newProgram,
                 newDaysPerWeek = request.newDaysPerWeek
             ))

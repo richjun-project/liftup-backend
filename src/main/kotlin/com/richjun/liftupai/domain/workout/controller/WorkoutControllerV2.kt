@@ -2,6 +2,7 @@ package com.richjun.liftupai.domain.workout.controller
 
 import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.service.WorkoutServiceV2
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.security.CustomUserDetails
 import jakarta.validation.Valid
@@ -112,9 +113,10 @@ class WorkoutControllerV2(
     fun updateSession(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @PathVariable sessionId: Long,
-        @Valid @RequestBody request: UpdateSessionRequest
+        @Valid @RequestBody request: UpdateSessionRequest,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<UpdateSessionResponse>> {
-        val response = workoutServiceV2.updateSession(userDetails.getId(), sessionId, request)
+        val response = workoutServiceV2.updateSession(userDetails.getId(), sessionId, request, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -133,9 +135,10 @@ class WorkoutControllerV2(
     @PostMapping("/adjust-next-set")
     fun adjustNextSet(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Valid @RequestBody request: AdjustNextSetRequest
+        @Valid @RequestBody request: AdjustNextSetRequest,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<AdjustNextSetResponse>> {
-        val response = workoutServiceV2.adjustNextSet(userDetails.getId(), request)
+        val response = workoutServiceV2.adjustNextSet(userDetails.getId(), request, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -145,9 +148,10 @@ class WorkoutControllerV2(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @RequestParam exerciseType: String,
         @RequestParam intensity: String,
-        @RequestParam setNumber: Int
+        @RequestParam setNumber: Int,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<RestTimerResponse>> {
-        val response = workoutServiceV2.getRestTimer(exerciseType, intensity, setNumber)
+        val response = workoutServiceV2.getRestTimer(userDetails.getId(), exerciseType, intensity, setNumber, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -157,11 +161,12 @@ class WorkoutControllerV2(
     @PutMapping("/plan")
     fun updateWorkoutPlan(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Valid @RequestBody request: com.richjun.liftupai.domain.user.dto.WorkoutPlanRequest
+        @Valid @RequestBody request: com.richjun.liftupai.domain.user.dto.WorkoutPlanRequest,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<Map<String, Any>>> {
         val plan = workoutPlanService.updateWorkoutPlan(userDetails.getId(), request)
         return ResponseEntity.ok(ApiResponse.success(mapOf(
-            "message" to "운동 계획이 업데이트되었습니다",
+            "message" to WorkoutLocalization.message("workout.plan.updated", WorkoutLocalization.normalizeLocale(locale)),
             "plan" to plan
         )))
     }
@@ -190,32 +195,42 @@ class WorkoutControllerV2(
         return ResponseEntity.ok(ApiResponse.success(recommendation))
     }
 
-    // 빠른 운동 추천
+    // 기본 운동 추천
+    @GetMapping("/recommendations/basic")
+    fun getBasicWorkoutRecommendation(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) duration: Int?,
+        @RequestParam(required = false) equipment: String?,
+        @RequestParam(required = false) targetMuscle: String?,
+        @RequestParam(required = false) locale: String?
+    ): ResponseEntity<ApiResponse<QuickWorkoutRecommendationResponse>> {
+        val response = workoutServiceV2.getBasicWorkoutRecommendation(
+            userDetails.getId(),
+            duration,
+            equipment,
+            targetMuscle,
+            locale
+        )
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
+    // 빠른 운동 추천 (호환성 유지, 내부적으로는 basic 추천 사용)
+    @Deprecated("Use GET /api/v2/workouts/recommendations/basic instead")
     @GetMapping("/recommendations/quick")
     fun getQuickWorkoutRecommendation(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @RequestParam(required = false) duration: Int?,
         @RequestParam(required = false) equipment: String?,
-        @RequestParam(required = false) targetMuscle: String?
+        @RequestParam(required = false) targetMuscle: String?,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<QuickWorkoutRecommendationResponse>> {
-        val response = workoutServiceV2.getQuickWorkoutRecommendation(
+        val response = workoutServiceV2.getBasicWorkoutRecommendation(
             userDetails.getId(),
             duration,
             equipment,
-            targetMuscle
+            targetMuscle,
+            locale
         )
         return ResponseEntity.ok(ApiResponse.success(response))
-    }
-
-    // 추천 운동 시작 - Deprecated, use /start/new with workout_type instead
-    @Deprecated("Use POST /api/v2/workouts/start/new with workout_type='quick' or 'ai' instead")
-    @PostMapping("/start-recommended")
-    fun startRecommendedWorkout(
-        @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Valid @RequestBody request: StartRecommendedWorkoutRequest
-    ): ResponseEntity<ApiResponse<StartRecommendedWorkoutResponse>> {
-        val response = workoutServiceV2.startRecommendedWorkout(userDetails.getId(), request)
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success(response))
     }
 }

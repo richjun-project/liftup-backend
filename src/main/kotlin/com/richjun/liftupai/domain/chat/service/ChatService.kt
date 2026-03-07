@@ -10,6 +10,8 @@ import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.domain.chat.repository.ChatMessageRepository
 import com.richjun.liftupai.domain.auth.repository.UserRepository
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -23,6 +25,7 @@ import java.time.format.DateTimeFormatter
 class ChatService(
     private val chatMessageRepository: ChatMessageRepository,
     private val userRepository: UserRepository,
+    private val userSettingsRepository: UserSettingsRepository,
     private val geminiAIService: GeminiAIService,
     private val aiAnalysisService: AIAnalysisService,
     private val objectMapper: ObjectMapper
@@ -30,7 +33,7 @@ class ChatService(
 
     fun sendMessage(userId: Long, request: ChatMessageRequest): ChatMessageResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
         // 사용자 메시지 저장
         var chatMessage = ChatMessage(
@@ -84,7 +87,7 @@ class ChatService(
         date: LocalDateTime?
     ): ChatHistoryResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
         val pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "timestamp"))
 
@@ -109,7 +112,7 @@ class ChatService(
 
     fun clearChatHistory(userId: Long) {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
         chatMessageRepository.deleteAllByUser(user)
     }
@@ -119,13 +122,15 @@ class ChatService(
         duration: Int?,
         equipment: String?,
         targetMuscle: String?,
-        difficulty: String?
+        difficulty: String?,
+        localeOverride: String?
     ): ChatWorkoutRecommendationResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
 
         // 사용자 메시지 생성
-        val userMessage = buildWorkoutRequestMessage(duration, equipment, targetMuscle, difficulty)
+        val userMessage = buildWorkoutRequestMessage(duration, equipment, targetMuscle, difficulty, locale)
 
         // 사용자 메시지를 채팅에 저장
         var chatMessage = ChatMessage(
@@ -144,11 +149,12 @@ class ChatService(
                 duration,
                 equipment,
                 targetMuscle,
-                difficulty
+                difficulty,
+                locale
             )
 
             // 추천을 사용자 친화적인 텍스트로 변환
-            val aiResponseText = formatWorkoutRecommendationAsText(workoutRecommendation)
+            val aiResponseText = formatWorkoutRecommendationAsText(workoutRecommendation, locale)
 
             // AI 응답으로 메시지 업데이트
             chatMessage = chatMessage.copy(
@@ -178,22 +184,48 @@ class ChatService(
         duration: Int?,
         equipment: String?,
         targetMuscle: String?,
-        difficulty: String?
+        difficulty: String?,
+        locale: String
     ): String {
         val parts = mutableListOf<String>()
 
-        parts.add("AI 운동 추천 요청")
+        parts.add(WorkoutLocalization.message("chat.request.title", locale))
 
-        duration?.let { parts.add("운동 시간: ${it}분") }
-        equipment?.let { parts.add("장비: $it") }
-        targetMuscle?.let { parts.add("타겟 근육: $it") }
-        difficulty?.let { parts.add("난이도: $it") }
+        duration?.let { parts.add(WorkoutLocalization.message("chat.request.duration", locale, it)) }
+        equipment?.let {
+            parts.add(
+                WorkoutLocalization.message(
+                    "chat.request.equipment",
+                    locale,
+                    WorkoutLocalization.equipmentName(it, locale)
+                )
+            )
+        }
+        targetMuscle?.let {
+            parts.add(
+                WorkoutLocalization.message(
+                    "chat.request.target",
+                    locale,
+                    WorkoutLocalization.targetDisplayName(it, locale)
+                )
+            )
+        }
+        difficulty?.let {
+            parts.add(
+                WorkoutLocalization.message(
+                    "chat.request.difficulty",
+                    locale,
+                    WorkoutLocalization.difficultyDisplayName(it, locale)
+                )
+            )
+        }
 
         return parts.joinToString(" | ")
     }
 
     private fun formatWorkoutRecommendationAsText(
-        recommendation: com.richjun.liftupai.domain.ai.dto.AIWorkoutRecommendationResponse
+        recommendation: com.richjun.liftupai.domain.ai.dto.AIWorkoutRecommendationResponse,
+        locale: String
     ): String {
         val detail = recommendation.recommendation
         val sb = StringBuilder()
@@ -203,45 +235,45 @@ class ChatService(
         sb.appendLine()
 
         // 기본 정보
-        sb.appendLine("⏱ 운동 시간: ${detail.duration}분")
-        sb.appendLine("💪 난이도: ${detail.difficulty}")
+        sb.appendLine(WorkoutLocalization.message("chat.summary.duration", locale, detail.duration))
+        sb.appendLine(WorkoutLocalization.message("chat.summary.difficulty", locale, detail.difficulty))
         if (detail.targetMuscles.isNotEmpty()) {
-            sb.appendLine("🎯 타겟 근육: ${detail.targetMuscles.joinToString(", ")}")
+            sb.appendLine(WorkoutLocalization.message("chat.summary.target", locale, detail.targetMuscles.joinToString(", ")))
         }
         if (detail.equipment.isNotEmpty()) {
-            sb.appendLine("🏋️ 필요 장비: ${detail.equipment.joinToString(", ")}")
+            sb.appendLine(WorkoutLocalization.message("chat.summary.equipment", locale, detail.equipment.joinToString(", ")))
         }
-        sb.appendLine("🔥 예상 칼로리: ${detail.estimatedCalories}kcal")
+        sb.appendLine(WorkoutLocalization.message("chat.summary.calories", locale, detail.estimatedCalories))
         sb.appendLine()
 
         // 운동 리스트
-        sb.appendLine("📋 운동 프로그램:")
+        sb.appendLine(WorkoutLocalization.message("chat.section.plan", locale))
         detail.exercises.forEach { exercise ->
             sb.appendLine("${exercise.order}. ${exercise.name}")
-            sb.appendLine("   - ${exercise.sets}세트 x ${exercise.reps}회 (휴식 ${exercise.rest}초)")
+            sb.appendLine(WorkoutLocalization.message("chat.set.line", locale, exercise.sets, exercise.reps, exercise.rest))
             exercise.suggestedWeight?.let {
-                sb.appendLine("   - 권장 무게: ${it}kg")
+                sb.appendLine(WorkoutLocalization.message("chat.weight.line", locale, it))
             }
         }
         sb.appendLine()
 
         // 코칭 메시지
         detail.coachingMessage?.let {
-            sb.appendLine("💬 코치의 한마디:")
+            sb.appendLine(WorkoutLocalization.message("chat.section.coaching", locale))
             sb.appendLine(it)
             sb.appendLine()
         }
 
         // 운동 포커스
         detail.workoutFocus?.let {
-            sb.appendLine("🎯 오늘의 포커스:")
+            sb.appendLine(WorkoutLocalization.message("chat.section.focus", locale))
             sb.appendLine(it)
             sb.appendLine()
         }
 
         // 팁
         if (detail.tips.isNotEmpty()) {
-            sb.appendLine("💡 운동 팁:")
+            sb.appendLine(WorkoutLocalization.message("chat.section.tips", locale))
             detail.tips.forEach { tip ->
                 sb.appendLine("• $tip")
             }
@@ -250,26 +282,36 @@ class ChatService(
 
         // 진행 노트
         detail.progressionNote?.let {
-            sb.appendLine("📈 다음 단계:")
+            sb.appendLine(WorkoutLocalization.message("chat.section.next", locale))
             sb.appendLine(it)
             sb.appendLine()
         }
 
         // AI 인사이트
         recommendation.aiInsights?.let { insights ->
-            sb.appendLine("🧠 AI 분석:")
+            sb.appendLine(WorkoutLocalization.message("chat.section.insights", locale))
             insights.workoutRationale?.let {
-                sb.appendLine("• 운동 구성 이유: $it")
+                sb.appendLine(WorkoutLocalization.message("chat.insight.rationale", locale, it))
             }
             insights.keyPoint?.let {
-                sb.appendLine("• 핵심 포인트: $it")
+                sb.appendLine(WorkoutLocalization.message("chat.insight.key_point", locale, it))
             }
             insights.nextStep?.let {
-                sb.appendLine("• 다음 목표: $it")
+                sb.appendLine(WorkoutLocalization.message("chat.insight.next", locale, it))
             }
         }
 
         return sb.toString().trim()
+    }
+
+    private fun resolveLocale(userId: Long, localeOverride: String?): String {
+        if (!localeOverride.isNullOrBlank()) {
+            return WorkoutLocalization.normalizeLocale(localeOverride)
+        }
+
+        return WorkoutLocalization.normalizeLocale(
+            userSettingsRepository.findByUser_Id(userId).orElse(null)?.language
+        )
     }
 
     private fun mapToDto(message: ChatMessage): ChatMessageDto {
@@ -284,4 +326,3 @@ class ChatService(
         )
     }
 }
-

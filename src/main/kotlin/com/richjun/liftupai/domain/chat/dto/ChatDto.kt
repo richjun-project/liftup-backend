@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import jakarta.validation.constraints.NotBlank
 
 data class ChatMessageRequest(
-    @field:NotBlank(message = "메시지는 필수입니다")
+    @field:NotBlank(message = "Message is required")
     val message: String,
 
     val attachments: List<String>? = null

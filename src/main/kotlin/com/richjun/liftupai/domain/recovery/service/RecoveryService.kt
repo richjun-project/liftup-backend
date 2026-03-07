@@ -6,9 +6,12 @@ import com.richjun.liftupai.domain.recovery.entity.MuscleRecovery
 import com.richjun.liftupai.domain.recovery.entity.RecoveryActivity
 import com.richjun.liftupai.domain.recovery.entity.RecoveryActivityType
 import com.richjun.liftupai.domain.recovery.entity.RecoveryIntensity
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository
 import com.richjun.liftupai.domain.recovery.repository.RecoveryActivityRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
+import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -21,6 +24,7 @@ import java.time.temporal.ChronoUnit
 @Transactional
 class RecoveryService(
     private val userRepository: UserRepository,
+    private val userSettingsRepository: UserSettingsRepository,
     private val muscleRecoveryRepository: MuscleRecoveryRepository,
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val recoveryActivityRepository: RecoveryActivityRepository
@@ -28,9 +32,10 @@ class RecoveryService(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @Transactional(readOnly = true)
-    fun getRecoveryStatus(userId: Long): RecoveryStatusResponse {
+    fun getRecoveryStatus(userId: Long, localeOverride: String? = null): RecoveryStatusResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
 
         println("DEBUG RecoveryService.getRecoveryStatus - userId: $userId")
 
@@ -44,14 +49,8 @@ class RecoveryService(
         }
 
         val muscleStatuses = muscles.map { muscle ->
-            MuscleRecoveryStatus(
-                name = muscle.muscleGroup,
-                recoveryPercentage = muscle.recoveryPercentage,
-                lastWorked = muscle.lastWorked.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                estimatedRecoveryTime = calculateEstimatedRecoveryTime(muscle),
-                status = determineRecoveryStatus(muscle.recoveryPercentage)
-            )
-        }.plus(getDefaultMuscleGroups(muscles))
+            toMuscleRecoveryStatus(muscle, locale)
+        }.plus(getDefaultMuscleGroups(muscles, locale))
 
         println("DEBUG RecoveryService.getRecoveryStatus - total muscle statuses: ${muscleStatuses.size}")
         println("DEBUG RecoveryService.getRecoveryStatus - muscle groups: ${muscleStatuses.map { it.name }}")
@@ -59,15 +58,17 @@ class RecoveryService(
         return RecoveryStatusResponse(muscles = muscleStatuses)
     }
 
-    fun updateRecovery(userId: Long, request: UpdateRecoveryRequest): UpdateRecoveryResponse {
+    fun updateRecovery(userId: Long, request: UpdateRecoveryRequest, localeOverride: String? = null): UpdateRecoveryResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
+        val muscleKey = canonicalMuscleKey(request.muscleGroup)
 
-        val muscleRecovery = muscleRecoveryRepository.findByUserAndMuscleGroup(user, request.muscleGroup)
+        val muscleRecovery = muscleRecoveryRepository.findByUserAndMuscleGroup(user, muscleKey)
             .orElseGet {
                 MuscleRecovery(
                     user = user,
-                    muscleGroup = request.muscleGroup,
+                    muscleGroup = muscleKey,
                     lastWorked = LocalDateTime.now()
                 )
             }
@@ -85,29 +86,24 @@ class RecoveryService(
 
         return UpdateRecoveryResponse(
             success = true,
-            updatedStatus = MuscleRecoveryStatus(
-                name = saved.muscleGroup,
-                recoveryPercentage = saved.recoveryPercentage,
-                lastWorked = saved.lastWorked.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                estimatedRecoveryTime = calculateEstimatedRecoveryTime(saved),
-                status = determineRecoveryStatus(saved.recoveryPercentage)
-            )
+            updatedStatus = toMuscleRecoveryStatus(saved, locale)
         )
     }
 
     @Transactional(readOnly = true)
-    fun getRecoveryRecommendations(userId: Long): RecoveryRecommendationsResponse {
+    fun getRecoveryRecommendations(userId: Long, localeOverride: String? = null): RecoveryRecommendationsResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
 
         val readyMuscles = muscleRecoveryRepository.findReadyMuscles(user, 80)
-            .map { it.muscleGroup }
+            .map { displayMuscleName(it.muscleGroup, locale) }
 
-        val recoveryExercises = generateRecoveryExercises(user)
-        val nutritionTips = generateNutritionTips(user)
+        val recoveryExercises = generateRecoveryExercises(user, locale)
+        val nutritionTips = generateNutritionTips(locale)
 
         return RecoveryRecommendationsResponse(
-            readyMuscles = readyMuscles.ifEmpty { getDefaultReadyMuscles() },
+            readyMuscles = readyMuscles.ifEmpty { getDefaultReadyMuscles(locale) },
             recoveryExercises = recoveryExercises,
             nutritionTips = nutritionTips
         )
@@ -115,13 +111,14 @@ class RecoveryService(
 
     fun updateMuscleWorkout(userId: Long, muscleGroup: String) {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val muscleKey = canonicalMuscleKey(muscleGroup)
 
-        val muscleRecovery = muscleRecoveryRepository.findByUserAndMuscleGroup(user, muscleGroup)
+        val muscleRecovery = muscleRecoveryRepository.findByUserAndMuscleGroup(user, muscleKey)
             .orElseGet {
                 MuscleRecovery(
                     user = user,
-                    muscleGroup = muscleGroup,
+                    muscleGroup = muscleKey,
                     lastWorked = LocalDateTime.now()
                 )
             }
@@ -136,15 +133,12 @@ class RecoveryService(
     // 운동 완료 시 여러 근육 그룹 업데이트
     fun updateMuscleWorkoutForExercise(userId: Long, exercise: com.richjun.liftupai.domain.workout.entity.Exercise) {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
-        // muscleGroups 컬렉션의 각 근육 업데이트
         exercise.muscleGroups.forEach { muscleEnum ->
-            val muscleName = mapMuscleGroupEnumToKorean(muscleEnum)
-            updateMuscleWorkout(userId, muscleName)
+            updateMuscleWorkout(userId, muscleEnum.name.lowercase())
         }
 
-        // muscleGroups가 비어있으면 카테고리 기반으로 업데이트
         if (exercise.muscleGroups.isEmpty()) {
             val categoryMuscle = mapCategoryToMuscleGroup(exercise.category)
             updateMuscleWorkout(userId, categoryMuscle)
@@ -152,38 +146,9 @@ class RecoveryService(
     }
 
     private fun mapCategoryToMuscleGroup(category: com.richjun.liftupai.domain.workout.entity.ExerciseCategory): String {
-        return when (category) {
-            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.CHEST -> "가슴"
-            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.BACK -> "등"
-            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.LEGS -> "하체"
-            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.SHOULDERS -> "어깨"
-            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.ARMS -> "팔"
-            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.CORE -> "복근"
-            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.CARDIO -> "유산소"
-            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.FULL_BODY -> "전신"
-        }
-    }
-
-    private fun mapMuscleGroupEnumToKorean(muscleGroup: com.richjun.liftupai.domain.workout.entity.MuscleGroup): String {
-        // Flutter 프론트엔드와 일치하는 16개 근육 그룹 매핑
-        return when (muscleGroup) {
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.CHEST -> "가슴"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.BACK -> "등"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.SHOULDERS -> "어깨"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.BICEPS -> "이두근"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.TRICEPS -> "삼두근"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.LEGS -> "다리"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.CORE -> "코어"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.ABS -> "복근"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.GLUTES -> "둔근"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.CALVES -> "종아리"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.FOREARMS -> "전완근"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.NECK -> "목"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.QUADRICEPS -> "대퇴사두근"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.HAMSTRINGS -> "햄스트링"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.LATS -> "광배근"
-            com.richjun.liftupai.domain.workout.entity.MuscleGroup.TRAPS -> "승모근"
-        }
+        return WorkoutTargetResolver.focusForCategory(category)
+            ?.let { WorkoutTargetResolver.key(it) }
+            ?: "full_body"
     }
 
     private fun updateRecoveryPercentages(user: com.richjun.liftupai.domain.auth.entity.User) {
@@ -231,54 +196,55 @@ class RecoveryService(
         return (remainingRecovery / recoveryRate).toInt()
     }
 
-    private fun determineRecoveryStatus(recoveryPercentage: Int): String {
+    private fun determineRecoveryStatusKey(recoveryPercentage: Int): String {
         return when {
-            recoveryPercentage >= 100 -> "완전 회복"
-            recoveryPercentage >= 80 -> "운동 가능"
-            recoveryPercentage >= 60 -> "가벼운 운동 가능"
-            recoveryPercentage >= 40 -> "회복 중"
-            else -> "휴식 필요"
+            recoveryPercentage >= 100 -> "full"
+            recoveryPercentage >= 80 -> "ready"
+            recoveryPercentage >= 60 -> "light"
+            recoveryPercentage >= 40 -> "recovering"
+            else -> "rest"
         }
     }
 
-    private fun getDefaultMuscleGroups(existingMuscles: List<MuscleRecovery>): List<MuscleRecoveryStatus> {
-        // Flutter 프론트엔드와 일치하는 16개 근육 그룹
+    private fun getDefaultMuscleGroups(existingMuscles: List<MuscleRecovery>, locale: String): List<MuscleRecoveryStatus> {
         val defaultGroups = listOf(
-            "가슴",           // chest
-            "등",             // back
-            "어깨",           // shoulders
-            "이두근",         // biceps
-            "삼두근",         // triceps
-            "다리",           // legs
-            "코어",           // core
-            "복근",           // abs
-            "둔근",           // glutes
-            "종아리",         // calves
-            "전완근",         // forearms
-            "목",             // neck
-            "대퇴사두근",     // quadriceps
-            "햄스트링",       // hamstrings
-            "광배근",         // lats
-            "승모근"          // traps
+            "chest",
+            "back",
+            "shoulders",
+            "biceps",
+            "triceps",
+            "legs",
+            "core",
+            "abs",
+            "glutes",
+            "calves",
+            "forearms",
+            "neck",
+            "quadriceps",
+            "hamstrings",
+            "lats",
+            "traps"
         )
         val existingGroups = existingMuscles.map { it.muscleGroup }.toSet()
 
         return defaultGroups.filter { it !in existingGroups }.map { group ->
             MuscleRecoveryStatus(
-                name = group,
+                code = group,
+                name = displayMuscleName(group, locale),
                 recoveryPercentage = 100,
                 lastWorked = null,
                 estimatedRecoveryTime = 0,
-                status = "완전 회복"
+                status = WorkoutLocalization.message("recovery.status.full", locale)
             )
         }
     }
 
-    private fun getDefaultReadyMuscles(): List<String> {
-        return listOf("가슴", "등", "어깨", "팔", "하체", "복근")
+    private fun getDefaultReadyMuscles(locale: String): List<String> {
+        return listOf("chest", "back", "shoulders", "arms", "legs", "abs")
+            .map { displayMuscleName(it, locale) }
     }
 
-    private fun generateRecoveryExercises(user: com.richjun.liftupai.domain.auth.entity.User): List<RecoveryExercise> {
+    private fun generateRecoveryExercises(user: com.richjun.liftupai.domain.auth.entity.User, locale: String): List<RecoveryExercise> {
         val recoveringMuscles = muscleRecoveryRepository.findRecoveringMuscles(user)
 
         val exercises = mutableListOf<RecoveryExercise>()
@@ -286,32 +252,32 @@ class RecoveryService(
         if (recoveringMuscles.any { it.soreness >= 5 }) {
             exercises.add(
                 RecoveryExercise(
-                    name = "가벼운 스트레칭",
-                    description = "전신 스트레칭으로 근육 긴장을 완화하세요",
+                    name = WorkoutLocalization.message("recovery.exercise.light_stretching.name", locale),
+                    description = WorkoutLocalization.message("recovery.exercise.light_stretching.description", locale),
                     duration = 15,
-                    type = "스트레칭"
+                    type = WorkoutLocalization.message("recovery.exercise.light_stretching.type", locale)
                 )
             )
         }
 
         exercises.addAll(listOf(
             RecoveryExercise(
-                name = "폼롤러 마사지",
-                description = "근육 뭉침을 풀어주고 혈액순환을 촉진합니다",
+                name = WorkoutLocalization.message("recovery.exercise.foam_rolling.name", locale),
+                description = WorkoutLocalization.message("recovery.exercise.foam_rolling.description", locale),
                 duration = 10,
-                type = "마사지"
+                type = WorkoutLocalization.message("recovery.exercise.foam_rolling.type", locale)
             ),
             RecoveryExercise(
-                name = "가벼운 유산소",
-                description = "20-30분 가벼운 조깅이나 자전거 타기",
+                name = WorkoutLocalization.message("recovery.exercise.light_cardio.name", locale),
+                description = WorkoutLocalization.message("recovery.exercise.light_cardio.description", locale),
                 duration = 25,
-                type = "유산소"
+                type = WorkoutLocalization.message("recovery.exercise.light_cardio.type", locale)
             ),
             RecoveryExercise(
-                name = "요가",
-                description = "유연성 향상과 근육 이완을 위한 요가",
+                name = WorkoutLocalization.message("recovery.exercise.yoga.name", locale),
+                description = WorkoutLocalization.message("recovery.exercise.yoga.description", locale),
                 duration = 30,
-                type = "요가"
+                type = WorkoutLocalization.message("recovery.exercise.yoga.type", locale)
             )
         ))
 
@@ -320,9 +286,10 @@ class RecoveryService(
 
     fun boostMuscleRecovery(userId: Long, muscleGroup: String, boostPercentage: Int) {
         val muscleRecoveries = muscleRecoveryRepository.findByUser_Id(userId)
+        val muscleKey = canonicalMuscleKey(muscleGroup)
 
         val recovery = muscleRecoveries.find {
-            it.muscleGroup.equals(muscleGroup, ignoreCase = true)
+            it.muscleGroup.equals(muscleKey, ignoreCase = true)
         } ?: return
 
         val newRecoveryPercentage = (recovery.recoveryPercentage + boostPercentage).coerceIn(0, 100)
@@ -330,40 +297,41 @@ class RecoveryService(
         recovery.updatedAt = LocalDateTime.now()
 
         muscleRecoveryRepository.save(recovery)
-        logger.info("Boosted recovery for $muscleGroup by $boostPercentage% for user $userId")
+        logger.info("Boosted recovery for $muscleKey by $boostPercentage% for user $userId")
     }
 
-    private fun generateNutritionTips(user: com.richjun.liftupai.domain.auth.entity.User): List<NutritionTip> {
+    private fun generateNutritionTips(locale: String): List<NutritionTip> {
         return listOf(
             NutritionTip(
-                tip = "단백질 섭취량 늘리기",
-                reason = "근육 회복과 성장을 위해 체중 kg당 1.5-2g의 단백질을 섭취하세요"
+                tip = WorkoutLocalization.message("recovery.nutrition.protein.tip", locale),
+                reason = WorkoutLocalization.message("recovery.nutrition.protein.reason", locale)
             ),
             NutritionTip(
-                tip = "충분한 수분 섭취",
-                reason = "하루 2-3리터의 물을 마셔 근육 회복을 돕고 노폐물 배출을 촉진하세요"
+                tip = WorkoutLocalization.message("recovery.nutrition.hydration.tip", locale),
+                reason = WorkoutLocalization.message("recovery.nutrition.hydration.reason", locale)
             ),
             NutritionTip(
-                tip = "BCAA 보충",
-                reason = "분지사슬아미노산은 근육 손상을 줄이고 회복 속도를 높입니다"
+                tip = WorkoutLocalization.message("recovery.nutrition.bcaa.tip", locale),
+                reason = WorkoutLocalization.message("recovery.nutrition.bcaa.reason", locale)
             ),
             NutritionTip(
-                tip = "충분한 수면",
-                reason = "7-9시간의 수면은 성장호르몬 분비를 촉진해 근육 회복을 돕습니다"
+                tip = WorkoutLocalization.message("recovery.nutrition.sleep.tip", locale),
+                reason = WorkoutLocalization.message("recovery.nutrition.sleep.reason", locale)
             ),
             NutritionTip(
-                tip = "항산화 식품 섭취",
-                reason = "베리류, 녹색 채소 등으로 운동으로 인한 산화 스트레스를 줄이세요"
+                tip = WorkoutLocalization.message("recovery.nutrition.antioxidants.tip", locale),
+                reason = WorkoutLocalization.message("recovery.nutrition.antioxidants.reason", locale)
             )
         )
     }
 
     // RecoveryActivityService methods
-    fun recordActivity(userId: Long, request: RecordActivityRequest): RecordActivityResponse {
+    fun recordActivity(userId: Long, request: RecordActivityRequest, localeOverride: String? = null): RecordActivityResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
+        val bodyPartKeys = request.bodyParts.map(::canonicalMuscleKey).toMutableSet()
 
-        // Calculate recovery score based on activity
         val recoveryScore = calculateRecoveryScore(request)
         val recoveryBoost = calculateRecoveryBoost(request)
 
@@ -373,7 +341,7 @@ class RecoveryService(
             duration = request.duration,
             intensity = request.intensity,
             notes = request.notes,
-            bodyParts = request.bodyParts.toMutableSet(),
+            bodyParts = bodyPartKeys,
             performedAt = request.performedAt,
             recoveryScore = recoveryScore,
             recoveryBoost = recoveryBoost
@@ -381,10 +349,9 @@ class RecoveryService(
 
         val saved = recoveryActivityRepository.save(activity)
 
-        // Update muscle recovery based on activity
-        updateMuscleRecoveryForActivity(userId, request.bodyParts, recoveryBoost)
+        updateMuscleRecoveryForActivity(userId, bodyPartKeys, recoveryBoost)
 
-        val nextRecommendation = generateNextRecommendation(userId, request.activityType)
+        val nextRecommendation = generateNextRecommendation(request.activityType, locale)
 
         logger.info("Recovery activity recorded for user $userId: ${request.activityType}")
 
@@ -398,9 +365,16 @@ class RecoveryService(
     }
 
     @Transactional(readOnly = true)
-    fun getRecoveryHistory(userId: Long, startDate: String, endDate: String, activityType: String?): RecoveryHistoryResponse {
+    fun getRecoveryHistory(
+        userId: Long,
+        startDate: String,
+        endDate: String,
+        activityType: String?,
+        localeOverride: String? = null
+    ): RecoveryHistoryResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
 
         val start = java.time.LocalDate.parse(startDate).atStartOfDay()
         val end = java.time.LocalDate.parse(endDate).atTime(23, 59, 59)
@@ -422,7 +396,7 @@ class RecoveryService(
 
         val history = groupedActivities.map { (date, dayActivities) ->
             val dayScore = calculateDailyRecoveryScore(dayActivities)
-            val muscleSoreness = getMuscleStressorForDate(userId, date)
+            val muscleSoreness = getMuscleStressorForDate(userId, date, locale)
 
             DailyRecoveryHistory(
                 date = date.format(DateTimeFormatter.ISO_LOCAL_DATE),
@@ -511,14 +485,14 @@ class RecoveryService(
         }
     }
 
-    private fun generateNextRecommendation(userId: Long, lastActivity: RecoveryActivityType): String {
+    private fun generateNextRecommendation(lastActivity: RecoveryActivityType, locale: String): String {
         return when (lastActivity) {
-            RecoveryActivityType.STRETCHING -> "다음 운동 전 폼롤링을 추천합니다"
-            RecoveryActivityType.FOAM_ROLLING -> "충분한 수분 섭취를 잊지 마세요"
-            RecoveryActivityType.MASSAGE -> "가벼운 스트레칭으로 마무리하세요"
-            RecoveryActivityType.COLD_BATH -> "체온 회복을 위해 따뜻한 차를 드세요"
-            RecoveryActivityType.SAUNA -> "수분 보충이 중요합니다"
-            RecoveryActivityType.SLEEP -> "일어나서 가벼운 스트레칭을 해보세요"
+            RecoveryActivityType.STRETCHING -> WorkoutLocalization.message("recovery.next.stretching", locale)
+            RecoveryActivityType.FOAM_ROLLING -> WorkoutLocalization.message("recovery.next.foam_rolling", locale)
+            RecoveryActivityType.MASSAGE -> WorkoutLocalization.message("recovery.next.massage", locale)
+            RecoveryActivityType.COLD_BATH -> WorkoutLocalization.message("recovery.next.cold_bath", locale)
+            RecoveryActivityType.SAUNA -> WorkoutLocalization.message("recovery.next.sauna", locale)
+            RecoveryActivityType.SLEEP -> WorkoutLocalization.message("recovery.next.sleep", locale)
         }
     }
 
@@ -532,11 +506,11 @@ class RecoveryService(
         return if (averageScore.isNaN()) 50 else averageScore.toInt()
     }
 
-    private fun getMuscleStressorForDate(userId: Long, date: java.time.LocalDate): MuscleSoreness {
+    private fun getMuscleStressorForDate(userId: Long, date: java.time.LocalDate, locale: String): MuscleSoreness {
         val muscleRecoveries = muscleRecoveryRepository.findByUser_Id(userId)
 
         val details = muscleRecoveries.associate { recovery ->
-            recovery.muscleGroup to (100 - recovery.recoveryPercentage).coerceIn(0, 10) / 10
+            displayMuscleName(recovery.muscleGroup, locale) to (100 - recovery.recoveryPercentage).coerceIn(0, 10) / 10
         }
 
         val overall = if (details.isNotEmpty()) {
@@ -595,5 +569,36 @@ class RecoveryService(
             secondHalfScore < firstHalfScore - 5 -> "declining"
             else -> "stable"
         }
+    }
+
+    private fun resolveLocale(userId: Long, localeOverride: String?): String {
+        if (!localeOverride.isNullOrBlank()) {
+            return WorkoutLocalization.normalizeLocale(localeOverride)
+        }
+
+        val userLocale = userSettingsRepository.findByUser_Id(userId).orElse(null)?.language
+        return WorkoutLocalization.normalizeLocale(userLocale)
+    }
+
+    private fun canonicalMuscleKey(raw: String): String {
+        return WorkoutTargetResolver.resolveMuscleGroup(raw)?.name?.lowercase()
+            ?: WorkoutTargetResolver.recommendationKey(raw)
+            ?: raw.trim().lowercase().replace("-", "_").replace(" ", "_")
+    }
+
+    private fun displayMuscleName(raw: String, locale: String): String {
+        return WorkoutLocalization.targetDisplayName(raw, locale)
+    }
+
+    private fun toMuscleRecoveryStatus(muscle: MuscleRecovery, locale: String): MuscleRecoveryStatus {
+        val statusKey = determineRecoveryStatusKey(muscle.recoveryPercentage)
+        return MuscleRecoveryStatus(
+            code = canonicalMuscleKey(muscle.muscleGroup),
+            name = displayMuscleName(muscle.muscleGroup, locale),
+            recoveryPercentage = muscle.recoveryPercentage,
+            lastWorked = muscle.lastWorked.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            estimatedRecoveryTime = calculateEstimatedRecoveryTime(muscle),
+            status = WorkoutLocalization.message("recovery.status.$statusKey", locale)
+        )
     }
 }

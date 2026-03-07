@@ -2,7 +2,6 @@ package com.richjun.liftupai.domain.workout.controller
 
 import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.service.WorkoutService
-import com.richjun.liftupai.domain.workout.service.WorkoutServiceV2
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.security.CustomUserDetails
 import jakarta.validation.Valid
@@ -17,8 +16,7 @@ import java.time.LocalDateTime
 @RestController
 @RequestMapping("/api/workouts")
 class WorkoutController(
-    private val workoutService: WorkoutService,
-    private val workoutServiceV2: WorkoutServiceV2
+    private val workoutService: WorkoutService
 ) {
 
     // 운동 세션 시작 (V1 - Deprecated, V2 API 사용 권장)
@@ -207,33 +205,5 @@ class WorkoutController(
     ): ResponseEntity<ApiResponse<StrengthStandardsResponse>> {
         val response = workoutService.getStrengthStandards(gender, bodyWeight)
         return ResponseEntity.ok(ApiResponse.success(response))
-    }
-
-    // Quick workout recommendations V3
-    @GetMapping("/recommendations/quick")
-    fun getQuickWorkoutRecommendation(
-        @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @RequestParam(required = false) duration: Int?,
-        @RequestParam(required = false) equipment: String?,
-        @RequestParam(required = false) targetMuscle: String?
-    ): ResponseEntity<ApiResponse<QuickWorkoutRecommendationResponse>> {
-        val response = workoutServiceV2.getQuickWorkoutRecommendation(
-            userDetails.getId(),
-            duration,
-            equipment,
-            targetMuscle
-        )
-        return ResponseEntity.ok(ApiResponse.success(response))
-    }
-
-    // Start recommended workout immediately V3
-    @PostMapping("/start-recommended")
-    fun startRecommendedWorkout(
-        @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Valid @RequestBody request: StartRecommendedWorkoutRequest
-    ): ResponseEntity<ApiResponse<StartRecommendedWorkoutResponse>> {
-        val response = workoutServiceV2.startRecommendedWorkout(userDetails.getId(), request)
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .body(ApiResponse.success(response))
     }
 }

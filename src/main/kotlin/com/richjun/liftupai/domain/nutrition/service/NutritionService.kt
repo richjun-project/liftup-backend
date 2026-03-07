@@ -2,6 +2,7 @@ package com.richjun.liftupai.domain.nutrition.service
 
 import com.richjun.liftupai.domain.ai.dto.*
 import com.richjun.liftupai.domain.ai.service.GeminiAIService
+import com.richjun.liftupai.domain.ai.util.AILocalization
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.nutrition.entity.MealLog
 import com.richjun.liftupai.domain.nutrition.entity.MealType
@@ -13,6 +14,7 @@ import com.richjun.liftupai.domain.chat.repository.ChatMessageRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.domain.upload.service.FileUploadService
 import com.richjun.liftupai.domain.upload.dto.ImageUploadResponse
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -29,14 +31,15 @@ class NutritionService(
     private val chatMessageRepository: ChatMessageRepository,
     private val geminiAIService: GeminiAIService,
     private val fileUploadService: FileUploadService,
-    private val userProfileRepository: com.richjun.liftupai.domain.user.repository.UserProfileRepository
+    private val userProfileRepository: com.richjun.liftupai.domain.user.repository.UserProfileRepository,
+    private val userSettingsRepository: UserSettingsRepository
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @Transactional(readOnly = true)
     fun getNutritionHistory(userId: Long, date: String, period: String): NutritionHistoryResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
         val startDate = LocalDate.parse(date)
         val endDate = when (period) {
@@ -87,7 +90,7 @@ class NutritionService(
 
     fun logNutrition(userId: Long, request: NutritionLogRequest): NutritionLogResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
         val mealLog = MealLog(
             user = user,
@@ -110,13 +113,14 @@ class NutritionService(
 
     fun analyzeMeal(userId: Long, request: MealAnalysisRequest): MealAnalysisResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId)
 
         // Gemini AI를 사용한 이미지 기반 식단 분석
         val aiResponse = geminiAIService.analyzeMealImage(request.imageUrl, user)
 
         // AI 응답 파싱
-        val response = parseMealAnalysisResponse(aiResponse)
+        val response = parseMealAnalysisResponse(aiResponse, locale)
 
         // 분석 결과를 DB에 저장
         val mealLog = MealLog(
@@ -133,9 +137,9 @@ class NutritionService(
         mealLogRepository.save(mealLog)
 
         // 채팅 메시지로도 저장
-        val userMessage = "🍽️ 식단 분석 요청"
+        val userMessage = AILocalization.message("nutrition.chat.request.analysis", locale)
 
-        val aiResponseText = formatMealAnalysisForChat(response)
+        val aiResponseText = formatMealAnalysisForChat(response, locale)
 
         val chatMessage = ChatMessage(
             user = user,
@@ -150,22 +154,22 @@ class NutritionService(
         return response
     }
 
-    private fun formatMealAnalysisForChat(response: MealAnalysisResponse): String {
+    private fun formatMealAnalysisForChat(response: MealAnalysisResponse, locale: String): String {
         val sb = StringBuilder()
 
-        sb.appendLine("📊 ${response.mealInfo.name} 분석 결과")
+        sb.appendLine("📊 ${AILocalization.message("nutrition.chat.analysis.title", locale, response.mealInfo.name)}")
         sb.appendLine()
-        sb.appendLine("📏 분량: ${response.mealInfo.portion}")
-        sb.appendLine("🔥 칼로리: ${response.calories}kcal")
+        sb.appendLine("📏 ${AILocalization.message("nutrition.chat.analysis.portion", locale, response.mealInfo.portion)}")
+        sb.appendLine("🔥 ${AILocalization.message("nutrition.chat.analysis.calories", locale, response.calories)}")
         sb.appendLine()
-        sb.appendLine("📊 영양성분:")
-        sb.appendLine("• 단백질: ${response.macros.protein}g")
-        sb.appendLine("• 탄수화물: ${response.macros.carbs}g")
-        sb.appendLine("• 지방: ${response.macros.fat}g")
+        sb.appendLine("📊 ${AILocalization.message("nutrition.chat.analysis.macros", locale)}")
+        sb.appendLine("• ${AILocalization.message("nutrition.chat.analysis.protein", locale, response.macros.protein)}")
+        sb.appendLine("• ${AILocalization.message("nutrition.chat.analysis.carbs", locale, response.macros.carbs)}")
+        sb.appendLine("• ${AILocalization.message("nutrition.chat.analysis.fat", locale, response.macros.fat)}")
 
         if (response.mealInfo.ingredients.isNotEmpty()) {
             sb.appendLine()
-            sb.appendLine("🥘 재료:")
+            sb.appendLine("🥘 ${AILocalization.message("nutrition.chat.analysis.ingredients", locale)}")
             response.mealInfo.ingredients.forEach { ingredient ->
                 sb.appendLine("• $ingredient")
             }
@@ -173,7 +177,7 @@ class NutritionService(
 
         if (response.suggestions.isNotEmpty()) {
             sb.appendLine()
-            sb.appendLine("💡 AI 영양사 조언:")
+            sb.appendLine("💡 ${AILocalization.message("nutrition.chat.analysis.advice", locale)}")
             response.suggestions.forEach { suggestion ->
                 sb.appendLine("• $suggestion")
             }
@@ -184,7 +188,7 @@ class NutritionService(
 
     fun uploadMealImage(userId: Long, file: MultipartFile): ImageUploadResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
         return fileUploadService.uploadImage(
             file = file,
@@ -222,7 +226,7 @@ class NutritionService(
         """.trimIndent()
     }
 
-    private fun parseMealAnalysisResponse(aiResponse: String): MealAnalysisResponse {
+    private fun parseMealAnalysisResponse(aiResponse: String, locale: String): MealAnalysisResponse {
         return try {
             // JSON 응답 파싱
             val cleanedResponse = aiResponse
@@ -236,9 +240,9 @@ class NutritionService(
             val objectMapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
             val jsonResponse = objectMapper.readValue(cleanedResponse, Map::class.java) as Map<String, Any>
 
-            val mealName = jsonResponse["meal_name"] as? String ?: "분석된 음식"
+            val mealName = jsonResponse["meal_name"] as? String ?: AILocalization.message("nutrition.default.meal_name", locale)
             val ingredients = (jsonResponse["ingredients"] as? List<String>) ?: emptyList()
-            val portion = jsonResponse["portion"] as? String ?: "1인분"
+            val portion = jsonResponse["portion"] as? String ?: AILocalization.message("nutrition.default.portion", locale)
             val calories = parseNumber(jsonResponse["calories"])?.toInt() ?: 0
 
             // 매크로 영양소 파싱 개선
@@ -255,7 +259,7 @@ class NutritionService(
                     name = mealName,
                     ingredients = ingredients,
                     portion = portion,
-                    type = determineMealTypeString()
+                    type = determineMealTypeString(locale)
                 ),
                 calories = calories,
                 macros = Macros(protein, carbs, fat),
@@ -264,17 +268,16 @@ class NutritionService(
         } catch (e: Exception) {
             logger.error("Error parsing AI response: ${e.message}", e)
             logger.error("Raw AI response: $aiResponse")
-            // 파싱 실패 시 기본값 반환
             MealAnalysisResponse(
                 mealInfo = MealInfo(
-                    name = "음식 분석 실패",
-                    ingredients = listOf("분석할 수 없음"),
-                    portion = "알 수 없음",
-                    type = "알 수 없음"
+                    name = AILocalization.message("nutrition.default.meal_name_error", locale),
+                    ingredients = listOf(AILocalization.message("nutrition.default.ingredient_unknown", locale)),
+                    portion = AILocalization.message("nutrition.default.portion", locale),
+                    type = AILocalization.message("nutrition.default.unknown", locale)
                 ),
                 calories = 0,
                 macros = Macros(0.0, 0.0, 0.0),
-                suggestions = listOf("이미지를 다시 업로드해주세요")
+                suggestions = listOf(AILocalization.message("nutrition.default.retry", locale))
             )
         }
     }
@@ -302,19 +305,20 @@ class NutritionService(
         }
     }
 
-    private fun determineMealTypeString(): String {
+    private fun determineMealTypeString(locale: String): String {
         val hour = LocalDateTime.now().hour
         return when (hour) {
-            in 5..10 -> "아침"
-            in 11..14 -> "점심"
-            in 17..21 -> "저녁"
-            else -> "간식"
+            in 5..10 -> AILocalization.message("nutrition.meal_type.breakfast", locale)
+            in 11..14 -> AILocalization.message("nutrition.meal_type.lunch", locale)
+            in 17..21 -> AILocalization.message("nutrition.meal_type.dinner", locale)
+            else -> AILocalization.message("nutrition.meal_type.snack", locale)
         }
     }
 
     fun getDailyMealPlan(userId: Long): DailyMealPlanResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId)
 
         // 사용자 프로필 가져오기
         val userProfile = userProfileRepository.findByUser(user).orElse(null)
@@ -323,11 +327,11 @@ class NutritionService(
         val aiResponse = geminiAIService.generateDailyMealPlan(user)
 
         // AI 응답 파싱
-        val response = parseDailyMealPlanResponse(aiResponse)
+        val response = parseDailyMealPlanResponse(aiResponse, locale)
 
         // 채팅 메시지로 저장
-        val userMessage = "🍱 오늘의 3끼 식단 추천 요청"
-        val aiResponseText = formatDailyMealPlanForChat(response, user, userProfile)
+        val userMessage = AILocalization.message("nutrition.chat.request.daily_plan", locale)
+        val aiResponseText = formatDailyMealPlanForChat(response, locale)
 
         val chatMessage = ChatMessage(
             user = user,
@@ -341,7 +345,7 @@ class NutritionService(
         return response
     }
 
-    private fun parseDailyMealPlanResponse(aiResponse: String): DailyMealPlanResponse {
+    private fun parseDailyMealPlanResponse(aiResponse: String, locale: String): DailyMealPlanResponse {
         return try {
             val cleanedResponse = aiResponse
                 .replace("```json", "")
@@ -354,9 +358,9 @@ class NutritionService(
             // AI 메시지 추출
             val aiMessage = jsonResponse["greeting"] as? String ?: jsonResponse["message"] as? String
 
-            val breakfast = parseIndividualMeal(jsonResponse["breakfast"] as Map<String, Any>)
-            val lunch = parseIndividualMeal(jsonResponse["lunch"] as Map<String, Any>)
-            val dinner = parseIndividualMeal(jsonResponse["dinner"] as Map<String, Any>)
+            val breakfast = parseIndividualMeal(jsonResponse["breakfast"] as Map<String, Any>, locale)
+            val lunch = parseIndividualMeal(jsonResponse["lunch"] as Map<String, Any>, locale)
+            val dinner = parseIndividualMeal(jsonResponse["dinner"] as Map<String, Any>, locale)
 
             val totalCalories = (jsonResponse["total_calories"] as? Number)?.toInt()
                 ?: (breakfast.calories + lunch.calories + dinner.calories)
@@ -390,21 +394,35 @@ class NutritionService(
             )
         } catch (e: Exception) {
             println("Error parsing daily meal plan: ${e.message}")
-            // 파싱 실패 시 기본값 반환
             DailyMealPlanResponse(
                 date = LocalDate.now().toString(),
                 aiMessage = null,
-                breakfast = MealRecommendation("오트밀", "건강한 아침 식사", 350, Macros(15.0, 45.0, 10.0)),
-                lunch = MealRecommendation("닭가슴살 샐러드", "단백질 풍부", 450, Macros(40.0, 30.0, 15.0)),
-                dinner = MealRecommendation("연어 구이", "오메가3 풍부", 400, Macros(35.0, 25.0, 20.0)),
+                breakfast = MealRecommendation(
+                    AILocalization.message("nutrition.chat.daily.default_breakfast", locale),
+                    AILocalization.message("nutrition.chat.daily.default_breakfast_desc", locale),
+                    350,
+                    Macros(15.0, 45.0, 10.0)
+                ),
+                lunch = MealRecommendation(
+                    AILocalization.message("nutrition.chat.daily.default_lunch", locale),
+                    AILocalization.message("nutrition.chat.daily.default_lunch_desc", locale),
+                    450,
+                    Macros(40.0, 30.0, 15.0)
+                ),
+                dinner = MealRecommendation(
+                    AILocalization.message("nutrition.chat.daily.default_dinner", locale),
+                    AILocalization.message("nutrition.chat.daily.default_dinner_desc", locale),
+                    400,
+                    Macros(35.0, 25.0, 20.0)
+                ),
                 totalCalories = 1200,
                 totalMacros = Macros(90.0, 100.0, 45.0),
-                tips = listOf("충분한 수분 섭취를 잊지 마세요")
+                tips = listOf(AILocalization.message("nutrition.chat.daily.default_tip", locale))
             )
         }
     }
 
-    private fun parseIndividualMeal(mealMap: Map<String, Any>): MealRecommendation {
+    private fun parseIndividualMeal(mealMap: Map<String, Any>, locale: String): MealRecommendation {
         val macrosMap = mealMap["macros"] as? Map<String, Any>
         val macros = if (macrosMap != null) {
             Macros(
@@ -417,158 +435,94 @@ class NutritionService(
         }
 
         return MealRecommendation(
-            mealName = mealMap["meal_name"] as? String ?: "식사",
+            mealName = mealMap["meal_name"] as? String ?: AILocalization.message("nutrition.default.meal_name", locale),
             description = mealMap["description"] as? String ?: "",
             calories = (mealMap["calories"] as? Number)?.toInt() ?: 0,
             macros = macros
         )
     }
 
-    private fun generateProfileBasedGreeting(
-        profile: com.richjun.liftupai.domain.user.entity.UserProfile,
-        nickname: String
-    ): String {
-        val bodyInfo = profile.bodyInfo
-        val goals = profile.goals.map { it.name }.joinToString(", ")
-        val ptStyle = profile.ptStyle
-
-        // BMI 계산
-        val bmi = if (bodyInfo?.weight != null && bodyInfo.height != null) {
-            val weight = bodyInfo.weight!!
-            val height = bodyInfo.height!!
-            val heightM = height / 100.0
-            String.format("%.1f", weight / (heightM * heightM))
-        } else null
-
-        // TDEE 계산
-        val tdee = calculateTDEE(profile)
-
-        // 기본 프로필 정보
-        val profileInfo = buildString {
-            if (bodyInfo?.weight != null) append("체중 ${bodyInfo.weight}kg")
-            if (bodyInfo?.height != null) append(", 키 ${bodyInfo.height}cm")
-            if (bmi != null) append(", BMI $bmi")
-            if (goals.isNotEmpty()) append(", 목표: $goals")
-        }
-
-        return when (ptStyle) {
-            com.richjun.liftupai.domain.user.entity.PTStyle.SPARTAN -> {
-                "💪 전사여! 너의 프로필($profileInfo)을 분석했다.\n" +
-                "오늘의 전투를 위한 연료를 공급하겠다! ${tdee?.let { "일일 목표: ${it}kcal" } ?: ""}"
-            }
-            com.richjun.liftupai.domain.user.entity.PTStyle.BURNOUT -> {
-                "😑 아... ${nickname}, 또 왔네.\n" +
-                "프로필 확인했어 ($profileInfo)\n" +
-                "${tdee?.let { "하루 ${it}kcal인데" } ?: "뭐"} 어차피 치킨 먹을거잖아? 그래도 일단 추천은 해줄게..."
-            }
-            com.richjun.liftupai.domain.user.entity.PTStyle.GAME_MASTER -> {
-                "🎮 플레이어 ${nickname} 로그인!\n" +
-                "[스탯 확인: $profileInfo]\n" +
-                "${tdee?.let { "일일 에너지 ${it}EP 필요!" } ?: ""} 오늘의 식단 퀘스트를 시작하자! ⚔️"
-            }
-            com.richjun.liftupai.domain.user.entity.PTStyle.INFLUENCER -> {
-                "✨ ${nickname}님~ 오늘도 빛나네요!\n" +
-                "프로필 체크했어요 ($profileInfo)\n" +
-                "${tdee?.let { "일일 ${it}kcal" } ?: ""} 맞춤 클린 식단! 인스타에 올리기 좋은 메뉴들로 준비했어요 📸"
-            }
-            com.richjun.liftupai.domain.user.entity.PTStyle.HIP_HOP -> {
-                "Yo! ${nickname} what's up!\n" +
-                "너의 스탯 체크 완료 ($profileInfo)\n" +
-                "${tdee?.let { "${it}kcal" } ?: ""} that's your daily goal, 오늘의 meal plan let's go! 🎤🔥"
-            }
-            com.richjun.liftupai.domain.user.entity.PTStyle.RETIRED_TEACHER -> {
-                "${nickname} 학생, 왔구나.\n" +
-                "자네 신체 정보 봤네 ($profileInfo)\n" +
-                "${tdee?.let { "하루 ${it}kcal" } ?: ""} 우리 때는 이런 계산도 없었는데... 라떼는 말이야... 🏫"
-            }
-            com.richjun.liftupai.domain.user.entity.PTStyle.OFFICE_MASTER -> {
-                "${nickname} 대리님, 수고 많으십니다.\n" +
-                "프로필 확인했습니다 ($profileInfo)\n" +
-                "${tdee?.let { "일일 ${it}kcal" } ?: ""} 회식 고려한 현실적인 식단 짜드렸습니다... 🍻"
-            }
-            com.richjun.liftupai.domain.user.entity.PTStyle.LA_KOREAN -> {
-                "Hey ${nickname}! What's up bro!\n" +
-                "너의 stats 체크했어 ($profileInfo)\n" +
-                "${tdee?.let { "Daily ${it}kcal" } ?: ""} perfect meal plan ready! Let's get it! 🇺🇸🔥"
-            }
-            com.richjun.liftupai.domain.user.entity.PTStyle.BUSAN_VETERAN -> {
-                "야 ${nickname}! 왔나.\n" +
-                "니 몸 상태 봤다 ($profileInfo)\n" +
-                "${tdee?.let { "하루 ${it}kcal" } ?: ""} 마 제대로 묵을 거 추천해주께. 징징대지 말고 묵어라! 💪"
-            }
-            com.richjun.liftupai.domain.user.entity.PTStyle.SOLDIER -> {
-                "안녕하십니... 아, 안녕하세요 ${nickname}님!\n" +
-                "신상명세... 아니 프로필 확인했습니다! ($profileInfo)\n" +
-                "${tdee?.let { "일일 보급량... 아니 ${it}kcal" } ?: ""} 식단 브리핑... 아니 추천 시작하겠습니다! 🫡"
-            }
-        }
-    }
-
-    private fun calculateTDEE(profile: com.richjun.liftupai.domain.user.entity.UserProfile): Int? {
-        val bodyInfo = profile.bodyInfo ?: return null
-        val weight = bodyInfo.weight ?: return null
-        val height = bodyInfo.height ?: return null
-        val age = profile.age ?: 30 // 기본값
-
-        // Harris-Benedict 공식
-        val bmr = if (profile.gender == "male" || profile.gender == null) {
-            88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
-        } else {
-            447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age)
-        }
-
-        // 활동 계수 (중간 활동 기준)
-        val activityFactor = 1.55
-
-        return (bmr * activityFactor).toInt()
-    }
-
     private fun formatDailyMealPlanForChat(
         response: DailyMealPlanResponse,
-        user: com.richjun.liftupai.domain.auth.entity.User,
-        userProfile: com.richjun.liftupai.domain.user.entity.UserProfile?
+        locale: String
     ): String {
         val sb = StringBuilder()
 
-        // PT 스타일에 따른 맞춤형 인사말 추가
-        if (userProfile != null) {
-            sb.appendLine(generateProfileBasedGreeting(userProfile, user.nickname))
+        response.aiMessage?.takeIf { it.isNotBlank() }?.let { greeting ->
+            sb.appendLine(greeting)
             sb.appendLine()
         }
 
-        sb.appendLine("📅 오늘의 식단 추천")
+        sb.appendLine("📅 ${AILocalization.message("nutrition.chat.daily.title", locale)}")
         sb.appendLine()
 
-        sb.appendLine("🌅 아침 (${response.breakfast.calories}kcal)")
+        sb.appendLine("🌅 ${AILocalization.message("nutrition.chat.daily.breakfast", locale, response.breakfast.calories)}")
         sb.appendLine("• ${response.breakfast.mealName}")
         sb.appendLine("• ${response.breakfast.description}")
-        sb.appendLine("• 단백질: ${response.breakfast.macros.protein}g | 탄수화물: ${response.breakfast.macros.carbs}g | 지방: ${response.breakfast.macros.fat}g")
+        sb.appendLine(
+            "• ${AILocalization.message(
+                "nutrition.chat.daily.macros",
+                locale,
+                response.breakfast.macros.protein,
+                response.breakfast.macros.carbs,
+                response.breakfast.macros.fat
+            )}"
+        )
         sb.appendLine()
 
-        sb.appendLine("☀️ 점심 (${response.lunch.calories}kcal)")
+        sb.appendLine("☀️ ${AILocalization.message("nutrition.chat.daily.lunch", locale, response.lunch.calories)}")
         sb.appendLine("• ${response.lunch.mealName}")
         sb.appendLine("• ${response.lunch.description}")
-        sb.appendLine("• 단백질: ${response.lunch.macros.protein}g | 탄수화물: ${response.lunch.macros.carbs}g | 지방: ${response.lunch.macros.fat}g")
+        sb.appendLine(
+            "• ${AILocalization.message(
+                "nutrition.chat.daily.macros",
+                locale,
+                response.lunch.macros.protein,
+                response.lunch.macros.carbs,
+                response.lunch.macros.fat
+            )}"
+        )
         sb.appendLine()
 
-        sb.appendLine("🌙 저녁 (${response.dinner.calories}kcal)")
+        sb.appendLine("🌙 ${AILocalization.message("nutrition.chat.daily.dinner", locale, response.dinner.calories)}")
         sb.appendLine("• ${response.dinner.mealName}")
         sb.appendLine("• ${response.dinner.description}")
-        sb.appendLine("• 단백질: ${response.dinner.macros.protein}g | 탄수화물: ${response.dinner.macros.carbs}g | 지방: ${response.dinner.macros.fat}g")
+        sb.appendLine(
+            "• ${AILocalization.message(
+                "nutrition.chat.daily.macros",
+                locale,
+                response.dinner.macros.protein,
+                response.dinner.macros.carbs,
+                response.dinner.macros.fat
+            )}"
+        )
         sb.appendLine()
 
-        sb.appendLine("💪 총 칼로리: ${response.totalCalories}kcal")
-        sb.appendLine("📊 총 영양소: 단백질 ${response.totalMacros.protein}g | 탄수화물 ${response.totalMacros.carbs}g | 지방 ${response.totalMacros.fat}g")
+        sb.appendLine("💪 ${AILocalization.message("nutrition.chat.daily.total_calories", locale, response.totalCalories)}")
+        sb.appendLine(
+            "📊 ${AILocalization.message(
+                "nutrition.chat.daily.total_macros",
+                locale,
+                response.totalMacros.protein,
+                response.totalMacros.carbs,
+                response.totalMacros.fat
+            )}"
+        )
 
         if (response.tips.isNotEmpty()) {
             sb.appendLine()
-            sb.appendLine("💡 오늘의 팁:")
+            sb.appendLine("💡 ${AILocalization.message("nutrition.chat.daily.tips", locale)}")
             response.tips.forEach { tip ->
                 sb.appendLine("• $tip")
             }
         }
 
         return sb.toString().trim()
+    }
+
+    private fun resolveLocale(userId: Long): String {
+        val language = userSettingsRepository.findByUser_Id(userId).orElse(null)?.language
+        return AILocalization.normalizeLocale(language)
     }
 
     private fun determineMealType(): MealType {

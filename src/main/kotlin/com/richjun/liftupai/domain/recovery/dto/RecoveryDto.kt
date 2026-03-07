@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
 
 data class MuscleRecoveryStatus(
+    val code: String,
     val name: String,
     val recoveryPercentage: Int,
     val lastWorked: String?,

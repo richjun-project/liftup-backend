@@ -18,18 +18,20 @@ class ExerciseControllerV2(
     fun getExercisesV2(
         @RequestParam(required = false) category: String?,
         @RequestParam(required = false) equipment: String?,
-        @RequestParam(defaultValue = "false") hasGif: Boolean
+        @RequestParam(defaultValue = "false") hasGif: Boolean,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<List<ExerciseDetailV2>>> {
-        val response = workoutServiceV2.getExercisesV2(category, equipment, hasGif)
+        val response = workoutServiceV2.getExercisesV2(category, equipment, hasGif, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/{exerciseId}/details")
     fun getExerciseDetailsV2(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @PathVariable exerciseId: Long
+        @PathVariable exerciseId: Long,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ExerciseDetailResponseV2>> {
-        val response = workoutServiceV2.getExerciseDetailsV2(userDetails.getId(), exerciseId)
+        val response = workoutServiceV2.getExerciseDetailsV2(userDetails.getId(), exerciseId, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 }
