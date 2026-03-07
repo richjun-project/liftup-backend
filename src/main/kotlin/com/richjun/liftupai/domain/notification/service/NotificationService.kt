@@ -9,12 +9,16 @@ import com.richjun.liftupai.domain.notification.dto.*
 import com.richjun.liftupai.domain.notification.entity.DevicePlatform
 import com.richjun.liftupai.domain.notification.entity.NotificationDevice
 import com.richjun.liftupai.domain.notification.entity.NotificationSettings
+import com.richjun.liftupai.domain.notification.util.NotificationLocalization
+import com.richjun.liftupai.domain.notification.util.NotificationScheduleTimeCalculator
 import com.richjun.liftupai.domain.notification.repository.NotificationDeviceRepository
 import com.richjun.liftupai.domain.notification.repository.NotificationSettingsRepository
 import com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository
 import com.richjun.liftupai.domain.notification.repository.NotificationHistoryRepository
 import com.richjun.liftupai.domain.notification.entity.*
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import com.google.firebase.messaging.*
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -31,6 +35,7 @@ import java.util.*
 @Transactional
 class NotificationService(
     private val userRepository: UserRepository,
+    private val userSettingsRepository: UserSettingsRepository,
     private val notificationDeviceRepository: NotificationDeviceRepository,
     private val notificationSettingsRepository: NotificationSettingsRepository,
     private val notificationScheduleRepository: NotificationScheduleRepository,
@@ -44,15 +49,16 @@ class NotificationService(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     fun registerDevice(userId: Long, request: RegisterDeviceRequest): RegisterDeviceResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val platform = try {
             DevicePlatform.valueOf(request.platform.uppercase())
         } catch (e: IllegalArgumentException) {
             return RegisterDeviceResponse(
                 success = false,
-                message = "지원하지 않는 플랫폼입니다: ${request.platform}"
+                message = NotificationLocalization.message("notification.unsupported_platform", locale, request.platform)
             )
         }
 
@@ -79,24 +85,25 @@ class NotificationService(
 
         return RegisterDeviceResponse(
             success = true,
-            message = "디바이스가 성공적으로 등록되었습니다"
+            message = NotificationLocalization.message("notification.device_registered", locale)
         )
     }
 
     @Transactional(readOnly = true)
     fun getNotificationSettings(userId: Long): NotificationSettingsResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", resolveLocale(userId))) }
 
         val settings = notificationSettingsRepository.findByUser(user)
             .orElseGet { createDefaultSettings(user) }
 
-        return toNotificationSettingsResponse(settings)
+        return toNotificationSettingsResponse(settings, userId)
     }
 
     fun updateNotificationSettings(userId: Long, request: UpdateNotificationSettingsRequest): UpdateNotificationSettingsResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val settings = notificationSettingsRepository.findByUser(user)
             .orElseGet { createDefaultSettings(user) }
@@ -119,13 +126,14 @@ class NotificationService(
 
         return UpdateNotificationSettingsResponse(
             success = true,
-            settings = toNotificationSettingsResponse(saved)
+            settings = toNotificationSettingsResponse(saved, userId)
         )
     }
 
     fun sendPushNotification(request: PushNotificationRequest): PushNotificationResponse {
+        val locale = resolveLocale(request.userId)
         val user = userRepository.findById(request.userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val activeDevices = notificationDeviceRepository.findActiveDevicesByUser(user)
 
@@ -134,7 +142,7 @@ class NotificationService(
                 success = false,
                 sentCount = 0,
                 failedCount = 0,
-                message = "등록된 활성 디바이스가 없습니다"
+                message = NotificationLocalization.message("notification.no_active_devices", locale)
             )
         }
 
@@ -155,13 +163,14 @@ class NotificationService(
             success = sentCount > 0,
             sentCount = sentCount,
             failedCount = failedCount,
-            message = "알림 전송 완료"
+            message = NotificationLocalization.message("notification.sent", locale)
         )
     }
 
     fun sendWorkoutReminder(userId: Long) {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val settings = notificationSettingsRepository.findByUser(user).orElse(null)
             ?: return
@@ -170,8 +179,8 @@ class NotificationService(
 
         val request = PushNotificationRequest(
             userId = userId,
-            title = "운동 시간입니다! 💪",
-            body = "오늘의 운동을 시작해보세요",
+            title = NotificationLocalization.message("notification.title.workout_reminder", locale),
+            body = NotificationLocalization.message("notification.workout_reminder.body", locale),
             data = mapOf("type" to "workout_reminder")
         )
 
@@ -179,8 +188,9 @@ class NotificationService(
     }
 
     fun sendAchievementNotification(userId: Long, achievement: String) {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val settings = notificationSettingsRepository.findByUser(user).orElse(null)
             ?: return
@@ -189,7 +199,7 @@ class NotificationService(
 
         val request = PushNotificationRequest(
             userId = userId,
-            title = "새로운 업적 달성! 🎉",
+            title = NotificationLocalization.message("notification.title.achievement", locale),
             body = achievement,
             data = mapOf("type" to "achievement")
         )
@@ -198,8 +208,9 @@ class NotificationService(
     }
 
     fun sendRecoveryAlert(userId: Long, muscleGroup: String) {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val settings = notificationSettingsRepository.findByUser(user).orElse(null)
             ?: return
@@ -208,8 +219,8 @@ class NotificationService(
 
         val request = PushNotificationRequest(
             userId = userId,
-            title = "근육 회복 완료",
-            body = "$muscleGroup 근육이 완전히 회복되었습니다. 운동을 시작해보세요!",
+            title = NotificationLocalization.message("notification.title.recovery", locale),
+            body = NotificationLocalization.message("notification.recovery.body", locale, muscleGroup),
             data = mapOf("type" to "recovery_alert", "muscle" to muscleGroup)
         )
 
@@ -231,10 +242,11 @@ class NotificationService(
         )
     }
 
-    private fun toNotificationSettingsResponse(settings: NotificationSettings): NotificationSettingsResponse {
+    private fun toNotificationSettingsResponse(settings: NotificationSettings, userId: Long): NotificationSettingsResponse {
         return NotificationSettingsResponse(
             workoutReminder = settings.workoutReminder,
             workoutReminderTime = settings.workoutReminderTime?.format(DateTimeFormatter.ISO_LOCAL_TIME),
+            timeZone = resolveTimeZone(userId),
             aiMessages = settings.aiMessages,
             achievements = settings.achievements,
             marketing = settings.marketing,
@@ -242,6 +254,18 @@ class NotificationService(
             weeklyReport = settings.weeklyReport,
             socialUpdates = settings.socialUpdates,
             recoveryAlerts = settings.recoveryAlerts
+        )
+    }
+
+    fun sendTestNotification(userId: Long): PushNotificationResponse {
+        val locale = resolveLocale(userId)
+        return sendPushNotification(
+            PushNotificationRequest(
+                userId = userId,
+                title = NotificationLocalization.message("notification.test.title", locale),
+                body = NotificationLocalization.message("notification.test.body", locale),
+                data = mapOf("type" to "test")
+            )
         )
     }
 
@@ -285,8 +309,9 @@ class NotificationService(
 
     // Notification Scheduling Methods
     fun scheduleWorkoutReminder(userId: Long, request: WorkoutReminderRequest): ScheduleResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         try {
             val time = LocalTime.parse(request.time)
@@ -294,7 +319,7 @@ class NotificationService(
                 try {
                     DayOfWeek.valueOf(dayStr.uppercase())
                 } catch (e: IllegalArgumentException) {
-                    throw IllegalArgumentException("유효하지 않은 요일입니다: $dayStr")
+                    throw IllegalArgumentException(NotificationLocalization.message("notification.invalid_day", locale, dayStr))
                 }
             }.toMutableSet()
 
@@ -306,43 +331,46 @@ class NotificationService(
                 enabled = request.enabled,
                 message = request.message,
                 notificationType = NotificationType.valueOf(request.notificationType.uppercase()),
-                nextTriggerAt = calculateNextTrigger(days, time)
+                nextTriggerAt = calculateNextTrigger(userId, days, time)
             )
 
             val savedSchedule = notificationScheduleRepository.save(schedule)
 
             return ScheduleResponse(
                 scheduleId = savedSchedule.id.toString(),
-                nextTriggerAt = savedSchedule.nextTriggerAt?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                nextTriggerAt = AppTime.formatUtc(savedSchedule.nextTriggerAt),
+                timeZone = resolveTimeZone(userId),
                 status = "scheduled",
                 created = true
             )
         } catch (e: DateTimeParseException) {
-            throw IllegalArgumentException("유효하지 않은 시간 형식입니다: ${request.time}")
+            throw IllegalArgumentException(NotificationLocalization.message("notification.invalid_time", locale, request.time))
         }
     }
 
     fun deleteWorkoutSchedule(userId: Long, scheduleId: Long): DeleteScheduleResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val schedule = notificationScheduleRepository.findByUserAndId(user, scheduleId)
-            ?: throw ResourceNotFoundException("스케줄을 찾을 수 없습니다")
+            ?: throw ResourceNotFoundException(NotificationLocalization.message("notification.schedule_not_found", locale))
 
         notificationScheduleRepository.delete(schedule)
 
         return DeleteScheduleResponse(
             success = true,
             deletedScheduleId = scheduleId.toString(),
-            message = "운동 리마인더가 취소되었습니다"
+            message = NotificationLocalization.message("notification.schedule_deleted", locale)
         )
     }
 
     // Notification History Methods
     @Transactional(readOnly = true)
     fun getNotificationHistory(userId: Long, page: Int, limit: Int, unreadOnly: Boolean): NotificationHistoryResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val pageable = PageRequest.of(page - 1, limit)
         val notificationPage = if (unreadOnly) {
@@ -359,8 +387,8 @@ class NotificationService(
                 body = notification.body,
                 data = notification.data.takeIf { it.isNotEmpty() },
                 isRead = notification.isRead,
-                createdAt = notification.createdAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                readAt = notification.readAt?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                createdAt = AppTime.formatUtcRequired(notification.createdAt),
+                readAt = AppTime.formatUtc(notification.readAt)
             )
         }
 
@@ -379,11 +407,12 @@ class NotificationService(
     }
 
     fun markNotificationAsRead(userId: Long, notificationId: String): MarkAsReadResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val notification = notificationHistoryRepository.findByUserAndNotificationId(user, notificationId)
-            .orElseThrow { ResourceNotFoundException("알림을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("notification.not_found", locale)) }
 
         if (!notification.isRead) {
             notification.isRead = true
@@ -396,13 +425,14 @@ class NotificationService(
         return MarkAsReadResponse(
             success = true,
             notificationId = notificationId,
-            readAt = notification.readAt?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) ?: "",
+            readAt = AppTime.formatUtc(notification.readAt).orEmpty(),
             unreadCount = unreadCount
         )
     }
 
     // Enhanced notification sending with history tracking
     fun sendScheduledNotification(schedule: NotificationSchedule) {
+        val locale = resolveLocale(schedule.user.id)
         val notificationId = UUID.randomUUID().toString()
 
         // Save to history first
@@ -410,14 +440,7 @@ class NotificationService(
             user = schedule.user,
             notificationId = notificationId,
             type = schedule.notificationType,
-            title = when(schedule.notificationType) {
-                NotificationType.WORKOUT_REMINDER -> "운동 시간입니다! 💪"
-                NotificationType.ACHIEVEMENT -> "새로운 업적 달성! 🎉"
-                NotificationType.STREAK -> "연속 운동 기록 갱신! 🔥"
-                NotificationType.REST_DAY -> "오늘은 휴식일입니다 😌"
-                NotificationType.RECOVERY_ALERT -> "근육 회복 완료! 🏃‍♂️"
-                NotificationType.AI_MESSAGE -> "AI 트레이너의 조언 📝"
-            },
+            title = NotificationLocalization.message(NotificationLocalization.titleKey(schedule.notificationType), locale),
             body = schedule.message,
             data = mutableMapOf(
                 "scheduleId" to schedule.id.toString(),
@@ -433,7 +456,7 @@ class NotificationService(
         if (schedule.notificationType == NotificationType.AI_MESSAGE) {
             val chatMessage = ChatMessage(
                 user = schedule.user,
-                userMessage = "[시스템 알림]", // 시스템이 자동으로 생성한 메시지임을 표시
+                userMessage = NotificationLocalization.message("notification.chat.system_message", locale),
                 aiResponse = schedule.message,
                 messageType = MessageType.TEXT,
                 status = MessageStatus.COMPLETED
@@ -452,47 +475,30 @@ class NotificationService(
         sendPushNotification(request)
 
         // Update next trigger time
-        schedule.nextTriggerAt = calculateNextTrigger(schedule.days, schedule.time)
+        schedule.nextTriggerAt = recalculateNextTrigger(schedule)
         notificationScheduleRepository.save(schedule)
     }
 
-    private fun calculateNextTrigger(days: Set<DayOfWeek>, time: LocalTime): LocalDateTime {
-        val now = LocalDateTime.now()
-        val today = now.dayOfWeek
-        val todayTime = now.toLocalTime()
+    fun recalculateNextTrigger(schedule: NotificationSchedule): LocalDateTime {
+        return NotificationScheduleTimeCalculator.calculateNextTrigger(
+            days = schedule.days,
+            time = schedule.time,
+            timeZone = resolveTimeZone(schedule.user.id)
+        )
+    }
 
-        // Convert our DayOfWeek enum to Java DayOfWeek
-        val javaDays = days.map { day ->
-            when (day) {
-                DayOfWeek.MON -> java.time.DayOfWeek.MONDAY
-                DayOfWeek.TUE -> java.time.DayOfWeek.TUESDAY
-                DayOfWeek.WED -> java.time.DayOfWeek.WEDNESDAY
-                DayOfWeek.THU -> java.time.DayOfWeek.THURSDAY
-                DayOfWeek.FRI -> java.time.DayOfWeek.FRIDAY
-                DayOfWeek.SAT -> java.time.DayOfWeek.SATURDAY
-                DayOfWeek.SUN -> java.time.DayOfWeek.SUNDAY
-            }
-        }.toSet()
+    fun refreshScheduleTimesForUser(userId: Long) {
+        val user = userRepository.findById(userId)
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", resolveLocale(userId))) }
 
-        // If today is in the schedule and time hasn't passed, schedule for today
-        if (javaDays.contains(today) && todayTime.isBefore(time)) {
-            return now.toLocalDate().atTime(time)
+        notificationScheduleRepository.findByUser(user).forEach { schedule ->
+            schedule.nextTriggerAt = if (schedule.enabled) recalculateNextTrigger(schedule) else null
+            notificationScheduleRepository.save(schedule)
         }
-
-        // Find the next day in the schedule
-        for (i in 1..7) {
-            val nextDay = today.plus(i.toLong())
-            if (javaDays.contains(nextDay)) {
-                return now.toLocalDate().plusDays(i.toLong()).atTime(time)
-            }
-        }
-
-        // This should never happen if days is not empty
-        return now.plusDays(1).toLocalDate().atTime(time)
     }
 
     fun cleanupInactiveDevices() {
-        val thirtyDaysAgo = LocalDateTime.now().minusDays(30)
+        val thirtyDaysAgo = AppTime.utcNow().minusDays(30)
         val inactiveDevices = notificationDeviceRepository.findInactiveDevices(thirtyDaysAgo)
 
         inactiveDevices.forEach { device ->
@@ -501,5 +507,21 @@ class NotificationService(
         }
 
         logger.info("Deactivated ${inactiveDevices.size} inactive devices")
+    }
+
+    private fun calculateNextTrigger(userId: Long, days: Set<DayOfWeek>, time: LocalTime): LocalDateTime {
+        return NotificationScheduleTimeCalculator.calculateNextTrigger(
+            days = days,
+            time = time,
+            timeZone = resolveTimeZone(userId)
+        )
+    }
+
+    private fun resolveLocale(userId: Long): String {
+        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.language ?: "en"
+    }
+
+    private fun resolveTimeZone(userId: Long): String {
+        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.timeZone ?: AppTime.DEFAULT_TIME_ZONE
     }
 }

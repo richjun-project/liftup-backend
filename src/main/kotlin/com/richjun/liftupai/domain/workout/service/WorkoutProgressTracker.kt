@@ -1,16 +1,22 @@
 package com.richjun.liftupai.domain.workout.service
 
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.workout.entity.WorkoutSession
 import com.richjun.liftupai.domain.workout.entity.WorkoutType
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
+import com.richjun.liftupai.domain.workout.util.WorkoutFocus
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
+import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
 @Service
 class WorkoutProgressTracker(
-    private val workoutSessionRepository: WorkoutSessionRepository
+    private val workoutSessionRepository: WorkoutSessionRepository,
+    private val userSettingsRepository: UserSettingsRepository
 ) {
 
     fun getNextWorkoutInProgram(user: User, programDays: Int): WorkoutProgramPosition {
@@ -21,7 +27,7 @@ class WorkoutProgressTracker(
         )
 
         // 오늘 날짜 확인
-        val todayStart = LocalDateTime.now().toLocalDate().atStartOfDay()
+        val todayStart = todayStart(user)
 
         // 오늘 이미 수행한 프로그램 세션 확인 (첫 번째 것만 인정)
         val todayProgramSession = recentSessions
@@ -86,7 +92,7 @@ class WorkoutProgressTracker(
     }
 
     fun hasStartedWorkoutToday(user: User): Boolean {
-        val todayStart = LocalDateTime.now().toLocalDate().atStartOfDay()
+        val todayStart = todayStart(user)
 
         return workoutSessionRepository.findAllByUserAndStatus(user, SessionStatus.IN_PROGRESS)
             .any { it.startTime >= todayStart } ||
@@ -112,49 +118,30 @@ class WorkoutProgressTracker(
     }
 
     fun determineWorkoutType(targetMuscles: List<String>): WorkoutType {
-        val muscleSet = targetMuscles.map { it.lowercase() }.toSet()
+        val focusSet = targetMuscles.mapNotNull { WorkoutTargetResolver.resolveFocus(it) }.toSet()
 
         return when {
-            muscleSet.containsAll(listOf("가슴", "삼두", "어깨")) ||
-            muscleSet.containsAll(listOf("chest", "triceps", "shoulders")) -> WorkoutType.PUSH
-
-            muscleSet.containsAll(listOf("등", "이두")) ||
-            muscleSet.containsAll(listOf("back", "biceps")) -> WorkoutType.PULL
-
-            muscleSet.contains("하체") || muscleSet.contains("legs") ||
-            muscleSet.contains("대퇴사두근") || muscleSet.contains("햄스트링") -> WorkoutType.LEGS
-
-            muscleSet.contains("가슴") || muscleSet.contains("chest") -> WorkoutType.CHEST
-            muscleSet.contains("등") || muscleSet.contains("back") -> WorkoutType.BACK
-            muscleSet.contains("어깨") || muscleSet.contains("shoulders") -> WorkoutType.SHOULDERS
-            muscleSet.contains("팔") || muscleSet.contains("arms") -> WorkoutType.ARMS
-
-            muscleSet.size >= 3 -> WorkoutType.FULL_BODY
-
+            WorkoutFocus.PUSH in focusSet -> WorkoutType.PUSH
+            WorkoutFocus.PULL in focusSet -> WorkoutType.PULL
+            WorkoutFocus.LEGS in focusSet || WorkoutFocus.LOWER in focusSet -> WorkoutType.LEGS
+            WorkoutFocus.CHEST in focusSet -> WorkoutType.CHEST
+            WorkoutFocus.BACK in focusSet -> WorkoutType.BACK
+            WorkoutFocus.SHOULDERS in focusSet -> WorkoutType.SHOULDERS
+            WorkoutFocus.ARMS in focusSet -> WorkoutType.ARMS
+            WorkoutFocus.CORE in focusSet -> WorkoutType.ABS
+            focusSet.size >= 2 -> WorkoutType.FULL_BODY
             else -> WorkoutType.FULL_BODY
         }
     }
 
-    fun getProgramSequenceDescription(programType: String, currentDay: Int): String {
+    fun getProgramSequenceDescription(programType: String, currentDay: Int, locale: String = "en"): String {
         val sequence = getWorkoutTypeSequence(programType)
         val totalDays = sequence.size
         val currentWorkout = sequence.getOrNull(currentDay - 1)
+        val workoutName = currentWorkout?.let { describeWorkoutType(it, locale) }
+            ?: WorkoutLocalization.message("workout.generic", locale)
 
-        val workoutName = when (currentWorkout) {
-            WorkoutType.PUSH -> "밀기 운동 (가슴/삼두/어깨)"
-            WorkoutType.PULL -> "당기기 운동 (등/이두)"
-            WorkoutType.LEGS -> "하체 운동"
-            WorkoutType.UPPER -> "상체 운동"
-            WorkoutType.LOWER -> "하체 운동"
-            WorkoutType.CHEST -> "가슴 운동"
-            WorkoutType.BACK -> "등 운동"
-            WorkoutType.SHOULDERS -> "어깨 운동"
-            WorkoutType.ARMS -> "팔 운동"
-            WorkoutType.FULL_BODY -> "전신 운동"
-            else -> "운동"
-        }
-
-        return "주 ${totalDays}회 프로그램 중 ${currentDay}회차: $workoutName"
+        return WorkoutLocalization.message("program.sequence.description", locale, totalDays, currentDay, workoutName)
     }
 
     /**
@@ -164,25 +151,32 @@ class WorkoutProgressTracker(
     fun getProgramSequenceDescriptionFromSequence(
         sequence: List<WorkoutType>,
         currentDay: Int,
-        totalDays: Int
+        totalDays: Int,
+        locale: String = "en"
     ): String {
         val currentWorkout = sequence.getOrNull(currentDay - 1)
+        val workoutName = currentWorkout?.let { describeWorkoutType(it, locale) }
+            ?: WorkoutLocalization.message("workout.generic", locale)
 
-        val workoutName = when (currentWorkout) {
-            WorkoutType.PUSH -> "밀기 운동 (가슴/삼두/어깨)"
-            WorkoutType.PULL -> "당기기 운동 (등/이두)"
-            WorkoutType.LEGS -> "하체 운동"
-            WorkoutType.UPPER -> "상체 운동"
-            WorkoutType.LOWER -> "하체 운동"
-            WorkoutType.CHEST -> "가슴 운동"
-            WorkoutType.BACK -> "등 운동"
-            WorkoutType.SHOULDERS -> "어깨 운동"
-            WorkoutType.ARMS -> "팔 운동"
-            WorkoutType.FULL_BODY -> "전신 운동"
-            else -> "운동"
+        return WorkoutLocalization.message("program.sequence.description", locale, totalDays, currentDay, workoutName)
+    }
+
+    private fun describeWorkoutType(workoutType: WorkoutType, locale: String = "en"): String {
+        val primaryFocus = WorkoutTargetResolver.primaryFocusForWorkoutType(workoutType)
+        val primaryName = WorkoutTargetResolver.displayName(primaryFocus, locale)
+        val targetNames = WorkoutTargetResolver.displayNamesForWorkoutType(workoutType, locale)
+
+        return when {
+            targetNames.isEmpty() -> WorkoutLocalization.message("workout.generic", locale)
+            targetNames.size == 1 -> WorkoutLocalization.message("workout.focused", locale, primaryName)
+            else -> WorkoutLocalization.message("workout.focused.with_targets", locale, primaryName, targetNames.joinToString("/"))
         }
+    }
 
-        return "주 ${totalDays}회 프로그램 중 ${currentDay}회차: $workoutName"
+    private fun todayStart(user: User): LocalDateTime {
+        val zoneId = AppTime.resolveZoneId(userSettingsRepository.findByUser_Id(user.id).orElse(null)?.timeZone)
+        val localDate = AppTime.currentUserDate(zoneId)
+        return AppTime.utcRangeForLocalDate(localDate, zoneId).first
     }
 }
 

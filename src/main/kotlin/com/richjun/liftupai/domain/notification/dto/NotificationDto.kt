@@ -22,6 +22,7 @@ data class RegisterDeviceResponse(
 data class NotificationSettingsResponse(
     val workoutReminder: Boolean,
     val workoutReminderTime: String?,
+    val timeZone: String? = null,
     val aiMessages: Boolean,
     val achievements: Boolean,
     val marketing: Boolean,
@@ -92,6 +93,7 @@ data class WorkoutReminderRequest(
 data class ScheduleResponse(
     val scheduleId: String,
     val nextTriggerAt: String?,
+    val timeZone: String? = null,
     val status: String,
     val created: Boolean
 )

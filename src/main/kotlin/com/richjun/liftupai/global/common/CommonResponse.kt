@@ -1,15 +1,14 @@
 package com.richjun.liftupai.global.common
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import com.richjun.liftupai.global.time.AppTime
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ApiResponse<T>(
     val success: Boolean,
     val data: T? = null,
     val error: ErrorResponse? = null,
-    val timestamp: String = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+    val timestamp: String = AppTime.formatUtcRequired(AppTime.utcNow())
 ) {
     companion object {
         fun <T> success(data: T): ApiResponse<T> {

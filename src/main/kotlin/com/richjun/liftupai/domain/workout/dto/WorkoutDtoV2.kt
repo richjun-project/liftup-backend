@@ -57,6 +57,8 @@ data class RestTimerSettings(
 data class CompleteWorkoutRequestV2(
     val exercises: List<CompletedExerciseV2> = emptyList(),
     val duration: Int = 0,
+    @JsonProperty("ended_at")
+    val endedAt: String? = null,
     val notes: String? = null
 )
 
@@ -289,6 +291,7 @@ data class StreakStats(
 
 data class Achievement(
     val id: String,
+    val code: String? = null,
     val name: String,
     val description: String,
 

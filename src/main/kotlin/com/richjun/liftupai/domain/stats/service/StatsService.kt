@@ -1,106 +1,89 @@
 package com.richjun.liftupai.domain.stats.service
 
 import com.richjun.liftupai.domain.auth.repository.UserRepository
+import com.richjun.liftupai.domain.notification.util.NotificationLocalization
 import com.richjun.liftupai.domain.stats.dto.*
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
-import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
+import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 @Service
 @Transactional(readOnly = true)
 class StatsService(
     private val userRepository: UserRepository,
+    private val userSettingsRepository: UserSettingsRepository,
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val workoutExerciseRepository: WorkoutExerciseRepository,
     private val exerciseSetRepository: ExerciseSetRepository
 ) {
 
     fun getOverview(userId: Long, period: String): StatsOverviewResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
+        val zoneId = resolveTimeZone(userId)
+        val (startDate, endDate) = getDateRange(period, zoneId)
 
-        val (startDate, endDate) = getDateRange(period)
-        println("DEBUG StatsService.getOverview - userId: $userId, period: $period")
-        println("DEBUG StatsService.getOverview - dateRange: $startDate to $endDate")
-
-        val sessions = workoutSessionRepository.findByUserAndStartTimeBetween(
-            user, startDate, endDate
-        ).filter { it.status == SessionStatus.COMPLETED }
-        println("DEBUG StatsService.getOverview - found ${sessions.size} completed sessions")
+        val sessions = workoutSessionRepository.findByUserAndStartTimeBetween(user, startDate, endDate)
+            .filter { it.status == SessionStatus.COMPLETED }
 
         val totalWorkouts = sessions.size
         val totalDuration = sessions.sumOf { it.duration ?: 0 }
         val totalVolume = sessions.sumOf { session ->
-            // WorkoutExercise를 통해 ExerciseSet 조회
-            val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-            println("DEBUG StatsService.getOverview - session ${session.id}: found ${workoutExercises.size} exercises")
-
-            val sessionVolume = workoutExercises.sumOf { workoutExercise ->
-                val completedSets = workoutExercise.sets.filter { it.completed }
-                println("DEBUG StatsService.getOverview - exercise ${workoutExercise.exercise.name}: ${completedSets.size} completed sets out of ${workoutExercise.sets.size}")
-
-                val exerciseVolume = completedSets.sumOf { set ->
-                    val setVolume = set.weight * set.reps
-                    println("DEBUG StatsService.getOverview - set: ${set.weight}kg x ${set.reps}reps = ${setVolume}kg")
-                    setVolume
-                }
-                println("DEBUG StatsService.getOverview - exercise total volume: ${exerciseVolume}kg")
-                exerciseVolume
+            workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).sumOf { workoutExercise ->
+                workoutExercise.sets.filter { it.completed }.sumOf { set -> set.weight * set.reps }
             }
-            println("DEBUG StatsService.getOverview - session ${session.id} total volume: ${sessionVolume}kg")
-            sessionVolume
         }
-        val averageDuration = if (totalWorkouts > 0) totalDuration / totalWorkouts else 0
-        val streak = calculateStreak(user)
-
-        println("DEBUG StatsService.getOverview - FINAL: totalWorkouts=$totalWorkouts, totalDuration=$totalDuration, totalVolume=$totalVolume, avgDuration=$averageDuration, streak=$streak")
 
         return StatsOverviewResponse(
             totalWorkouts = totalWorkouts,
             totalDuration = totalDuration,
             totalVolume = totalVolume,
-            averageDuration = averageDuration,
-            streak = streak
+            averageDuration = if (totalWorkouts > 0) totalDuration / totalWorkouts else 0,
+            streak = calculateStreak(user, zoneId)
         )
     }
 
     fun getVolumeStats(userId: Long, period: String, startDate: String?): VolumeStatsResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
+        val zoneId = resolveTimeZone(userId)
 
         val start = if (startDate != null) {
-            LocalDate.parse(startDate).atStartOfDay()
+            AppTime.utcRangeForLocalDate(LocalDate.parse(startDate), zoneId).first
         } else {
-            LocalDateTime.now().minusWeeks(1)
+            AppTime.utcNow().minusWeeks(1)
         }
 
         val end = when (period) {
-            "week" -> start.plusWeeks(1)
-            "month" -> start.plusMonths(1)
-            else -> start.plusWeeks(1)
+            "week" -> if (startDate != null) AppTime.toUtc(AppTime.toUserLocalDateTime(start, zoneId).plusWeeks(1), zoneId) else AppTime.utcNow()
+            "month" -> if (startDate != null) AppTime.toUtc(AppTime.toUserLocalDateTime(start, zoneId).plusMonths(1), zoneId) else AppTime.utcNow()
+            else -> if (startDate != null) AppTime.toUtc(AppTime.toUserLocalDateTime(start, zoneId).plusWeeks(1), zoneId) else AppTime.utcNow()
         }
 
         val sessions = workoutSessionRepository.findByUserAndStartTimeBetween(user, start, end)
             .filter { it.status == SessionStatus.COMPLETED }
 
-        val volumeByDate = sessions.groupBy { it.startTime.toLocalDate() }
-            .map { (date, sessions) ->
-                val dayVolume = sessions.sumOf { session ->
-                    val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-                    workoutExercises.sumOf { workoutExercise ->
-                        workoutExercise.sets.filter { it.completed }.sumOf { set ->
-                            set.weight * set.reps
-                        }
+        val volumeByDate = sessions.groupBy { AppTime.toUserLocalDate(it.startTime, zoneId) }
+            .map { (date, dateSessions) ->
+                val dayVolume = dateSessions.sumOf { session ->
+                    workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).sumOf { workoutExercise ->
+                        workoutExercise.sets.filter { it.completed }.sumOf { set -> set.weight * set.reps }
                     }
                 }
+
                 VolumeDataPoint(
                     date = date.format(DateTimeFormatter.ISO_LOCAL_DATE),
                     volume = dayVolume
@@ -112,49 +95,38 @@ class StatsService(
     }
 
     fun getMuscleDistribution(userId: Long, period: String): MuscleDistributionResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
+        val zoneId = resolveTimeZone(userId)
+        val (startDate, endDate) = getDateRange(period, zoneId)
 
-        val (startDate, endDate) = getDateRange(period)
-        println("DEBUG StatsService.getMuscleDistribution - userId: $userId, period: $period")
-        println("DEBUG StatsService.getMuscleDistribution - dateRange: $startDate to $endDate")
-
-        val sessions = workoutSessionRepository.findByUserAndStartTimeBetween(
-            user, startDate, endDate
-        ).filter { it.status == SessionStatus.COMPLETED }
-        println("DEBUG StatsService.getMuscleDistribution - found ${sessions.size} completed sessions")
+        val sessions = workoutSessionRepository.findByUserAndStartTimeBetween(user, startDate, endDate)
+            .filter { it.status == SessionStatus.COMPLETED }
 
         val muscleGroups = mutableMapOf<String, Int>()
+
         sessions.forEach { session ->
-            val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-            println("DEBUG StatsService.getMuscleDistribution - session ${session.id}: found ${workoutExercises.size} exercises")
-
-            workoutExercises.forEach { workoutExercise ->
+            workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).forEach { workoutExercise ->
                 val exercise = workoutExercise.exercise
-                println("DEBUG StatsService.getMuscleDistribution - exercise: ${exercise.name}, muscleGroups: ${exercise.muscleGroups.map { it.name }}")
 
-                // muscleGroups Set 확인
                 if (exercise.muscleGroups.isNotEmpty()) {
-                    exercise.muscleGroups.forEach { muscleEnum ->
-                        val muscleName = mapMuscleGroupToKorean(muscleEnum.name)
-                        muscleGroups[muscleName] = muscleGroups.getOrDefault(muscleName, 0) + 1
-                        println("DEBUG StatsService.getMuscleDistribution - added muscle: $muscleName")
+                    exercise.muscleGroups.forEach { muscleGroup ->
+                        val name = WorkoutLocalization.muscleGroupName(muscleGroup, locale)
+                        muscleGroups[name] = muscleGroups.getOrDefault(name, 0) + 1
                     }
                 } else {
-                    // muscleGroups가 없으면 카테고리 기반으로 설정
-                    val categoryMuscle = mapCategoryToMuscleGroup(exercise.category.name)
-                    muscleGroups[categoryMuscle] = muscleGroups.getOrDefault(categoryMuscle, 0) + 1
-                    println("DEBUG StatsService.getMuscleDistribution - no muscles, using category: ${exercise.category.name} -> $categoryMuscle")
+                    val name = WorkoutLocalization.targetDisplayName(exercise.category.name, locale)
+                    muscleGroups[name] = muscleGroups.getOrDefault(name, 0) + 1
                 }
             }
         }
-        println("DEBUG StatsService.getMuscleDistribution - final muscle groups: $muscleGroups")
 
         val total = muscleGroups.values.sum().toDouble()
         val distribution = muscleGroups.map { (muscle, count) ->
             MuscleDistribution(
                 muscleGroup = muscle,
-                percentage = if (total > 0) (count / total * 100) else 0.0,
+                percentage = if (total > 0) count / total * 100 else 0.0,
                 sessions = count
             )
         }.sortedByDescending { it.percentage }
@@ -162,72 +134,33 @@ class StatsService(
         return MuscleDistributionResponse(distribution = distribution)
     }
 
-    private fun mapMuscleGroupToKorean(muscleEnum: String): String {
-        // Flutter 프론트엔드와 일치하는 16개 근육 그룹 매핑
-        return when (muscleEnum) {
-            "CHEST" -> "가슴"
-            "BACK" -> "등"
-            "SHOULDERS" -> "어깨"
-            "BICEPS" -> "이두근"
-            "TRICEPS" -> "삼두근"
-            "LEGS" -> "다리"
-            "CORE" -> "코어"
-            "ABS" -> "복근"
-            "GLUTES" -> "둔근"
-            "CALVES" -> "종아리"
-            "FOREARMS" -> "전완근"
-            "NECK" -> "목"
-            "QUADRICEPS" -> "대퇴사두근"
-            "HAMSTRINGS" -> "햄스트링"
-            "LATS" -> "광배근"
-            "TRAPS" -> "승모근"
-            else -> muscleEnum
-        }
-    }
-
-    private fun mapCategoryToMuscleGroup(category: String): String {
-        return when (category) {
-            "CHEST" -> "가슴"
-            "BACK" -> "등"
-            "LEGS" -> "하체"
-            "SHOULDERS" -> "어깨"
-            "ARMS" -> "팔"
-            "CORE" -> "복근"
-            "CARDIO" -> "유산소"
-            "FULL_BODY" -> "전신"
-            else -> "기타"
-        }
-    }
-
     fun getPersonalRecords(userId: Long): PersonalRecordsResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
+        val zoneId = resolveTimeZone(userId)
 
         val allSessions = workoutSessionRepository.findByUserAndStartTimeBetween(
             user,
-            LocalDateTime.now().minusYears(1),
-            LocalDateTime.now()
+            AppTime.utcNow().minusYears(1),
+            AppTime.utcNow()
         ).filter { it.status == SessionStatus.COMPLETED }
 
         val recordsByExercise = mutableMapOf<Long, PersonalRecord>()
 
         allSessions.forEach { session ->
-            val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-            workoutExercises.forEach { workoutExercise ->
-                val exercise = workoutExercise.exercise
-                val exerciseId = exercise.id
+            workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).forEach { workoutExercise ->
+                val exerciseId = workoutExercise.exercise.id
 
                 workoutExercise.sets.filter { it.completed }.forEach { set ->
                     val current = recordsByExercise[exerciseId]
-                    val weight = set.weight
-
-                    if (current == null || weight > current.weight) {
+                    if (current == null || set.weight > current.weight) {
                         recordsByExercise[exerciseId] = PersonalRecord(
                             exerciseId = exerciseId,
-                            exerciseName = exercise.name,
-                            weight = weight,
+                            exerciseName = workoutExercise.exercise.name,
+                            weight = set.weight,
                             reps = set.reps,
-                            date = session.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                            date = AppTime.toUserLocalDate(session.startTime, zoneId).format(DateTimeFormatter.ISO_LOCAL_DATE)
                         )
                     }
                 }
@@ -238,8 +171,10 @@ class StatsService(
     }
 
     fun getProgress(userId: Long, metric: String, period: String): ProgressResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
+        val zoneId = resolveTimeZone(userId)
 
         val months = when (period) {
             "3months" -> 3L
@@ -248,74 +183,73 @@ class StatsService(
             else -> 3L
         }
 
-        val startDate = LocalDateTime.now().minusMonths(months)
-        val sessions = workoutSessionRepository.findByUserAndStartTimeBetween(
-            user, startDate, LocalDateTime.now()
-        ).filter { it.status == SessionStatus.COMPLETED }
+        val startDate = AppTime.toUtc(AppTime.toUserLocalDateTime(AppTime.utcNow(), zoneId).minusMonths(months), zoneId)
+        val sessions = workoutSessionRepository.findByUserAndStartTimeBetween(user, startDate, AppTime.utcNow())
+            .filter { it.status == SessionStatus.COMPLETED }
 
         val progress = when (metric) {
-            "weight" -> calculateWeightProgress(sessions)
-            "volume" -> calculateVolumeProgress(sessions)
-            "strength" -> calculateStrengthProgress(sessions)
+            "weight" -> calculateWeightProgress(sessions, zoneId)
+            "volume" -> calculateVolumeProgress(sessions, zoneId)
+            "strength" -> calculateStrengthProgress(sessions, zoneId)
             else -> emptyList()
         }
 
         return ProgressResponse(progress = progress)
     }
 
-    private fun getDateRange(period: String): Pair<LocalDateTime, LocalDateTime> {
-        val now = LocalDateTime.now()
+    private fun getDateRange(period: String, zoneId: ZoneId): Pair<LocalDateTime, LocalDateTime> {
+        val now = AppTime.toUserLocalDateTime(AppTime.utcNow(), zoneId)
         val startDate = when (period) {
-            "week" -> now.minusWeeks(1)
-            "month" -> now.minusMonths(1)
-            "year" -> now.minusYears(1)
-            else -> now.minusWeeks(1)
+            "week" -> AppTime.toUtc(now.minusWeeks(1), zoneId)
+            "month" -> AppTime.toUtc(now.minusMonths(1), zoneId)
+            "year" -> AppTime.toUtc(now.minusYears(1), zoneId)
+            else -> AppTime.toUtc(now.minusWeeks(1), zoneId)
         }
-        return Pair(startDate, now)
+
+        return startDate to AppTime.utcNow()
     }
 
-    private fun calculateStreak(user: com.richjun.liftupai.domain.auth.entity.User): Int {
+    private fun calculateStreak(user: com.richjun.liftupai.domain.auth.entity.User, zoneId: ZoneId): Int {
         val sessions = workoutSessionRepository.findByUserAndStartTimeBetween(
             user,
-            LocalDateTime.now().minusMonths(1),
-            LocalDateTime.now()
+            AppTime.utcNow().minusMonths(1),
+            AppTime.utcNow()
         ).filter { it.status == SessionStatus.COMPLETED }
-            .sortedByDescending { it.startTime }
 
-        if (sessions.isEmpty()) return 0
+        if (sessions.isEmpty()) {
+            return 0
+        }
 
-        var streak = 1
-        var lastDate = sessions.first().startTime.toLocalDate()
+        val workoutDays = sessions.map { AppTime.toUserLocalDate(it.startTime, zoneId) }.toSet()
+        var streak = 0
+        var currentDate = AppTime.currentUserDate(zoneId)
 
-        for (i in 1 until sessions.size) {
-            val currentDate = sessions[i].startTime.toLocalDate()
-            val daysBetween = ChronoUnit.DAYS.between(currentDate, lastDate)
+        if (!workoutDays.contains(currentDate)) {
+            currentDate = currentDate.minusDays(1)
+        }
 
-            if (daysBetween <= 1) {
-                if (daysBetween == 1L) streak++
-                lastDate = currentDate
-            } else {
-                break
-            }
+        while (workoutDays.contains(currentDate)) {
+            streak++
+            currentDate = currentDate.minusDays(1)
         }
 
         return streak
     }
 
-    private fun calculateWeightProgress(sessions: List<com.richjun.liftupai.domain.workout.entity.WorkoutSession>): List<ProgressDataPoint> {
-        val points = sessions.groupBy { it.startTime.toLocalDate().withDayOfMonth(1) }
+    private fun calculateWeightProgress(
+        sessions: List<com.richjun.liftupai.domain.workout.entity.WorkoutSession>,
+        zoneId: ZoneId
+    ): List<ProgressDataPoint> {
+        val points = sessions.groupBy { AppTime.toUserLocalDate(it.startTime, zoneId).withDayOfMonth(1) }
             .map { (month, monthlySessions) ->
                 val allSets = monthlySessions.flatMap { session ->
-                    val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-                    workoutExercises.flatMap { it.sets.filter { set -> set.completed } }
+                    workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                        .flatMap { workoutExercise -> workoutExercise.sets.filter { set -> set.completed } }
                 }
-                val avgWeight = if (allSets.isNotEmpty()) {
-                    allSets.map { it.weight }.average()
-                } else 0.0
 
                 ProgressDataPoint(
                     date = month.format(DateTimeFormatter.ISO_LOCAL_DATE),
-                    value = avgWeight,
+                    value = allSets.map { it.weight }.average().takeUnless { it.isNaN() } ?: 0.0,
                     change = 0.0
                 )
             }
@@ -325,25 +259,22 @@ class StatsService(
         for (i in 1 until points.size) {
             val prevValue = points[i - 1].value
             val currentValue = points[i].value
-            val changePercent = if (prevValue != 0.0) {
-                ((currentValue - prevValue) / prevValue * 100)
-            } else 0.0
-
+            val changePercent = if (prevValue != 0.0) ((currentValue - prevValue) / prevValue * 100) else 0.0
             points[i] = points[i].copy(change = changePercent)
         }
 
         return points
     }
 
-    private fun calculateVolumeProgress(sessions: List<com.richjun.liftupai.domain.workout.entity.WorkoutSession>): List<ProgressDataPoint> {
-        val points = sessions.groupBy { it.startTime.toLocalDate().withDayOfMonth(1) }
+    private fun calculateVolumeProgress(
+        sessions: List<com.richjun.liftupai.domain.workout.entity.WorkoutSession>,
+        zoneId: ZoneId
+    ): List<ProgressDataPoint> {
+        val points = sessions.groupBy { AppTime.toUserLocalDate(it.startTime, zoneId).withDayOfMonth(1) }
             .map { (month, monthlySessions) ->
                 val totalVolume = monthlySessions.sumOf { session ->
-                    val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-                    workoutExercises.sumOf { workoutExercise ->
-                        workoutExercise.sets.filter { it.completed }.sumOf { set ->
-                            set.weight * set.reps
-                        }
+                    workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).sumOf { workoutExercise ->
+                        workoutExercise.sets.filter { it.completed }.sumOf { set -> set.weight * set.reps }
                     }
                 }
 
@@ -359,17 +290,25 @@ class StatsService(
         for (i in 1 until points.size) {
             val prevValue = points[i - 1].value
             val currentValue = points[i].value
-            val changePercent = if (prevValue != 0.0) {
-                ((currentValue - prevValue) / prevValue * 100)
-            } else 0.0
-
+            val changePercent = if (prevValue != 0.0) ((currentValue - prevValue) / prevValue * 100) else 0.0
             points[i] = points[i].copy(change = changePercent)
         }
 
         return points
     }
 
-    private fun calculateStrengthProgress(sessions: List<com.richjun.liftupai.domain.workout.entity.WorkoutSession>): List<ProgressDataPoint> {
-        return calculateWeightProgress(sessions)
+    private fun calculateStrengthProgress(
+        sessions: List<com.richjun.liftupai.domain.workout.entity.WorkoutSession>,
+        zoneId: ZoneId
+    ): List<ProgressDataPoint> {
+        return calculateWeightProgress(sessions, zoneId)
+    }
+
+    private fun resolveLocale(userId: Long): String {
+        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.language ?: "en"
+    }
+
+    private fun resolveTimeZone(userId: Long): ZoneId {
+        return AppTime.resolveZoneId(userSettingsRepository.findByUser_Id(userId).orElse(null)?.timeZone)
     }
 }

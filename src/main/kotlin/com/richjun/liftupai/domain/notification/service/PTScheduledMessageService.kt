@@ -7,6 +7,8 @@ import com.richjun.liftupai.domain.chat.entity.MessageStatus
 import com.richjun.liftupai.domain.chat.entity.MessageType
 import com.richjun.liftupai.domain.chat.repository.ChatMessageRepository
 import com.richjun.liftupai.domain.notification.entity.*
+import com.richjun.liftupai.domain.notification.util.NotificationLocalization
+import com.richjun.liftupai.domain.notification.util.NotificationScheduleTimeCalculator
 import com.richjun.liftupai.domain.notification.repository.NotificationHistoryRepository
 import com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository
 import com.richjun.liftupai.domain.user.entity.PTStyle
@@ -14,6 +16,7 @@ import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -39,11 +42,12 @@ class PTScheduledMessageService(
      * 사용자의 PT 스타일에 맞는 스케줄 메시지 생성
      */
     fun createPTSchedulesForUser(userId: Long) {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val profile = userProfileRepository.findByUser(user)
-            .orElseThrow { ResourceNotFoundException("사용자 프로필을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.profile_not_found", locale)) }
 
         val settings = userSettingsRepository.findByUser(user).orElse(null)
 
@@ -62,7 +66,7 @@ class PTScheduledMessageService(
             user = user,
             scheduleName = "morning_meal_check",
             time = LocalTime.of(7, 30),
-            message = ptMessageTemplates.getMorningMealMessage(ptStyle),
+            message = ptMessageTemplates.getMorningMealMessage(ptStyle, locale),
             days = getAllDays()
         )
 
@@ -71,7 +75,7 @@ class PTScheduledMessageService(
             user = user,
             scheduleName = "lunch_meal_check",
             time = LocalTime.of(12, 30),
-            message = ptMessageTemplates.getLunchMealMessage(ptStyle),
+            message = ptMessageTemplates.getLunchMealMessage(ptStyle, locale),
             days = getAllDays()
         )
 
@@ -81,7 +85,7 @@ class PTScheduledMessageService(
             user = user,
             scheduleName = "workout_reminder",
             time = workoutReminderTime,
-            message = ptMessageTemplates.getWorkoutReminderMessage(ptStyle),
+            message = ptMessageTemplates.getWorkoutReminderMessage(ptStyle, locale),
             days = getAllDays()
         )
 
@@ -90,7 +94,7 @@ class PTScheduledMessageService(
             user = user,
             scheduleName = "dinner_meal_check",
             time = LocalTime.of(19, 0),
-            message = ptMessageTemplates.getDinnerMealMessage(ptStyle),
+            message = ptMessageTemplates.getDinnerMealMessage(ptStyle, locale),
             days = getAllDays()
         )
 
@@ -99,7 +103,7 @@ class PTScheduledMessageService(
             user = user,
             scheduleName = "sleep_prep",
             time = LocalTime.of(22, 0),
-            message = ptMessageTemplates.getSleepPrepMessage(ptStyle),
+            message = ptMessageTemplates.getSleepPrepMessage(ptStyle, locale),
             days = getAllDays()
         )
 
@@ -111,13 +115,14 @@ class PTScheduledMessageService(
      */
     fun updatePTSchedulesForStyleChange(userId: Long, newStyle: PTStyle) {
         logger.info("Updating PT schedules for user $userId with new style $newStyle")
+        val locale = resolveLocale(userId)
 
         // 사용자 프로필 조회
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
         val profile = userProfileRepository.findByUser(user)
-            .orElseThrow { ResourceNotFoundException("사용자 프로필을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.profile_not_found", locale)) }
 
         // PT 스타일 업데이트
         profile.ptStyle = newStyle
@@ -158,22 +163,23 @@ class PTScheduledMessageService(
      * 컨텍스트 기반 메시지 생성 (운동 이력 참고)
      */
     fun generateContextualMessage(user: User, baseMessage: String): String {
+        val locale = resolveLocale(user.id)
         val recentSessions = workoutSessionRepository.findTop7ByUserOrderByStartTimeDesc(user)
 
         if (recentSessions.isEmpty()) {
-            return "$baseMessage (운동 기록이 없네요. 오늘부터 시작해봐요!)"
+            return NotificationLocalization.message("pt.context.no_history", locale, baseMessage)
         }
 
         val daysSinceLastWorkout = if (recentSessions.isNotEmpty()) {
-            java.time.Duration.between(recentSessions.first().startTime, LocalDateTime.now()).toDays()
+            java.time.Duration.between(recentSessions.first().startTime, AppTime.utcNow()).toDays()
         } else {
             999
         }
 
         return when {
-            daysSinceLastWorkout == 0L -> "$baseMessage (오늘 이미 운동하셨네요! 대단해요!)"
-            daysSinceLastWorkout == 1L -> "$baseMessage (어제 운동 수고하셨어요!)"
-            daysSinceLastWorkout >= 3L -> "$baseMessage (${daysSinceLastWorkout}일째 쉬고 계시네요. 오늘은 꼭!)"
+            daysSinceLastWorkout == 0L -> NotificationLocalization.message("pt.context.today_done", locale, baseMessage)
+            daysSinceLastWorkout == 1L -> NotificationLocalization.message("pt.context.yesterday_done", locale, baseMessage)
+            daysSinceLastWorkout >= 3L -> NotificationLocalization.message("pt.context.days_resting", locale, baseMessage, daysSinceLastWorkout)
             else -> baseMessage
         }
     }
@@ -193,7 +199,7 @@ class PTScheduledMessageService(
             days = days.toMutableSet(),
             enabled = true,
             notificationType = NotificationType.AI_MESSAGE,
-            nextTriggerAt = calculateNextTrigger(days, time)
+            nextTriggerAt = NotificationScheduleTimeCalculator.calculateNextTrigger(days, time, resolveTimeZone(user.id))
         )
         notificationScheduleRepository.save(schedule)
     }
@@ -233,37 +239,11 @@ class PTScheduledMessageService(
         )
     }
 
-    private fun calculateNextTrigger(days: Set<DayOfWeek>, time: LocalTime): LocalDateTime {
-        val now = LocalDateTime.now()
-        val today = now.dayOfWeek
-        val todayTime = now.toLocalTime()
+    private fun resolveLocale(userId: Long): String {
+        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.language ?: "en"
+    }
 
-        // Java DayOfWeek로 변환
-        val javaDays = days.map { day ->
-            when (day) {
-                DayOfWeek.MON -> java.time.DayOfWeek.MONDAY
-                DayOfWeek.TUE -> java.time.DayOfWeek.TUESDAY
-                DayOfWeek.WED -> java.time.DayOfWeek.WEDNESDAY
-                DayOfWeek.THU -> java.time.DayOfWeek.THURSDAY
-                DayOfWeek.FRI -> java.time.DayOfWeek.FRIDAY
-                DayOfWeek.SAT -> java.time.DayOfWeek.SATURDAY
-                DayOfWeek.SUN -> java.time.DayOfWeek.SUNDAY
-            }
-        }.toSet()
-
-        // 오늘이 스케줄에 있고 시간이 아직 안 지났으면 오늘 설정
-        if (javaDays.contains(today) && todayTime.isBefore(time)) {
-            return now.toLocalDate().atTime(time)
-        }
-
-        // 다음 날 찾기
-        for (i in 1..7) {
-            val nextDay = today.plus(i.toLong())
-            if (javaDays.contains(nextDay)) {
-                return now.toLocalDate().plusDays(i.toLong()).atTime(time)
-            }
-        }
-
-        return now.plusDays(1).toLocalDate().atTime(time)
+    private fun resolveTimeZone(userId: Long): String {
+        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.timeZone ?: AppTime.DEFAULT_TIME_ZONE
     }
 }

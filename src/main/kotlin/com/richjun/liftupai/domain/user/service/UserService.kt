@@ -1,12 +1,14 @@
 package com.richjun.liftupai.domain.user.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.richjun.liftupai.domain.notification.service.NotificationService
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.user.dto.*
 import com.richjun.liftupai.domain.user.entity.*
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import org.slf4j.LoggerFactory
@@ -22,7 +24,8 @@ class UserService(
     private val userRepository: UserRepository,
     private val userProfileRepository: UserProfileRepository,
     private val userSettingsRepository: UserSettingsRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val notificationService: NotificationService
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -145,6 +148,7 @@ class UserService(
         settings.workoutSplit = request.workoutSplit
         settings.preferredWorkoutTime = request.preferredWorkoutTime
         settings.workoutDuration = request.workoutDuration
+        request.timeZone?.let { settings.timeZone = validateTimeZone(it) }
 
         request.availableEquipment?.let {
             settings.availableEquipment.clear()
@@ -188,6 +192,7 @@ class UserService(
             app = AppSettings(
                 theme = settings.theme,
                 language = settings.language,
+                timeZone = settings.timeZone,
                 units = settings.units
             )
         )
@@ -200,6 +205,7 @@ class UserService(
         val settings = userSettingsRepository.findByUser_Id(userId).orElse(
             UserSettings(user = user)
         )
+        val previousTimeZone = settings.timeZone
 
         request.notifications?.let {
             settings.workoutReminder = it.workoutReminder
@@ -216,11 +222,16 @@ class UserService(
         request.app?.let {
             settings.theme = it.theme
             settings.language = it.language
+            settings.timeZone = validateTimeZone(it.timeZone)
             settings.units = it.units
         }
 
         settings.updatedAt = LocalDateTime.now()
         userSettingsRepository.save(settings)
+
+        if (previousTimeZone != settings.timeZone) {
+            notificationService.refreshScheduleTimesForUser(userId)
+        }
 
         return getSettings(userId)
     }
@@ -458,8 +469,8 @@ class UserService(
 
         return mapOf(
             "success" to true,
-            "message" to "회원 탈퇴가 완료되었습니다",
-            "deactivatedAt" to user.deletedAt.toString()
+            "message" to "Account deactivated successfully",
+            "deactivatedAt" to AppTime.formatUtc(user.deletedAt).orEmpty()
         )
     }
 
@@ -470,7 +481,7 @@ class UserService(
             email = user.email ?: "",
             nickname = user.nickname,
             experienceLevel = profile.experienceLevel.name,
-            joinDate = user.joinDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            joinDate = AppTime.formatUtcRequired(user.joinDate),
             bodyInfo = profile.bodyInfo?.let {
                 BodyInfoDto(
                     height = it.height,
@@ -485,6 +496,10 @@ class UserService(
             ptStyle = profile.ptStyle.name,
             subscription = SubscriptionDto()
         )
+    }
+
+    private fun validateTimeZone(rawTimeZone: String): String {
+        return AppTime.requireZoneId(rawTimeZone).id
     }
 
     private fun mapToProfileResponseV4(profile: UserProfile): ProfileResponse {

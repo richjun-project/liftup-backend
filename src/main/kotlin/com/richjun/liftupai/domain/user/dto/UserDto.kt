@@ -1,6 +1,7 @@
 package com.richjun.liftupai.domain.user.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.richjun.liftupai.global.time.AppTime
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -126,6 +127,9 @@ data class OnboardingRequest(
     @JsonProperty("workout_duration")
     val workoutDuration: Int?,
 
+    @JsonProperty("time_zone")
+    val timeZone: String? = null,
+
     val injuries: List<String>?
 )
 
@@ -158,6 +162,8 @@ data class PrivacySettings(
 data class AppSettings(
     val theme: String = "LIGHT",
     val language: String = "ko",
+    @JsonProperty("time_zone")
+    val timeZone: String = AppTime.DEFAULT_TIME_ZONE,
     val units: String = "METRIC"
 )
 

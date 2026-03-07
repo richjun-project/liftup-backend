@@ -14,6 +14,11 @@ import com.richjun.liftupai.domain.recovery.service.RecoveryService
 import com.richjun.liftupai.domain.recovery.entity.MuscleRecovery
 import com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.domain.workout.util.WorkoutAchievementCatalog
+import com.richjun.liftupai.domain.workout.util.WorkoutFocus
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
+import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -42,14 +47,23 @@ class WorkoutServiceV2(
     private val recoveryService: RecoveryService,
     private val muscleRecoveryRepository: MuscleRecoveryRepository,
     private val exercisePatternClassifier: ExercisePatternClassifier,
-    private val exerciseRecommendationService: ExerciseRecommendationService
+    private val exerciseRecommendationService: ExerciseRecommendationService,
+    private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService,
+    private val autoProgramSelector: AutoProgramSelector
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+
+    private data class RecommendationProgramContext(
+        val programDays: Int,
+        val programType: String,
+        val workoutSequence: List<WorkoutType>
+    )
 
     // 기존 메서드 (호환성 유지) - 진행 중인 세션이 있으면 반환, 없으면 새로 생성
     fun startWorkout(userId: Long, request: StartWorkoutRequestV2): StartWorkoutResponseV2 {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId)
 
         // 진행 중인 세션이 있으면 그대로 반환
         val existingSession = workoutSessionRepository.findFirstByUserAndStatusOrderByStartTimeDesc(user, SessionStatus.IN_PROGRESS)
@@ -58,22 +72,15 @@ class WorkoutServiceV2(
 
             // WorkoutExercise를 직접 조회하여 운동 정보 가져오기
             val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+            val translations = translationMap(workoutExercises.map { it.exercise }, locale)
 
             val exercises = workoutExercises.map { workoutExercise ->
-                val exercise = workoutExercise.exercise
-                ExerciseDto(
-                    id = exercise.id,
-                    name = exercise.name,
-                    category = exercise.category.name,
-                    muscleGroups = exercise.muscleGroups.map { it.name },
-                    equipment = exercise.equipment?.name,
-                    instructions = exercise.instructions
-                )
+                toExerciseDto(workoutExercise.exercise, locale, translations)
             }
 
             return StartWorkoutResponseV2(
                 sessionId = session.id,
-                startTime = session.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                startTime = AppTime.formatUtcRequired(session.startTime),
                 exercises = exercises,
                 restTimerSettings = RestTimerSettings(
                     defaultRestSeconds = 90,
@@ -100,7 +107,7 @@ class WorkoutServiceV2(
         // 진행 중인 세션이 없으면 새로 생성
         val session = WorkoutSession(
             user = user,
-            startTime = LocalDateTime.now(),
+            startTime = AppTime.utcNow(),
             status = SessionStatus.IN_PROGRESS,
             workoutType = workoutType,
             programDay = programPosition.day,
@@ -108,11 +115,15 @@ class WorkoutServiceV2(
         )
 
         val savedSession = workoutSessionRepository.save(session)
+        val plannedExercises = request.plannedExercises.map { planned ->
+            exerciseRepository.findById(planned.exerciseId)
+                .orElseThrow { ResourceNotFoundException("EXERCISE001: Exercise not found") }
+        }
+        val translations = translationMap(plannedExercises, locale)
 
         // 계획된 운동들 추가 및 WorkoutExercise 엔티티 생성
         val exercises = request.plannedExercises.mapIndexed { index, planned ->
-            val exercise = exerciseRepository.findById(planned.exerciseId)
-                .orElseThrow { ResourceNotFoundException("EXERCISE001: 운동을 찾을 수 없습니다") }
+            val exercise = plannedExercises[index]
 
             // WorkoutExercise 엔티티 생성 및 저장
             val workoutExercise = WorkoutExercise(
@@ -123,19 +134,12 @@ class WorkoutServiceV2(
             val savedWorkoutExercise = workoutExerciseRepository.save(workoutExercise)
             println("DEBUG: Saved WorkoutExercise ID: ${savedWorkoutExercise.id}, Session ID: ${savedSession.id}, Exercise: ${exercise.name}")
 
-            ExerciseDto(
-                id = exercise.id,
-                name = exercise.name,
-                category = exercise.category.name,
-                muscleGroups = exercise.muscleGroups.map { it.name },
-                equipment = exercise.equipment?.name,
-                instructions = exercise.instructions
-            )
+            toExerciseDto(exercise, locale, translations)
         }
 
         return StartWorkoutResponseV2(
             sessionId = savedSession.id,
-            startTime = savedSession.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            startTime = AppTime.formatUtcRequired(savedSession.startTime),
             exercises = exercises,
             restTimerSettings = RestTimerSettings(
                 defaultRestSeconds = 90,
@@ -146,7 +150,7 @@ class WorkoutServiceV2(
 
     fun startNewWorkout(userId: Long, request: StartWorkoutRequestV2): StartWorkoutResponseV2 {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
 
         // workout_type에 따른 처리
         return when (request.workoutType) {
@@ -157,25 +161,22 @@ class WorkoutServiceV2(
     }
 
     private fun startQuickWorkout(user: com.richjun.liftupai.domain.auth.entity.User, request: StartWorkoutRequestV2): StartWorkoutResponseV2 {
-        // 기존 startRecommendedWorkout 로직 활용
         if (request.recommendationId == null) {
-            throw IllegalArgumentException("Quick 운동을 시작하려면 recommendation_id가 필요합니다")
+            throw IllegalArgumentException("recommendation_id is required to start a quick workout")
         }
+        val locale = resolveLocale(user.id)
 
-        // 진행 중인 세션 처리
         cancelExistingSessions(user)
 
-        // 추천 운동 정보 가져오기
-        val workoutDetail = getWorkoutFromRecommendationId(request.recommendationId)
+        val workoutDetail = getWorkoutFromRecommendationId(user, request.recommendationId, locale)
         val adjustedWorkout = request.adjustments?.let { applyWorkoutAdjustments(workoutDetail, it) } ?: workoutDetail
 
-        // 세션 생성
         val programPosition = getOrCalculateProgramPosition(user)
         val workoutType = workoutProgressTracker.determineWorkoutType(adjustedWorkout.targetMuscles)
 
         val session = WorkoutSession(
             user = user,
-            startTime = LocalDateTime.now(),
+            startTime = AppTime.utcNow(),
             status = SessionStatus.IN_PROGRESS,
             workoutType = workoutType,
             programDay = programPosition.day,
@@ -183,11 +184,15 @@ class WorkoutServiceV2(
             recommendationType = "QUICK"
         )
         val savedSession = workoutSessionRepository.save(session)
+        val exerciseEntities = adjustedWorkout.exercises.map { quickExercise ->
+            exerciseRepository.findById(quickExercise.exerciseId.toLong())
+                .orElseThrow { ResourceNotFoundException("Exercise not found") }
+        }
+        val translations = translationMap(exerciseEntities, locale)
 
         // 운동 정보 생성
-        val exercises = adjustedWorkout.exercises.map { quickExercise ->
-            val exercise = exerciseRepository.findById(quickExercise.exerciseId.toLong())
-                .orElseThrow { ResourceNotFoundException("운동을 찾을 수 없습니다") }
+        val exercises = adjustedWorkout.exercises.mapIndexed { index, quickExercise ->
+            val exercise = exerciseEntities[index]
 
             // WorkoutExercise 저장
             val workoutExercise = WorkoutExercise(
@@ -197,19 +202,12 @@ class WorkoutServiceV2(
             )
             workoutExerciseRepository.save(workoutExercise)
 
-            ExerciseDto(
-                id = exercise.id,
-                name = exercise.name,
-                category = exercise.category.name,
-                muscleGroups = exercise.muscleGroups.map { it.name },
-                equipment = exercise.equipment?.name,
-                instructions = exercise.instructions
-            )
+            toExerciseDto(exercise, locale, translations)
         }
 
         return StartWorkoutResponseV2(
             sessionId = savedSession.id,
-            startTime = savedSession.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            startTime = AppTime.formatUtcRequired(savedSession.startTime),
             exercises = exercises,
             restTimerSettings = RestTimerSettings(
                 defaultRestSeconds = 90,
@@ -220,8 +218,9 @@ class WorkoutServiceV2(
 
     private fun startAIWorkout(user: com.richjun.liftupai.domain.auth.entity.User, request: StartWorkoutRequestV2): StartWorkoutResponseV2 {
         if (request.aiWorkout == null) {
-            throw IllegalArgumentException("AI 운동을 시작하려면 ai_workout 데이터가 필요합니다")
+            throw IllegalArgumentException("ai_workout payload is required to start an AI workout")
         }
+        val locale = resolveLocale(user.id)
 
         // 진행 중인 세션 처리
         cancelExistingSessions(user)
@@ -232,7 +231,7 @@ class WorkoutServiceV2(
 
         val session = WorkoutSession(
             user = user,
-            startTime = LocalDateTime.now(),
+            startTime = AppTime.utcNow(),
             status = SessionStatus.IN_PROGRESS,
             workoutType = workoutType,
             programDay = programPosition.day,
@@ -240,11 +239,15 @@ class WorkoutServiceV2(
             recommendationType = "AI"
         )
         val savedSession = workoutSessionRepository.save(session)
+        val exerciseEntities = request.aiWorkout.exercises.map { aiExercise ->
+            exerciseRepository.findById(aiExercise.exerciseId.toLong())
+                .orElseThrow { ResourceNotFoundException("Exercise not found") }
+        }
+        val translations = translationMap(exerciseEntities, locale)
 
         // AI 추천 운동 정보 생성
-        val exercises = request.aiWorkout.exercises.map { aiExercise ->
-            val exercise = exerciseRepository.findById(aiExercise.exerciseId.toLong())
-                .orElseThrow { ResourceNotFoundException("운동을 찾을 수 없습니다") }
+        val exercises = request.aiWorkout.exercises.mapIndexed { index, aiExercise ->
+            val exercise = exerciseEntities[index]
 
             // WorkoutExercise 저장
             val workoutExercise = WorkoutExercise(
@@ -254,19 +257,12 @@ class WorkoutServiceV2(
             )
             workoutExerciseRepository.save(workoutExercise)
 
-            ExerciseDto(
-                id = exercise.id,
-                name = exercise.name,
-                category = exercise.category.name,
-                muscleGroups = exercise.muscleGroups.map { it.name },
-                equipment = exercise.equipment?.name,
-                instructions = exercise.instructions
-            )
+            toExerciseDto(exercise, locale, translations)
         }
 
         return StartWorkoutResponseV2(
             sessionId = savedSession.id,
-            startTime = savedSession.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            startTime = AppTime.formatUtcRequired(savedSession.startTime),
             exercises = exercises,
             restTimerSettings = RestTimerSettings(
                 defaultRestSeconds = 90,
@@ -278,6 +274,7 @@ class WorkoutServiceV2(
     private fun startRegularWorkout(user: com.richjun.liftupai.domain.auth.entity.User, request: StartWorkoutRequestV2): StartWorkoutResponseV2 {
         // 진행 중인 세션 처리
         cancelExistingSessions(user)
+        val locale = resolveLocale(user.id)
 
         // 프로그램 진행 상황 계산
         val programPosition = getOrCalculateProgramPosition(user)
@@ -286,7 +283,7 @@ class WorkoutServiceV2(
         // 새 세션 생성
         val session = WorkoutSession(
             user = user,
-            startTime = LocalDateTime.now(),
+            startTime = AppTime.utcNow(),
             status = SessionStatus.IN_PROGRESS,
             workoutType = workoutType,
             programDay = programPosition.day,
@@ -294,11 +291,15 @@ class WorkoutServiceV2(
         )
 
         val savedSession = workoutSessionRepository.save(session)
+        val plannedExercises = request.plannedExercises.map { planned ->
+            exerciseRepository.findById(planned.exerciseId)
+                .orElseThrow { ResourceNotFoundException("EXERCISE001: Exercise not found") }
+        }
+        val translations = translationMap(plannedExercises, locale)
 
         // 계획된 운동들 추가 및 WorkoutExercise 엔티티 생성
         val exercises = request.plannedExercises.mapIndexed { index, planned ->
-            val exercise = exerciseRepository.findById(planned.exerciseId)
-                .orElseThrow { ResourceNotFoundException("EXERCISE001: 운동을 찾을 수 없습니다") }
+            val exercise = plannedExercises[index]
 
             // WorkoutExercise 엔티티 생성 및 저장
             val workoutExercise = WorkoutExercise(
@@ -308,19 +309,12 @@ class WorkoutServiceV2(
             )
             workoutExerciseRepository.save(workoutExercise)
 
-            ExerciseDto(
-                id = exercise.id,
-                name = exercise.name,
-                category = exercise.category.name,
-                muscleGroups = exercise.muscleGroups.map { it.name },
-                equipment = exercise.equipment?.name,
-                instructions = exercise.instructions
-            )
+            toExerciseDto(exercise, locale, translations)
         }
 
         return StartWorkoutResponseV2(
             sessionId = savedSession.id,
-            startTime = savedSession.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            startTime = AppTime.formatUtcRequired(savedSession.startTime),
             exercises = exercises,
             restTimerSettings = RestTimerSettings(
                 defaultRestSeconds = 90,
@@ -334,8 +328,8 @@ class WorkoutServiceV2(
         if (existingSession.isPresent) {
             val session = existingSession.get()
             session.status = SessionStatus.ABANDONED
-            session.endTime = LocalDateTime.now()
-            session.duration = ChronoUnit.MINUTES.between(session.startTime, session.endTime).toInt()
+            session.endTime = AppTime.utcNow()
+            session.duration = ChronoUnit.MINUTES.between(session.startTime, session.endTime).toInt().coerceAtLeast(0)
             workoutSessionRepository.save(session)
         }
     }
@@ -361,11 +355,12 @@ class WorkoutServiceV2(
 
     fun continueWorkout(userId: Long): StartWorkoutResponseV2 {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId)
 
         // 진행 중인 세션 찾기
         val existingSession = workoutSessionRepository.findFirstByUserAndStatusOrderByStartTimeDesc(user, SessionStatus.IN_PROGRESS)
-            .orElseThrow { ResourceNotFoundException("진행 중인 운동 세션이 없습니다") }
+            .orElseThrow { ResourceNotFoundException("No workout session is currently in progress") }
 
         // 만약 programDay가 없으면 설정 (이전 버전 호환성)
         if (existingSession.programDay == null) {
@@ -393,17 +388,10 @@ class WorkoutServiceV2(
 
         // WorkoutExercise를 직접 조회하여 운동 정보 가져오기
         val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(existingSession.id)
+        val translations = translationMap(workoutExercises.map { it.exercise }, locale)
 
         val exercises = workoutExercises.map { workoutExercise ->
-            val exercise = workoutExercise.exercise
-            ExerciseDto(
-                id = exercise.id,
-                name = exercise.name,
-                category = exercise.category.name,
-                muscleGroups = exercise.muscleGroups.map { it.name },
-                equipment = exercise.equipment?.name,
-                instructions = exercise.instructions
-            )
+            toExerciseDto(workoutExercise.exercise, locale, translations)
         }
 
         // 각 운동의 세트 정보도 가져오기
@@ -411,7 +399,7 @@ class WorkoutServiceV2(
             val sets = exerciseSetRepository.findByWorkoutExerciseId(workoutExercise.id)
             ExerciseWithSets(
                 exerciseId = workoutExercise.exercise.id,
-                exerciseName = workoutExercise.exercise.name,
+                exerciseName = localizedName(workoutExercise.exercise, locale, translations),
                 orderIndex = workoutExercise.orderInSession,
                 sets = sets.mapIndexed { index, set ->
                     SetInfo(
@@ -420,7 +408,7 @@ class WorkoutServiceV2(
                         weight = set.weight,
                         reps = set.reps,
                         completed = set.completed,
-                        completedAt = set.completedAt?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        completedAt = AppTime.formatUtc(set.completedAt),
                         rpe = set.rpe  // RPE 추가
                     )
                 }.ifEmpty {
@@ -437,7 +425,7 @@ class WorkoutServiceV2(
 
         return StartWorkoutResponseV2(
             sessionId = existingSession.id,
-            startTime = existingSession.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            startTime = AppTime.formatUtcRequired(existingSession.startTime),
             exercises = exercises,
             restTimerSettings = RestTimerSettings(
                 defaultRestSeconds = 90,
@@ -450,13 +438,23 @@ class WorkoutServiceV2(
     @Transactional
     fun completeWorkout(userId: Long, sessionId: Long, request: CompleteWorkoutRequestV2): CompleteWorkoutResponseV2 {
         val session = findUserSession(userId, sessionId)
+        val locale = resolveLocale(userId)
+        val completedExerciseMap = request.exercises.associate { completedExercise ->
+            completedExercise.exerciseId to exerciseRepository.findById(completedExercise.exerciseId)
+                .orElseThrow { ResourceNotFoundException("Exercise not found") }
+        }
+        val translations = translationMap(completedExerciseMap.values, locale)
 
         println("DEBUG: completeWorkout - sessionId: $sessionId")
         println("DEBUG: request.exercises.size: ${request.exercises.size}")
         println("DEBUG: request.duration: ${request.duration}")
 
-        session.endTime = LocalDateTime.now()
-        session.duration = request.duration
+        val completedAt = request.endedAt?.let { AppTime.parseClientDateTime(it, resolveTimeZone(userId)) } ?: AppTime.utcNow()
+        val serverDuration = ChronoUnit.MINUTES.between(session.startTime, completedAt).toInt().coerceAtLeast(0)
+        val normalizedDuration = normalizeDuration(request.duration, serverDuration)
+
+        session.endTime = completedAt
+        session.duration = normalizedDuration
         session.notes = request.notes
         session.status = SessionStatus.COMPLETED
 
@@ -466,8 +464,7 @@ class WorkoutServiceV2(
 
         // 완료된 운동 세트 저장
         request.exercises.forEach { completedExercise ->
-            val exercise = exerciseRepository.findById(completedExercise.exerciseId)
-                .orElseThrow { ResourceNotFoundException("운동을 찾을 수 없습니다") }
+            val exercise = completedExerciseMap.getValue(completedExercise.exerciseId)
 
             // WorkoutExercise를 repository에서 찾기
             val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
@@ -498,7 +495,7 @@ class WorkoutServiceV2(
                     restTime = setDto.restTaken,
                     rpe = setDto.rpe,  // RPE 추가
                     completed = true,  // 이미 filter로 completed=true인 것만 처리
-                    completedAt = LocalDateTime.now()
+                    completedAt = setDto.completedAt?.let { AppTime.parseClientDateTime(it, resolveTimeZone(userId)) } ?: completedAt
                 )
                 workoutExercise.sets.add(exerciseSet)
                 exerciseSetRepository.save(exerciseSet)
@@ -515,12 +512,12 @@ class WorkoutServiceV2(
                         exercise = exercise,
                         weight = setDto.weight,
                         reps = setDto.reps,
-                        date = LocalDateTime.now()
+                        date = completedAt
                     )
                     personalRecordRepository.save(newRecord)
 
                     personalRecords.add(PersonalRecordInfo(
-                        exerciseName = exercise.name,
+                        exerciseName = localizedName(exercise, locale, translations),
                         weight = setDto.weight,
                         reps = setDto.reps,
                         previousBest = previousRecord?.weight ?: 0.0
@@ -533,7 +530,7 @@ class WorkoutServiceV2(
         println("DEBUG: Final totalSets: $totalSets")
 
         session.totalVolume = totalVolume
-        session.caloriesBurned = calculateCaloriesBurned(request.duration, totalVolume)
+        session.caloriesBurned = calculateCaloriesBurned(normalizedDuration, totalVolume)
         workoutSessionRepository.save(session)
 
         println("DEBUG: Saved session with totalVolume: ${session.totalVolume}")
@@ -542,7 +539,7 @@ class WorkoutServiceV2(
         val profile = userProfileRepository.findByUser_Id(userId)
         if (profile.isPresent) {
             val userProfile = profile.get()
-            userProfile.lastWorkoutDate = LocalDateTime.now()
+            userProfile.lastWorkoutDate = completedAt
             userProfileRepository.save(userProfile)
         }
 
@@ -561,7 +558,7 @@ class WorkoutServiceV2(
         return CompleteWorkoutResponseV2(
             success = true,
             summary = WorkoutSummaryV2(
-                duration = request.duration,
+                duration = normalizedDuration,
                 totalVolume = totalVolume,
                 totalSets = totalSets,
                 exerciseCount = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).size,
@@ -579,11 +576,11 @@ class WorkoutServiceV2(
         val session = findUserSession(userId, sessionId)
 
         if (session.status != SessionStatus.IN_PROGRESS) {
-            throw IllegalStateException("운동 세션이 진행 중이 아닙니다")
+            throw IllegalStateException("Workout session is not in progress")
         }
 
         val exercise = exerciseRepository.findById(request.exerciseId)
-            .orElseThrow { ResourceNotFoundException("운동을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("Exercise not found") }
 
         // WorkoutExercise를 repository에서 찾기
         val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
@@ -621,7 +618,7 @@ class WorkoutServiceV2(
                 exercise = exercise,
                 weight = request.weight,
                 reps = request.reps,
-                date = LocalDateTime.now()
+                date = AppTime.utcNow()
             )
             personalRecordRepository.save(newRecord)
         }
@@ -641,7 +638,8 @@ class WorkoutServiceV2(
     }
 
     @Transactional(readOnly = true)
-    fun getExercisesV2(category: String?, equipment: String?, hasGif: Boolean): List<ExerciseDetailV2> {
+    fun getExercisesV2(category: String?, equipment: String?, hasGif: Boolean, localeOverride: String?): List<ExerciseDetailV2> {
+        val locale = resolveLocale(null, localeOverride)
         val exercises = when {
             category != null && equipment != null -> {
                 val cat = ExerciseCategory.valueOf(category.uppercase())
@@ -654,29 +652,32 @@ class WorkoutServiceV2(
             }
             else -> exerciseRepository.findAll()
         }
+        val translations = translationMap(exercises, locale)
 
         return exercises.map { exercise ->
             ExerciseDetailV2(
                 id = exercise.id,
-                name = exercise.name,
+                name = localizedName(exercise, locale, translations),
                 category = exercise.category.name,
-                muscleGroups = exercise.muscleGroups.map { it.name },
-                equipment = exercise.equipment?.name,
+                muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
+                equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
                 imageUrl = if (hasGif) generateGifUrl(exercise) else exercise.imageUrl,
                 thumbnailUrl = generateThumbnailUrl(exercise),
-                difficulty = "intermediate",
-                description = exercise.instructions
+                difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale),
+                description = localizedInstructions(exercise, locale, translations)
             )
         }
     }
 
     @Transactional(readOnly = true)
-    fun getExerciseDetailsV2(userId: Long, exerciseId: Long): ExerciseDetailResponseV2 {
+    fun getExerciseDetailsV2(userId: Long, exerciseId: Long, localeOverride: String?): ExerciseDetailResponseV2 {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
 
         val exercise = exerciseRepository.findById(exerciseId)
-            .orElseThrow { ResourceNotFoundException("운동을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("Exercise not found") }
+        val translations = translationMap(listOf(exercise), locale)
 
         val personalRecord = personalRecordRepository.findTopByUserAndExerciseOrderByWeightDesc(user, exercise)
 
@@ -693,19 +694,19 @@ class WorkoutServiceV2(
 
         val exerciseDetail = ExerciseDetailV2(
             id = exercise.id,
-            name = exercise.name,
+            name = localizedName(exercise, locale, translations),
             category = exercise.category.name,
-            muscleGroups = exercise.muscleGroups.map { it.name },
-            equipment = exercise.equipment?.name,
+            muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
+            equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
             imageUrl = generateGifUrl(exercise),
             thumbnailUrl = generateThumbnailUrl(exercise),
             videoUrl = generateVideoUrl(exercise),
-            difficulty = "intermediate",
-            description = exercise.instructions,
-            instructions = generateInstructions(exercise),
-            tips = generateTips(exercise),
-            commonMistakes = generateCommonMistakes(exercise),
-            breathing = generateBreathingGuide(exercise)
+            difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale),
+            description = localizedInstructions(exercise, locale, translations),
+            instructions = localizedLines(localizedInstructions(exercise, locale, translations)) ?: generateInstructions(exercise, locale),
+            tips = localizedLines(localizedTips(exercise, locale, translations)) ?: generateTips(exercise, locale),
+            commonMistakes = generateCommonMistakes(exercise, locale),
+            breathing = generateBreathingGuide(locale)
         )
 
         return ExerciseDetailResponseV2(
@@ -727,9 +728,10 @@ class WorkoutServiceV2(
     }
 
     @Transactional(readOnly = true)
-    fun getWorkoutCompletionStats(userId: Long, sessionId: Long?): WorkoutCompletionStats {
+    fun getWorkoutCompletionStats(userId: Long, sessionId: Long?, localeOverride: String? = null): WorkoutCompletionStats {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
 
         val session = sessionId?.let { findUserSession(userId, it) }
 
@@ -746,20 +748,22 @@ class WorkoutServiceV2(
         // 히스토리 통계
         val totalWorkouts = workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED)
         val memberSince = user.joinDate
-        val weeksSinceJoin = ChronoUnit.WEEKS.between(memberSince, LocalDateTime.now())
+        val zoneId = resolveTimeZone(userId)
+        val completedSessions = workoutSessionRepository.findAllByUserAndStatus(user, SessionStatus.COMPLETED)
+        val weeksSinceJoin = ChronoUnit.WEEKS.between(memberSince, AppTime.utcNow())
         val avgWorkoutsPerWeek = if (weeksSinceJoin > 0) totalWorkouts.toDouble() / weeksSinceJoin else 0.0
 
         val historyStats = HistoryStats(
-            totalWorkoutDays = workoutSessionRepository.countDistinctWorkoutDays(user),
+            totalWorkoutDays = completedSessions.map { AppTime.toUserLocalDate(it.startTime, zoneId) }.distinct().count(),
             totalWorkouts = totalWorkouts.toInt(),
             memberSince = memberSince.format(DateTimeFormatter.ISO_LOCAL_DATE),
             averageWorkoutsPerWeek = avgWorkoutsPerWeek
         )
 
         // 스트릭 통계
-        val currentStreak = calculateCurrentStreak(user)
+        val currentStreak = calculateCurrentStreak(user, zoneId)
         val longestStreak = workoutStreakRepository.findLongestStreakByUser(user) ?: 0
-        val weeklyCount = calculateWeeklyWorkoutCount(user)
+        val weeklyCount = calculateWeeklyWorkoutCount(user, zoneId)
         val monthlyCount = calculateMonthlyWorkoutCount(user)
 
         val streakStats = StreakStats(
@@ -775,8 +779,9 @@ class WorkoutServiceV2(
         val achievements = achievementRepository.findByUser_Id(userId).map { ach ->
             com.richjun.liftupai.domain.workout.dto.Achievement(
                 id = ach.id.toString(),
-                name = ach.name,
-                description = ach.description,
+                code = ach.code,
+                name = localizedAchievementName(ach, locale),
+                description = localizedAchievementDescription(ach, locale),
                 unlockedAt = ach.unlockedAt.format(DateTimeFormatter.ISO_LOCAL_DATE),
                 icon = ach.icon
             )
@@ -791,7 +796,7 @@ class WorkoutServiceV2(
 
         val comparisonStats = ComparisonStats(
             volumeChange = volumeChange,
-            durationChange = "+5min",
+            durationChange = WorkoutLocalization.message("duration.change.minutes", locale, 5),
             comparedTo = "lastWeekAverage"
         )
 
@@ -805,11 +810,12 @@ class WorkoutServiceV2(
     }
 
     @Transactional(readOnly = true)
-    fun getWorkoutCalendar(userId: Long, year: Int, month: Int): WorkoutCalendarResponse {
+    fun getWorkoutCalendar(userId: Long, year: Int, month: Int, localeOverride: String? = null): WorkoutCalendarResponse {
         val logger = LoggerFactory.getLogger(this::class.java)
 
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
 
         val yearMonth = YearMonth.of(year, month)
         val startDate = yearMonth.atDay(1).atStartOfDay()
@@ -842,7 +848,7 @@ class WorkoutServiceV2(
                 totalVolume = daySessions.sumOf { it.totalVolume ?: 0.0 },
                 primaryMuscles = daySessions.flatMap { session ->
                     val exercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-                    exercises.flatMap { it.exercise.muscleGroups.map { mg -> mg.name } }
+                    exercises.flatMap { it.exercise.muscleGroups.map { mg -> WorkoutLocalization.muscleGroupName(mg, locale) } }
                 }.distinct()
             )
         }
@@ -856,7 +862,9 @@ class WorkoutServiceV2(
         val mostFrequentDay = sessions
             .groupBy { it.startTime.dayOfWeek }
             .maxByOrNull { it.value.size }
-            ?.key?.name ?: "N/A"
+            ?.key
+            ?.let { WorkoutLocalization.message("day.${it.name.lowercase()}", locale) }
+            ?: "n/a"
 
         return WorkoutCalendarResponse(
             calendar = calendarDays,
@@ -869,7 +877,8 @@ class WorkoutServiceV2(
         )
     }
 
-    fun adjustNextSet(userId: Long, request: AdjustNextSetRequest): AdjustNextSetResponse {
+    fun adjustNextSet(userId: Long, request: AdjustNextSetRequest, localeOverride: String? = null): AdjustNextSetResponse {
+        val locale = resolveLocale(userId, localeOverride)
         val fatigueMultiplier = when (request.fatigue) {
             "high" -> 0.8
             "medium" -> 0.9
@@ -892,9 +901,9 @@ class WorkoutServiceV2(
         }
 
         val reason = when {
-            request.fatigue == "high" -> "피로도가 높아 중량과 반복수를 줄였습니다"
-            request.previousSet.rpe >= 9 -> "RPE가 높아 중량을 조정했습니다"
-            else -> "표준 진행으로 계속합니다"
+            request.fatigue == "high" -> WorkoutLocalization.message("adjust.reason.fatigue_high", locale)
+            request.previousSet.rpe >= 9 -> WorkoutLocalization.message("adjust.reason.rpe_high", locale)
+            else -> WorkoutLocalization.message("adjust.reason.standard", locale)
         }
 
         return AdjustNextSetResponse(
@@ -909,19 +918,20 @@ class WorkoutServiceV2(
                     type = "drop_set",
                     weight = request.previousSet.weight * 0.7,
                     reps = request.previousSet.reps + 2,
-                    description = "드롭세트로 볼륨 유지"
+                    description = WorkoutLocalization.message("adjust.alternative.drop_set", locale)
                 ),
                 AlternativeSet(
                     type = "rest_pause",
                     weight = request.previousSet.weight,
                     reps = request.previousSet.reps / 2,
-                    description = "레스트-포즈로 강도 유지"
+                    description = WorkoutLocalization.message("adjust.alternative.rest_pause", locale)
                 )
             )
         )
     }
 
-    fun getRestTimer(exerciseType: String, intensity: String, setNumber: Int): RestTimerResponse {
+    fun getRestTimer(userId: Long, exerciseType: String, intensity: String, setNumber: Int, localeOverride: String? = null): RestTimerResponse {
+        val locale = resolveLocale(userId, localeOverride)
         val baseRest = when (exerciseType) {
             "compound" -> 180
             "isolation" -> 90
@@ -947,43 +957,37 @@ class WorkoutServiceV2(
             minRest = (recommendedRest * 0.7).toInt(),
             maxRest = (recommendedRest * 1.5).toInt(),
             factors = RestFactors(
-                exerciseType = when (exerciseType) {
-                    "compound" -> "복합 운동"
-                    "isolation" -> "고립 운동"
-                    else -> "일반 운동"
-                },
-                intensity = when (intensity) {
-                    "high" -> "고강도"
-                    "low" -> "저강도"
-                    else -> "중강도"
-                },
-                setNumber = if (setNumber >= 4) "후반 세트" else "초반 세트"
+                exerciseType = WorkoutLocalization.message("rest.exercise_type.${if (exerciseType == "compound" || exerciseType == "isolation") exerciseType else "general"}", locale),
+                intensity = WorkoutLocalization.message("rest.intensity.${if (intensity == "high" || intensity == "low") intensity else "medium"}", locale),
+                setNumber = WorkoutLocalization.message("rest.set_phase.${if (setNumber >= 4) "late" else "early"}", locale)
             )
         )
     }
 
-    // Quick workout recommendation methods for V3
+    // Basic workout recommendation methods
     @Transactional(readOnly = true)
-    fun getQuickWorkoutRecommendation(
+    fun getBasicWorkoutRecommendation(
         userId: Long,
         duration: Int? = null,
         equipment: String? = null,
-        targetMuscle: String? = null
+        targetMuscle: String? = null,
+        localeOverride: String? = null
     ): QuickWorkoutRecommendationResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
 
         // Check if user has an active session
         val activeSession = workoutSessionRepository.findFirstByUserAndStatusOrderByStartTimeDesc(user, SessionStatus.IN_PROGRESS).orElse(null)
 
-        // Get user's program type and position
         val userProfile = userProfileRepository.findByUser_Id(userId).orElse(null)
-        val programDays = userProfile?.weeklyWorkoutDays ?: 3
-        val programPosition = workoutProgressTracker.getNextWorkoutInProgram(user, programDays)
+        val programContext = resolveRecommendationProgramContext(userId, user, userProfile)
+        val programPosition = workoutProgressTracker.getNextWorkoutInProgram(user, programContext.programDays)
+        val normalizedTargetMuscle = normalizeRecommendationTarget(targetMuscle)
 
         // Determine target muscle based on current session or program position
         // 사용자가 명시적으로 근육을 지정하지 않으면 현재 세션 또는 프로그램 상태를 따름
-        val adjustedTargetMuscle = if (targetMuscle == null || targetMuscle == "auto") {
+        val adjustedTargetMuscle = if (normalizedTargetMuscle == null) {
             if (activeSession != null) {
                 // 현재 진행 중인 세션이 있으면 그 세션의 workout type을 따름
                 val currentWorkoutType = activeSession.workoutType ?: WorkoutType.FULL_BODY
@@ -1001,13 +1005,11 @@ class WorkoutServiceV2(
                     WorkoutType.CARDIO -> "full_body"
                     WorkoutType.FULL_BODY -> "full_body"
                 }
-                println("✅ 현재 세션에 맞는 근육 선택: $sessionMuscle (현재 진행 중: $currentWorkoutType)")
+                println("Selected target muscle from current session: $sessionMuscle (current type: $currentWorkoutType)")
                 sessionMuscle
             } else {
                 // 진행 중인 세션이 없으면 프로그램 위치에 따라 선택
-                val programType = userProfile?.workoutSplit ?: "PPL"
-                val sequence = workoutProgressTracker.getWorkoutTypeSequence(programType)
-                val workoutType = sequence.getOrNull(programPosition.day - 1) ?: WorkoutType.FULL_BODY
+                val workoutType = programContext.workoutSequence.getOrNull(programPosition.day - 1) ?: WorkoutType.FULL_BODY
 
                 val programMuscle = when (workoutType) {
                     WorkoutType.PUSH -> "chest"
@@ -1023,19 +1025,19 @@ class WorkoutServiceV2(
                     WorkoutType.CARDIO -> "full_body"
                     WorkoutType.FULL_BODY -> "full_body"
                 }
-                println("✅ 프로그램 상태에 따른 근육 선택: $programMuscle (다음 예정: $workoutType, Day ${programPosition.day})")
+                println("Selected target muscle from program state: $programMuscle (next: $workoutType, day ${programPosition.day})")
                 programMuscle
             }
         } else {
-            println("ℹ️ 사용자 지정 근육 사용: $targetMuscle")
-            targetMuscle
+            println("Using user-selected target muscle: $normalizedTargetMuscle")
+            normalizedTargetMuscle
         }
 
         // Generate main recommendation based on filters
-        val recommendation = generateQuickRecommendation(user, duration, equipment, adjustedTargetMuscle)
+        val recommendation = generateQuickRecommendation(user, duration, equipment, adjustedTargetMuscle, locale)
 
         // Generate alternatives
-        val alternatives = generateAlternativeWorkouts(user, duration, equipment, adjustedTargetMuscle)
+        val alternatives = generateAlternativeWorkouts(duration, equipment, adjustedTargetMuscle, locale)
 
         return QuickWorkoutRecommendationResponse(
             recommendation = recommendation,
@@ -1043,93 +1045,38 @@ class WorkoutServiceV2(
         )
     }
 
-    @Transactional
-    fun startRecommendedWorkout(
+    @Deprecated("Use getBasicWorkoutRecommendation instead")
+    @Transactional(readOnly = true)
+    fun getQuickWorkoutRecommendation(
         userId: Long,
-        request: StartRecommendedWorkoutRequest
-    ): StartRecommendedWorkoutResponse {
-        val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
-
-        // Cancel existing IN_PROGRESS sessions
-        val existingSessions = workoutSessionRepository.findAllByUserAndStatus(user, SessionStatus.IN_PROGRESS)
-        existingSessions.forEach { session ->
-            session.status = SessionStatus.CANCELLED
-            workoutSessionRepository.save(session)
-        }
-
-        // Get workout details from recommendation ID
-        val workoutDetail = getWorkoutFromRecommendationId(request.recommendationId)
-
-        // Apply adjustments
-        val adjustedWorkout = applyWorkoutAdjustments(workoutDetail, request.adjustments)
-
-        // Get program position for tracking
-        val userProfile = userProfileRepository.findByUser_Id(userId).orElse(null)
-        val programDays = userProfile?.weeklyWorkoutDays ?: 3
-        val programPosition = workoutProgressTracker.getNextWorkoutInProgram(user, programDays)
-
-        // Determine workout type from target muscles
-        val workoutType = workoutProgressTracker.determineWorkoutType(adjustedWorkout.targetMuscles)
-
-        // Create session with tracking info
-        val session = WorkoutSession(
-            user = user,
-            startTime = LocalDateTime.now(),
-            status = SessionStatus.IN_PROGRESS,
-            workoutType = workoutType,
-            programDay = programPosition.day,
-            programCycle = programPosition.cycle,
-            recommendationType = "QUICK"
-        )
-
-        val savedSession = workoutSessionRepository.save(session)
-
-        // Prepare exercises with suggested weights
-        val exercises = adjustedWorkout.exercises.map { exercise ->
-            val exerciseEntity = exerciseRepository.findById(exercise.exerciseId.toLong())
-                .orElseThrow { ResourceNotFoundException("운동을 찾을 수 없습니다") }
-
-            val suggestedWeight = calculateSuggestedWeight(user, exerciseEntity)
-
-            RecommendedWorkoutExercise(
-                exerciseId = exercise.exerciseId,
-                name = exercise.name,
-                plannedSets = exercise.sets,
-                plannedReps = exercise.reps,
-                suggestedWeight = suggestedWeight,
-                restTimer = exercise.rest
-            )
-        }
-
-        return StartRecommendedWorkoutResponse(
-            sessionId = savedSession.id.toString(),
-            workoutName = adjustedWorkout.name,
-            startTime = savedSession.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-            exercises = exercises,
-            estimatedDuration = adjustedWorkout.duration,
-            started = true
-        )
+        duration: Int? = null,
+        equipment: String? = null,
+        targetMuscle: String? = null,
+        localeOverride: String? = null
+    ): QuickWorkoutRecommendationResponse {
+        return getBasicWorkoutRecommendation(userId, duration, equipment, targetMuscle, localeOverride)
     }
 
     private fun generateQuickRecommendation(
         user: com.richjun.liftupai.domain.auth.entity.User,
         duration: Int?,
         equipment: String?,
-        targetMuscle: String?
+        targetMuscle: String?,
+        locale: String
     ): WorkoutRecommendationDetail {
         val workoutDuration = duration ?: 30
         val workoutId = generateWorkoutId(workoutDuration, equipment, targetMuscle)
 
         // Get user profile to determine difficulty
         val userProfile = userProfileRepository.findByUser(user).orElse(null)
-        val difficulty = when (userProfile?.experienceLevel) {
+        val difficultyKey = when (userProfile?.experienceLevel) {
             ExperienceLevel.BEGINNER -> "beginner"
             ExperienceLevel.INTERMEDIATE -> "intermediate"
             ExperienceLevel.ADVANCED -> "advanced"
-            ExperienceLevel.EXPERT -> "expert"
+            ExperienceLevel.EXPERT -> "advanced"
             else -> "intermediate" // default
         }
+        val difficulty = WorkoutLocalization.difficultyDisplayName(difficultyKey, locale)
 
         // Calculate optimal exercise count based on duration
         val targetExerciseCount = getTargetExerciseCount(workoutDuration)
@@ -1142,8 +1089,9 @@ class WorkoutServiceV2(
             duration = workoutDuration,
             limit = targetExerciseCount
         )
+        val translations = translationMap(exercises, locale)
 
-        logger.info("운동 추천 완료: ${exercises.size}개 (목표: $targetExerciseCount)")
+        logger.info("Workout recommendation completed: ${exercises.size} exercises (target: $targetExerciseCount)")
 
         // Create quick exercise details
         val quickExercises = exercises.take(targetExerciseCount).mapIndexed { index, exercise ->
@@ -1152,7 +1100,7 @@ class WorkoutServiceV2(
 
             QuickExerciseDetail(
                 exerciseId = exercise.id.toString(),
-                name = exercise.name,
+                name = localizedName(exercise, locale, translations),
                 sets = when (exercise.category) {
                     ExerciseCategory.CHEST, ExerciseCategory.BACK -> 3
                     ExerciseCategory.LEGS -> 4
@@ -1178,12 +1126,16 @@ class WorkoutServiceV2(
             )
         }
 
-        val targetMuscles = exercises.flatMap { it.muscleGroups.map { mg -> mg.name.lowercase() } }.distinct()
-        val equipmentList = exercises.mapNotNull { it.equipment?.name?.lowercase() }.distinct()
+        val targetMuscles = exercises
+            .flatMap { exercise -> exercise.muscleGroups.map { muscle -> WorkoutTargetResolver.displayName(muscle, locale) } }
+            .distinct()
+        val equipmentList = exercises
+            .mapNotNull { exercise -> exercise.equipment?.let { localizeEquipment(it, locale) } }
+            .distinct()
 
         return WorkoutRecommendationDetail(
             workoutId = workoutId,
-            name = generateWorkoutName(workoutDuration, targetMuscle, equipment),
+            name = generateWorkoutName(workoutDuration, targetMuscle, equipment, locale),
             duration = workoutDuration,
             difficulty = difficulty,
             exercises = quickExercises,
@@ -1194,10 +1146,10 @@ class WorkoutServiceV2(
     }
 
     private fun generateAlternativeWorkouts(
-        user: com.richjun.liftupai.domain.auth.entity.User,
         duration: Int?,
         equipment: String?,
-        targetMuscle: String?
+        targetMuscle: String?,
+        locale: String
     ): List<AlternativeWorkout> {
         val alternatives = mutableListOf<AlternativeWorkout>()
 
@@ -1206,7 +1158,7 @@ class WorkoutServiceV2(
         if (baseDuration >= 30) {
             alternatives.add(AlternativeWorkout(
                 workoutId = generateWorkoutId(20, equipment, "core"),
-                name = "20분 코어 집중",
+                name = generateWorkoutName(20, "core", equipment, locale),
                 duration = 20
             ))
         }
@@ -1214,7 +1166,7 @@ class WorkoutServiceV2(
         if (baseDuration <= 30) {
             alternatives.add(AlternativeWorkout(
                 workoutId = generateWorkoutId(45, equipment, "full_body"),
-                name = "45분 전신 운동",
+                name = generateWorkoutName(45, "full_body", equipment, locale),
                 duration = 45
             ))
         }
@@ -1223,7 +1175,7 @@ class WorkoutServiceV2(
         if (equipment != "bodyweight") {
             alternatives.add(AlternativeWorkout(
                 workoutId = generateWorkoutId(baseDuration, "bodyweight", targetMuscle),
-                name = "${baseDuration}분 맨몸 운동",
+                name = generateWorkoutName(baseDuration, targetMuscle, "bodyweight", locale),
                 duration = baseDuration
             ))
         }
@@ -1244,22 +1196,18 @@ class WorkoutServiceV2(
         }
     }
 
-    private fun getWorkoutFromRecommendationId(recommendationId: String): WorkoutRecommendationDetail {
-        // In a real implementation, this would fetch from a database or cache
-        // For now, generate based on ID pattern
-        val parts = recommendationId.split("_")
-        val duration = parts.getOrNull(1)?.filter { it.isDigit() }?.toIntOrNull() ?: 30
-        val targetMuscle = parts.getOrNull(2)
-
-        // recommendationId에서 실제 사용자 정보 추출 또는 전달받은 사용자 ID 사용
-        val user = userRepository.findById(recommendationId.split("-").firstOrNull()?.toLongOrNull() ?: 1L)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
-
+    private fun getWorkoutFromRecommendationId(
+        user: com.richjun.liftupai.domain.auth.entity.User,
+        recommendationId: String,
+        locale: String
+    ): WorkoutRecommendationDetail {
+        val query = parseWorkoutRecommendationId(recommendationId)
         return generateQuickRecommendation(
-            user,
-            duration,
-            null,
-            targetMuscle
+            user = user,
+            duration = query.duration,
+            equipment = query.equipment,
+            targetMuscle = query.targetMuscle,
+            locale = locale
         )
     }
 
@@ -1293,11 +1241,47 @@ class WorkoutServiceV2(
         )
     }
 
+    private data class WorkoutRecommendationQuery(
+        val duration: Int,
+        val equipment: String?,
+        val targetMuscle: String?
+    )
+
+    private fun parseWorkoutRecommendationId(recommendationId: String): WorkoutRecommendationQuery {
+        if (recommendationId.startsWith("quick|")) {
+            val parts = recommendationId.split("|")
+            return WorkoutRecommendationQuery(
+                duration = parts.getOrNull(1)?.toIntOrNull() ?: 30,
+                targetMuscle = normalizeRecommendationTarget(parts.getOrNull(2)),
+                equipment = normalizeRecommendationEquipment(parts.getOrNull(3))
+            )
+        }
+
+        val legacy = recommendationId.removePrefix("quick_")
+        val durationToken = legacy.substringBefore("_", "30min")
+        val remainder = legacy.substringAfter("_", "full_body_general")
+        val equipmentToken = knownRecommendationEquipmentTokens
+            .firstOrNull { remainder == it || remainder.endsWith("_$it") }
+
+        val targetToken = when {
+            equipmentToken == null -> remainder
+            remainder == equipmentToken -> "full_body"
+            else -> remainder.removeSuffix("_$equipmentToken")
+        }
+
+        return WorkoutRecommendationQuery(
+            duration = durationToken.removeSuffix("min").filter { it.isDigit() }.toIntOrNull() ?: 30,
+            targetMuscle = normalizeRecommendationTarget(targetToken),
+            equipment = normalizeRecommendationEquipment(equipmentToken)
+        )
+    }
+
     fun calculateSuggestedWeight(
         user: com.richjun.liftupai.domain.auth.entity.User,
         exercise: Exercise
     ): Double {
         val logger = LoggerFactory.getLogger(this::class.java)
+        val locale = resolveLocale(user.id)
 
         // 사용자 프로필 및 데이터 수집
         val userProfile = userProfileRepository.findByUser_Id(user.id).orElse(null)
@@ -1317,7 +1301,8 @@ class WorkoutServiceV2(
             gender = gender,
             experienceLevel = experienceLevel,
             personalRecord = personalRecord,
-            recentHistory = recentSessions
+            recentHistory = recentSessions,
+            locale = locale
         )
 
         logger.info("Advanced PT System - Exercise: ${exercise.name}, " +
@@ -1339,7 +1324,8 @@ class WorkoutServiceV2(
         gender: String,
         experienceLevel: com.richjun.liftupai.domain.user.entity.ExperienceLevel,
         personalRecord: com.richjun.liftupai.domain.workout.entity.PersonalRecord?,
-        recentHistory: List<WorkoutData>
+        recentHistory: List<WorkoutData>,
+        locale: String
     ): PTRecommendation {
 
         // 1. 기본 무게 계산
@@ -1349,7 +1335,7 @@ class WorkoutServiceV2(
         val performanceAnalysis = analyzeRecentPerformance(recentHistory)
 
         // 3. 피로도 및 회복 상태 평가
-        val recoveryStatus = assessRecoveryStatus(user, exercise)
+        val recoveryStatus = assessRecoveryStatus(user, exercise, recentHistory)
 
         // 4. 주기화 단계 결정 (메소사이클)
         val periodizationPhase = determinePeriodizationPhase(user, recentHistory)
@@ -1361,7 +1347,8 @@ class WorkoutServiceV2(
             recentHistory = recentHistory,
             performanceAnalysis = performanceAnalysis,
             recoveryStatus = recoveryStatus,
-            periodizationPhase = periodizationPhase
+            periodizationPhase = periodizationPhase,
+            locale = locale
         )
 
         // 6. 최종 추천 생성
@@ -1369,7 +1356,8 @@ class WorkoutServiceV2(
             exercise = exercise,
             progressionPlan = progressionPlan,
             periodizationPhase = periodizationPhase,
-            recoveryStatus = recoveryStatus
+            recoveryStatus = recoveryStatus,
+            locale = locale
         )
     }
 
@@ -1418,12 +1406,23 @@ class WorkoutServiceV2(
     /**
      * 회복 상태 평가
      */
-    private fun assessRecoveryStatus(user: com.richjun.liftupai.domain.auth.entity.User, exercise: Exercise): RecoveryStatus {
-        // 마지막 운동으로부터 경과 시간
-        val lastWorkout = workoutSessionRepository.findFirstByUserOrderByStartTimeDesc(user).orElse(null)
-        val daysSinceLastWorkout = lastWorkout?.let {
-            ChronoUnit.DAYS.between(it.startTime, LocalDateTime.now())
+    private fun assessRecoveryStatus(
+        user: com.richjun.liftupai.domain.auth.entity.User,
+        exercise: Exercise,
+        recentHistory: List<WorkoutData>
+    ): RecoveryStatus {
+        val daysSinceSameExercise = recentHistory.firstOrNull()?.let {
+            ChronoUnit.DAYS.between(it.completedAt, LocalDateTime.now())
         } ?: 7L
+
+        val weekStart = LocalDateTime.now().minusDays(7)
+        val targetedFrequency = workoutSessionRepository.findByUserAndStartTimeAfter(user, weekStart)
+            .filter { it.status == SessionStatus.COMPLETED }
+            .count { session ->
+                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).any { workoutExercise ->
+                    workoutExercise.exercise.muscleGroups.any { it in exercise.muscleGroups }
+                }
+            }
 
         // 근육군별 회복 시간 (48-72시간)
         val optimalRecoveryDays = when (exercise.category) {
@@ -1432,15 +1431,11 @@ class WorkoutServiceV2(
             else -> 1..2
         }
 
-        // 주간 운동 빈도 (최근 7일간 세션 수)
-        val weekStart = LocalDateTime.now().minusDays(7)
-        val weeklyFrequency = workoutSessionRepository.countByUserAndStartTimeAfter(user, weekStart)
-
         return when {
-            daysSinceLastWorkout < optimalRecoveryDays.first -> RecoveryStatus.UNDER_RECOVERED
-            daysSinceLastWorkout > optimalRecoveryDays.last * 2 -> RecoveryStatus.DETRAINED
-            weeklyFrequency > 6 -> RecoveryStatus.OVERREACHING
-            daysSinceLastWorkout in optimalRecoveryDays -> RecoveryStatus.OPTIMAL
+            daysSinceSameExercise < optimalRecoveryDays.first -> RecoveryStatus.UNDER_RECOVERED
+            daysSinceSameExercise > optimalRecoveryDays.last * 2 -> RecoveryStatus.DETRAINED
+            targetedFrequency >= 4 -> RecoveryStatus.OVERREACHING
+            daysSinceSameExercise in optimalRecoveryDays -> RecoveryStatus.OPTIMAL
             else -> RecoveryStatus.WELL_RECOVERED
         }
     }
@@ -1513,7 +1508,8 @@ class WorkoutServiceV2(
         recentHistory: List<WorkoutData>,
         performanceAnalysis: PerformanceAnalysis,
         recoveryStatus: RecoveryStatus,
-        periodizationPhase: PeriodizationPhase
+        periodizationPhase: PeriodizationPhase,
+        locale: String
     ): ProgressionPlan {
 
         val lastWeight = recentHistory.lastOrNull()?.weight ?: baseWeight
@@ -1567,7 +1563,7 @@ class WorkoutServiceV2(
             val maxWeeklyIncrease = lastWeight * 1.05
             if (progressionMultiplier > 1.0 && targetWeight > maxWeeklyIncrease) {
                 targetWeight = maxWeeklyIncrease
-                println("⚠️ 안전을 위해 증가율 제한: 최대 5%/주")
+                println("Safety cap applied: maximum weekly increase is 5%")
             }
 
             // 3. 절대 최소값 보장 (2.5kg)
@@ -1598,7 +1594,7 @@ class WorkoutServiceV2(
             reps = reps,
             restSeconds = getRestTime(periodizationPhase),
             intensity = intensity,
-            focus = determineFocus(performanceAnalysis, periodizationPhase)
+            focus = determineFocus(performanceAnalysis, periodizationPhase, locale)
         )
     }
 
@@ -1609,7 +1605,8 @@ class WorkoutServiceV2(
         exercise: Exercise,
         progressionPlan: ProgressionPlan,
         periodizationPhase: PeriodizationPhase,
-        recoveryStatus: RecoveryStatus
+        recoveryStatus: RecoveryStatus,
+        locale: String
     ): PTRecommendation {
 
         // PT의 코칭 메시지 생성
@@ -1617,24 +1614,25 @@ class WorkoutServiceV2(
             exercise = exercise,
             phase = periodizationPhase,
             recovery = recoveryStatus,
-            focus = progressionPlan.focus
+            focus = progressionPlan.focus,
+            locale = locale
         )
 
         // 추천 이유 설명
         val reason = buildString {
             append(when (periodizationPhase) {
-                PeriodizationPhase.ACCUMULATION -> "볼륨 증가 주간: "
-                PeriodizationPhase.INTENSIFICATION -> "강도 증가 주간: "
-                PeriodizationPhase.REALIZATION -> "피크 주간: "
-                PeriodizationPhase.DELOAD -> "회복 주간: "
+                PeriodizationPhase.ACCUMULATION -> WorkoutLocalization.message("pt.phase.accumulation", locale)
+                PeriodizationPhase.INTENSIFICATION -> WorkoutLocalization.message("pt.phase.intensification", locale)
+                PeriodizationPhase.REALIZATION -> WorkoutLocalization.message("pt.phase.realization", locale)
+                PeriodizationPhase.DELOAD -> WorkoutLocalization.message("pt.phase.deload", locale)
             })
 
             append(when (recoveryStatus) {
-                RecoveryStatus.OPTIMAL -> "최적의 회복 상태입니다."
-                RecoveryStatus.UNDER_RECOVERED -> "충분한 회복이 필요합니다."
-                RecoveryStatus.OVERREACHING -> "과훈련 주의가 필요합니다."
-                RecoveryStatus.DETRAINED -> "점진적으로 강도를 높여갑니다."
-                else -> "적절한 강도로 진행합니다."
+                RecoveryStatus.OPTIMAL -> WorkoutLocalization.message("pt.recovery.optimal", locale)
+                RecoveryStatus.UNDER_RECOVERED -> WorkoutLocalization.message("pt.recovery.under_recovered", locale)
+                RecoveryStatus.OVERREACHING -> WorkoutLocalization.message("pt.recovery.overreaching", locale)
+                RecoveryStatus.DETRAINED -> WorkoutLocalization.message("pt.recovery.detrained", locale)
+                else -> WorkoutLocalization.message("pt.recovery.default", locale)
             })
         }
 
@@ -1712,7 +1710,7 @@ class WorkoutServiceV2(
                 .let { filterOutliers(it) }
 
         } catch (e: Exception) {
-            println("⚠️ 최근 운동 기록 조회 실패: ${e.message}")
+            println("Failed to load recent workout history: ${e.message}")
             emptyList()
         }
     }
@@ -1780,26 +1778,67 @@ class WorkoutServiceV2(
         }
     }
 
-    private fun determineFocus(analysis: PerformanceAnalysis, phase: PeriodizationPhase): String {
+    private fun determineFocus(analysis: PerformanceAnalysis, phase: PeriodizationPhase, locale: String): String {
         return when {
-            analysis.trend == PerformanceTrend.TECHNIQUE_FOCUS -> "폼과 기술에 집중하세요"
-            phase == PeriodizationPhase.DELOAD -> "가볍게 수행하며 회복에 집중하세요"
-            phase == PeriodizationPhase.REALIZATION -> "최대 집중력으로 수행하세요"
-            analysis.avgRPE > 8 -> "충분한 휴식 후 수행하세요"
-            else -> "일정한 템포로 컨트롤하며 수행하세요"
+            analysis.trend == PerformanceTrend.TECHNIQUE_FOCUS -> WorkoutLocalization.message("pt.focus.technique", locale)
+            phase == PeriodizationPhase.DELOAD -> WorkoutLocalization.message("pt.focus.deload", locale)
+            phase == PeriodizationPhase.REALIZATION -> WorkoutLocalization.message("pt.focus.realization", locale)
+            analysis.avgRPE > 8 -> WorkoutLocalization.message("pt.focus.high_rpe", locale)
+            else -> WorkoutLocalization.message("pt.focus.default", locale)
         }
     }
 
-    private fun generateCoachingTip(exercise: Exercise, phase: PeriodizationPhase, recovery: RecoveryStatus, focus: String): String {
-        // 10년차 PT의 운동별 맞춤 팁
-        val exerciseTip = when {
-            exercise.name.contains("벤치프레스") -> "가슴을 펴고 견갑골을 모아 안정적인 자세를 유지하세요."
-            exercise.name.contains("스쿼트") -> "무릎이 발끝 방향으로 향하도록 하고, 코어를 단단히 고정하세요."
-            exercise.name.contains("데드리프트") -> "등을 곧게 펴고, 바가 몸에서 멀어지지 않도록 주의하세요."
-            else -> "정확한 자세와 호흡에 집중하세요."
+    private fun generateCoachingTip(
+        exercise: Exercise,
+        phase: PeriodizationPhase,
+        recovery: RecoveryStatus,
+        focus: String,
+        locale: String
+    ): String {
+        val pattern = exercisePatternClassifier.classifyExercise(exercise)
+        val exerciseTip = when (pattern) {
+            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_BARBELL,
+            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_DUMBBELL,
+            ExercisePatternClassifier.MovementPattern.INCLINE_PRESS_BARBELL,
+            ExercisePatternClassifier.MovementPattern.INCLINE_PRESS_DUMBBELL,
+            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_BARBELL,
+            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_DUMBBELL,
+            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_MACHINE -> WorkoutLocalization.message("pt.coaching.press", locale)
+
+            ExercisePatternClassifier.MovementPattern.SQUAT,
+            ExercisePatternClassifier.MovementPattern.LUNGE,
+            ExercisePatternClassifier.MovementPattern.LEG_PRESS -> WorkoutLocalization.message("pt.coaching.squat", locale)
+
+            ExercisePatternClassifier.MovementPattern.HIP_HINGE,
+            ExercisePatternClassifier.MovementPattern.DEADLIFT -> WorkoutLocalization.message("pt.coaching.hinge", locale)
+
+            ExercisePatternClassifier.MovementPattern.BARBELL_ROW,
+            ExercisePatternClassifier.MovementPattern.DUMBBELL_ROW,
+            ExercisePatternClassifier.MovementPattern.CABLE_ROW,
+            ExercisePatternClassifier.MovementPattern.LAT_PULLDOWN,
+            ExercisePatternClassifier.MovementPattern.PULLUP_CHINUP -> WorkoutLocalization.message("pt.coaching.row_pull", locale)
+
+            ExercisePatternClassifier.MovementPattern.LATERAL_RAISE,
+            ExercisePatternClassifier.MovementPattern.FRONT_RAISE,
+            ExercisePatternClassifier.MovementPattern.REAR_DELT -> WorkoutLocalization.message("pt.coaching.shoulder", locale)
+
+            ExercisePatternClassifier.MovementPattern.BICEP_CURL_BARBELL,
+            ExercisePatternClassifier.MovementPattern.BICEP_CURL_DUMBBELL,
+            ExercisePatternClassifier.MovementPattern.BICEP_CURL_CABLE,
+            ExercisePatternClassifier.MovementPattern.TRICEP_OVERHEAD,
+            ExercisePatternClassifier.MovementPattern.TRICEP_LYING,
+            ExercisePatternClassifier.MovementPattern.TRICEP_PUSHDOWN -> WorkoutLocalization.message("pt.coaching.arms", locale)
+
+            ExercisePatternClassifier.MovementPattern.CRUNCH,
+            ExercisePatternClassifier.MovementPattern.LEG_RAISE,
+            ExercisePatternClassifier.MovementPattern.PLANK,
+            ExercisePatternClassifier.MovementPattern.ROTATION,
+            ExercisePatternClassifier.MovementPattern.ROLLOUT -> WorkoutLocalization.message("pt.coaching.core", locale)
+
+            else -> WorkoutLocalization.message("pt.coaching.generic", locale)
         }
 
-        return "$exerciseTip $focus"
+        return WorkoutLocalization.message("pt.coaching.combined", locale, exerciseTip, focus)
     }
 
     // 데이터 클래스들
@@ -1868,135 +1907,158 @@ class WorkoutServiceV2(
      * PT의 경험적 데이터 기반
      */
     private fun getExerciseBaseWeight(exercise: Exercise, bodyWeight: Double): Double {
-        val exerciseName = exercise.name.lowercase()
-
-        return when {
-            // === CHEST 운동 ===
-            exerciseName.contains("벤치프레스") || exerciseName.contains("bench press") -> {
-                when {
-                    exerciseName.contains("바벨") -> bodyWeight * 0.75  // 체중의 75%
-                    exerciseName.contains("덤벨") -> bodyWeight * 0.3   // 한쪽 덤벨 기준
-                    exerciseName.contains("인클라인") -> bodyWeight * 0.65
-                    exerciseName.contains("디클라인") -> bodyWeight * 0.85
-                    else -> bodyWeight * 0.7
-                }
-            }
-            exerciseName.contains("플라이") || exerciseName.contains("fly") -> {
-                when {
-                    exerciseName.contains("케이블") -> bodyWeight * 0.25
-                    exerciseName.contains("덤벨") -> bodyWeight * 0.2
-                    else -> bodyWeight * 0.22
-                }
-            }
-            exerciseName.contains("체스트 프레스") -> bodyWeight * 0.7
-            exerciseName.contains("케이블 크로스오버") -> bodyWeight * 0.3
-            exerciseName.contains("푸시업") || exerciseName.contains("push up") -> 0.0  // 맨몸
-            exerciseName.contains("딥스") || exerciseName.contains("dips") -> 0.0  // 맨몸 or 보조
-
-            // === BACK 운동 ===
-            exerciseName.contains("데드리프트") || exerciseName.contains("deadlift") -> {
-                when {
-                    exerciseName.contains("루마니안") -> bodyWeight * 0.8
-                    exerciseName.contains("스티프") -> bodyWeight * 0.75
-                    else -> bodyWeight * 1.2  // 컨벤셔널 데드리프트
-                }
-            }
-            exerciseName.contains("바벨로우") || exerciseName.contains("barbell row") -> bodyWeight * 0.6
-            exerciseName.contains("덤벨로우") -> bodyWeight * 0.35  // 한쪽
-            exerciseName.contains("시티드 로우") || exerciseName.contains("seated row") -> bodyWeight * 0.65
-            exerciseName.contains("랫풀다운") || exerciseName.contains("lat pulldown") -> bodyWeight * 0.6
-            exerciseName.contains("풀업") || exerciseName.contains("pull up") -> 0.0  // 맨몸
-            exerciseName.contains("페이스 풀") -> bodyWeight * 0.2
-
-            // === LEGS 운동 ===
-            exerciseName.contains("스쿼트") || exerciseName.contains("squat") -> {
-                when {
-                    exerciseName.contains("프론트") -> bodyWeight * 0.7
-                    exerciseName.contains("불가리안") -> bodyWeight * 0.4  // 한쪽 다리
-                    exerciseName.contains("고블릿") -> bodyWeight * 0.5
-                    else -> bodyWeight * 0.9  // 백스쿼트
-                }
-            }
-            exerciseName.contains("레그프레스") || exerciseName.contains("leg press") -> bodyWeight * 1.8
-            exerciseName.contains("런지") || exerciseName.contains("lunge") -> bodyWeight * 0.4
-            exerciseName.contains("레그 익스텐션") -> bodyWeight * 0.5
-            exerciseName.contains("레그 컬") -> bodyWeight * 0.4
-            exerciseName.contains("카프 레이즈") -> bodyWeight * 0.8
-
-            // === SHOULDERS 운동 ===
-            exerciseName.contains("숄더프레스") || exerciseName.contains("shoulder press") -> {
-                when {
-                    exerciseName.contains("바벨") -> bodyWeight * 0.5
-                    exerciseName.contains("덤벨") -> bodyWeight * 0.22  // 한쪽
-                    else -> bodyWeight * 0.45
-                }
-            }
-            exerciseName.contains("사이드 레이즈") || exerciseName.contains("lateral raise") -> bodyWeight * 0.1
-            exerciseName.contains("프론트 레이즈") -> bodyWeight * 0.12
-            exerciseName.contains("리어 델트") -> bodyWeight * 0.08
-            exerciseName.contains("업라이트 로우") -> bodyWeight * 0.4
-            exerciseName.contains("슈러그") -> bodyWeight * 0.6
-
-            // === ARMS 운동 ===
-            exerciseName.contains("바벨컬") || exerciseName.contains("barbell curl") -> bodyWeight * 0.35
-            exerciseName.contains("덤벨컬") || exerciseName.contains("dumbbell curl") -> bodyWeight * 0.15  // 한쪽
-            exerciseName.contains("해머컬") -> bodyWeight * 0.17  // 한쪽
-            exerciseName.contains("프리처컬") -> bodyWeight * 0.3
-            exerciseName.contains("케이블 컬") -> bodyWeight * 0.3
-            exerciseName.contains("트라이셉") || exerciseName.contains("tricep") -> {
-                when {
-                    exerciseName.contains("익스텐션") -> bodyWeight * 0.35
-                    exerciseName.contains("푸시다운") -> bodyWeight * 0.4
-                    exerciseName.contains("킥백") -> bodyWeight * 0.1
-                    else -> bodyWeight * 0.3
-                }
-            }
-
-            // === CORE 운동 ===
-            exerciseName.contains("플랭크") || exerciseName.contains("plank") -> 0.0
-            exerciseName.contains("크런치") || exerciseName.contains("crunch") -> 0.0
-            exerciseName.contains("레그레이즈") -> 0.0
-            exerciseName.contains("우드챱") -> bodyWeight * 0.15
-
-            // === 기본값 (카테고리별) ===
+        val pattern = exercisePatternClassifier.classifyExercise(exercise)
+        val baseRatio = when (pattern) {
+            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_BARBELL -> 0.75
+            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_DUMBBELL -> 0.3
+            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_MACHINE -> 0.7
+            ExercisePatternClassifier.MovementPattern.INCLINE_PRESS_BARBELL -> 0.65
+            ExercisePatternClassifier.MovementPattern.INCLINE_PRESS_DUMBBELL -> 0.25
+            ExercisePatternClassifier.MovementPattern.DECLINE_PRESS -> 0.8
+            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_BARBELL -> 0.5
+            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_DUMBBELL -> 0.22
+            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_MACHINE -> 0.45
+            ExercisePatternClassifier.MovementPattern.DIPS,
+            ExercisePatternClassifier.MovementPattern.PUSHUP -> 0.0
+            ExercisePatternClassifier.MovementPattern.FLY -> 0.2
+            ExercisePatternClassifier.MovementPattern.PULLUP_CHINUP,
+            ExercisePatternClassifier.MovementPattern.INVERTED_ROW -> 0.0
+            ExercisePatternClassifier.MovementPattern.LAT_PULLDOWN -> 0.6
+            ExercisePatternClassifier.MovementPattern.BARBELL_ROW -> 0.6
+            ExercisePatternClassifier.MovementPattern.DUMBBELL_ROW -> 0.35
+            ExercisePatternClassifier.MovementPattern.CABLE_ROW -> 0.65
+            ExercisePatternClassifier.MovementPattern.DEADLIFT -> 1.2
+            ExercisePatternClassifier.MovementPattern.HIP_HINGE -> 0.8
+            ExercisePatternClassifier.MovementPattern.SQUAT -> 0.9
+            ExercisePatternClassifier.MovementPattern.LUNGE -> 0.4
+            ExercisePatternClassifier.MovementPattern.LEG_PRESS -> 1.8
+            ExercisePatternClassifier.MovementPattern.LEG_CURL -> 0.4
+            ExercisePatternClassifier.MovementPattern.LEG_EXTENSION -> 0.5
+            ExercisePatternClassifier.MovementPattern.GLUTE_FOCUSED -> 0.7
+            ExercisePatternClassifier.MovementPattern.CALF -> 0.8
+            ExercisePatternClassifier.MovementPattern.LATERAL_RAISE -> 0.1
+            ExercisePatternClassifier.MovementPattern.FRONT_RAISE -> 0.12
+            ExercisePatternClassifier.MovementPattern.REAR_DELT -> 0.08
+            ExercisePatternClassifier.MovementPattern.FACE_PULL -> 0.2
+            ExercisePatternClassifier.MovementPattern.UPRIGHT_ROW -> 0.4
+            ExercisePatternClassifier.MovementPattern.SHRUG -> 0.6
+            ExercisePatternClassifier.MovementPattern.BICEP_CURL_BARBELL -> 0.35
+            ExercisePatternClassifier.MovementPattern.BICEP_CURL_DUMBBELL -> 0.15
+            ExercisePatternClassifier.MovementPattern.BICEP_CURL_CABLE -> 0.3
+            ExercisePatternClassifier.MovementPattern.TRICEP_OVERHEAD -> 0.35
+            ExercisePatternClassifier.MovementPattern.TRICEP_LYING -> 0.3
+            ExercisePatternClassifier.MovementPattern.TRICEP_PUSHDOWN -> 0.4
+            ExercisePatternClassifier.MovementPattern.CRUNCH,
+            ExercisePatternClassifier.MovementPattern.LEG_RAISE,
+            ExercisePatternClassifier.MovementPattern.PLANK,
+            ExercisePatternClassifier.MovementPattern.ROLLOUT,
+            ExercisePatternClassifier.MovementPattern.CARDIO,
+            ExercisePatternClassifier.MovementPattern.PLYOMETRIC,
+            ExercisePatternClassifier.MovementPattern.STRETCHING -> 0.0
+            ExercisePatternClassifier.MovementPattern.ROTATION -> 0.15
             else -> when (exercise.category) {
-                ExerciseCategory.CHEST -> bodyWeight * 0.5
-                ExerciseCategory.BACK -> bodyWeight * 0.6
-                ExerciseCategory.LEGS -> bodyWeight * 0.7
-                ExerciseCategory.SHOULDERS -> bodyWeight * 0.35
-                ExerciseCategory.ARMS -> bodyWeight * 0.25
+                ExerciseCategory.CHEST -> 0.5
+                ExerciseCategory.BACK -> 0.6
+                ExerciseCategory.LEGS -> 0.7
+                ExerciseCategory.SHOULDERS -> 0.35
+                ExerciseCategory.ARMS -> 0.25
                 ExerciseCategory.CORE -> 0.0
-                else -> bodyWeight * 0.4
+                else -> 0.4
             }
         }
+
+        return bodyWeight * baseRatio
+    }
+
+    private fun resolveRecommendationProgramContext(
+        userId: Long,
+        user: com.richjun.liftupai.domain.auth.entity.User,
+        userProfile: com.richjun.liftupai.domain.user.entity.UserProfile? = userProfileRepository.findByUser_Id(userId).orElse(null)
+    ): RecommendationProgramContext {
+        val userSettings = userSettingsRepository.findByUser_Id(userId).orElse(null)
+        val configuredProgramType = userSettings?.workoutSplit
+            ?: userProfile?.workoutSplit
+            ?: "PPL"
+        val programDays = userSettings?.weeklyWorkoutDays
+            ?: userProfile?.weeklyWorkoutDays
+            ?: 3
+        val autoRecommendation = if (configuredProgramType.equals("AUTO", ignoreCase = true)) {
+            autoProgramSelector.selectProgram(user)
+        } else {
+            null
+        }
+
+        return RecommendationProgramContext(
+            programDays = programDays,
+            programType = autoRecommendation?.programType ?: configuredProgramType,
+            workoutSequence = autoRecommendation?.workoutSequence
+                ?: workoutProgressTracker.getWorkoutTypeSequence(configuredProgramType)
+        )
     }
 
     private fun generateWorkoutId(duration: Int, equipment: String?, targetMuscle: String?): String {
-        val equipmentPart = equipment ?: "general"
-        val musclePart = targetMuscle ?: "fullbody"
-        return "quick_${duration}min_${musclePart}_${equipmentPart}"
+        val equipmentPart = sanitizeRecommendationToken(equipment ?: "general")
+        val musclePart = sanitizeRecommendationToken(targetMuscle ?: "full_body")
+        return "quick|$duration|$musclePart|$equipmentPart"
     }
 
-    private fun generateWorkoutName(duration: Int, targetMuscle: String?, equipment: String?): String {
-        val muscleText = when (targetMuscle?.lowercase()) {
-            "chest" -> "가슴"
-            "back" -> "등"
-            "legs" -> "하체"
-            "shoulders" -> "어깨"
-            "arms" -> "팔"
-            "core" -> "코어"
-            else -> "전신"
-        }
+    private fun generateWorkoutName(duration: Int, targetMuscle: String?, equipment: String?, locale: String): String {
+        val focus = WorkoutTargetResolver.resolveFocus(targetMuscle) ?: WorkoutFocus.FULL_BODY
+        val muscleText = WorkoutTargetResolver.displayName(focus, locale = locale)
+        val equipmentText = localizeEquipment(equipment, locale)
+        val durationText = WorkoutLocalization.durationLabel(duration, locale)
 
-        val equipmentText = when (equipment?.lowercase()) {
-            "dumbbell", "dumbbells" -> "덤벨"
-            "barbell" -> "바벨"
-            "bodyweight" -> "맨몸"
-            "machine" -> "머신"
-            else -> ""
+        return if (equipmentText.isBlank()) {
+            WorkoutLocalization.message("basic.workout.name_no_equipment", locale, durationText, muscleText)
+        } else {
+            WorkoutLocalization.message("basic.workout.name", locale, durationText, muscleText, equipmentText)
         }
+    }
 
-        return "${duration}분 ${muscleText} ${equipmentText} 운동".trim()
+    private fun sanitizeRecommendationToken(rawValue: String): String {
+        return rawValue
+            .trim()
+            .lowercase()
+            .replace("-", "_")
+            .replace(" ", "_")
+    }
+
+    private fun normalizeRecommendationTarget(rawValue: String?): String? {
+        return WorkoutTargetResolver.recommendationKey(rawValue)
+    }
+
+    private fun normalizeRecommendationEquipment(rawValue: String?): String? {
+        val normalized = rawValue
+            ?.let(::sanitizeRecommendationToken)
+            ?.takeIf { it.isNotBlank() }
+            ?: return null
+
+        return when (normalized) {
+            "general", "none" -> null
+            else -> normalized
+        }
+    }
+
+    private fun localizeEquipment(equipment: Equipment, locale: String): String {
+        return localizeEquipment(equipment.name, locale)
+    }
+
+    private fun localizeEquipment(equipment: String?, locale: String): String {
+        return WorkoutLocalization.equipmentName(equipment, locale)
+    }
+
+    companion object {
+        private val knownRecommendationEquipmentTokens = listOf(
+            "resistance_band",
+            "bodyweight",
+            "kettlebell",
+            "dumbbells",
+            "dumbbell",
+            "barbell",
+            "machine",
+            "cable",
+            "general"
+        )
     }
 
     private fun calculateEstimatedCalories(duration: Int, exerciseCount: Int): Int {
@@ -2008,10 +2070,10 @@ class WorkoutServiceV2(
     // Helper methods
     private fun findUserSession(userId: Long, sessionId: Long): WorkoutSession {
         val session = workoutSessionRepository.findById(sessionId)
-            .orElseThrow { ResourceNotFoundException("WORKOUT002: 운동 세션을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("WORKOUT002: Workout session not found") }
 
         if (session.user.id != userId) {
-            throw ResourceNotFoundException("권한이 없습니다")
+            throw ResourceNotFoundException("Access denied")
         }
 
         return session
@@ -2024,7 +2086,8 @@ class WorkoutServiceV2(
     }
 
     private fun updateWorkoutStreak(user: com.richjun.liftupai.domain.auth.entity.User): WorkoutStreak {
-        val today = LocalDate.now()
+        val zoneId = resolveTimeZone(user.id)
+        val today = AppTime.currentUserDate(zoneId)
         val existingStreak = workoutStreakRepository.findByUserAndDate(user, today)
 
         return if (existingStreak == null) {
@@ -2048,160 +2111,30 @@ class WorkoutServiceV2(
 
         val totalWorkouts = workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED)
 
-        // 운동 횟수 업적 확인 및 저장
         when (totalWorkouts) {
-            1L -> {
-                milestones.add("first_workout")
-                unlockedAchievements.add(createAchievement(
-                    user = user,
-                    name = "첫 운동 완료",
-                    description = "운동 여정의 첫 걸음을 내딛었습니다!",
-                    icon = "🌟",
-                    type = AchievementType.MILESTONE
-                ))
-            }
-            10L -> {
-                milestones.add("workout_10")
-                unlockedAchievements.add(createAchievement(
-                    user = user,
-                    name = "운동 10회 달성",
-                    description = "꾸준함이 습관이 되고 있습니다!",
-                    icon = "💪",
-                    type = AchievementType.WORKOUT_COUNT
-                ))
-            }
-            50L -> {
-                milestones.add("workout_50")
-                unlockedAchievements.add(createAchievement(
-                    user = user,
-                    name = "운동 50회 달성",
-                    description = "반백 운동! 당신은 진정한 운동인입니다!",
-                    icon = "🏅",
-                    type = AchievementType.WORKOUT_COUNT
-                ))
-            }
-            100L -> {
-                milestones.add("workout_100")
-                unlockedAchievements.add(createAchievement(
-                    user = user,
-                    name = "운동 100회 달성",
-                    description = "백 번의 도전, 백 번의 성장! 놀라운 성취입니다!",
-                    icon = "🏆",
-                    type = AchievementType.WORKOUT_COUNT
-                ))
-            }
-            200L -> {
-                milestones.add("workout_200")
-                unlockedAchievements.add(createAchievement(
-                    user = user,
-                    name = "운동 200회 달성",
-                    description = "200회의 노력이 빛나는 순간입니다!",
-                    icon = "👑",
-                    type = AchievementType.WORKOUT_COUNT
-                ))
-            }
+            1L -> unlockAchievement(user, "first_workout", milestones, unlockedAchievements)
+            10L -> unlockAchievement(user, "workout_10", milestones, unlockedAchievements)
+            50L -> unlockAchievement(user, "workout_50", milestones, unlockedAchievements)
+            100L -> unlockAchievement(user, "workout_100", milestones, unlockedAchievements)
+            200L -> unlockAchievement(user, "workout_200", milestones, unlockedAchievements)
         }
 
-        // 연속 운동 스트릭 업적 확인 및 저장
-        val currentStreak = calculateCurrentStreak(user)
+        val currentStreak = calculateCurrentStreak(user, resolveTimeZone(user.id))
         when (currentStreak) {
-            7 -> {
-                milestones.add("week_streak_7")
-                if (!achievementRepository.existsByUserAndName(user, "일주일 연속 운동")) {
-                    unlockedAchievements.add(createAchievement(
-                        user = user,
-                        name = "일주일 연속 운동",
-                        description = "7일 연속 운동을 완료했습니다! 당신의 의지는 강철입니다!",
-                        icon = "🔥",
-                        type = AchievementType.STREAK
-                    ))
-                }
-            }
-            14 -> {
-                milestones.add("week_streak_14")
-                if (!achievementRepository.existsByUserAndName(user, "2주 연속 운동")) {
-                    unlockedAchievements.add(createAchievement(
-                        user = user,
-                        name = "2주 연속 운동",
-                        description = "14일 연속 운동! 습관이 형성되고 있습니다!",
-                        icon = "🎯",
-                        type = AchievementType.STREAK
-                    ))
-                }
-            }
-            30 -> {
-                milestones.add("month_streak_30")
-                if (!achievementRepository.existsByUserAndName(user, "한 달 연속 운동")) {
-                    unlockedAchievements.add(createAchievement(
-                        user = user,
-                        name = "한 달 연속 운동",
-                        description = "30일 연속 운동! 당신은 진정한 챔피언입니다!",
-                        icon = "🏆",
-                        type = AchievementType.STREAK
-                    ))
-                }
-            }
-            60 -> {
-                milestones.add("month_streak_60")
-                if (!achievementRepository.existsByUserAndName(user, "두 달 연속 운동")) {
-                    unlockedAchievements.add(createAchievement(
-                        user = user,
-                        name = "두 달 연속 운동",
-                        description = "60일 연속 운동! 전설이 되어가고 있습니다!",
-                        icon = "⭐",
-                        type = AchievementType.STREAK
-                    ))
-                }
-            }
+            7 -> unlockAchievement(user, "week_streak_7", milestones, unlockedAchievements)
+            14 -> unlockAchievement(user, "week_streak_14", milestones, unlockedAchievements)
+            30 -> unlockAchievement(user, "month_streak_30", milestones, unlockedAchievements)
+            60 -> unlockAchievement(user, "month_streak_60", milestones, unlockedAchievements)
         }
 
-        // 볼륨 업적 확인
         val totalVolume = session.totalVolume ?: 0.0
-        if (totalVolume >= 10000 && !achievementRepository.existsByUserAndName(user, "10톤 마스터")) {
-            milestones.add("volume_10000")
-            unlockedAchievements.add(createAchievement(
-                user = user,
-                name = "10톤 마스터",
-                description = "한 세션에서 10,000kg을 들어올렸습니다!",
-                icon = "💪",
-                type = AchievementType.VOLUME
-            ))
-        }
-        if (totalVolume >= 20000 && !achievementRepository.existsByUserAndName(user, "20톤 전사")) {
-            milestones.add("volume_20000")
-            unlockedAchievements.add(createAchievement(
-                user = user,
-                name = "20톤 전사",
-                description = "한 세션에서 20,000kg을 들어올렸습니다!",
-                icon = "🦾",
-                type = AchievementType.VOLUME
-            ))
-        }
+        if (totalVolume >= 10000) unlockAchievement(user, "volume_10000", milestones, unlockedAchievements)
+        if (totalVolume >= 20000) unlockAchievement(user, "volume_20000", milestones, unlockedAchievements)
 
-        // 운동 시간 업적 확인
         val duration = session.duration ?: 0
-        if (duration >= 60 && !achievementRepository.existsByUserAndName(user, "한 시간 집중")) {
-            milestones.add("duration_60")
-            unlockedAchievements.add(createAchievement(
-                user = user,
-                name = "한 시간 집중",
-                description = "60분 이상 운동을 완료했습니다!",
-                icon = "⏱️",
-                type = AchievementType.CONSISTENCY
-            ))
-        }
-        if (duration >= 90 && !achievementRepository.existsByUserAndName(user, "90분 전사")) {
-            milestones.add("duration_90")
-            unlockedAchievements.add(createAchievement(
-                user = user,
-                name = "90분 전사",
-                description = "90분 이상 운동을 완료했습니다!",
-                icon = "⚡",
-                type = AchievementType.CONSISTENCY
-            ))
-        }
+        if (duration >= 60) unlockAchievement(user, "duration_60", milestones, unlockedAchievements)
+        if (duration >= 90) unlockAchievement(user, "duration_90", milestones, unlockedAchievements)
 
-        // 업적을 데이터베이스에 저장
         unlockedAchievements.forEach { achievement ->
             achievementRepository.save(achievement)
         }
@@ -2209,27 +2142,42 @@ class WorkoutServiceV2(
         return milestones
     }
 
+    private fun unlockAchievement(
+        user: com.richjun.liftupai.domain.auth.entity.User,
+        code: String,
+        milestones: MutableList<String>,
+        unlockedAchievements: MutableList<Achievement>
+    ) {
+        milestones.add(code)
+        if (!achievementRepository.existsByUserAndCode(user, code)) {
+            unlockedAchievements.add(createAchievement(user, code))
+        }
+    }
+
     private fun createAchievement(
         user: com.richjun.liftupai.domain.auth.entity.User,
-        name: String,
-        description: String,
-        icon: String,
-        type: AchievementType
+        code: String
     ): Achievement {
+        val definition = WorkoutAchievementCatalog.definition(code)
+            ?: throw IllegalArgumentException("Unknown achievement code: $code")
+
         return Achievement(
             user = user,
-            name = name,
-            description = description,
-            icon = icon,
-            type = type,
-            unlockedAt = LocalDateTime.now()
+            code = code,
+            name = WorkoutAchievementCatalog.name(code, "en"),
+            description = WorkoutAchievementCatalog.description(code, "en"),
+            icon = definition.icon,
+            type = definition.type,
+            unlockedAt = AppTime.utcNow()
         )
     }
 
     private fun calculateWorkoutStats(user: com.richjun.liftupai.domain.auth.entity.User): WorkoutStats {
-        val totalWorkoutDays = workoutSessionRepository.countDistinctWorkoutDays(user)
-        val currentWeekCount = calculateWeeklyWorkoutCount(user)
-        val currentStreak = calculateCurrentStreak(user)
+        val zoneId = resolveTimeZone(user.id)
+        val completedSessions = workoutSessionRepository.findAllByUserAndStatus(user, SessionStatus.COMPLETED)
+        val totalWorkoutDays = completedSessions.map { AppTime.toUserLocalDate(it.startTime, zoneId) }.distinct().count()
+        val currentWeekCount = calculateWeeklyWorkoutCount(user, zoneId)
+        val currentStreak = calculateCurrentStreak(user, zoneId)
         val longestStreak = workoutStreakRepository.findLongestStreakByUser(user) ?: 0
 
         return WorkoutStats(
@@ -2241,13 +2189,16 @@ class WorkoutServiceV2(
         )
     }
 
-    private fun calculateCurrentStreak(user: com.richjun.liftupai.domain.auth.entity.User): Int {
-        val today = LocalDate.now()
+    private fun calculateCurrentStreak(user: com.richjun.liftupai.domain.auth.entity.User, zoneId: java.time.ZoneId): Int {
+        val workoutDays = workoutSessionRepository.findAllByUserAndStatus(user, SessionStatus.COMPLETED)
+            .map { AppTime.toUserLocalDate(it.startTime, zoneId) }
+            .toSet()
+        val today = AppTime.currentUserDate(zoneId)
         var streak = 0
         var currentDate = today
 
         while (true) {
-            val hasWorkout = workoutSessionRepository.existsByUserAndDate(user, currentDate)
+            val hasWorkout = workoutDays.contains(currentDate)
             if (hasWorkout) {
                 streak++
                 currentDate = currentDate.minusDays(1)
@@ -2261,27 +2212,34 @@ class WorkoutServiceV2(
         return streak
     }
 
-    private fun calculateWeeklyWorkoutCount(user: com.richjun.liftupai.domain.auth.entity.User): Int {
-        val startOfWeek = LocalDate.now().minusDays(LocalDate.now().dayOfWeek.value.toLong() - 1)
+    private fun calculateWeeklyWorkoutCount(user: com.richjun.liftupai.domain.auth.entity.User, zoneId: java.time.ZoneId): Int {
+        val today = AppTime.currentUserDate(zoneId)
+        val startOfWeek = today.minusDays(today.dayOfWeek.value.toLong() - 1)
+        val (startUtc, _) = AppTime.utcRangeForLocalDate(startOfWeek, zoneId)
         return workoutSessionRepository.countByUserAndDateRange(
             user,
-            startOfWeek.atStartOfDay(),
-            LocalDateTime.now()
+            startUtc,
+            AppTime.utcNow()
         )
     }
 
     private fun calculateMonthlyWorkoutCount(user: com.richjun.liftupai.domain.auth.entity.User): Int {
-        val startOfMonth = LocalDate.now().withDayOfMonth(1)
+        val zoneId = resolveTimeZone(user.id)
+        val today = AppTime.currentUserDate(zoneId)
+        val startOfMonth = today.withDayOfMonth(1)
+        val (startUtc, _) = AppTime.utcRangeForLocalDate(startOfMonth, zoneId)
         return workoutSessionRepository.countByUserAndDateRange(
             user,
-            startOfMonth.atStartOfDay(),
-            LocalDateTime.now()
+            startUtc,
+            AppTime.utcNow()
         )
     }
 
     private fun calculateLastWeekAverageVolume(user: com.richjun.liftupai.domain.auth.entity.User): Double {
-        val lastWeekStart = LocalDate.now().minusWeeks(1).atStartOfDay()
-        val lastWeekEnd = LocalDate.now().atStartOfDay()
+        val zoneId = resolveTimeZone(user.id)
+        val today = AppTime.currentUserDate(zoneId)
+        val (lastWeekStart, _) = AppTime.utcRangeForLocalDate(today.minusWeeks(1), zoneId)
+        val (lastWeekEnd, _) = AppTime.utcRangeForLocalDate(today, zoneId)
 
         val lastWeekSessions = workoutSessionRepository.findByUserAndStartTimeBetween(
             user,
@@ -2336,60 +2294,135 @@ class WorkoutServiceV2(
         return "https://liftup-cdn.com/exercises/${exercise.id}/video.mp4"
     }
 
-    private fun generateInstructions(exercise: Exercise): List<String> {
-        return when (exercise.name) {
-            "벤치프레스" -> listOf(
-                "벤치에 등을 대고 눕습니다",
-                "견갑골을 모으고 아치를 만듭니다",
-                "바벨을 어깨너비보다 약간 넓게 잡습니다",
-                "천천히 가슴으로 내린 후 폭발적으로 밀어올립니다"
+    private fun generateInstructions(exercise: Exercise, locale: String): List<String> {
+        val parsedInstructions = exercise.instructions
+            ?.split("\n", ".")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+
+        if (!parsedInstructions.isNullOrEmpty()) {
+            return parsedInstructions.take(4)
+        }
+
+        return when (exercisePatternClassifier.classifyExercise(exercise)) {
+            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_BARBELL,
+            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_DUMBBELL,
+            ExercisePatternClassifier.MovementPattern.INCLINE_PRESS_BARBELL,
+            ExercisePatternClassifier.MovementPattern.INCLINE_PRESS_DUMBBELL,
+            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_BARBELL,
+            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_DUMBBELL,
+            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_MACHINE -> localizedMessages(
+                locale,
+                "exercise.instructions.press.1",
+                "exercise.instructions.press.2",
+                "exercise.instructions.press.3"
             )
-            else -> listOf(exercise.instructions ?: "표준 자세로 수행하세요")
+            ExercisePatternClassifier.MovementPattern.SQUAT,
+            ExercisePatternClassifier.MovementPattern.LUNGE,
+            ExercisePatternClassifier.MovementPattern.LEG_PRESS -> localizedMessages(
+                locale,
+                "exercise.instructions.squat.1",
+                "exercise.instructions.squat.2",
+                "exercise.instructions.squat.3"
+            )
+            ExercisePatternClassifier.MovementPattern.HIP_HINGE,
+            ExercisePatternClassifier.MovementPattern.DEADLIFT -> localizedMessages(
+                locale,
+                "exercise.instructions.hinge.1",
+                "exercise.instructions.hinge.2",
+                "exercise.instructions.hinge.3"
+            )
+            ExercisePatternClassifier.MovementPattern.BARBELL_ROW,
+            ExercisePatternClassifier.MovementPattern.DUMBBELL_ROW,
+            ExercisePatternClassifier.MovementPattern.CABLE_ROW,
+            ExercisePatternClassifier.MovementPattern.LAT_PULLDOWN,
+            ExercisePatternClassifier.MovementPattern.PULLUP_CHINUP -> localizedMessages(
+                locale,
+                "exercise.instructions.row_pull.1",
+                "exercise.instructions.row_pull.2",
+                "exercise.instructions.row_pull.3"
+            )
+            else -> localizedMessages(locale, "exercise.instructions.generic.1")
         }
     }
 
-    private fun generateTips(exercise: Exercise): List<String> {
+    private fun generateTips(exercise: Exercise, locale: String): List<String> {
         return when (exercise.category) {
-            ExerciseCategory.CHEST -> listOf(
-                "견갑골을 모으고 아치를 유지하세요",
-                "손목은 중립 위치를 유지하세요",
-                "팔꿈치는 45-75도 각도를 유지하세요"
+            ExerciseCategory.CHEST -> localizedMessages(
+                locale,
+                "exercise.tips.chest.1",
+                "exercise.tips.chest.2",
+                "exercise.tips.chest.3"
             )
-            else -> listOf("정확한 자세를 유지하세요")
+            else -> localizedMessages(locale, "exercise.tips.generic.1")
         }
     }
 
-    private fun generateCommonMistakes(exercise: Exercise): List<String> {
-        return when (exercise.name) {
-            "벤치프레스" -> listOf(
-                "바벨을 너무 높은 위치(목 쪽)에서 내리기",
-                "엉덩이를 벤치에서 들어올리기",
-                "바운싱(가슴에서 튕기기)"
+    private fun generateCommonMistakes(exercise: Exercise, locale: String): List<String> {
+        return when (exercisePatternClassifier.classifyExercise(exercise)) {
+            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_BARBELL,
+            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_DUMBBELL,
+            ExercisePatternClassifier.MovementPattern.INCLINE_PRESS_BARBELL,
+            ExercisePatternClassifier.MovementPattern.INCLINE_PRESS_DUMBBELL -> localizedMessages(
+                locale,
+                "exercise.mistakes.press.1",
+                "exercise.mistakes.press.2",
+                "exercise.mistakes.press.3"
             )
-            else -> listOf("급한 동작", "불완전한 가동범위")
+            ExercisePatternClassifier.MovementPattern.SQUAT,
+            ExercisePatternClassifier.MovementPattern.LUNGE,
+            ExercisePatternClassifier.MovementPattern.LEG_PRESS -> localizedMessages(
+                locale,
+                "exercise.mistakes.squat.1",
+                "exercise.mistakes.squat.2",
+                "exercise.mistakes.squat.3"
+            )
+            ExercisePatternClassifier.MovementPattern.HIP_HINGE,
+            ExercisePatternClassifier.MovementPattern.DEADLIFT -> localizedMessages(
+                locale,
+                "exercise.mistakes.hinge.1",
+                "exercise.mistakes.hinge.2",
+                "exercise.mistakes.hinge.3"
+            )
+            ExercisePatternClassifier.MovementPattern.BARBELL_ROW,
+            ExercisePatternClassifier.MovementPattern.DUMBBELL_ROW,
+            ExercisePatternClassifier.MovementPattern.CABLE_ROW,
+            ExercisePatternClassifier.MovementPattern.LAT_PULLDOWN,
+            ExercisePatternClassifier.MovementPattern.PULLUP_CHINUP -> localizedMessages(
+                locale,
+                "exercise.mistakes.row_pull.1",
+                "exercise.mistakes.row_pull.2",
+                "exercise.mistakes.row_pull.3"
+            )
+            else -> localizedMessages(
+                locale,
+                "exercise.mistakes.generic.1",
+                "exercise.mistakes.generic.2"
+            )
         }
     }
 
-    private fun generateBreathingGuide(exercise: Exercise): String {
-        return "내릴 때 들이마시고, 올릴 때 내쉬세요"
+    private fun generateBreathingGuide(locale: String): String {
+        return WorkoutLocalization.message("exercise.breathing.default", locale)
     }
 
     @Transactional
-    fun updateSession(userId: Long, sessionId: Long, request: UpdateSessionRequest): UpdateSessionResponse {
+    fun updateSession(userId: Long, sessionId: Long, request: UpdateSessionRequest, localeOverride: String? = null): UpdateSessionResponse {
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId, localeOverride)
 
         // 세션 조회 및 권한 확인
         val session = workoutSessionRepository.findById(sessionId)
-            .orElseThrow { ResourceNotFoundException("운동 세션을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException("Workout session not found") }
 
         if (session.user.id != userId) {
-            throw ResourceNotFoundException("권한이 없습니다")
+            throw ResourceNotFoundException("Access denied")
         }
 
         // 진행 중인 세션만 업데이트 가능
         if (session.status != SessionStatus.IN_PROGRESS) {
-            throw IllegalStateException("진행 중인 세션만 업데이트할 수 있습니다")
+            throw IllegalStateException("Only sessions in progress can be updated")
         }
 
         var totalSets = 0
@@ -2400,7 +2433,7 @@ class WorkoutServiceV2(
         request.exercises.forEach { exerciseData ->
             // 운동 존재 확인
             val exercise = exerciseRepository.findById(exerciseData.exerciseId)
-                .orElseThrow { ResourceNotFoundException("운동을 찾을 수 없습니다: ${exerciseData.exerciseId}") }
+                .orElseThrow { ResourceNotFoundException("Exercise not found: ${exerciseData.exerciseId}") }
 
             // WorkoutExercise 조회 또는 생성
             val existingWorkoutExercise = workoutExerciseRepository.findBySessionIdAndExerciseId(sessionId, exerciseData.exerciseId)
@@ -2459,7 +2492,7 @@ class WorkoutServiceV2(
 
         return UpdateSessionResponse(
             success = true,
-            message = "세션이 성공적으로 업데이트되었습니다",
+            message = WorkoutLocalization.message("session.update.success", locale),
             sessionId = sessionId,
             updatedExercises = updatedExercises,
             totalSets = totalSets,
@@ -2467,25 +2500,106 @@ class WorkoutServiceV2(
         )
     }
 
-    private fun mapMuscleGroupToKorean(muscleGroup: MuscleGroup): String {
-        return when (muscleGroup) {
-            MuscleGroup.CHEST -> "가슴"
-            MuscleGroup.BACK -> "등"
-            MuscleGroup.SHOULDERS -> "어깨"
-            MuscleGroup.BICEPS -> "이두근"
-            MuscleGroup.TRICEPS -> "삼두근"
-            MuscleGroup.LEGS -> "다리"
-            MuscleGroup.CORE -> "코어"
-            MuscleGroup.ABS -> "복근"
-            MuscleGroup.GLUTES -> "둔근"
-            MuscleGroup.CALVES -> "종아리"
-            MuscleGroup.FOREARMS -> "전완근"
-            MuscleGroup.NECK -> "목"
-            MuscleGroup.QUADRICEPS -> "대퇴사두근"
-            MuscleGroup.HAMSTRINGS -> "햄스트링"
-            MuscleGroup.LATS -> "광배근"
-            MuscleGroup.TRAPS -> "승모근"
+    private fun resolveLocale(userId: Long?, localeOverride: String? = null): String {
+        if (!localeOverride.isNullOrBlank()) {
+            return exerciseCatalogLocalizationService.normalizeLocale(localeOverride)
         }
+
+        val userLocale = userId
+            ?.let { userSettingsRepository.findByUser_Id(it).orElse(null)?.language }
+
+        return exerciseCatalogLocalizationService.normalizeLocale(userLocale)
+    }
+
+    private fun resolveTimeZone(userId: Long): java.time.ZoneId {
+        val timeZone = userSettingsRepository.findByUser_Id(userId).orElse(null)?.timeZone
+        return AppTime.resolveZoneId(timeZone)
+    }
+
+    private fun normalizeDuration(clientDuration: Int, serverDuration: Int): Int {
+        if (serverDuration <= 0) {
+            return clientDuration.coerceAtLeast(0)
+        }
+
+        if (clientDuration <= 0) {
+            return serverDuration
+        }
+
+        return if (abs(clientDuration - serverDuration) <= 5) clientDuration else serverDuration
+    }
+
+    private fun translationMap(exercises: Collection<Exercise>, locale: String): Map<Long, ExerciseTranslation> {
+        return exerciseCatalogLocalizationService.translationMap(exercises, locale)
+    }
+
+    private fun localizedName(
+        exercise: Exercise,
+        locale: String,
+        translations: Map<Long, ExerciseTranslation>
+    ): String {
+        return exerciseCatalogLocalizationService.displayName(exercise, locale, translations)
+    }
+
+    private fun localizedInstructions(
+        exercise: Exercise,
+        locale: String,
+        translations: Map<Long, ExerciseTranslation>
+    ): String? {
+        return exerciseCatalogLocalizationService.instructions(exercise, locale, translations)
+    }
+
+    private fun localizedTips(
+        exercise: Exercise,
+        locale: String,
+        translations: Map<Long, ExerciseTranslation>
+    ): String? {
+        return exerciseCatalogLocalizationService.tips(exercise, locale, translations)
+    }
+
+    private fun localizedLines(text: String?): List<String>? {
+        return text
+            ?.split("\n", ".")
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            ?.take(4)
+            ?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun localizedMessages(locale: String, vararg keys: String): List<String> {
+        return keys.map { key -> WorkoutLocalization.message(key, locale) }
+    }
+
+    private fun localizedAchievementName(achievement: Achievement, locale: String): String {
+        val code = achievement.code
+        return if (WorkoutAchievementCatalog.contains(code)) {
+            WorkoutAchievementCatalog.name(code!!, locale)
+        } else {
+            achievement.name
+        }
+    }
+
+    private fun localizedAchievementDescription(achievement: Achievement, locale: String): String {
+        val code = achievement.code
+        return if (WorkoutAchievementCatalog.contains(code)) {
+            WorkoutAchievementCatalog.description(code!!, locale)
+        } else {
+            achievement.description
+        }
+    }
+
+    private fun toExerciseDto(
+        exercise: Exercise,
+        locale: String,
+        translations: Map<Long, ExerciseTranslation>
+    ): ExerciseDto {
+        return ExerciseDto(
+            id = exercise.id,
+            name = localizedName(exercise, locale, translations),
+            category = exercise.category.name,
+            muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
+            equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
+            instructions = localizedInstructions(exercise, locale, translations)
+        )
     }
 
     /**
@@ -2507,23 +2621,16 @@ class WorkoutServiceV2(
                 println("DEBUG: - Category: ${exercise.category}")
                 println("DEBUG: - MuscleGroups: ${exercise.muscleGroups.map { it.name }}")
 
-                // Exercise의 muscleGroups에서 근육 그룹 가져오기 (한글로 변환)
+                // Exercise의 muscleGroups에서 canonical key 가져오기
                 exercise.muscleGroups.forEach { muscleGroup ->
-                    val koreanName = mapMuscleGroupToKorean(muscleGroup)
-                    muscleGroupsWorked.add(koreanName)
-                    println("DEBUG: Added muscle group: ${muscleGroup.name} -> $koreanName")
+                    val muscleKey = muscleGroup.name.lowercase()
+                    muscleGroupsWorked.add(muscleKey)
+                    println("DEBUG: Added muscle group: ${muscleGroup.name} -> $muscleKey")
                 }
 
-                // Exercise의 category를 기본 근육 그룹으로도 추가 (한글로 변환)
-                val categoryMuscle = when (exercise.category) {
-                    ExerciseCategory.CHEST -> "가슴"
-                    ExerciseCategory.BACK -> "등"
-                    ExerciseCategory.LEGS -> "다리"
-                    ExerciseCategory.SHOULDERS -> "어깨"
-                    ExerciseCategory.ARMS -> "팔"
-                    ExerciseCategory.CORE -> "복근"
-                    else -> null
-                }
+                // Exercise의 category를 기본 target key로도 추가
+                val categoryMuscle = WorkoutTargetResolver.focusForCategory(exercise.category)
+                    ?.let { WorkoutTargetResolver.key(it) }
                 categoryMuscle?.let {
                     muscleGroupsWorked.add(it)
                     println("DEBUG: Added category muscle: ${exercise.category} -> $it")

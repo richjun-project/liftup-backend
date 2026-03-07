@@ -47,13 +47,7 @@ class NotificationController(
     fun sendTestNotification(
         @AuthenticationPrincipal userDetails: CustomUserDetails
     ): ResponseEntity<ApiResponse<PushNotificationResponse>> {
-        val request = PushNotificationRequest(
-            userId = userDetails.getId(),
-            title = "테스트 알림",
-            body = "LiftUp AI 알림 테스트입니다",
-            data = mapOf("type" to "test")
-        )
-        val response = notificationService.sendPushNotification(request)
+        val response = notificationService.sendTestNotification(userDetails.getId())
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

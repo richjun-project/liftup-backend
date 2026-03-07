@@ -42,6 +42,9 @@ data class UserSettings(
     @Column
     var language: String = "ko",
 
+    @Column(name = "time_zone")
+    var timeZone: String = "Asia/Seoul",
+
     @Column
     var units: String = "METRIC",
 

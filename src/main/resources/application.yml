@@ -7,6 +7,7 @@ spring:
   jackson:
     property-naming-strategy: SNAKE_CASE
     default-property-inclusion: NON_NULL
+    time-zone: UTC
 
   servlet:
     multipart:
@@ -18,6 +19,12 @@ server:
   error:
     include-message: always
     include-binding-errors: always
+
+app:
+  exercise-catalog:
+    mode: ${APP_EXERCISE_CATALOG_MODE:if_empty}
+    resource: ${APP_EXERCISE_CATALOG_RESOURCE:catalog/exercise-catalog.json}
+    exit-after-bootstrap: ${APP_EXERCISE_CATALOG_EXIT_AFTER_BOOTSTRAP:false}
 
 # JWT 설정
 jwt:

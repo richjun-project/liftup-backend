@@ -1,9 +1,11 @@
 package com.richjun.liftupai.global.config
 
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.core.convert.converter.Converter
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
@@ -21,7 +23,9 @@ class StringToLocalDateTimeConverter : Converter<String, LocalDateTime> {
     override fun convert(source: String): LocalDateTime {
         // Try parsing as full ISO 8601 with timezone first
         try {
-            return LocalDateTime.parse(source, dateTimeOffsetFormatter)
+            return OffsetDateTime.parse(source, dateTimeOffsetFormatter)
+                .withOffsetSameInstant(java.time.ZoneOffset.UTC)
+                .toLocalDateTime()
         } catch (e: DateTimeParseException) {
             // Ignore and try next format
         }
@@ -52,6 +56,7 @@ class StringToLocalDateConverter : Converter<String, LocalDate> {
 
     private val dateOnlyFormatter = DateTimeFormatter.ISO_LOCAL_DATE
     private val dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
+    private val dateTimeOffsetFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
     override fun convert(source: String): LocalDate {
         // Try parsing as date-only first
@@ -61,14 +66,21 @@ class StringToLocalDateConverter : Converter<String, LocalDate> {
             // Ignore and try next format
         }
 
+        try {
+            return OffsetDateTime.parse(source, dateTimeOffsetFormatter)
+                .withOffsetSameInstant(java.time.ZoneOffset.UTC)
+                .toLocalDate()
+        } catch (e: DateTimeParseException) {
+            // Ignore and try next format
+        }
+
         // Try parsing as ISO date-time and extract date part
         try {
-            val dateTime = LocalDateTime.parse(source, dateTimeFormatter)
-            return dateTime.toLocalDate()
+            return AppTime.parseClientDateTime(source).toLocalDate()
         } catch (e: DateTimeParseException) {
             throw IllegalArgumentException(
                 "Invalid date format: $source. Supported formats: " +
-                "YYYY-MM-DD, YYYY-MM-DDTHH:MM:SS"
+                "YYYY-MM-DD, YYYY-MM-DDTHH:MM:SS, YYYY-MM-DDTHH:MM:SSZ"
             )
         }
     }

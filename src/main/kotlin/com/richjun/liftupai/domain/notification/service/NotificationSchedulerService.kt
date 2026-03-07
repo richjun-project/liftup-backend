@@ -1,10 +1,10 @@
 package com.richjun.liftupai.domain.notification.service
 
 import com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository
+import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
-import java.time.LocalDateTime
 
 @Service
 class NotificationSchedulerService(
@@ -19,7 +19,7 @@ class NotificationSchedulerService(
     @Scheduled(fixedRate = 60000) // 1분마다 실행
     fun processScheduledNotifications() {
         try {
-            val currentTime = LocalDateTime.now()
+            val currentTime = AppTime.utcNow()
             val schedulesToTrigger = notificationScheduleRepository.findSchedulesToTrigger(currentTime)
 
             if (schedulesToTrigger.isNotEmpty()) {
@@ -51,7 +51,7 @@ class NotificationSchedulerService(
                 .filter { it.enabled }
 
             allActiveSchedules.forEach { schedule ->
-                val nextTrigger = calculateNextTrigger(schedule)
+                val nextTrigger = notificationService.recalculateNextTrigger(schedule)
                 if (schedule.nextTriggerAt != nextTrigger) {
                     schedule.nextTriggerAt = nextTrigger
                     notificationScheduleRepository.save(schedule)
@@ -62,40 +62,5 @@ class NotificationSchedulerService(
         } catch (e: Exception) {
             logger.error("Error updating next trigger times", e)
         }
-    }
-
-    private fun calculateNextTrigger(schedule: com.richjun.liftupai.domain.notification.entity.NotificationSchedule): LocalDateTime {
-        val now = LocalDateTime.now()
-        val today = now.dayOfWeek
-        val todayTime = now.toLocalTime()
-
-        // Convert our DayOfWeek enum to Java DayOfWeek
-        val javaDays = schedule.days.map { day ->
-            when (day) {
-                com.richjun.liftupai.domain.notification.entity.DayOfWeek.MON -> java.time.DayOfWeek.MONDAY
-                com.richjun.liftupai.domain.notification.entity.DayOfWeek.TUE -> java.time.DayOfWeek.TUESDAY
-                com.richjun.liftupai.domain.notification.entity.DayOfWeek.WED -> java.time.DayOfWeek.WEDNESDAY
-                com.richjun.liftupai.domain.notification.entity.DayOfWeek.THU -> java.time.DayOfWeek.THURSDAY
-                com.richjun.liftupai.domain.notification.entity.DayOfWeek.FRI -> java.time.DayOfWeek.FRIDAY
-                com.richjun.liftupai.domain.notification.entity.DayOfWeek.SAT -> java.time.DayOfWeek.SATURDAY
-                com.richjun.liftupai.domain.notification.entity.DayOfWeek.SUN -> java.time.DayOfWeek.SUNDAY
-            }
-        }.toSet()
-
-        // If today is in the schedule and time hasn't passed, schedule for today
-        if (javaDays.contains(today) && todayTime.isBefore(schedule.time)) {
-            return now.toLocalDate().atTime(schedule.time)
-        }
-
-        // Find the next day in the schedule
-        for (i in 1..7) {
-            val nextDay = today.plus(i.toLong())
-            if (javaDays.contains(nextDay)) {
-                return now.toLocalDate().plusDays(i.toLong()).atTime(schedule.time)
-            }
-        }
-
-        // This should never happen if days is not empty
-        return now.plusDays(1).toLocalDate().atTime(schedule.time)
     }
 }

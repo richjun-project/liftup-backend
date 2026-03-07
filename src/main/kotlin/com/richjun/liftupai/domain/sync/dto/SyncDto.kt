@@ -6,7 +6,8 @@ data class OfflineWorkoutSyncRequest(
     @field:NotNull
     val workouts: List<OfflineWorkout>,
 
-    val lastSyncTime: String?
+    val lastSyncTime: String?,
+    val timeZone: String? = null
 )
 
 data class OfflineWorkout(
