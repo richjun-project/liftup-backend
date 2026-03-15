@@ -2,6 +2,7 @@ package com.richjun.liftupai.domain.workout.service
 
 import com.richjun.liftupai.domain.workout.entity.Exercise
 import com.richjun.liftupai.domain.workout.entity.InjuryExerciseRestriction
+import com.richjun.liftupai.domain.workout.entity.InjurySeverity
 import com.richjun.liftupai.domain.workout.entity.SubstitutionReason
 import com.richjun.liftupai.domain.workout.entity.UserProgramEnrollment
 import com.richjun.liftupai.domain.workout.repository.InjuryExerciseRestrictionRepository
@@ -28,7 +29,19 @@ class InjuryFilterService(
     fun getRestrictedExercises(injuries: Set<String>): List<InjuryExerciseRestriction> {
         if (injuries.isEmpty()) return emptyList()
         return injuries.flatMap { injury ->
-            injuryExerciseRestrictionRepository.findByInjuryType(injury)
+            val injuryType = injury.substringBefore(":")
+            val userSeverity = injury.substringAfter(":", "ALL")
+
+            // MILD: only block the most dangerous exercises (SEVERE restrictions)
+            // MODERATE: block MODERATE and SEVERE
+            // SEVERE or ALL (legacy format without severity): block all restrictions
+            val applicableSeverities = when (userSeverity.uppercase()) {
+                "MILD" -> listOf(InjurySeverity.SEVERE)
+                "MODERATE" -> listOf(InjurySeverity.MODERATE, InjurySeverity.SEVERE)
+                else -> InjurySeverity.values().toList()
+            }
+
+            injuryExerciseRestrictionRepository.findByInjuryTypeAndSeverityIn(injuryType, applicableSeverities)
         }.distinctBy { it.id }
     }
 

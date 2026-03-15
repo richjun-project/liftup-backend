@@ -277,10 +277,10 @@ class AuthService(
         }
 
         // Save injuries to profile (used by ProgramEnrollmentService for auto-overrides)
-        // Store only the body part — severity levels are defined per exercise in InjuryExerciseRestriction
+        // Store as "bodyPart:severity" so InjuryFilterService can apply severity-aware filtering
         request.injuries?.let { injuries ->
             profile.injuries.clear()
-            profile.injuries.addAll(injuries.map { it.bodyPart })
+            profile.injuries.addAll(injuries.map { "${it.bodyPart}:${it.severity}" })
         }
 
         // Compute initial 1RM estimates from bodyweight strength assessment
@@ -296,20 +296,32 @@ class AuthService(
                 val cappedReps = minOf(pushups, 15)
                 val pushLoad = bodyWeight * 0.63
                 val est1RM = pushLoad * (1 + cappedReps / 30.0)
-                estimatedMaxes["bench-press"] = (est1RM * 0.65).coerceAtMost(bodyWeight * 0.5)
-                estimatedMaxes["overhead-press"] = (est1RM * 0.45).coerceAtMost(bodyWeight * 0.35)
+                val benchWeight = (est1RM * 0.65).coerceAtMost(bodyWeight * 0.5)
+                estimatedMaxes["bench-press"] = benchWeight
+                estimatedMaxes["barbell-bench-press"] = benchWeight
+                estimatedMaxes["dumbbell-bench-press"] = benchWeight
+                estimatedMaxes["machine-chest-press"] = benchWeight * 1.1
+                estimatedMaxes["incline-dumbbell-press"] = benchWeight * 0.85
+                val ohpWeight = (est1RM * 0.45).coerceAtMost(bodyWeight * 0.35)
+                estimatedMaxes["overhead-press"] = ohpWeight
+                estimatedMaxes["dumbbell-shoulder-press"] = ohpWeight
+                estimatedMaxes["machine-shoulder-press"] = ohpWeight * 1.1
             }
             if (pullups > 0) {
                 val cappedReps = minOf(pullups, 15)
                 val est1RM = bodyWeight * (1 + cappedReps / 30.0)
                 estimatedMaxes["barbell-row"] = est1RM * 0.55
+                estimatedMaxes["dumbbell-row"] = est1RM * 0.5
+                estimatedMaxes["seated-cable-row"] = est1RM * 0.55
                 estimatedMaxes["lat-pulldown"] = est1RM * 0.65
             }
             if (squats > 0) {
                 val cappedReps = minOf(squats, 15)
                 val est1RM = bodyWeight * (1 + cappedReps / 30.0)
                 estimatedMaxes["leg-press"] = est1RM * 0.80
-                estimatedMaxes["squat"] = (est1RM * 0.45).coerceAtMost(bodyWeight * 0.5)
+                estimatedMaxes["goblet-squat"] = (est1RM * 0.35).coerceAtMost(bodyWeight * 0.4)
+                estimatedMaxes["dumbbell-lunge"] = (est1RM * 0.3).coerceAtMost(bodyWeight * 0.35)
+                estimatedMaxes["barbell-back-squat"] = (est1RM * 0.45).coerceAtMost(bodyWeight * 0.5)
             }
 
             if (estimatedMaxes.isNotEmpty()) {

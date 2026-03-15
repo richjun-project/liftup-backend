@@ -70,8 +70,12 @@ class ProgramProgressiveOverloadService(
 
         val progressionModel = enrollment.program.progressionModel
 
-        // Deload week: use model-specific deload percentage
-        if (position.isDeloadWeek || isBlockDeloadWeek(progressionModel, position)) {
+        // Deload week: BLOCK uses its own 7-week block deload only; other models use the generic flag
+        val isDeload = when (progressionModel) {
+            ProgressionModel.BLOCK -> isBlockDeloadWeek(progressionModel, position)
+            else -> position.isDeloadWeek
+        }
+        if (isDeload) {
             return roundWeight(exercise, calculateDeloadWeight(lastWeight, progressionModel))
         }
 
@@ -94,6 +98,20 @@ class ProgramProgressiveOverloadService(
             else -> targetWeight
         }
 
+        // Plateau detection: same weight for 3+ sessions → reduce 10% and rebuild
+        val plateauSessionCount = 3
+        val plateauSetCount = plateauSessionCount * 3  // ~3 sets per session
+        if (lastSets.size >= plateauSetCount) {
+            val recentWeights = lastSets.take(plateauSetCount).map { it.weight }.distinct()
+            if (recentWeights.size == 1) {
+                logger.info(
+                    "Plateau detected for exercise {}: {}kg for {}+ sessions — reducing 10%",
+                    exercise.name, recentWeights.first(), plateauSessionCount
+                )
+                targetWeight = lastWeight * 0.90
+            }
+        }
+
         // Clamp: ±10% / ±20% of last weight
         targetWeight = targetWeight.coerceIn(lastWeight * 0.80, lastWeight * 1.10)
 
@@ -111,10 +129,10 @@ class ProgramProgressiveOverloadService(
     ): Double {
         return when {
             lastRepsAchieved >= dayExercise.maxReps && lastRPE <= 8.0 -> {
-                val increment = if (exercise.category in listOf(ExerciseCategory.LEGS, ExerciseCategory.BACK)) {
-                    5.0
-                } else {
-                    2.5
+                val increment = when {
+                    exercise.category == ExerciseCategory.LEGS -> 5.0
+                    exercise.movementPattern?.uppercase() in listOf("HIP_HINGE", "DEADLIFT") -> 5.0
+                    else -> 2.5  // All upper body including back rows/pulldowns
                 }
                 lastWeight + increment
             }
