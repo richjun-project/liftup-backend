@@ -443,6 +443,9 @@ class WorkoutServiceV2(
     @Transactional
     fun completeWorkout(userId: Long, sessionId: Long, request: CompleteWorkoutRequestV2): CompleteWorkoutResponseV2 {
         val session = findUserSession(userId, sessionId)
+        if (session.status != SessionStatus.IN_PROGRESS) {
+            throw IllegalStateException("Session is already ${session.status}")
+        }
         val locale = resolveLocale(userId)
         val completedExerciseMap = request.exercises.associate { completedExercise ->
             completedExercise.exerciseId to exerciseRepository.findById(completedExercise.exerciseId)
@@ -567,7 +570,7 @@ class WorkoutServiceV2(
                 userProgramEnrollmentRepository.save(activeEnrollment)
             }
         } catch (e: Exception) {
-            logger.warn("Failed to update program enrollment: ${e.message}")
+            logger.error("Failed to update program enrollment for user ${session.user.id}: ${e.message}", e)
             // Non-blocking — workout completion should succeed even if enrollment update fails
         }
 
@@ -1495,8 +1498,7 @@ class WorkoutServiceV2(
         }
 
         // 실제 주간 운동 횟수로 사이클 주차 계산
-        val totalWeeks = workoutSessionRepository.findAll()
-            .filter { it.user.id == user.id && it.status == SessionStatus.COMPLETED }
+        val totalWeeks = workoutSessionRepository.findAllByUserAndStatus(user, SessionStatus.COMPLETED)
             .map { it.startTime.toLocalDate().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)) }
             .distinct()
             .count()

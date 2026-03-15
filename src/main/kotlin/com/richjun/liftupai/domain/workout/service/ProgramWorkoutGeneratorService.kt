@@ -7,6 +7,8 @@ import com.richjun.liftupai.domain.workout.dto.ProgramGeneratedExercise
 import com.richjun.liftupai.domain.workout.dto.ProgramSubstituteExercise
 import com.richjun.liftupai.domain.workout.dto.ProgramWarmupSet
 import com.richjun.liftupai.domain.workout.entity.ProgressionModel
+import com.richjun.liftupai.domain.user.repository.UserProfileRepository
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.repository.ProgramDayExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.ProgramDayRepository
 import com.richjun.liftupai.domain.workout.repository.UserExerciseOverrideRepository
@@ -24,7 +26,9 @@ class ProgramWorkoutGeneratorService(
     private val userExerciseOverrideRepository: UserExerciseOverrideRepository,
     private val progressiveOverloadService: ProgramProgressiveOverloadService,
     private val exerciseSubstitutionService: ExerciseSubstitutionService,
-    private val graduationService: ProgramGraduationService
+    private val graduationService: ProgramGraduationService,
+    private val userProfileRepository: UserProfileRepository,
+    private val userSettingsRepository: UserSettingsRepository
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -74,7 +78,9 @@ class ProgramWorkoutGeneratorService(
             }
 
             // Build substitute list (injury-aware)
-            val injuries = user.profile?.injuries ?: emptySet()
+            val profileInjuries = userProfileRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
+            val settingsInjuries = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
+            val injuries = profileInjuries + settingsInjuries
             val substitutes = exerciseSubstitutionService
                 .getSubstitutesForInjury(actualExercise.id, injuries)
                 .map { sub ->

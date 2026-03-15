@@ -18,13 +18,13 @@ interface ExerciseSetRepository : JpaRepository<ExerciseSet, Long> {
         JOIN we.session ws
         WHERE ws.user.id = :userId
         AND we.exercise.id = :exerciseId
-        AND ws.startTime >= CURRENT_TIMESTAMP - :days DAY
+        AND ws.startTime >= :since
         ORDER BY ws.startTime DESC
     """)
     fun findRecentByUserAndExercise(
         @Param("userId") userId: Long,
         @Param("exerciseId") exerciseId: Long,
-        @Param("days") days: Int
+        @Param("since") since: LocalDateTime
     ): List<ExerciseSet>
 
     @Query("""

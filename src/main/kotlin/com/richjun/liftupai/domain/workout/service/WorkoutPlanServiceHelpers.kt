@@ -4,6 +4,7 @@ import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.user.dto.ExerciseDetailV4
 import com.richjun.liftupai.domain.user.dto.SetDetail
 import com.richjun.liftupai.domain.workout.entity.*
+import com.richjun.liftupai.global.time.AppTime
 import kotlin.math.roundToInt
 
 // 확장 함수와 헬퍼 메서드들
@@ -94,7 +95,7 @@ fun WorkoutPlanService.getUserRecentWorkoutData(
 ): Pair<Double?, Int?> {
     // 최근 운동 기록에서 평균 중량과 반복수 계산
     val recentWorkouts = exerciseSetRepository.findRecentByUserAndExercise(
-        userId, exerciseId, days
+        userId, exerciseId, AppTime.utcNow().minusDays(days.toLong())
     )
 
     if (recentWorkouts.isEmpty()) {

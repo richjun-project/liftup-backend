@@ -10,6 +10,7 @@ import com.richjun.liftupai.domain.workout.entity.WorkoutType
 import com.richjun.liftupai.domain.workout.repository.CanonicalProgramRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -187,7 +188,7 @@ class AutoProgramSelector(
     }
 
     private fun estimateWeeklyDaysFromHistory(user: User): Int {
-        val fourWeeksAgo = LocalDateTime.now().minusWeeks(4)
+        val fourWeeksAgo = AppTime.utcNow().minusWeeks(4)
         val recentSessions = workoutSessionRepository.findTop10ByUserAndStatusInOrderByStartTimeDesc(
             user,
             listOf(SessionStatus.COMPLETED, SessionStatus.IN_PROGRESS)
@@ -210,7 +211,7 @@ class AutoProgramSelector(
     }
 
     private fun analyzeRecentPattern(user: User): WorkoutPattern {
-        val twoWeeksAgo = LocalDateTime.now().minusWeeks(2)
+        val twoWeeksAgo = AppTime.utcNow().minusWeeks(2)
         val recentSessions = workoutSessionRepository.findTop10ByUserAndStatusInOrderByStartTimeDesc(
             user,
             listOf(SessionStatus.COMPLETED, SessionStatus.IN_PROGRESS)
