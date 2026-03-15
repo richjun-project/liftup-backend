@@ -504,7 +504,7 @@ class ProgramProgressionService(
         return WorkoutTargetResolver.targetsForWorkoutType(workoutType)
     }
 
-    private fun getMEV(muscleGroup: String): Int = when (muscleGroup.lowercase()) {
+    internal fun getMEV(muscleGroup: String): Int = when (muscleGroup.lowercase()) {
         "chest" -> 8
         "back", "lats" -> 10
         "quadriceps", "quads", "legs" -> 8
@@ -521,7 +521,7 @@ class ProgramProgressionService(
         else -> 8
     }
 
-    private fun getMAV(muscleGroup: String): Int = when (muscleGroup.lowercase()) {
+    internal fun getMAV(muscleGroup: String): Int = when (muscleGroup.lowercase()) {
         "chest" -> 20
         "back", "lats" -> 25
         "quadriceps", "quads", "legs" -> 20

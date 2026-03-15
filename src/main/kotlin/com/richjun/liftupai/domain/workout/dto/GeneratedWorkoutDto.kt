@@ -32,6 +32,14 @@ data class GraduationStatusDto(
     val message: String
 )
 
+data class WeeklyVolumeStatus(
+    val muscleGroup: String,
+    val currentSets: Int,
+    val mevSets: Int,
+    val mavSets: Int,
+    val status: String  // "BELOW_MEV", "ON_TARGET", "ABOVE_MAV"
+)
+
 data class GeneratedWorkout(
     val programName: String,
     val weekNumber: Int,
@@ -42,5 +50,6 @@ data class GeneratedWorkout(
     val workoutType: WorkoutType,
     val estimatedDuration: Int,
     val exercises: List<ProgramGeneratedExercise>,
-    val graduationStatus: GraduationStatusDto? = null
+    val graduationStatus: GraduationStatusDto? = null,
+    val weeklyVolume: List<WeeklyVolumeStatus> = emptyList()
 )

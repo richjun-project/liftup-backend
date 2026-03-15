@@ -85,7 +85,8 @@ data class TodayWorkoutResponse(
     val workoutType: String,
     val estimatedDuration: Int,
     val exercises: List<TodayExerciseResponse>,
-    val graduationStatus: GraduationStatusDto? = null
+    val graduationStatus: GraduationStatusDto? = null,
+    val weeklyVolume: List<WeeklyVolumeStatusDto>? = null
 )
 
 data class TodayExerciseResponse(
@@ -104,6 +105,13 @@ data class TodayExerciseResponse(
 
 data class WarmupSetResponse(val weight: Double, val reps: Int)
 data class SubstituteResponse(val exerciseId: Long, val name: String, val reason: String)
+data class WeeklyVolumeStatusDto(
+    val muscleGroup: String,
+    val currentSets: Int,
+    val mevSets: Int,
+    val mavSets: Int,
+    val status: String
+)
 
 data class WeeklyScheduleResponse(
     val programName: String,

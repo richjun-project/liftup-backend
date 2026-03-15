@@ -6,13 +6,18 @@ import com.richjun.liftupai.domain.workout.dto.GraduationStatusDto
 import com.richjun.liftupai.domain.workout.dto.ProgramGeneratedExercise
 import com.richjun.liftupai.domain.workout.dto.ProgramSubstituteExercise
 import com.richjun.liftupai.domain.workout.dto.ProgramWarmupSet
+import com.richjun.liftupai.domain.workout.dto.WeeklyVolumeStatus
 import com.richjun.liftupai.domain.workout.entity.ProgressionModel
+import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.repository.ProgramDayExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.ProgramDayRepository
 import com.richjun.liftupai.domain.workout.repository.UserExerciseOverrideRepository
+import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
+import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -28,7 +33,10 @@ class ProgramWorkoutGeneratorService(
     private val exerciseSubstitutionService: ExerciseSubstitutionService,
     private val graduationService: ProgramGraduationService,
     private val userProfileRepository: UserProfileRepository,
-    private val userSettingsRepository: UserSettingsRepository
+    private val userSettingsRepository: UserSettingsRepository,
+    private val workoutSessionRepository: WorkoutSessionRepository,
+    private val workoutExerciseRepository: WorkoutExerciseRepository,
+    private val progressionService: ProgramProgressionService
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -117,7 +125,10 @@ class ProgramWorkoutGeneratorService(
             )
         }
 
-        // 10. Return GeneratedWorkout
+        // 10. Compute weekly volume status
+        val weeklyVolume = computeWeeklyVolumeStatus(user, dayExercises, generatedExercises)
+
+        // 11. Return GeneratedWorkout
         return GeneratedWorkout(
             programName = program.name,
             weekNumber = position.week,
@@ -128,8 +139,64 @@ class ProgramWorkoutGeneratorService(
             workoutType = programDay.workoutType,
             estimatedDuration = programDay.estimatedDurationMinutes,
             exercises = generatedExercises,
-            graduationStatus = if (graduationStatus.shouldGraduate) graduationStatus else null
+            graduationStatus = if (graduationStatus.shouldGraduate) graduationStatus else null,
+            weeklyVolume = weeklyVolume
         )
+    }
+
+    private fun computeWeeklyVolumeStatus(
+        user: User,
+        dayExercises: List<com.richjun.liftupai.domain.workout.entity.ProgramDayExercise>,
+        generatedExercises: List<ProgramGeneratedExercise>
+    ): List<WeeklyVolumeStatus> {
+        // Count sets per muscle group from this week's completed sessions
+        val weekStart = AppTime.utcNow().with(java.time.DayOfWeek.MONDAY).toLocalDate().atStartOfDay()
+        val thisWeekSessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, weekStart)
+            .filter { it.status == SessionStatus.COMPLETED }
+
+        val completedSetsPerMuscle = mutableMapOf<String, Int>()
+        thisWeekSessions.forEach { session ->
+            val exercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+            exercises.forEach { we ->
+                val setCount = we.sets.size
+                we.exercise.muscleGroups.forEach { mg ->
+                    val key = mg.name.lowercase()
+                    completedSetsPerMuscle[key] = completedSetsPerMuscle.getOrDefault(key, 0) + setCount
+                }
+            }
+        }
+
+        // Add today's planned sets per muscle group (from dayExercises which have the Exercise entity)
+        val plannedSetsPerMuscle = mutableMapOf<String, Int>()
+        val plannedSetsByExerciseId = generatedExercises.associateBy({ it.exerciseId }, { it.sets })
+        dayExercises.forEach { pde ->
+            val sets = plannedSetsByExerciseId[pde.exercise.id] ?: pde.sets
+            pde.exercise.muscleGroups.forEach { mg ->
+                val key = mg.name.lowercase()
+                plannedSetsPerMuscle[key] = plannedSetsPerMuscle.getOrDefault(key, 0) + sets
+            }
+        }
+
+        // Merge completed + planned
+        val allMuscles = (completedSetsPerMuscle.keys + plannedSetsPerMuscle.keys).toSet()
+        return allMuscles.map { muscle ->
+            val totalSets = completedSetsPerMuscle.getOrDefault(muscle, 0) +
+                plannedSetsPerMuscle.getOrDefault(muscle, 0)
+            val mev = progressionService.getMEV(muscle)
+            val mav = progressionService.getMAV(muscle)
+            val status = when {
+                totalSets < mev -> "BELOW_MEV"
+                totalSets > mav -> "ABOVE_MAV"
+                else -> "ON_TARGET"
+            }
+            WeeklyVolumeStatus(
+                muscleGroup = muscle,
+                currentSets = totalSets,
+                mevSets = mev,
+                mavSets = mav,
+                status = status
+            )
+        }.sortedBy { it.muscleGroup }
     }
 
     private fun generateWarmupSets(workingWeight: Double): List<ProgramWarmupSet> {

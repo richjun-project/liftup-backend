@@ -166,7 +166,16 @@ class ProgramService(
             workoutType = workout.workoutType.name,
             estimatedDuration = workout.estimatedDuration,
             exercises = todayExercises,
-            graduationStatus = workout.graduationStatus
+            graduationStatus = workout.graduationStatus,
+            weeklyVolume = workout.weeklyVolume.map {
+                WeeklyVolumeStatusDto(
+                    muscleGroup = it.muscleGroup,
+                    currentSets = it.currentSets,
+                    mevSets = it.mevSets,
+                    mavSets = it.mavSets,
+                    status = it.status
+                )
+            }
         )
     }
 
