@@ -165,7 +165,8 @@ class ProgramService(
             periodizationPhase = workout.periodizationPhase,
             workoutType = workout.workoutType.name,
             estimatedDuration = workout.estimatedDuration,
-            exercises = todayExercises
+            exercises = todayExercises,
+            graduationStatus = workout.graduationStatus
         )
     }
 
@@ -180,8 +181,9 @@ class ProgramService(
 
         val program = enrollment.program
         val days = programDayRepository.findByProgramIdOrderByDayNumber(program.id)
-        val weekNumber = enrollment.totalCompletedWorkouts / maxOf(days.size, 1) + 1
-        val currentDayIndex = enrollment.totalCompletedWorkouts % maxOf(days.size, 1)
+        val daysPerWeek = program.daysPerWeek.coerceAtLeast(1)
+        val weekNumber = enrollment.totalCompletedWorkouts / daysPerWeek + 1
+        val currentDayIndex = enrollment.totalCompletedWorkouts % daysPerWeek
 
         val isDeloadWeek = program.deloadEveryNWeeks > 0 &&
             enrollment.totalCompletedWorkouts > 0 &&
@@ -300,9 +302,9 @@ class ProgramService(
     )
 
     private fun UserProgramEnrollment.toStatusResponse(): EnrollmentStatusResponse {
-        val days = programDayRepository.findByProgramIdOrderByDayNumber(program.id)
-        val currentDayInCycle = if (days.isEmpty()) 1 else totalCompletedWorkouts % days.size + 1
-        val currentWeek = if (days.isEmpty()) 1 else totalCompletedWorkouts / days.size + 1
+        val daysPerWeek = program.daysPerWeek.coerceAtLeast(1)
+        val currentDayInCycle = totalCompletedWorkouts % daysPerWeek + 1
+        val currentWeek = totalCompletedWorkouts / daysPerWeek + 1
         val isDeloadWeek = program.deloadEveryNWeeks > 0 &&
             totalCompletedWorkouts > 0 &&
             currentWeek % program.deloadEveryNWeeks == 0

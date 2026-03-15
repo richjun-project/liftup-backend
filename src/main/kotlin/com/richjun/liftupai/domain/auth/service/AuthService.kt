@@ -285,9 +285,9 @@ class AuthService(
         // Compute initial 1RM estimates from bodyweight strength assessment
         request.strengthAssessment?.let { assessment ->
             val bodyWeight = request.bodyInfo?.weight ?: 65.0
-            val pushups = (assessment["pushupReps"] as? Number)?.toInt() ?: 0
-            val pullups = (assessment["pullupReps"] as? Number)?.toInt() ?: 0
-            val squats = (assessment["squatReps"] as? Number)?.toInt() ?: 0
+            val pushups = (assessment["pushup_reps"] as? Number)?.toInt() ?: 0
+            val pullups = (assessment["pullup_reps"] as? Number)?.toInt() ?: 0
+            val squats = (assessment["squat_reps"] as? Number)?.toInt() ?: 0
 
             val estimatedMaxes = mutableMapOf<String, Double>()
 

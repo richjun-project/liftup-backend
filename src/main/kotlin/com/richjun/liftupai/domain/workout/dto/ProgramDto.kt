@@ -84,7 +84,8 @@ data class TodayWorkoutResponse(
     val periodizationPhase: String,
     val workoutType: String,
     val estimatedDuration: Int,
-    val exercises: List<TodayExerciseResponse>
+    val exercises: List<TodayExerciseResponse>,
+    val graduationStatus: GraduationStatusDto? = null
 )
 
 data class TodayExerciseResponse(

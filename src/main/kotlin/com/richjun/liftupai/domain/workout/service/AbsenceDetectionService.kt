@@ -40,10 +40,10 @@ class AbsenceDetectionService {
             )
             daysAbsent >= 7 -> AbsenceStatus(
                 daysAbsent = daysAbsent,
-                needsWeightReduction = false,
-                weightReductionPercent = 0.0,
-                shouldPause = true,
-                message = "1주 이상 공백이 있습니다. 가벼운 무게로 워밍업 세션을 권장합니다."
+                needsWeightReduction = true,
+                weightReductionPercent = 0.05,
+                shouldPause = false,
+                message = "1주 이상 공백이 있습니다. 가벼운 무게로 시작합니다."
             )
             else -> AbsenceStatus(
                 daysAbsent = daysAbsent,

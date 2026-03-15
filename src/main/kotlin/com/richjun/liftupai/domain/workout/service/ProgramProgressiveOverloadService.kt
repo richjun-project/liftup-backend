@@ -1,6 +1,9 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.Exercise
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
@@ -21,7 +24,9 @@ import kotlin.math.roundToInt
 @Transactional(readOnly = true)
 class ProgramProgressiveOverloadService(
     private val exerciseSetRepository: ExerciseSetRepository,
-    private val personalRecordRepository: PersonalRecordRepository
+    private val personalRecordRepository: PersonalRecordRepository,
+    private val userProfileRepository: UserProfileRepository,
+    private val objectMapper: ObjectMapper
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -37,7 +42,25 @@ class ProgramProgressiveOverloadService(
         dayExercise: ProgramDayExercise
     ): Double? {
         val lastSets = getLastWorkoutSets(user, exercise)
-        if (lastSets.isEmpty()) return null
+        if (lastSets.isEmpty()) {
+            // Try to use estimatedMaxes from profile
+            val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
+            val estimatedMaxes = profile?.estimatedMaxes
+            if (estimatedMaxes != null) {
+                try {
+                    val maxesMap = objectMapper.readValue<Map<String, Double>>(estimatedMaxes)
+                    val exerciseKey = exercise.slug.replace("-", "_")
+                    val est1RM = maxesMap[exerciseKey]
+                        ?: maxesMap.entries.firstOrNull { exerciseKey.contains(it.key) || it.key.contains(exerciseKey) }?.value
+                    if (est1RM != null && est1RM > 0) {
+                        return roundWeight(exercise, est1RM)
+                    }
+                } catch (e: Exception) {
+                    logger.warn("Failed to parse estimatedMaxes: ${e.message}")
+                }
+            }
+            return null
+        }
 
         val lastWeight = lastSets.maxOf { it.weight }
         val lastRepsAchieved = lastSets.maxOf { it.reps }
