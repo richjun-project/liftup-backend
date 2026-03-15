@@ -540,6 +540,17 @@ class ProgramProgressionService(
         else -> 16
     }
 
+    internal fun getMRV(muscleGroup: String, readinessScore: Double = 1.0): Int {
+        val baseMAV = getMAV(muscleGroup)
+        val recoveryBonus = when {
+            readinessScore >= 1.0 -> 4
+            readinessScore >= 0.9 -> 2
+            readinessScore >= 0.8 -> 0
+            else -> -2  // If low readiness, MRV drops below MAV
+        }
+        return (baseMAV + recoveryBonus).coerceAtLeast(getMEV(muscleGroup))
+    }
+
     private fun checkMEVStatus(volumes: Map<String, Int>): Boolean {
         // 근육군별 MEV 기준 (Israetel) 충족 여부 체크
         return volumes.entries.all { (muscle, sets) -> sets >= getMEV(muscle) }

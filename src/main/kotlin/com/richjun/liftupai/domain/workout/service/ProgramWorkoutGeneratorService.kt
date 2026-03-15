@@ -93,14 +93,12 @@ class ProgramWorkoutGeneratorService(
         // FIX 3: Compute readiness score
         val readiness = computeReadiness(user, enrollment, subjectiveReadiness)
 
-        // FIX 5: Compute age-based multiplier
+        // FIX 5: Compute age-based multiplier (continuous formula)
         val userAge = profile?.age
         val ageMultiplier = when {
             userAge == null -> 1.0
-            userAge >= 60 -> 0.85   // 60+: 15% intensity reduction
-            userAge >= 50 -> 0.90   // 50-59: 10% reduction
-            userAge >= 40 -> 0.95   // 40-49: 5% reduction
-            else -> 1.0
+            userAge <= 40 -> 1.0
+            else -> (1.0 - (userAge - 40) * 0.015).coerceIn(0.70, 1.0)
         }
 
         // FIX 1: BLOCK phase adjustment
@@ -130,9 +128,16 @@ class ProgramWorkoutGeneratorService(
             val substitutes = exerciseSubstitutionService
                 .getSubstitutesForInjury(actualExercise.id, injuries)
             if (!pde.isCompound && substitutes.isNotEmpty()) {
-                val rotationIndex = ((position.week - 1) / 4) % (substitutes.size + 1)
-                if (rotationIndex > 0 && rotationIndex <= substitutes.size) {
-                    val rotatedExercise = exerciseRepository.findById(substitutes[rotationIndex - 1].substituteExercise.id).orElse(null)
+                val sortedSubstitutes = if (enrollment.program.progressionModel == ProgressionModel.BLOCK && blockPhaseAdj != null) {
+                    if (blockPhaseAdj.intensityPercent >= 0.85) {
+                        substitutes.sortedByDescending { it.substituteExercise.difficulty }  // Realization: harder
+                    } else {
+                        substitutes.sortedBy { it.substituteExercise.difficulty }  // Accumulation: easier/higher SFR
+                    }
+                } else substitutes
+                val rotationIndex = ((position.week - 1) / 4) % (sortedSubstitutes.size + 1)
+                if (rotationIndex > 0 && rotationIndex <= sortedSubstitutes.size) {
+                    val rotatedExercise = exerciseRepository.findById(sortedSubstitutes[rotationIndex - 1].substituteExercise.id).orElse(null)
                     if (rotatedExercise != null) {
                         logger.info("Rotated isolation exercise: ${actualExercise.name} → ${rotatedExercise.name} (week ${position.week}, rotation #$rotationIndex)")
                         actualExercise = rotatedExercise
@@ -156,15 +161,24 @@ class ProgramWorkoutGeneratorService(
             val suggestedWeight = rawWeight?.let { it * readiness.intensityMultiplier * ageMultiplier }
 
             // FIX 1: Apply BLOCK phase sets/reps
+            // GAP 2.3: Volume deload for LINEAR/UNDULATING
+            val deloadSetsMultiplier = if (position.isDeloadWeek &&
+                enrollment.program.progressionModel != ProgressionModel.BLOCK) {
+                0.60
+            } else 1.0
             val adjustedSets = if (blockPhaseAdj != null) {
                 (pde.sets * blockPhaseAdj.setsMultiplier).roundToInt().coerceAtLeast(2)
-            } else pde.sets
+            } else {
+                (pde.sets * deloadSetsMultiplier).roundToInt().coerceAtLeast(2)
+            }
             val adjustedMinReps = blockPhaseAdj?.repRangeLow ?: pde.minReps
             val adjustedMaxReps = blockPhaseAdj?.repRangeHigh ?: pde.maxReps
 
-            // Generate warmup sets for compound exercises
-            var warmupSets = if (pde.isCompound && suggestedWeight != null && suggestedWeight > 20.0) {
-                generateWarmupSets(suggestedWeight)
+            // Generate warmup sets for compound exercises and heavy isolation exercises
+            val shouldWarmup = suggestedWeight != null &&
+                (pde.isCompound && suggestedWeight > 20.0 || suggestedWeight > 30.0)
+            var warmupSets = if (shouldWarmup) {
+                generateWarmupSets(suggestedWeight!!)
             } else {
                 emptyList()
             }
@@ -174,6 +188,23 @@ class ProgramWorkoutGeneratorService(
                 val extraWarmupWeight = (suggestedWeight?.times(0.20) ?: 10.0).coerceAtLeast(5.0)
                 warmupSets = listOf(ProgramWarmupSet(weight = roundToNearest(extraWarmupWeight, 2.5), reps = 15)) + warmupSets
             }
+
+            // GAP 6.1: Phase-adjusted rest periods
+            val baseRest = pde.restSeconds
+            val phaseRestMultiplier = if (enrollment.program.progressionModel == ProgressionModel.BLOCK &&
+                blockPhaseAdj != null) {
+                when {
+                    blockPhaseAdj.intensityPercent >= 0.85 -> 1.5   // Realization: 50% more rest
+                    blockPhaseAdj.intensityPercent >= 0.75 -> 1.2   // Intensification: 20% more
+                    else -> 1.0  // Accumulation: normal
+                }
+            } else 1.0
+            val ageRestMultiplier = when {
+                userAge != null && userAge >= 50 -> 1.2
+                userAge != null && userAge >= 40 -> 1.1
+                else -> 1.0
+            }
+            val adjustedRest = (baseRest * phaseRestMultiplier * ageRestMultiplier).roundToInt()
 
             // Build substitute list (injury-aware) — reuse already-fetched substitutes
             val substituteResponses = substitutes.map { sub ->
@@ -190,7 +221,7 @@ class ProgramWorkoutGeneratorService(
                 sets = adjustedSets,
                 minReps = adjustedMinReps,
                 maxReps = adjustedMaxReps,
-                restSeconds = pde.restSeconds,
+                restSeconds = adjustedRest,
                 suggestedWeight = suggestedWeight,
                 targetRPE = pde.targetRPE,
                 isCompound = pde.isCompound,
@@ -229,10 +260,15 @@ class ProgramWorkoutGeneratorService(
                 muscleGroups.any { it.contains(vol.muscleGroup, ignoreCase = true) || vol.muscleGroup.contains(it, ignoreCase = true) } &&
                     vol.status == "ABOVE_MAV"
             }
+            val aboveMrv = weeklyVolume.any { vol ->
+                muscleGroups.any { it.contains(vol.muscleGroup, ignoreCase = true) || vol.muscleGroup.contains(it, ignoreCase = true) } &&
+                    vol.currentSets > progressionService.getMRV(vol.muscleGroup, readiness.score)
+            }
 
             when {
-                belowMev && !isRealizationPhase && exercise.sets < 5 -> exercise.copy(sets = exercise.sets + 1)
+                aboveMrv && exercise.sets > 2 -> exercise.copy(sets = exercise.sets - 2)
                 aboveMav && exercise.sets > 2 -> exercise.copy(sets = exercise.sets - 1)
+                belowMev && !isRealizationPhase && exercise.sets < 5 -> exercise.copy(sets = exercise.sets + 1)
                 else -> exercise
             }
         }
@@ -331,8 +367,9 @@ class ProgramWorkoutGeneratorService(
             val exercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
             exercises.forEach { we ->
                 val setCount = we.sets.size
-                we.exercise.muscleGroups.forEach { mg ->
-                    val key = mg.name.lowercase()
+                val primaryMuscle = we.exercise.muscleGroups.firstOrNull()
+                if (primaryMuscle != null) {
+                    val key = primaryMuscle.name.lowercase()
                     completedSetsPerMuscle[key] = completedSetsPerMuscle.getOrDefault(key, 0) + setCount
                 }
             }
@@ -343,8 +380,9 @@ class ProgramWorkoutGeneratorService(
         val plannedSetsByExerciseId = generatedExercises.associateBy({ it.exerciseId }, { it.sets })
         dayExercises.forEach { pde ->
             val sets = plannedSetsByExerciseId[pde.exercise.id] ?: pde.sets
-            pde.exercise.muscleGroups.forEach { mg ->
-                val key = mg.name.lowercase()
+            val primaryMuscle = pde.exercise.muscleGroups.firstOrNull()
+            if (primaryMuscle != null) {
+                val key = primaryMuscle.name.lowercase()
                 plannedSetsPerMuscle[key] = plannedSetsPerMuscle.getOrDefault(key, 0) + sets
             }
         }

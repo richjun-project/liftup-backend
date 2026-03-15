@@ -75,6 +75,9 @@ class ProgramProgressiveOverloadService(
             if (it.isNaN()) 7.0 else it
         }
 
+        val genderProfile = userProfileRepository.findByUser_Id(user.id).orElse(null)
+        val isFemale = genderProfile?.gender?.lowercase() == "female"
+
         val progressionModel = enrollment.program.progressionModel
 
         // Deload week: BLOCK uses its own 7-week block deload only; other models use the generic flag
@@ -88,7 +91,7 @@ class ProgramProgressiveOverloadService(
 
         var targetWeight: Double = when (progressionModel) {
             ProgressionModel.LINEAR -> calculateLinear(
-                exercise, dayExercise, lastWeight, lastRepsAchieved, lastRPE
+                exercise, dayExercise, lastWeight, lastRepsAchieved, lastRPE, isFemale
             )
             ProgressionModel.UNDULATING -> calculateUndulating(
                 user, exercise, position, lastWeight, lastRPE
@@ -105,22 +108,44 @@ class ProgramProgressiveOverloadService(
             else -> targetWeight
         }
 
-        // Plateau detection: same weight for 3+ sessions → reduce 10% and rebuild
-        val plateauSessionCount = 3
-        val plateauSetCount = plateauSessionCount * 3  // ~3 sets per session
-        if (lastSets.size >= plateauSetCount) {
-            val recentWeights = lastSets.take(plateauSetCount).map { it.weight }.distinct()
-            if (recentWeights.size == 1) {
-                logger.info(
-                    "Plateau detected for exercise {}: {}kg for {}+ sessions — reducing 10%",
-                    exercise.name, recentWeights.first(), plateauSessionCount
-                )
-                targetWeight = lastWeight * 0.90
+        // Plateau detection: same max weight for 3+ distinct sessions → reduce 10%
+        val sessionWeights = lastSets
+            .groupBy { it.workoutExercise.session.id }
+            .map { (_, sets) -> sets.maxOf { it.weight } }
+            .take(3)
+
+        if (sessionWeights.size >= 3 && sessionWeights.distinct().size == 1) {
+            logger.info("Plateau detected: ${sessionWeights.first()}kg for ${sessionWeights.size} sessions")
+            targetWeight = lastWeight * 0.90
+        }
+
+        // LINEAR: reload if below minReps for 2 consecutive sessions
+        if (progressionModel == ProgressionModel.LINEAR) {
+            val recentMaxReps = lastSets.take(6)
+                .groupBy { it.workoutExercise.session.id }
+                .values
+                .map { sets -> sets.map { it.reps }.average().toInt() }
+
+            if (recentMaxReps.size >= 2 && recentMaxReps.all { it < dayExercise.minReps }) {
+                targetWeight = lastWeight * 0.85
+                logger.info("LINEAR reload: ${exercise.name} failed minReps for 2 sessions, reducing to 85%")
             }
         }
 
         // Clamp: ±10% / ±20% of last weight
         targetWeight = targetWeight.coerceIn(lastWeight * 0.80, lastWeight * 1.10)
+
+        // Bodyweight-relative safety ceiling for new/light users
+        val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
+        val bodyWeight = profile?.bodyInfo?.weight ?: 70.0
+        val maxSafeMultiplier = when (exercise.category) {
+            ExerciseCategory.LEGS -> 2.0
+            ExerciseCategory.BACK -> 2.0
+            ExerciseCategory.CHEST -> 1.5
+            ExerciseCategory.SHOULDERS -> 1.0
+            else -> 1.0
+        }
+        targetWeight = targetWeight.coerceAtMost(bodyWeight * maxSafeMultiplier)
 
         return roundWeight(exercise, targetWeight)
     }
@@ -132,7 +157,8 @@ class ProgramProgressiveOverloadService(
         dayExercise: ProgramDayExercise,
         lastWeight: Double,
         lastRepsAchieved: Int,
-        lastRPE: Double
+        lastRPE: Double,
+        isFemale: Boolean = false
     ): Double {
         val minReps = dayExercise.minReps
         val maxReps = dayExercise.maxReps
@@ -145,10 +171,10 @@ class ProgramProgressiveOverloadService(
                         it.contains("PUSHDOWN") || it.contains("FLY") || it.contains("KICKBACK")
                 } ?: false
                 val increment = when {
-                    exercise.category == ExerciseCategory.LEGS -> 5.0
-                    exercise.movementPattern?.uppercase() in listOf("HIP_HINGE", "DEADLIFT") -> 5.0
-                    isIsolation -> 1.25
-                    else -> 2.5  // Compound upper body
+                    exercise.category == ExerciseCategory.LEGS -> if (isFemale) 2.5 else 5.0
+                    exercise.movementPattern?.uppercase() in listOf("HIP_HINGE", "DEADLIFT") -> if (isFemale) 2.5 else 5.0
+                    isIsolation -> if (isFemale) 1.0 else 1.25
+                    else -> if (isFemale) 1.25 else 2.5  // Compound upper body
                 }
                 lastWeight + increment
             }
@@ -184,6 +210,11 @@ class ProgramProgressiveOverloadService(
         if (lastRPE < 7.5) {
             targetWeight *= 1.015
         }
+
+        // Week-over-week ramp: +2% per week within the mesocycle
+        val weekInMesocycle = ((position.week - 1) % 4).coerceAtMost(3)  // 0-3
+        val weeklyRamp = 1.0 + (weekInMesocycle * 0.02)  // 1.0, 1.02, 1.04, 1.06
+        targetWeight *= weeklyRamp
 
         return targetWeight
     }
@@ -225,8 +256,7 @@ class ProgramProgressiveOverloadService(
         // Try personal record first
         val pr = personalRecordRepository.findTopByUserAndExerciseOrderByWeightDesc(user, exercise)
         if (pr != null && pr.reps > 0) {
-            // Epley formula: 1RM = weight * (1 + reps/30)
-            return pr.weight * (1.0 + pr.reps / 30.0)
+            return getEstimated1RM(pr.weight, pr.reps)
         }
 
         // Fall back to recent sets
@@ -234,8 +264,22 @@ class ProgramProgressiveOverloadService(
         if (recentSets.isEmpty()) return null
 
         return recentSets.maxOf { set ->
-            set.weight * (1.0 + set.reps / 30.0)
+            getEstimated1RM(set.weight, set.reps, set.rpe?.toDouble())
         }
+    }
+
+    private fun getEstimated1RM(weight: Double, reps: Int, rpe: Double? = null): Double {
+        val raw1RM = if (reps <= 0) weight
+            else if (reps == 1) weight
+            else if (reps <= 10) weight * (36.0 / (37.0 - reps))  // Brzycki
+            else weight * (1 + reps / 30.0)  // Epley for high reps
+
+        // RPE adjustment: if RPE < 10, user had reps in reserve
+        val rpeMultiplier = if (rpe != null && rpe < 10.0) {
+            1.0 + (10.0 - rpe) * 0.025  // Each RIR adds ~2.5% to true 1RM
+        } else 1.0
+
+        return raw1RM * rpeMultiplier
     }
 
     private fun calculateDeloadWeight(
@@ -258,26 +302,31 @@ class ProgramProgressiveOverloadService(
     fun getBlockPhaseAdjustment(position: ProgramPosition): BlockPhaseAdjustment {
         val weekInBlock = (position.week - 1) % 7
         return when {
-            weekInBlock in 0..1 -> BlockPhaseAdjustment(  // Accumulation
-                intensityPercent = 0.70,
-                setsMultiplier = 1.0,     // Full volume
-                repRangeLow = 10, repRangeHigh = 12
-            )
-            weekInBlock in 2..3 -> BlockPhaseAdjustment(  // Intensification
-                intensityPercent = 0.80,
-                setsMultiplier = 0.85,    // Reduce volume 15%
-                repRangeLow = 6, repRangeHigh = 8
-            )
-            weekInBlock in 4..5 -> BlockPhaseAdjustment(  // Realization
-                intensityPercent = 0.88,
-                setsMultiplier = 0.70,    // Reduce volume 30%
-                repRangeLow = 3, repRangeHigh = 5
-            )
-            else -> BlockPhaseAdjustment(  // Deload week 7
-                intensityPercent = 0.55,
-                setsMultiplier = 0.50,
-                repRangeLow = 12, repRangeHigh = 15
-            )
+            weekInBlock in 0..1 -> {
+                val weekInPhase = weekInBlock  // 0 or 1
+                BlockPhaseAdjustment(
+                    intensityPercent = 0.68 + (weekInPhase * 0.04),  // 0.68 → 0.72
+                    setsMultiplier = 1.0,
+                    repRangeLow = 10, repRangeHigh = 12
+                )
+            }
+            weekInBlock in 2..3 -> {
+                val weekInPhase = weekInBlock - 2
+                BlockPhaseAdjustment(
+                    intensityPercent = 0.78 + (weekInPhase * 0.04),  // 0.78 → 0.82
+                    setsMultiplier = 0.85,
+                    repRangeLow = 6, repRangeHigh = 8
+                )
+            }
+            weekInBlock in 4..5 -> {
+                val weekInPhase = weekInBlock - 4
+                BlockPhaseAdjustment(
+                    intensityPercent = 0.86 + (weekInPhase * 0.04),  // 0.86 → 0.90
+                    setsMultiplier = 0.70,
+                    repRangeLow = 3, repRangeHigh = 5
+                )
+            }
+            else -> BlockPhaseAdjustment(0.55, 0.50, 12, 15)  // Deload
         }
     }
 

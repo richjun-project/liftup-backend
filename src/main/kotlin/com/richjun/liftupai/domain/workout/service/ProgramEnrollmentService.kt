@@ -2,8 +2,14 @@ package com.richjun.liftupai.domain.workout.service
 
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.workout.entity.EnrollmentStatus
+import com.richjun.liftupai.domain.workout.entity.SubstitutionReason
+import com.richjun.liftupai.domain.workout.entity.UserExerciseOverride
 import com.richjun.liftupai.domain.workout.entity.UserProgramEnrollment
 import com.richjun.liftupai.domain.workout.repository.CanonicalProgramRepository
+import com.richjun.liftupai.domain.workout.repository.ExerciseSubstitutionRepository
+import com.richjun.liftupai.domain.workout.repository.ProgramDayExerciseRepository
+import com.richjun.liftupai.domain.workout.repository.ProgramDayRepository
+import com.richjun.liftupai.domain.workout.repository.UserExerciseOverrideRepository
 import com.richjun.liftupai.domain.workout.repository.UserProgramEnrollmentRepository
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
@@ -27,7 +33,11 @@ class ProgramEnrollmentService(
     private val canonicalProgramRepository: CanonicalProgramRepository,
     private val injuryFilterService: InjuryFilterService,
     private val userProfileRepository: UserProfileRepository,
-    private val userSettingsRepository: UserSettingsRepository
+    private val userSettingsRepository: UserSettingsRepository,
+    private val programDayRepository: ProgramDayRepository,
+    private val programDayExerciseRepository: ProgramDayExerciseRepository,
+    private val exerciseSubstitutionRepository: ExerciseSubstitutionRepository,
+    private val userExerciseOverrideRepository: UserExerciseOverrideRepository
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -60,6 +70,16 @@ class ProgramEnrollmentService(
         if (injuries.isNotEmpty()) {
             injuryFilterService.autoApplyOverrides(saved, injuries)
             logger.info("Applied injury overrides for user={} injuries={}", user.id, injuries)
+        }
+
+        // Auto-apply equipment-based overrides
+        val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
+        val availableEquipment = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.availableEquipment
+            ?: profile?.availableEquipment ?: emptySet()
+
+        if (availableEquipment.isNotEmpty()) {
+            autoApplyEquipmentOverrides(saved, availableEquipment)
+            logger.info("Applied equipment overrides for user={} equipment={}", user.id, availableEquipment)
         }
 
         return saved
@@ -127,6 +147,43 @@ class ProgramEnrollmentService(
         enrollment.status = EnrollmentStatus.ABANDONED
         enrollment.endDate = AppTime.utcNow()
         userProgramEnrollmentRepository.save(enrollment)
+    }
+
+    private fun autoApplyEquipmentOverrides(enrollment: UserProgramEnrollment, availableEquipment: Set<String>) {
+        val days = programDayRepository.findByProgramIdOrderByDayNumber(enrollment.program.id)
+        days.forEach { day ->
+            val exercises = programDayExerciseRepository.findByDayIdWithExercises(day.id)
+            exercises.forEach { pde ->
+                val exerciseEquipment = pde.exercise.equipment?.name?.uppercase()
+                if (exerciseEquipment != null && !availableEquipment.any { it.uppercase() == exerciseEquipment }) {
+                    // Exercise requires equipment user doesn't have → find substitute
+                    val existingOverride = userExerciseOverrideRepository
+                        .findByEnrollmentIdAndOriginalExerciseId(enrollment.id, pde.exercise.id)
+                    if (existingOverride != null) return@forEach
+
+                    val substitute = exerciseSubstitutionRepository
+                        .findByOriginalExerciseIdOrderByPriority(pde.exercise.id)
+                        .firstOrNull { sub ->
+                            sub.substituteExercise.equipment == null ||
+                                availableEquipment.any { it.uppercase() == sub.substituteExercise.equipment?.name?.uppercase() }
+                        }
+
+                    if (substitute != null) {
+                        val override = UserExerciseOverride(
+                            enrollment = enrollment,
+                            originalExercise = pde.exercise,
+                            substituteExercise = substitute.substituteExercise,
+                            reason = SubstitutionReason.EQUIPMENT
+                        )
+                        userExerciseOverrideRepository.save(override)
+                        logger.info(
+                            "Auto-applied equipment override: enrollment={} original={} substitute={} equipment={}",
+                            enrollment.id, pde.exercise.id, substitute.substituteExercise.id, exerciseEquipment
+                        )
+                    }
+                }
+            }
+        }
     }
 
     private fun collectUserInjuries(user: User): Set<String> {
