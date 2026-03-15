@@ -7,6 +7,7 @@ import com.richjun.liftupai.domain.version.entity.Platform
 import com.richjun.liftupai.domain.version.entity.UpdateType
 import com.richjun.liftupai.domain.version.repository.AppVersionRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -135,7 +136,7 @@ class AppVersionService(
         request.maintenanceMessage?.let { appVersion.maintenanceMessage = it }
         request.features?.let { appVersion.features = objectMapper.writeValueAsString(it) }
 
-        appVersion.updatedAt = LocalDateTime.now()
+        appVersion.updatedAt = AppTime.utcNow()
 
         return appVersionRepository.save(appVersion)
     }
@@ -186,7 +187,7 @@ class AppVersionService(
             .orElseThrow { ResourceNotFoundException("버전 정보를 찾을 수 없습니다") }
 
         appVersion.isActive = false
-        appVersion.updatedAt = LocalDateTime.now()
+        appVersion.updatedAt = AppTime.utcNow()
 
         appVersionRepository.save(appVersion)
     }
@@ -209,7 +210,7 @@ class AppVersionService(
 
         latestVersion.maintenanceMode = enabled
         latestVersion.maintenanceMessage = if (enabled) message ?: "서버 점검 중입니다. 잠시 후 다시 시도해주세요." else null
-        latestVersion.updatedAt = LocalDateTime.now()
+        latestVersion.updatedAt = AppTime.utcNow()
 
         appVersionRepository.save(latestVersion)
     }

@@ -6,6 +6,7 @@ import com.richjun.liftupai.domain.subscription.entity.*
 import com.richjun.liftupai.domain.subscription.repository.PaymentHistoryRepository
 import com.richjun.liftupai.domain.subscription.repository.SubscriptionRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -77,7 +78,7 @@ class SubscriptionService(
         }
 
         subscription.status = SubscriptionStatus.CANCELLED
-        subscription.cancelledAt = LocalDateTime.now()
+        subscription.cancelledAt = AppTime.utcNow()
         subscription.autoRenew = false
 
         subscriptionRepository.save(subscription)
@@ -111,13 +112,13 @@ class SubscriptionService(
             user = user,
             plan = SubscriptionPlan.FREE,
             status = SubscriptionStatus.ACTIVE,
-            startDate = LocalDateTime.now()
+            startDate = AppTime.utcNow()
         )
     }
 
     private fun checkAndUpdateExpiredSubscription(subscription: Subscription) {
         if (subscription.expiryDate != null &&
-            subscription.expiryDate!!.isBefore(LocalDateTime.now()) &&
+            subscription.expiryDate!!.isBefore(AppTime.utcNow()) &&
             subscription.status == SubscriptionStatus.ACTIVE) {
 
             subscription.status = SubscriptionStatus.EXPIRED
@@ -129,12 +130,12 @@ class SubscriptionService(
     private fun updateSubscription(subscription: Subscription, request: SubscribeRequest): Subscription {
         subscription.plan = request.plan
         subscription.status = SubscriptionStatus.ACTIVE
-        subscription.startDate = LocalDateTime.now()
+        subscription.startDate = AppTime.utcNow()
         subscription.expiryDate = calculateExpiryDate(request.plan)
         subscription.googlePlayOrderId = request.googlePlayOrderId
         subscription.appleTransactionId = request.appleTransactionId
         subscription.autoRenew = true
-        subscription.updatedAt = LocalDateTime.now()
+        subscription.updatedAt = AppTime.utcNow()
         return subscription
     }
 
@@ -143,7 +144,7 @@ class SubscriptionService(
             user = user,
             plan = request.plan,
             status = SubscriptionStatus.ACTIVE,
-            startDate = LocalDateTime.now(),
+            startDate = AppTime.utcNow(),
             expiryDate = calculateExpiryDate(request.plan),
             googlePlayOrderId = request.googlePlayOrderId,
             appleTransactionId = request.appleTransactionId,
@@ -154,7 +155,7 @@ class SubscriptionService(
     private fun calculateExpiryDate(plan: SubscriptionPlan): LocalDateTime? {
         return when (plan) {
             SubscriptionPlan.FREE -> null
-            SubscriptionPlan.BASIC, SubscriptionPlan.PREMIUM -> LocalDateTime.now().plusMonths(1)
+            SubscriptionPlan.BASIC, SubscriptionPlan.PREMIUM -> AppTime.utcNow().plusMonths(1)
         }
     }
 
@@ -177,7 +178,7 @@ class SubscriptionService(
             valid = true,
             productId = request.productId,
             transactionId = "google_${System.currentTimeMillis()}",
-            expiryDate = LocalDateTime.now().plusMonths(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            expiryDate = AppTime.utcNow().plusMonths(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
             message = "Google Play 영수증 검증 성공"
         )
     }
@@ -189,7 +190,7 @@ class SubscriptionService(
             valid = true,
             productId = request.productId,
             transactionId = "apple_${System.currentTimeMillis()}",
-            expiryDate = LocalDateTime.now().plusMonths(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            expiryDate = AppTime.utcNow().plusMonths(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
             message = "App Store 영수증 검증 성공"
         )
     }

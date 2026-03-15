@@ -80,7 +80,7 @@ class UserService(
             }
         }
 
-        profile.updatedAt = LocalDateTime.now()
+        profile.updatedAt = AppTime.utcNow()
         userRepository.save(user)
         userProfileRepository.save(profile)
 
@@ -136,7 +136,7 @@ class UserService(
         }
 
         profile.notificationEnabled = request.notificationEnabled
-        profile.updatedAt = LocalDateTime.now()
+        profile.updatedAt = AppTime.utcNow()
 
         // Create or update settings
         val settings = userSettingsRepository.findByUser_Id(userId).orElse(
@@ -160,7 +160,7 @@ class UserService(
             settings.injuries.addAll(it)
         }
 
-        settings.updatedAt = LocalDateTime.now()
+        settings.updatedAt = AppTime.utcNow()
 
         userRepository.save(user)
         userProfileRepository.save(profile)
@@ -226,7 +226,7 @@ class UserService(
             settings.units = it.units
         }
 
-        settings.updatedAt = LocalDateTime.now()
+        settings.updatedAt = AppTime.utcNow()
         userSettingsRepository.save(settings)
 
         if (previousTimeZone != settings.timeZone) {
@@ -242,7 +242,7 @@ class UserService(
 
         profile.workoutSplit = newProgram
         profile.weeklyWorkoutDays = newDaysPerWeek
-        profile.updatedAt = LocalDateTime.now()
+        profile.updatedAt = AppTime.utcNow()
 
         userProfileRepository.save(profile)
     }
@@ -378,7 +378,7 @@ class UserService(
             profile.injuries.addAll(it)
         }
 
-        profile.updatedAt = LocalDateTime.now()
+        profile.updatedAt = AppTime.utcNow()
 
         logger.debug("Profile after update - height: ${profile.bodyInfo?.height}, weight: ${profile.bodyInfo?.weight}")
         logger.debug("Updated profile - updatedAt: ${profile.updatedAt}")
@@ -403,20 +403,20 @@ class UserService(
         val profile = userProfileRepository.findByUser_Id(userId)
             .orElseThrow { ResourceNotFoundException("프로필을 찾을 수 없습니다") }
 
-        profile.lastWorkoutDate = LocalDateTime.now()
+        profile.lastWorkoutDate = AppTime.utcNow()
 
         // Update muscle recovery JSON
         val recoveryMap = profile.muscleRecovery?.let {
             objectMapper.readValue(it, Map::class.java) as MutableMap<String, String>
         } ?: mutableMapOf()
 
-        val nowString = LocalDateTime.now().toString()
+        val nowString = AppTime.utcNow().toString()
         muscleGroups.forEach { muscle ->
             recoveryMap[muscle] = nowString
         }
 
         profile.muscleRecovery = objectMapper.writeValueAsString(recoveryMap)
-        profile.updatedAt = LocalDateTime.now()
+        profile.updatedAt = AppTime.utcNow()
 
         userProfileRepository.save(profile)
     }
@@ -443,7 +443,7 @@ class UserService(
         }
 
         profile.strengthTestCompleted = true
-        profile.updatedAt = LocalDateTime.now()
+        profile.updatedAt = AppTime.utcNow()
 
         userProfileRepository.save(profile)
     }
@@ -462,7 +462,7 @@ class UserService(
 
         // 사용자 비활성화
         user.isActive = false
-        user.deletedAt = LocalDateTime.now()
+        user.deletedAt = AppTime.utcNow()
         user.refreshToken = null  // 리프레시 토큰 제거
 
         userRepository.save(user)

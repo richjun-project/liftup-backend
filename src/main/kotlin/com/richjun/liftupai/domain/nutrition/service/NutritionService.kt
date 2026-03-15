@@ -133,7 +133,7 @@ class NutritionService(
             carbs = response.macros.carbs,
             fat = response.macros.fat,
             imageUrl = request.imageUrl,
-            timestamp = LocalDateTime.now()
+            timestamp = AppTime.utcNow()
         )
         mealLogRepository.save(mealLog)
 

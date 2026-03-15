@@ -17,6 +17,7 @@ import com.richjun.liftupai.global.util.ValidationUtil
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import com.richjun.liftupai.global.time.AppTime
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -119,7 +120,7 @@ class AuthService(
         }
 
         // 마지막 로그인 시간 업데이트
-        user.lastLoginAt = LocalDateTime.now()
+        user.lastLoginAt = AppTime.utcNow()
 
         // JWT 토큰 생성
         val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.email ?: user.deviceId ?: "")
@@ -359,7 +360,7 @@ class AuthService(
         }
 
         // 마지막 로그인 시간 업데이트
-        user.lastLoginAt = LocalDateTime.now()
+        user.lastLoginAt = AppTime.utcNow()
 
         // JWT 토큰 생성
         val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.deviceId ?: "")
@@ -393,7 +394,7 @@ class AuthService(
         if (existingSession.isPresent) {
             val session = existingSession.get()
             session.isActive = true
-            session.updatedAt = LocalDateTime.now()
+            session.updatedAt = AppTime.utcNow()
             // Note: deviceInfo is immutable in data class, so we can't update it
             deviceSessionRepository.save(session)
         } else {
@@ -422,7 +423,7 @@ class AuthService(
 
         // 탈퇴 후 30일 경과 확인
         user.deletedAt?.let { deletedAt ->
-            val daysSinceDeleted = java.time.Duration.between(deletedAt, LocalDateTime.now()).toDays()
+            val daysSinceDeleted = java.time.Duration.between(deletedAt, AppTime.utcNow()).toDays()
             if (daysSinceDeleted > 30) {
                 throw IllegalStateException("탈퇴 후 30일이 경과하여 복구할 수 없습니다")
             }

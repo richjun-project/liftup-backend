@@ -3,6 +3,7 @@ package com.richjun.liftupai.domain.upload.service
 import com.richjun.liftupai.domain.upload.dto.ImageUploadResponse
 import com.richjun.liftupai.global.exception.CustomException
 import com.richjun.liftupai.global.exception.ErrorCode
+import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -89,7 +90,7 @@ class FileUploadService(
                 imageUrl = imageUrl,
                 thumbnailUrl = thumbnailUrl ?: imageUrl,
                 imageId = UUID.randomUUID().toString(),
-                uploadedAt = LocalDateTime.now()
+                uploadedAt = AppTime.utcNow()
             )
         } catch (e: Exception) {
             logger.error("Failed to upload to S3, falling back to local storage", e)
@@ -131,7 +132,7 @@ class FileUploadService(
             imageUrl = imageUrl,
             thumbnailUrl = thumbnailUrl,
             imageId = imageId,
-            uploadedAt = LocalDateTime.now()
+            uploadedAt = AppTime.utcNow()
         )
     }
 

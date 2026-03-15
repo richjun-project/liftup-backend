@@ -1435,10 +1435,10 @@ class WorkoutServiceV2(
         recentHistory: List<WorkoutData>
     ): RecoveryStatus {
         val daysSinceSameExercise = recentHistory.firstOrNull()?.let {
-            ChronoUnit.DAYS.between(it.completedAt, LocalDateTime.now())
+            ChronoUnit.DAYS.between(it.completedAt, AppTime.utcNow())
         } ?: 7L
 
-        val weekStart = LocalDateTime.now().minusDays(7)
+        val weekStart = AppTime.utcNow().minusDays(7)
         val targetedFrequency = workoutSessionRepository.findByUserAndStartTimeAfter(user, weekStart)
             .filter { it.status == SessionStatus.COMPLETED }
             .count { session ->
@@ -1471,7 +1471,7 @@ class WorkoutServiceV2(
      * - 실제 날짜 기반 계산으로 휴식 기간 반영
      */
     private fun determinePeriodizationPhase(user: com.richjun.liftupai.domain.auth.entity.User, recentHistory: List<WorkoutData>): PeriodizationPhase {
-        val now = LocalDateTime.now()
+        val now = AppTime.utcNow()
 
         // 최근 8주간의 주별 운동 빈도 계산
         val last8Weeks = (0..7).map { weekOffset ->
@@ -1694,7 +1694,7 @@ class WorkoutServiceV2(
 
     private fun getRecentWorkoutHistory(user: com.richjun.liftupai.domain.auth.entity.User, exercise: Exercise, days: Int): List<WorkoutData> {
         return try {
-            val cutoffDate = LocalDateTime.now().minusDays(days.toLong())
+            val cutoffDate = AppTime.utcNow().minusDays(days.toLong())
 
             // 최근 N일 이내의 완료된 세션 조회
             val recentSessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoffDate)
