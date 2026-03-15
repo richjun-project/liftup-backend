@@ -80,9 +80,10 @@ class ProgramController(
 
     @GetMapping("/programs/enrollment/today")
     fun getTodayWorkout(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) readiness: Int?
     ): ResponseEntity<ApiResponse<TodayWorkoutResponse>> {
-        val response = programService.getTodayWorkout(userDetails.getId())
+        val response = programService.getTodayWorkout(userDetails.getId(), readiness)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

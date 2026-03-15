@@ -52,7 +52,7 @@ class ProgramWorkoutGeneratorService(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    fun generateTodayWorkout(user: User): GeneratedWorkout {
+    fun generateTodayWorkout(user: User, subjectiveReadiness: Int? = null): GeneratedWorkout {
         // 1. Get current enrollment
         val enrollment = programEnrollmentService.getCurrentEnrollment(user)
             ?: throw ResourceNotFoundException("No active program enrollment for user: ${user.id}")
@@ -91,7 +91,7 @@ class ProgramWorkoutGeneratorService(
         }
 
         // FIX 3: Compute readiness score
-        val readiness = computeReadiness(user, enrollment)
+        val readiness = computeReadiness(user, enrollment, subjectiveReadiness)
 
         // FIX 5: Compute age-based multiplier
         val userAge = profile?.age
@@ -171,7 +171,8 @@ class ProgramWorkoutGeneratorService(
 
             // FIX 5: Add extra warmup set for users 50+
             if (userAge != null && userAge >= 50 && warmupSets.isNotEmpty()) {
-                warmupSets = listOf(ProgramWarmupSet(weight = 10.0, reps = 15)) + warmupSets
+                val extraWarmupWeight = (suggestedWeight?.times(0.20) ?: 10.0).coerceAtLeast(5.0)
+                warmupSets = listOf(ProgramWarmupSet(weight = roundToNearest(extraWarmupWeight, 2.5), reps = 15)) + warmupSets
             }
 
             // Build substitute list (injury-aware) — reuse already-fetched substitutes
@@ -213,6 +214,9 @@ class ProgramWorkoutGeneratorService(
         val weeklyVolume = computeWeeklyVolumeStatus(user, dayExercises, generatedExercises)
 
         // 11. Volume-reactive set adjustment: add/remove 1 set based on BELOW_MEV / ABOVE_MAV
+        val isRealizationPhase = enrollment.program.progressionModel == ProgressionModel.BLOCK &&
+            progressiveOverloadService.getBlockPhaseAdjustment(position).setsMultiplier <= 0.70
+
         val adjustedExercises = generatedExercises.mapIndexed { index, exercise ->
             val pde = dayExercises[index]
             val muscleGroups = exerciseMuscleGroupsMap[pde.exercise.id] ?: emptySet()
@@ -227,7 +231,7 @@ class ProgramWorkoutGeneratorService(
             }
 
             when {
-                belowMev && exercise.sets < 5 -> exercise.copy(sets = exercise.sets + 1)
+                belowMev && !isRealizationPhase && exercise.sets < 5 -> exercise.copy(sets = exercise.sets + 1)
                 aboveMav && exercise.sets > 2 -> exercise.copy(sets = exercise.sets - 1)
                 else -> exercise
             }
@@ -250,7 +254,7 @@ class ProgramWorkoutGeneratorService(
         )
     }
 
-    private fun computeReadiness(user: User, enrollment: UserProgramEnrollment): ReadinessScore {
+    private fun computeReadiness(user: User, enrollment: UserProgramEnrollment, subjectiveReadiness: Int? = null): ReadinessScore {
         val factors = mutableListOf<String>()
         var score = 1.0
 
@@ -284,9 +288,21 @@ class ProgramWorkoutGeneratorService(
             else -> { factors.add("정상 컨디션") }
         }
 
+        // Factor 3: Subjective readiness (if provided)
+        if (subjectiveReadiness != null) {
+            when (subjectiveReadiness) {
+                1 -> { score -= 0.20; factors.add("컨디션 매우 안 좋음") }
+                2 -> { score -= 0.10; factors.add("컨디션 안 좋음") }
+                3 -> { factors.add("보통 컨디션") }
+                4 -> { score += 0.05; factors.add("컨디션 좋음") }
+                5 -> { score += 0.10; factors.add("컨디션 매우 좋음") }
+            }
+        }
+
         score = score.coerceIn(0.5, 1.1)
 
         val intensityMultiplier = when {
+            score >= 1.0 -> 1.05     // Well rested + low recent RPE → slight boost
             score >= 0.95 -> 1.0
             score >= 0.85 -> 0.95
             score >= 0.75 -> 0.90
@@ -376,6 +392,10 @@ class ProgramWorkoutGeneratorService(
 
     private fun roundToNearest25(weight: Double): Double {
         return (weight / 2.5).toLong() * 2.5
+    }
+
+    private fun roundToNearest(value: Double, increment: Double): Double {
+        return (value / increment).roundToInt() * increment
     }
 
     private fun resolvePeriodizationPhase(model: ProgressionModel, position: ProgramPosition): String {

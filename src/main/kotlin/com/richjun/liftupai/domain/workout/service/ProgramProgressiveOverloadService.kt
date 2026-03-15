@@ -70,7 +70,7 @@ class ProgramProgressiveOverloadService(
         }
 
         val lastWeight = lastSets.maxOf { it.weight }
-        val lastRepsAchieved = lastSets.maxOf { it.reps }
+        val lastRepsAchieved = lastSets.map { it.reps }.average().toInt()
         val lastRPE = lastSets.mapNotNull { it.rpe?.toDouble() }.average().let {
             if (it.isNaN()) 7.0 else it
         }
@@ -140,10 +140,15 @@ class ProgramProgressiveOverloadService(
         return when {
             // Hit top of rep range with good RPE → add weight (double progression)
             lastRepsAchieved >= maxReps && lastRPE <= 8.0 -> {
+                val isIsolation = exercise.movementPattern?.uppercase()?.let {
+                    it.contains("CURL") || it.contains("EXTENSION") || it.contains("RAISE") ||
+                        it.contains("PUSHDOWN") || it.contains("FLY") || it.contains("KICKBACK")
+                } ?: false
                 val increment = when {
                     exercise.category == ExerciseCategory.LEGS -> 5.0
                     exercise.movementPattern?.uppercase() in listOf("HIP_HINGE", "DEADLIFT") -> 5.0
-                    else -> 2.5  // All upper body including back rows/pulldowns
+                    isIsolation -> 1.25
+                    else -> 2.5  // Compound upper body
                 }
                 lastWeight + increment
             }
@@ -283,9 +288,11 @@ class ProgramProgressiveOverloadService(
     }
 
     private fun roundWeight(exercise: Exercise, weight: Double): Double {
-        return when (exercise.equipment) {
-            Equipment.DUMBBELL -> (weight / 2.0).roundToInt() * 2.0
-            else -> (weight / 2.5).roundToInt() * 2.5  // barbell default
+        val increment = when {
+            exercise.equipment == Equipment.DUMBBELL -> 2.0
+            weight < 20.0 -> 1.25
+            else -> 2.5
         }
+        return (weight / increment).roundToInt() * increment
     }
 }

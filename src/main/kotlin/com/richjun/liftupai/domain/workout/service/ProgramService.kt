@@ -118,7 +118,7 @@ class ProgramService(
 
     // ── Today's Workout ──────────────────────────────────────────────────────
 
-    fun getTodayWorkout(userId: Long): TodayWorkoutResponse {
+    fun getTodayWorkout(userId: Long, subjectiveReadiness: Int? = null): TodayWorkoutResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
 
@@ -131,7 +131,7 @@ class ProgramService(
             throw ResourceNotFoundException("프로그램이 장기 미활동으로 일시정지되었습니다. 재개해주세요.")
         }
 
-        var workout = workoutGeneratorService.generateTodayWorkout(user)
+        var workout = workoutGeneratorService.generateTodayWorkout(user, subjectiveReadiness)
         if (absenceStatus.needsWeightReduction) {
             workout = workout.copy(
                 exercises = workout.exercises.map { ex ->
