@@ -9,6 +9,7 @@ import java.util.*
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.entity.Achievement
 import com.richjun.liftupai.domain.workout.entity.AchievementType
+import com.richjun.liftupai.domain.workout.entity.EnrollmentStatus
 import com.richjun.liftupai.domain.workout.repository.*
 import com.richjun.liftupai.domain.recovery.service.RecoveryService
 import com.richjun.liftupai.domain.recovery.entity.MuscleRecovery
@@ -50,7 +51,8 @@ class WorkoutServiceV2(
     private val exercisePatternClassifier: ExercisePatternClassifier,
     private val exerciseRecommendationService: ExerciseRecommendationService,
     private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService,
-    private val autoProgramSelector: AutoProgramSelector
+    private val autoProgramSelector: AutoProgramSelector,
+    private val userProgramEnrollmentRepository: UserProgramEnrollmentRepository
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     @Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
@@ -554,6 +556,20 @@ class WorkoutServiceV2(
 
         // 업적 확인
         val milestones = checkMilestones(session.user, session)
+
+        // Update program enrollment if active
+        try {
+            val activeEnrollment = userProgramEnrollmentRepository
+                .findFirstByUserAndStatusOrderByStartDateDesc(session.user, EnrollmentStatus.ACTIVE)
+            if (activeEnrollment != null) {
+                activeEnrollment.totalCompletedWorkouts += 1
+                activeEnrollment.lastActiveDate = AppTime.utcNow()
+                userProgramEnrollmentRepository.save(activeEnrollment)
+            }
+        } catch (e: Exception) {
+            logger.warn("Failed to update program enrollment: ${e.message}")
+            // Non-blocking — workout completion should succeed even if enrollment update fails
+        }
 
         // 통계 계산
         val stats = calculateWorkoutStats(session.user)

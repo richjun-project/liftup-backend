@@ -10,6 +10,8 @@ import com.richjun.liftupai.global.exception.InvalidCredentialsException
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.auth.repository.DeviceSessionRepository
+import com.richjun.liftupai.domain.user.repository.UserProfileRepository
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.global.security.JwtTokenProvider
 import com.richjun.liftupai.global.util.ValidationUtil
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -24,6 +26,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 class AuthService(
     private val userRepository: UserRepository,
     private val deviceSessionRepository: DeviceSessionRepository,
+    private val userProfileRepository: UserProfileRepository,
+    private val userSettingsRepository: UserSettingsRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtTokenProvider: JwtTokenProvider,
     private val validationUtil: ValidationUtil,
@@ -269,6 +273,46 @@ class AuthService(
         request.bodyInfo?.let { bodyInfo ->
             profile.age = bodyInfo.age
             profile.gender = bodyInfo.gender ?: "unknown"
+        }
+
+        // Save injuries to profile (used by ProgramEnrollmentService for auto-overrides)
+        request.injuries?.let { injuries ->
+            profile.injuries.clear()
+            profile.injuries.addAll(injuries.map { "${it.bodyPart}:${it.severity}" })
+        }
+
+        // Compute initial 1RM estimates from bodyweight strength assessment
+        request.strengthAssessment?.let { assessment ->
+            val bodyWeight = request.bodyInfo?.weight ?: 65.0
+            val pushups = (assessment["pushupReps"] as? Number)?.toInt() ?: 0
+            val pullups = (assessment["pullupReps"] as? Number)?.toInt() ?: 0
+            val squats = (assessment["squatReps"] as? Number)?.toInt() ?: 0
+
+            val estimatedMaxes = mutableMapOf<String, Double>()
+
+            if (pushups > 0) {
+                val cappedReps = minOf(pushups, 15)
+                val pushLoad = bodyWeight * 0.63
+                val est1RM = pushLoad * (1 + cappedReps / 30.0)
+                estimatedMaxes["bench_press"] = (est1RM * 0.65).coerceAtMost(bodyWeight * 0.5)
+                estimatedMaxes["overhead_press"] = (est1RM * 0.45).coerceAtMost(bodyWeight * 0.35)
+            }
+            if (pullups > 0) {
+                val cappedReps = minOf(pullups, 15)
+                val est1RM = bodyWeight * (1 + cappedReps / 30.0)
+                estimatedMaxes["barbell_row"] = est1RM * 0.55
+                estimatedMaxes["lat_pulldown"] = est1RM * 0.65
+            }
+            if (squats > 0) {
+                val cappedReps = minOf(squats, 15)
+                val est1RM = bodyWeight * (1 + cappedReps / 30.0)
+                estimatedMaxes["leg_press"] = est1RM * 0.80
+                estimatedMaxes["barbell_squat"] = (est1RM * 0.45).coerceAtMost(bodyWeight * 0.5)
+            }
+
+            if (estimatedMaxes.isNotEmpty()) {
+                profile.estimatedMaxes = objectMapper.writeValueAsString(estimatedMaxes)
+            }
         }
 
         user.profile = profile

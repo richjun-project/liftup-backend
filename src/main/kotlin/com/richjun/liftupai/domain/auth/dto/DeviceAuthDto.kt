@@ -4,6 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
 
+data class InjuryInput(
+    @JsonProperty("body_part")
+    val bodyPart: String,
+    val severity: String
+)
+
 data class DeviceRegisterRequest(
     @field:NotBlank(message = "디바이스 ID는 필수입니다")
     @JsonProperty("device_id")
@@ -28,7 +34,12 @@ data class DeviceRegisterRequest(
     val ptStyle: String = "FRIENDLY",
 
     @JsonProperty("workout_preferences")
-    val workoutPreferences: WorkoutPreferencesRequest? = null
+    val workoutPreferences: WorkoutPreferencesRequest? = null,
+
+    val injuries: List<InjuryInput>? = null,
+
+    @JsonProperty("strength_assessment")
+    val strengthAssessment: Map<String, Any>? = null
 )
 
 data class DeviceLoginRequest(
