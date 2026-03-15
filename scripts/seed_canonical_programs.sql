@@ -20,7 +20,7 @@
 -- 1. CANONICAL PROGRAMS
 -- =============================================================================
 
-INSERT INTO canonical_programs
+INSERT IGNORE INTO canonical_programs
     (code, name, split_type, target_experience_level, target_goal,
      days_per_week, program_duration_weeks, deload_every_n_weeks,
      progression_model, next_program_code, version, description, is_active)
@@ -113,7 +113,6 @@ VALUES
     'Advanced 6-day double PPL for maximal hypertrophy. Each muscle group hit twice per week with Push A/B, Pull A/B, Legs A/B variation.',
     TRUE
 )
-ON CONFLICT (code) DO NOTHING;
 
 
 -- =============================================================================
@@ -121,7 +120,7 @@ ON CONFLICT (code) DO NOTHING;
 -- =============================================================================
 
 -- ── 2.1  FULL_BODY_BEG_GENERAL ──────────────────────────────────────────────
-INSERT INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
+INSERT IGNORE INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
 VALUES
 (
     (SELECT id FROM canonical_programs WHERE code = 'FULL_BODY_BEG_GENERAL'),
@@ -135,10 +134,9 @@ VALUES
     (SELECT id FROM canonical_programs WHERE code = 'FULL_BODY_BEG_GENERAL'),
     3, 'FULL_BODY', 'Full Body C', 50
 )
-ON CONFLICT DO NOTHING;
 
 -- ── 2.2  FULL_BODY_BEG_MUSCLE ────────────────────────────────────────────────
-INSERT INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
+INSERT IGNORE INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
 VALUES
 (
     (SELECT id FROM canonical_programs WHERE code = 'FULL_BODY_BEG_MUSCLE'),
@@ -152,10 +150,9 @@ VALUES
     (SELECT id FROM canonical_programs WHERE code = 'FULL_BODY_BEG_MUSCLE'),
     3, 'FULL_BODY', 'Full Body C', 55
 )
-ON CONFLICT DO NOTHING;
 
 -- ── 2.3  FULL_BODY_BEG_FATLOSS ───────────────────────────────────────────────
-INSERT INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
+INSERT IGNORE INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
 VALUES
 (
     (SELECT id FROM canonical_programs WHERE code = 'FULL_BODY_BEG_FATLOSS'),
@@ -169,10 +166,9 @@ VALUES
     (SELECT id FROM canonical_programs WHERE code = 'FULL_BODY_BEG_FATLOSS'),
     3, 'FULL_BODY', 'Full Body C', 50
 )
-ON CONFLICT DO NOTHING;
 
 -- ── 2.4  PPL_INT_MUSCLE ──────────────────────────────────────────────────────
-INSERT INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
+INSERT IGNORE INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
 VALUES
 (
     (SELECT id FROM canonical_programs WHERE code = 'PPL_INT_MUSCLE'),
@@ -186,10 +182,9 @@ VALUES
     (SELECT id FROM canonical_programs WHERE code = 'PPL_INT_MUSCLE'),
     3, 'LEGS', 'Legs', 65
 )
-ON CONFLICT DO NOTHING;
 
 -- ── 2.5  PPL_INT_STRENGTH ────────────────────────────────────────────────────
-INSERT INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
+INSERT IGNORE INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
 VALUES
 (
     (SELECT id FROM canonical_programs WHERE code = 'PPL_INT_STRENGTH'),
@@ -203,10 +198,9 @@ VALUES
     (SELECT id FROM canonical_programs WHERE code = 'PPL_INT_STRENGTH'),
     3, 'LEGS', 'Legs', 70
 )
-ON CONFLICT DO NOTHING;
 
 -- ── 2.6  UL_INT_MUSCLE ───────────────────────────────────────────────────────
-INSERT INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
+INSERT IGNORE INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
 VALUES
 (
     (SELECT id FROM canonical_programs WHERE code = 'UL_INT_MUSCLE'),
@@ -224,10 +218,9 @@ VALUES
     (SELECT id FROM canonical_programs WHERE code = 'UL_INT_MUSCLE'),
     4, 'LOWER', 'Lower B', 65
 )
-ON CONFLICT DO NOTHING;
 
 -- ── 2.7  PPLUL_ADV_MUSCLE ────────────────────────────────────────────────────
-INSERT INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
+INSERT IGNORE INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
 VALUES
 (
     (SELECT id FROM canonical_programs WHERE code = 'PPLUL_ADV_MUSCLE'),
@@ -249,10 +242,9 @@ VALUES
     (SELECT id FROM canonical_programs WHERE code = 'PPLUL_ADV_MUSCLE'),
     5, 'LOWER', 'Lower', 65
 )
-ON CONFLICT DO NOTHING;
 
 -- ── 2.8  PPL2X_ADV_MUSCLE ────────────────────────────────────────────────────
-INSERT INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
+INSERT IGNORE INTO program_days (program_id, day_number, workout_type, name, estimated_duration_minutes)
 VALUES
 (
     (SELECT id FROM canonical_programs WHERE code = 'PPL2X_ADV_MUSCLE'),
@@ -278,7 +270,6 @@ VALUES
     (SELECT id FROM canonical_programs WHERE code = 'PPL2X_ADV_MUSCLE'),
     6, 'LEGS', 'Legs B', 75
 )
-ON CONFLICT DO NOTHING;
 
 
 -- =============================================================================
@@ -302,7 +293,7 @@ ON CONFLICT DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- Day 1 – Full Body A
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT
@@ -325,10 +316,9 @@ CROSS JOIN (
         (5, FALSE,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'dumbbell-curl' LIMIT 1),          (SELECT id FROM exercises WHERE category = 'ARMS'  AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
         (6, FALSE,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'tricep-pushdown' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'ARMS'  AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 2 – Full Body B
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT
@@ -351,10 +341,9 @@ CROSS JOIN (
         (5, TRUE, 10, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'leg-curl' LIMIT 1),               (SELECT id FROM exercises WHERE category = 'LEGS'     AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
         (6, FALSE,30, 45, COALESCE((SELECT id FROM exercises WHERE slug = 'plank' LIMIT 1),                  (SELECT id FROM exercises WHERE category = 'ABS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 3 – Full Body C
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT
@@ -377,7 +366,6 @@ CROSS JOIN (
         (5, FALSE,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'hammer-curl' LIMIT 1),            (SELECT id FROM exercises WHERE category = 'ARMS'     AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
         (6, FALSE,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'overhead-tricep-extension' LIMIT 1),(SELECT id FROM exercises WHERE category = 'ARMS'   AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 
 -- ────────────────────────────────────────────────────────────────────────────
@@ -385,7 +373,7 @@ ON CONFLICT DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- Day 1 – Full Body A
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -400,10 +388,9 @@ CROSS JOIN (VALUES
     (5, FALSE,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'dumbbell-curl' LIMIT 1),          (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'tricep-pushdown' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 2 – Full Body B
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -419,10 +406,9 @@ CROSS JOIN (VALUES
     (6, TRUE,  8, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'leg-curl' LIMIT 1),               (SELECT id FROM exercises WHERE category = 'LEGS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (7, FALSE,30, 60, COALESCE((SELECT id FROM exercises WHERE slug = 'plank' LIMIT 1),                  (SELECT id FROM exercises WHERE category = 'ABS'       AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 3 – Full Body C
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -437,7 +423,6 @@ CROSS JOIN (VALUES
     (5, FALSE,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'hammer-curl' LIMIT 1),             (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'overhead-tricep-extension' LIMIT 1),(SELECT id FROM exercises WHERE category = 'ARMS'     AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 
 -- ────────────────────────────────────────────────────────────────────────────
@@ -445,7 +430,7 @@ ON CONFLICT DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- Day 1 – Full Body A
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -460,10 +445,9 @@ CROSS JOIN (VALUES
     (5, FALSE, 15, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'dumbbell-curl' LIMIT 1),          (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 15, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'tricep-pushdown' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 2 – Full Body B
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -479,10 +463,9 @@ CROSS JOIN (VALUES
     (6, TRUE,  12, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'leg-curl' LIMIT 1),               (SELECT id FROM exercises WHERE category = 'LEGS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (7, FALSE, 30, 60, COALESCE((SELECT id FROM exercises WHERE slug = 'plank' LIMIT 1),                  (SELECT id FROM exercises WHERE category = 'ABS'       AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 3 – Full Body C
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -497,7 +480,6 @@ CROSS JOIN (VALUES
     (5, FALSE, 15, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'hammer-curl' LIMIT 1),             (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 15, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'overhead-tricep-extension' LIMIT 1),(SELECT id FROM exercises WHERE category = 'ARMS'     AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 
 -- ────────────────────────────────────────────────────────────────────────────
@@ -505,7 +487,7 @@ ON CONFLICT DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- Day 1 – Push
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -520,10 +502,9 @@ CROSS JOIN (VALUES
     (5, FALSE, 3,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'lateral-raise' LIMIT 1),          (SELECT id FROM exercises WHERE category = 'SHOULDERS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'tricep-pushdown' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 2 – Pull
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -538,10 +519,9 @@ CROSS JOIN (VALUES
     (5, FALSE, 3, 8, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'barbell-curl' LIMIT 1),     (SELECT id FROM exercises WHERE category = 'ARMS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'hammer-curl' LIMIT 1),      (SELECT id FROM exercises WHERE category = 'ARMS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 3 – Legs
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -556,7 +536,6 @@ CROSS JOIN (VALUES
     (5, FALSE, 3,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'leg-extension' LIMIT 1),     (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 3,15, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'calf-raise' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 
 -- ────────────────────────────────────────────────────────────────────────────
@@ -566,7 +545,7 @@ ON CONFLICT DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- Day 1 – Push (Strength)
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -579,10 +558,9 @@ CROSS JOIN (VALUES
     (3, TRUE,  3, 6, 8,  90, 8.0, 65, 75, COALESCE((SELECT id FROM exercises WHERE slug = 'incline-dumbbell-press' LIMIT 1), (SELECT id FROM exercises WHERE category = 'CHEST'     AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (4, FALSE, 3, 8,10,  90, 7.5, NULL, NULL, COALESCE((SELECT id FROM exercises WHERE slug = 'tricep-pushdown' LIMIT 1),    (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, rest, rpe, ip_lo, ip_hi, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 2 – Pull (Strength)
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -595,10 +573,9 @@ CROSS JOIN (VALUES
     (3, TRUE,  3, 6, 8,  90, 8.0, 65, 75, COALESCE((SELECT id FROM exercises WHERE slug = 'lat-pulldown' LIMIT 1),      (SELECT id FROM exercises WHERE category = 'BACK' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (4, FALSE, 3, 8,10,  90, 7.5, NULL, NULL, COALESCE((SELECT id FROM exercises WHERE slug = 'barbell-curl' LIMIT 1),  (SELECT id FROM exercises WHERE category = 'ARMS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, rest, rpe, ip_lo, ip_hi, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 3 – Legs (Strength)
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -611,7 +588,6 @@ CROSS JOIN (VALUES
     (3, FALSE, 3, 8,10,  90, 7.5, NULL, NULL, COALESCE((SELECT id FROM exercises WHERE slug = 'leg-curl' LIMIT 1),      (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (4, FALSE, 3,10,15,  90, 7.0, NULL, NULL, COALESCE((SELECT id FROM exercises WHERE slug = 'calf-raise' LIMIT 1),    (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, rest, rpe, ip_lo, ip_hi, eid)
-ON CONFLICT DO NOTHING;
 
 
 -- ────────────────────────────────────────────────────────────────────────────
@@ -619,7 +595,7 @@ ON CONFLICT DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- Day 1 – Upper A
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -635,10 +611,9 @@ CROSS JOIN (VALUES
     (6, FALSE, 3, 8, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'barbell-curl' LIMIT 1),           (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (7, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'tricep-pushdown' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 2 – Lower A
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -652,10 +627,9 @@ CROSS JOIN (VALUES
     (4, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'leg-curl' LIMIT 1),            (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (5, FALSE, 3,15, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'calf-raise' LIMIT 1),          (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 3 – Upper B
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -670,10 +644,9 @@ CROSS JOIN (VALUES
     (5, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'hammer-curl' LIMIT 1),               (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'overhead-tricep-extension' LIMIT 1), (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 4 – Lower B
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -687,7 +660,6 @@ CROSS JOIN (VALUES
     (4, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'leg-curl' LIMIT 1),          (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (5, FALSE, 3,15, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'calf-raise' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 
 -- ────────────────────────────────────────────────────────────────────────────
@@ -695,7 +667,7 @@ ON CONFLICT DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- Day 1 – Push
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -711,10 +683,9 @@ CROSS JOIN (VALUES
     (6, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'tricep-pushdown' LIMIT 1),             (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (7, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'overhead-tricep-extension' LIMIT 1),   (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 2 – Pull
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -729,10 +700,9 @@ CROSS JOIN (VALUES
     (5, FALSE, 3, 8, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'barbell-curl' LIMIT 1),      (SELECT id FROM exercises WHERE category = 'ARMS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'hammer-curl' LIMIT 1),       (SELECT id FROM exercises WHERE category = 'ARMS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 3 – Legs
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -747,10 +717,9 @@ CROSS JOIN (VALUES
     (5, FALSE, 3,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'leg-extension' LIMIT 1),     (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 4,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'calf-raise' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 4 – Upper
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -765,10 +734,9 @@ CROSS JOIN (VALUES
     (5, FALSE, 2,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'barbell-curl' LIMIT 1),              (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 2,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'tricep-pushdown' LIMIT 1),           (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 5 – Lower
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -782,7 +750,6 @@ CROSS JOIN (VALUES
     (4, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'leg-curl' LIMIT 1),          (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (5, FALSE, 3,15, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'calf-raise' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 
 -- ────────────────────────────────────────────────────────────────────────────
@@ -790,7 +757,7 @@ ON CONFLICT DO NOTHING;
 -- ────────────────────────────────────────────────────────────────────────────
 
 -- Day 1 – Push A
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -805,10 +772,9 @@ CROSS JOIN (VALUES
     (5, FALSE, 4,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'lateral-raise' LIMIT 1),             (SELECT id FROM exercises WHERE category = 'SHOULDERS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'tricep-pushdown' LIMIT 1),           (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 2 – Pull A
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -823,10 +789,9 @@ CROSS JOIN (VALUES
     (5, FALSE, 3, 8, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'barbell-curl' LIMIT 1),      (SELECT id FROM exercises WHERE category = 'ARMS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 2,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'hammer-curl' LIMIT 1),       (SELECT id FROM exercises WHERE category = 'ARMS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 3 – Legs A
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -840,10 +805,9 @@ CROSS JOIN (VALUES
     (4, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'leg-curl' LIMIT 1),          (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (5, FALSE, 4,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'calf-raise' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 4 – Push B
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -858,10 +822,9 @@ CROSS JOIN (VALUES
     (5, FALSE, 3,12, 15, COALESCE((SELECT id FROM exercises WHERE slug = 'lateral-raise' LIMIT 1),             (SELECT id FROM exercises WHERE category = 'SHOULDERS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'overhead-tricep-extension' LIMIT 1), (SELECT id FROM exercises WHERE category = 'ARMS'      AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 5 – Pull B
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -875,10 +838,9 @@ CROSS JOIN (VALUES
     (4, FALSE, 3,15, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'rear-delt-fly' LIMIT 1),     (SELECT id FROM exercises WHERE category = 'SHOULDERS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (5, FALSE, 3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'dumbbell-curl' LIMIT 1),     (SELECT id FROM exercises WHERE category = 'ARMS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 -- Day 6 – Legs B
-INSERT INTO program_day_exercises
+INSERT IGNORE INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, sets, min_reps, max_reps,
      rest_seconds, target_rpe, intensity_percent_low, intensity_percent_high, set_type, is_optional, notes)
 SELECT pd.id, ex.eid, ex.ord, ex.compound,
@@ -893,7 +855,6 @@ CROSS JOIN (VALUES
     (5, TRUE,  3,10, 12, COALESCE((SELECT id FROM exercises WHERE slug = 'hip-thrust' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1))),
     (6, FALSE, 3,15, 20, COALESCE((SELECT id FROM exercises WHERE slug = 'calf-raise' LIMIT 1),        (SELECT id FROM exercises WHERE category = 'LEGS' AND recommendation_tier = 'ESSENTIAL' ORDER BY popularity_score DESC LIMIT 1)))
 ) AS ex(ord, compound, sets, min_r, max_r, eid)
-ON CONFLICT DO NOTHING;
 
 
 -- =============================================================================
@@ -902,7 +863,7 @@ ON CONFLICT DO NOTHING;
 -- movement_pattern is a free-text label used for grouping
 -- =============================================================================
 
-INSERT INTO exercise_substitutions
+INSERT IGNORE INTO exercise_substitutions
     (original_exercise_id, substitute_exercise_id, priority, reason, movement_pattern, notes)
 
 -- ── Bench Press family ────────────────────────────────────────────────────
@@ -913,7 +874,6 @@ SELECT
     'Dumbbell variant allows greater range of motion and unilateral correction'
 WHERE (SELECT id FROM exercises WHERE slug = 'barbell-bench-press' LIMIT 1) IS NOT NULL
   AND (SELECT id FROM exercises WHERE slug = 'dumbbell-bench-press' LIMIT 1) IS NOT NULL
-ON CONFLICT DO NOTHING
 
 UNION ALL SELECT
     (SELECT id FROM exercises WHERE slug = 'barbell-bench-press' LIMIT 1),
@@ -1121,7 +1081,7 @@ WHERE (SELECT id FROM exercises WHERE slug = 'cable-fly' LIMIT 1) IS NOT NULL
 -- 5. INJURY EXERCISE RESTRICTIONS  (~15 rows)
 -- =============================================================================
 
-INSERT INTO injury_exercise_restrictions
+INSERT IGNORE INTO injury_exercise_restrictions
     (injury_type, restricted_exercise_id, suggested_substitute_id, severity, reason)
 
 -- ── Shoulder injury ───────────────────────────────────────────────────────
@@ -1132,7 +1092,6 @@ SELECT
     'MODERATE',
     'Overhead pressing places shoulder in impingement-prone position; landmine press uses angled path with less impingement risk'
 WHERE (SELECT id FROM exercises WHERE slug = 'overhead-press' LIMIT 1) IS NOT NULL
-ON CONFLICT DO NOTHING
 
 UNION ALL SELECT
     'SHOULDER',
@@ -1141,7 +1100,6 @@ UNION ALL SELECT
     'MODERATE',
     'Barbell bench press fixed bar path can aggravate shoulder impingement; machine press allows adjustable path'
 WHERE (SELECT id FROM exercises WHERE slug = 'barbell-bench-press' LIMIT 1) IS NOT NULL
-ON CONFLICT DO NOTHING
 
 UNION ALL SELECT
     'SHOULDER',
@@ -1150,7 +1108,6 @@ UNION ALL SELECT
     'MILD',
     'Heavy dumbbell lateral raises can impinge; cable variant allows lower starting weight and controlled arc'
 WHERE (SELECT id FROM exercises WHERE slug = 'lateral-raise' LIMIT 1) IS NOT NULL
-ON CONFLICT DO NOTHING
 
 UNION ALL SELECT
     'SHOULDER',
@@ -1159,7 +1116,6 @@ UNION ALL SELECT
     'MILD',
     'Dumbbell bench allows natural wrist rotation reducing shoulder stress'
 WHERE (SELECT id FROM exercises WHERE slug = 'barbell-bench-press' LIMIT 1) IS NOT NULL
-ON CONFLICT DO NOTHING
 
 -- ── Knee injury ───────────────────────────────────────────────────────────
 UNION ALL SELECT

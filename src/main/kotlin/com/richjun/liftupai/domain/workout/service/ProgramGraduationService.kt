@@ -7,7 +7,7 @@ import com.richjun.liftupai.domain.workout.repository.CanonicalProgramRepository
 import com.richjun.liftupai.domain.workout.repository.UserProgramEnrollmentRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
+import com.richjun.liftupai.global.time.AppTime
 import kotlin.math.roundToInt
 
 @Service
@@ -62,7 +62,7 @@ class ProgramGraduationService(
     fun graduate(enrollment: UserProgramEnrollment): UserProgramEnrollment? {
         // Mark current as completed
         enrollment.status = EnrollmentStatus.COMPLETED
-        enrollment.endDate = LocalDateTime.now()
+        enrollment.endDate = AppTime.utcNow()
         enrollmentRepository.save(enrollment)
 
         // Auto-enroll in next program if available

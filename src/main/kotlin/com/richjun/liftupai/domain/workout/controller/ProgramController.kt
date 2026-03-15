@@ -61,9 +61,10 @@ class ProgramController(
     @PutMapping("/programs/enrollment/current")
     fun updateEnrollment(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @RequestParam status: String
+        @RequestBody request: Map<String, String>
     ): ResponseEntity<ApiResponse<EnrollmentStatusResponse>> {
-        val response = programService.updateEnrollmentStatus(userDetails.getId(), status)
+        val action = request["action"] ?: throw com.richjun.liftupai.global.exception.BadRequestException("Missing 'action' field")
+        val response = programService.updateEnrollmentStatus(userDetails.getId(), action)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

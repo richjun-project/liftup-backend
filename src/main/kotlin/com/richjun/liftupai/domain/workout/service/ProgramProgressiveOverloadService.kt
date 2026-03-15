@@ -10,6 +10,7 @@ import com.richjun.liftupai.domain.workout.entity.ProgressionModel
 import com.richjun.liftupai.domain.workout.entity.UserProgramEnrollment
 import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
 import com.richjun.liftupai.domain.workout.repository.PersonalRecordRepository
+import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -151,7 +152,7 @@ class ProgramProgressiveOverloadService(
     // ---- Helpers ----
 
     private fun getLastWorkoutSets(user: User, exercise: Exercise): List<ExerciseSet> {
-        val since = LocalDateTime.now().minusWeeks(8)
+        val since = AppTime.utcNow().minusWeeks(8)
         return exerciseSetRepository.findCompletedSetsByUserAndExercise(
             userId = user.id,
             exerciseId = exercise.id,
