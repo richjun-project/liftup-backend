@@ -125,9 +125,20 @@ class ProgramService(
         val enrollment = enrollmentService.getCurrentEnrollment(user)
             ?: throw ResourceNotFoundException("No active program enrollment")
 
-        absenceDetectionService.checkAbsence(enrollment)
+        val absenceStatus = absenceDetectionService.checkAbsence(enrollment)
+        if (absenceStatus.shouldPause) {
+            enrollmentService.pauseEnrollment(user)
+            throw ResourceNotFoundException("프로그램이 장기 미활동으로 일시정지되었습니다. 재개해주세요.")
+        }
 
-        val workout = workoutGeneratorService.generateTodayWorkout(user)
+        var workout = workoutGeneratorService.generateTodayWorkout(user)
+        if (absenceStatus.needsWeightReduction) {
+            workout = workout.copy(
+                exercises = workout.exercises.map { ex ->
+                    ex.copy(suggestedWeight = ex.suggestedWeight?.let { it * (1 - absenceStatus.weightReductionPercent) })
+                }
+            )
+        }
 
         val todayExercises = workout.exercises.map { ex ->
             TodayExerciseResponse(

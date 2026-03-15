@@ -276,9 +276,10 @@ class AuthService(
         }
 
         // Save injuries to profile (used by ProgramEnrollmentService for auto-overrides)
+        // Store only the body part — severity levels are defined per exercise in InjuryExerciseRestriction
         request.injuries?.let { injuries ->
             profile.injuries.clear()
-            profile.injuries.addAll(injuries.map { "${it.bodyPart}:${it.severity}" })
+            profile.injuries.addAll(injuries.map { it.bodyPart })
         }
 
         // Compute initial 1RM estimates from bodyweight strength assessment

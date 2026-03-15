@@ -1,6 +1,7 @@
 package com.richjun.liftupai.domain.workout.repository
 
 import com.richjun.liftupai.domain.workout.entity.ExerciseSet
+import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -33,12 +34,13 @@ interface ExerciseSetRepository : JpaRepository<ExerciseSet, Long> {
         WHERE ws.user.id = :userId
         AND we.exercise.id = :exerciseId
         AND ws.startTime >= :since
-        AND ws.status = 'COMPLETED'
+        AND ws.status = :status
         ORDER BY ws.startTime DESC
     """)
     fun findCompletedSetsByUserAndExercise(
         @Param("userId") userId: Long,
         @Param("exerciseId") exerciseId: Long,
-        @Param("since") since: LocalDateTime
+        @Param("since") since: LocalDateTime,
+        @Param("status") status: SessionStatus = SessionStatus.COMPLETED
     ): List<ExerciseSet>
 }

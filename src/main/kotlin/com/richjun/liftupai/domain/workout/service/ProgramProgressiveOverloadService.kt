@@ -66,7 +66,7 @@ class ProgramProgressiveOverloadService(
 
         // RPE auto-regulation (all models)
         targetWeight = when {
-            lastRPE >= 9.5 -> targetWeight * 0.95
+            lastRPE >= 9.0 -> targetWeight * 0.95
             lastRPE <= 5.0 -> targetWeight * 1.05
             else -> targetWeight
         }

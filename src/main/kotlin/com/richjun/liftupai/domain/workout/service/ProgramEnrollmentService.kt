@@ -5,6 +5,8 @@ import com.richjun.liftupai.domain.workout.entity.EnrollmentStatus
 import com.richjun.liftupai.domain.workout.entity.UserProgramEnrollment
 import com.richjun.liftupai.domain.workout.repository.CanonicalProgramRepository
 import com.richjun.liftupai.domain.workout.repository.UserProgramEnrollmentRepository
+import com.richjun.liftupai.domain.user.repository.UserProfileRepository
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
@@ -23,7 +25,9 @@ data class ProgramPosition(
 class ProgramEnrollmentService(
     private val userProgramEnrollmentRepository: UserProgramEnrollmentRepository,
     private val canonicalProgramRepository: CanonicalProgramRepository,
-    private val injuryFilterService: InjuryFilterService
+    private val injuryFilterService: InjuryFilterService,
+    private val userProfileRepository: UserProfileRepository,
+    private val userSettingsRepository: UserSettingsRepository
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -74,7 +78,7 @@ class ProgramEnrollmentService(
 
         val week = (total / daysPerWeek) + 1
         val dayInCycle = (total % daysPerWeek) + 1
-        val isDeloadWeek = (week % program.deloadEveryNWeeks) == 0
+        val isDeloadWeek = program.deloadEveryNWeeks > 0 && week > 1 && (week % program.deloadEveryNWeeks) == 0
         val isNewCycle = total > 0 && total % daysPerWeek == 0
 
         return ProgramPosition(
@@ -85,6 +89,12 @@ class ProgramEnrollmentService(
         )
     }
 
+    /**
+     * Internal use only — increments totalCompletedWorkouts on the enrollment.
+     * The primary call path goes through WorkoutServiceV2.completeWorkout(), which
+     * directly updates the enrollment counter. Do NOT call this method from
+     * WorkoutServiceV2 to avoid double-incrementing.
+     */
     fun completeWorkout(enrollment: UserProgramEnrollment) {
         enrollment.totalCompletedWorkouts++
         enrollment.lastActiveDate = AppTime.utcNow()
@@ -120,7 +130,8 @@ class ProgramEnrollmentService(
     }
 
     private fun collectUserInjuries(user: User): Set<String> {
-        val profileInjuries = user.profile?.injuries ?: emptySet()
-        return profileInjuries.toSet()
+        val profileInjuries = userProfileRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
+        val settingsInjuries = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
+        return (profileInjuries + settingsInjuries)
     }
 }

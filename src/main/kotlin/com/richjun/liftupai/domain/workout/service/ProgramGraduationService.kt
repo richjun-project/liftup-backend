@@ -29,7 +29,7 @@ class ProgramGraduationService(
     fun checkGraduation(enrollment: UserProgramEnrollment): GraduationStatus {
         val program = enrollment.program
         val position = enrollmentService.getCurrentPosition(enrollment)
-        val totalExpectedWorkouts = program.daysPerWeek * program.programDurationWeeks
+        val totalExpectedWorkouts = (program.daysPerWeek * program.programDurationWeeks).coerceAtLeast(1)
         val completionRate = enrollment.totalCompletedWorkouts.toDouble() / totalExpectedWorkouts
 
         val shouldGraduate = position.week > program.programDurationWeeks && completionRate >= 0.8
