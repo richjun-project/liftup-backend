@@ -4,6 +4,7 @@ import com.richjun.liftupai.domain.workout.entity.Exercise
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.MuscleGroup
+import com.richjun.liftupai.domain.workout.entity.RecommendationTier
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -11,6 +12,12 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface ExerciseRepository : JpaRepository<Exercise, Long> {
+    fun findBySlug(slug: String): Exercise?
+
+    fun findFirstByCategoryAndRecommendationTierOrderByPopularityDesc(
+        category: ExerciseCategory,
+        tier: RecommendationTier
+    ): Exercise?
     fun findByCategory(category: ExerciseCategory): List<Exercise>
 
     fun findByEquipment(equipment: Equipment): List<Exercise>

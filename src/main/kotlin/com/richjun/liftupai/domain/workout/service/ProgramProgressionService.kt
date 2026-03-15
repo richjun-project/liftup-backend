@@ -1,6 +1,7 @@
 package com.richjun.liftupai.domain.workout.service
 
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.domain.user.entity.ExperienceLevel
 import com.richjun.liftupai.domain.user.entity.UserProfile
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
@@ -8,6 +9,7 @@ import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.workout.entity.WorkoutType
 import com.richjun.liftupai.domain.workout.entity.WorkoutSession
+import com.richjun.liftupai.domain.workout.repository.CanonicalProgramRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
@@ -27,7 +29,8 @@ class ProgramProgressionService(
     private val userProfileRepository: UserProfileRepository,
     private val userSettingsRepository: UserSettingsRepository,
     private val exerciseSetRepository: ExerciseSetRepository,
-    private val workoutExerciseRepository: WorkoutExerciseRepository
+    private val workoutExerciseRepository: WorkoutExerciseRepository,
+    private val canonicalProgramRepository: CanonicalProgramRepository
 ) {
 
     /**
@@ -146,10 +149,32 @@ class ProgramProgressionService(
             }
         }
 
+        // 근육군별 가장 최근 세션의 RPE/볼륨 계산
+        val muscleSessionRPE = mutableMapOf<WorkoutFocus, Double?>()
+        val muscleSessionVolume = mutableMapOf<WorkoutFocus, Int?>()
+        muscleLastWorkout.keys.forEach { focus ->
+            val lastSession = recentSessions.firstOrNull { session ->
+                session.workoutType?.let { type ->
+                    getMusclesFromWorkoutType(type.toString()).contains(focus)
+                } ?: false
+            }
+            if (lastSession != null) {
+                val exercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(lastSession.id)
+                val sets = exercises.flatMap { exerciseSetRepository.findByWorkoutExerciseId(it.id) }
+                val rpeValues = sets.mapNotNull { it.rpe?.toDouble() }
+                muscleSessionRPE[focus] = if (rpeValues.isNotEmpty()) rpeValues.average() else null
+                muscleSessionVolume[focus] = sets.size
+            }
+        }
+
         // 각 근육군 회복 상태 계산
         muscleLastWorkout.forEach { (focus, lastWorkout) ->
             val hoursSinceWorkout = ChronoUnit.HOURS.between(lastWorkout, now)
-            val recoveryPercentage = calculateRecoveryPercentage(hoursSinceWorkout)
+            val recoveryPercentage = calculateRecoveryPercentage(
+                hoursSinceWorkout,
+                sessionRPE = muscleSessionRPE[focus],
+                sessionVolume = muscleSessionVolume[focus]
+            )
             val optimalRecoveryHours = getOptimalRecoveryHours(focus)
             val readyForNextSession = hoursSinceWorkout >= optimalRecoveryHours
 
@@ -478,23 +503,80 @@ class ProgramProgressionService(
         return WorkoutTargetResolver.targetsForWorkoutType(workoutType)
     }
 
+    private fun getMEV(muscleGroup: String): Int = when (muscleGroup.lowercase()) {
+        "chest" -> 8
+        "back", "lats" -> 10
+        "quadriceps", "quads", "legs" -> 8
+        "hamstrings" -> 6
+        "glutes" -> 6
+        "shoulders" -> 8
+        "biceps" -> 6
+        "triceps" -> 6
+        "core", "abs" -> 6
+        "calves" -> 8
+        "forearms" -> 4
+        "rear delts", "rear_delts" -> 6
+        "side delts", "lateral_delts" -> 8
+        else -> 8
+    }
+
+    private fun getMAV(muscleGroup: String): Int = when (muscleGroup.lowercase()) {
+        "chest" -> 20
+        "back", "lats" -> 25
+        "quadriceps", "quads", "legs" -> 20
+        "hamstrings" -> 16
+        "glutes" -> 16
+        "shoulders" -> 22
+        "biceps" -> 14
+        "triceps" -> 14
+        "core", "abs" -> 16
+        "calves" -> 16
+        "forearms" -> 10
+        "rear delts", "rear_delts" -> 18
+        "side delts", "lateral_delts" -> 22
+        else -> 16
+    }
+
     private fun checkMEVStatus(volumes: Map<String, Int>): Boolean {
-        // 최소 효과 볼륨 체크 (근육군별 주당 10세트 기준)
-        return volumes.values.all { it >= 10 }
+        // 근육군별 MEV 기준 (Israetel) 충족 여부 체크
+        return volumes.entries.all { (muscle, sets) -> sets >= getMEV(muscle) }
     }
 
     private fun checkMAVStatus(volumes: Map<String, Int>): Boolean {
-        // 최대 적응 볼륨 초과 체크 (근육군별 주당 20세트 기준)
-        return volumes.values.any { it > 20 }
+        // 근육군별 MAV 기준 (Israetel) 초과 여부 체크
+        return volumes.entries.any { (muscle, sets) -> sets > getMAV(muscle) }
     }
 
-    private fun calculateRecoveryPercentage(hoursSinceWorkout: Long): Int {
-        return when {
+    fun calculateRecoveryPercentage(
+        hoursSinceWorkout: Long,
+        sessionRPE: Double? = null,
+        sessionVolume: Int? = null
+    ): Int {
+        val baseRecovery = when {
             hoursSinceWorkout >= 72 -> 100
             hoursSinceWorkout >= 48 -> 85
             hoursSinceWorkout >= 24 -> 60
             else -> (hoursSinceWorkout * 2.5).roundToInt()
         }
+
+        // RPE correction: higher RPE = slower recovery
+        val rpeMultiplier = when {
+            sessionRPE == null -> 1.0
+            sessionRPE >= 9.5 -> 0.80  // very hard session, 20% slower recovery
+            sessionRPE >= 8.5 -> 0.90
+            sessionRPE >= 7.0 -> 1.0   // normal
+            else -> 1.10               // easy session, 10% faster
+        }
+
+        // Volume correction: more sets = slower recovery
+        val volumeMultiplier = when {
+            sessionVolume == null -> 1.0
+            sessionVolume >= 25 -> 0.85  // high volume session
+            sessionVolume >= 15 -> 0.95
+            else -> 1.0
+        }
+
+        return (baseRecovery * rpeMultiplier * volumeMultiplier).roundToInt().coerceIn(0, 100)
     }
 
     private fun getOptimalRecoveryHours(focus: WorkoutFocus): Int {
@@ -582,74 +664,26 @@ class ProgramProgressionService(
 
     private fun generateProgramSuggestions(profile: UserProfile?, locale: String): List<ProgramSuggestion> {
         val currentProgram = profile?.workoutSplit ?: "PPL"
+        val experienceLevel = profile?.experienceLevel ?: ExperienceLevel.BEGINNER
 
-        val suggestions = mutableListOf<ProgramSuggestion>()
+        // Find programs that are one step up, excluding the current program
+        val candidates = canonicalProgramRepository.findByIsActiveTrue()
+            .filter { it.code != currentProgram }
+            .sortedBy { it.daysPerWeek }
 
-        when (currentProgram) {
-            "PPL" -> {
-                suggestions.add(ProgramSuggestion(
-                    programCode = "UPPER_LOWER",
-                    programName = WorkoutLocalization.splitName("upper_lower", locale),
-                    daysPerWeek = 4,
-                    description = WorkoutLocalization.message("progression.suggestion.upper_lower.description", locale),
-                    benefits = listOf(
-                        WorkoutLocalization.message("progression.suggestion.upper_lower.benefit.1", locale),
-                        WorkoutLocalization.message("progression.suggestion.upper_lower.benefit.2", locale)
-                    ),
-                    difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale)
-                ))
-                suggestions.add(ProgramSuggestion(
-                    programCode = "PPLUL",
-                    programName = WorkoutLocalization.splitName("pplul", locale),
-                    daysPerWeek = 5,
-                    description = WorkoutLocalization.message("progression.suggestion.pplul.description", locale),
-                    benefits = listOf(
-                        WorkoutLocalization.message("progression.suggestion.pplul.benefit.1", locale),
-                        WorkoutLocalization.message("progression.suggestion.pplul.benefit.2", locale)
-                    ),
-                    difficulty = WorkoutLocalization.difficultyDisplayName("advanced", locale)
-                ))
-            }
-            "UPPER_LOWER" -> {
-                suggestions.add(ProgramSuggestion(
-                    programCode = "BRO_SPLIT",
-                    programName = WorkoutLocalization.splitName("bro_split", locale),
-                    daysPerWeek = 5,
-                    description = WorkoutLocalization.message("progression.suggestion.bro_split.description", locale),
-                    benefits = listOf(
-                        WorkoutLocalization.message("progression.suggestion.bro_split.benefit.1", locale),
-                        WorkoutLocalization.message("progression.suggestion.bro_split.benefit.2", locale)
-                    ),
-                    difficulty = WorkoutLocalization.difficultyDisplayName("advanced", locale)
-                ))
-                suggestions.add(ProgramSuggestion(
-                    programCode = "PPL_X2",
-                    programName = WorkoutLocalization.splitName("ppl_x2", locale),
-                    daysPerWeek = 6,
-                    description = WorkoutLocalization.message("progression.suggestion.ppl_x2.description", locale),
-                    benefits = listOf(
-                        WorkoutLocalization.message("progression.suggestion.ppl_x2.benefit.1", locale),
-                        WorkoutLocalization.message("progression.suggestion.ppl_x2.benefit.2", locale)
-                    ),
-                    difficulty = WorkoutLocalization.difficultyDisplayName("advanced", locale)
-                ))
-            }
-            else -> {
-                suggestions.add(ProgramSuggestion(
-                    programCode = "PPL",
-                    programName = WorkoutLocalization.splitName("ppl", locale),
-                    daysPerWeek = 3,
-                    description = WorkoutLocalization.message("progression.suggestion.ppl.description", locale),
-                    benefits = listOf(
-                        WorkoutLocalization.message("progression.suggestion.ppl.benefit.1", locale),
-                        WorkoutLocalization.message("progression.suggestion.ppl.benefit.2", locale)
-                    ),
-                    difficulty = WorkoutLocalization.difficultyDisplayName("beginner", locale)
-                ))
-            }
+        return candidates.take(3).map { program ->
+            ProgramSuggestion(
+                programCode = program.code,
+                programName = program.name,
+                daysPerWeek = program.daysPerWeek,
+                description = program.description ?: "",
+                benefits = listOf(
+                    "${program.progressionModel.name} 주기화",
+                    "${program.daysPerWeek}일/주 훈련"
+                ),
+                difficulty = program.targetExperienceLevel.name.lowercase()
+            )
         }
-
-        return suggestions
     }
 
     private fun estimateStrengthGain(sessions: List<WorkoutSession>): Int {

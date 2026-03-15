@@ -201,7 +201,8 @@ object WorkoutTargetResolver {
             WorkoutFocus.LEGS -> 72
             WorkoutFocus.BACK -> 72
             WorkoutFocus.CHEST, WorkoutFocus.SHOULDERS, WorkoutFocus.PUSH, WorkoutFocus.PULL, WorkoutFocus.UPPER, WorkoutFocus.LOWER -> 48
-            WorkoutFocus.ARMS, WorkoutFocus.CORE, WorkoutFocus.CARDIO -> 24
+            WorkoutFocus.ARMS -> 48
+            WorkoutFocus.CORE, WorkoutFocus.CARDIO -> 24
             WorkoutFocus.FULL_BODY -> 48
         }
     }

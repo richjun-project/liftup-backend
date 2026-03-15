@@ -30,8 +30,8 @@ class GeminiAIService(
     @Value("\${gemini.max-tokens:2048}")
     private var maxTokens: Int = 2048
 
-    @Value("\${gemini.temperature:0.7}")
-    private var temperature: Double = 0.7
+    @Value("\${gemini.temperature:0.4}")
+    private var temperature: Double = 0.4
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)

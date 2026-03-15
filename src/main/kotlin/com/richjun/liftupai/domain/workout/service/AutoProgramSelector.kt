@@ -4,8 +4,10 @@ import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.user.entity.ExperienceLevel
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
+import com.richjun.liftupai.domain.workout.entity.CanonicalProgram
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.workout.entity.WorkoutType
+import com.richjun.liftupai.domain.workout.repository.CanonicalProgramRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import org.springframework.stereotype.Service
@@ -16,14 +18,16 @@ import java.time.temporal.ChronoUnit
 class AutoProgramSelector(
     private val userProfileRepository: UserProfileRepository,
     private val userSettingsRepository: UserSettingsRepository,
-    private val workoutSessionRepository: WorkoutSessionRepository
+    private val workoutSessionRepository: WorkoutSessionRepository,
+    private val canonicalProgramRepository: CanonicalProgramRepository
 ) {
 
     data class ProgramRecommendation(
         val programType: String,
         val workoutSequence: List<WorkoutType>,
         val reason: String,
-        val confidence: Double
+        val confidence: Double,
+        val matchedProgram: CanonicalProgram? = null
     )
 
     fun selectProgram(user: User): ProgramRecommendation {
@@ -45,7 +49,7 @@ class AutoProgramSelector(
         val recentPattern = analyzeRecentPattern(user)
 
         // 프로그램 선택 로직
-        return when {
+        val recommendation = when {
             // 초보자는 전신 운동으로 시작
             experienceLevel == ExperienceLevel.BEGINNER -> {
                 ProgramRecommendation(
@@ -64,15 +68,15 @@ class AutoProgramSelector(
             weeklyDays in 2..3 -> {
                 when (experienceLevel) {
                     ExperienceLevel.INTERMEDIATE, ExperienceLevel.ADVANCED -> {
-                        // 중급자 이상은 밀기/당기기/하체 추천
+                        // 중급자 이상도 주 2-3회는 전신 운동 (PPL은 각 근육 주 1회로 빈도 부족)
                         ProgramRecommendation(
-                            programType = "PPL",
+                            programType = "FULL_BODY",
                             workoutSequence = listOf(
-                                WorkoutType.PUSH,
-                                WorkoutType.PULL,
-                                WorkoutType.LEGS
+                                WorkoutType.FULL_BODY,
+                                WorkoutType.FULL_BODY,
+                                WorkoutType.FULL_BODY
                             ),
-                            reason = WorkoutLocalization.message("auto_program.reason.intermediate_ppl", locale, weeklyDays),
+                            reason = WorkoutLocalization.message("auto_program.reason.low_frequency_full_body", locale, weeklyDays),
                             confidence = 0.85
                         )
                     }
@@ -109,14 +113,15 @@ class AutoProgramSelector(
 
             // 주 5회 이상 + 고급자
             weeklyDays >= 5 && experienceLevel == ExperienceLevel.ADVANCED -> {
+                // PPLUL 하이브리드: Bro Split 대비 상체 빈도 2x 확보
                 ProgramRecommendation(
-                    programType = "BRO_SPLIT",
+                    programType = "PPLUL",
                     workoutSequence = listOf(
-                        WorkoutType.CHEST,
-                        WorkoutType.BACK,
-                        WorkoutType.SHOULDERS,
-                        WorkoutType.ARMS,
-                        WorkoutType.LEGS
+                        WorkoutType.PUSH,
+                        WorkoutType.PULL,
+                        WorkoutType.LEGS,
+                        WorkoutType.UPPER,
+                        WorkoutType.LOWER
                     ),
                     reason = WorkoutLocalization.message("auto_program.reason.advanced_bro_split", locale, weeklyDays),
                     confidence = 0.85
@@ -166,6 +171,11 @@ class AutoProgramSelector(
                 )
             }
         }
+
+        // Try to match a CanonicalProgram by programType code
+        val matchedProgram = canonicalProgramRepository.findByCode(recommendation.programType)
+
+        return recommendation.copy(matchedProgram = matchedProgram)
     }
 
     private fun resolveLocale(userId: Long): String {

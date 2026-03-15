@@ -554,6 +554,38 @@ class AIAnalysisService(
             ""
         }
 
+        // 주기화 단계 계산 (recentWorkouts 기반 간소화 버전)
+        val periodizationPhase = run {
+            val now = java.time.LocalDateTime.now()
+            val lastWorkout = recentWorkouts.firstOrNull()
+            val daysSinceLast = if (lastWorkout != null)
+                java.time.temporal.ChronoUnit.DAYS.between(lastWorkout.startTime, now)
+            else 99L
+
+            when {
+                daysSinceLast >= 14 -> "DELOAD"
+                recentWorkouts.size >= 4 && recentWorkouts.take(4)
+                    .count { java.time.temporal.ChronoUnit.DAYS.between(it.startTime, now) <= 7 } >= 5 -> "DELOAD"
+                else -> {
+                    // 4주 메소사이클: 첫 운동 날짜 기준 주차 계산
+                    val firstSession = recentWorkouts.minByOrNull { it.startTime }
+                    if (firstSession != null) {
+                        val weeksSinceFirst = java.time.temporal.ChronoUnit.WEEKS.between(firstSession.startTime, now)
+                        when ((weeksSinceFirst % 4).toInt()) {
+                            0 -> "ACCUMULATION"
+                            1 -> "INTENSIFICATION"
+                            2 -> "REALIZATION"
+                            3 -> "DELOAD"
+                            else -> "ACCUMULATION"
+                        }
+                    } else "ACCUMULATION"
+                }
+            }
+        }
+        val periodizationNote = if (periodizationPhase == "DELOAD")
+            " (prescribe lighter intensity ~50-60% 1RM, reduced volume)"
+        else ""
+
         return """
             Build a personalized workout program and respond with JSON only.
 
@@ -573,6 +605,7 @@ class AIAnalysisService(
             - Target focus: $muscleText
             - Difficulty code: $targetDifficulty
             - Response language: $responseLanguage
+            - Current periodization phase: $periodizationPhase$periodizationNote
 
             $candidateExercisesText
 
