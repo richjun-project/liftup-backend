@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 import java.util.Optional
@@ -57,6 +58,13 @@ interface WorkoutSessionRepository : JpaRepository<WorkoutSession, Long> {
     fun findTop10ByUserAndStatusInOrderByStartTimeDesc(
         user: User,
         status: List<SessionStatus>
+    ): List<WorkoutSession>
+
+    @Query("SELECT ws FROM WorkoutSession ws WHERE ws.user = :user AND ws.status IN :statuses ORDER BY ws.startTime DESC")
+    fun findByUserAndStatusInOrderByStartTimeDesc(
+        @Param("user") user: User,
+        @Param("statuses") statuses: List<SessionStatus>,
+        pageable: Pageable
     ): List<WorkoutSession>
 
     fun findFirstByUserOrderByStartTimeDesc(user: User): Optional<WorkoutSession>

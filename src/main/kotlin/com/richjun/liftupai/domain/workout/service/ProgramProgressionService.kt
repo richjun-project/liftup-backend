@@ -17,6 +17,7 @@ import com.richjun.liftupai.domain.workout.util.WorkoutFocus
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.time.AppTime
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -247,10 +248,11 @@ class ProgramProgressionService(
     // Helper methods
 
     private fun getRecentCompletedSessions(user: User, limit: Int): List<WorkoutSession> {
-        return workoutSessionRepository.findTop10ByUserAndStatusInOrderByStartTimeDesc(
+        return workoutSessionRepository.findByUserAndStatusInOrderByStartTimeDesc(
             user,
-            listOf(SessionStatus.COMPLETED)
-        ).take(limit)
+            listOf(SessionStatus.COMPLETED),
+            PageRequest.of(0, limit)
+        )
     }
 
     private fun calculateCompletedCycles(sessions: List<WorkoutSession>, profile: UserProfile?): Int {

@@ -7,10 +7,12 @@ import com.richjun.liftupai.domain.workout.dto.ProgramGeneratedExercise
 import com.richjun.liftupai.domain.workout.dto.ProgramSubstituteExercise
 import com.richjun.liftupai.domain.workout.dto.ProgramWarmupSet
 import com.richjun.liftupai.domain.workout.dto.WeeklyVolumeStatus
+import com.richjun.liftupai.domain.workout.entity.InjurySeverity
 import com.richjun.liftupai.domain.workout.entity.ProgressionModel
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
+import com.richjun.liftupai.domain.workout.repository.InjuryExerciseRestrictionRepository
 import com.richjun.liftupai.domain.workout.repository.ProgramDayExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.ProgramDayRepository
 import com.richjun.liftupai.domain.workout.repository.UserExerciseOverrideRepository
@@ -36,7 +38,8 @@ class ProgramWorkoutGeneratorService(
     private val userSettingsRepository: UserSettingsRepository,
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val workoutExerciseRepository: WorkoutExerciseRepository,
-    private val progressionService: ProgramProgressionService
+    private val progressionService: ProgramProgressionService,
+    private val injuryExerciseRestrictionRepository: InjuryExerciseRestrictionRepository
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -64,12 +67,41 @@ class ProgramWorkoutGeneratorService(
             .findByEnrollmentId(enrollment.id)
             .associateBy { it.originalExercise.id }
 
-        // 6 & 7 & 8. Build exercise list applying overrides, substitutions, weights, warmups
+        // 6. Load injuries once (outside the loop)
+        val profileInjuries = userProfileRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
+        val settingsInjuries = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
+        val injuries = profileInjuries + settingsInjuries
+
+        // Load all SEVERE restrictions for the user's injuries
+        val injuryRestrictions = injuries.flatMap { injury ->
+            injuryExerciseRestrictionRepository.findByInjuryTypeAndSeverityIn(
+                injury,
+                listOf(InjurySeverity.SEVERE)
+            )
+        }
+
+        // Map from exerciseId to muscle groups (for volume-reactive set adjustment)
+        val exerciseMuscleGroupsMap = mutableMapOf<Long, Set<String>>()
+
+        // 7 & 8. Build exercise list applying overrides, SEVERE auto-substitution, weights, warmups
         val generatedExercises = dayExercises.map { pde ->
             val override = overrideMap[pde.exercise.id]
-            val actualExercise = override?.substituteExercise ?: pde.exercise
+            var actualExercise = override?.substituteExercise ?: pde.exercise
 
-            // 7. Calculate suggested weight
+            // Auto-substitute if SEVERE injury restriction applies
+            val severeRestriction = injuryRestrictions.find {
+                it.restrictedExercise.id == actualExercise.id && it.suggestedSubstitute != null
+            }
+            if (severeRestriction != null) {
+                val substitute = severeRestriction.suggestedSubstitute!!
+                logger.info("Auto-substituted ${actualExercise.name} → ${substitute.name} (SEVERE injury restriction)")
+                actualExercise = substitute
+            }
+
+            // Record muscle groups for this exercise (keyed by original pde exercise id for volume map lookup)
+            exerciseMuscleGroupsMap[pde.exercise.id] = actualExercise.muscleGroups.map { it.name.lowercase() }.toSet()
+
+            // Calculate suggested weight
             val suggestedWeight = progressiveOverloadService.calculateWeight(
                 user = user,
                 exercise = actualExercise,
@@ -78,7 +110,7 @@ class ProgramWorkoutGeneratorService(
                 dayExercise = pde
             )
 
-            // 8. Generate warmup sets for compound exercises
+            // Generate warmup sets for compound exercises
             val warmupSets = if (pde.isCompound && suggestedWeight != null && suggestedWeight > 20.0) {
                 generateWarmupSets(suggestedWeight)
             } else {
@@ -86,9 +118,6 @@ class ProgramWorkoutGeneratorService(
             }
 
             // Build substitute list (injury-aware)
-            val profileInjuries = userProfileRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
-            val settingsInjuries = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
-            val injuries = profileInjuries + settingsInjuries
             val substitutes = exerciseSubstitutionService
                 .getSubstitutesForInjury(actualExercise.id, injuries)
                 .map { sub ->
@@ -128,7 +157,28 @@ class ProgramWorkoutGeneratorService(
         // 10. Compute weekly volume status
         val weeklyVolume = computeWeeklyVolumeStatus(user, dayExercises, generatedExercises)
 
-        // 11. Return GeneratedWorkout
+        // 11. Volume-reactive set adjustment: add/remove 1 set based on BELOW_MEV / ABOVE_MAV
+        val adjustedExercises = generatedExercises.mapIndexed { index, exercise ->
+            val pde = dayExercises[index]
+            val muscleGroups = exerciseMuscleGroupsMap[pde.exercise.id] ?: emptySet()
+
+            val belowMev = weeklyVolume.any { vol ->
+                muscleGroups.any { it.contains(vol.muscleGroup, ignoreCase = true) || vol.muscleGroup.contains(it, ignoreCase = true) } &&
+                    vol.status == "BELOW_MEV"
+            }
+            val aboveMav = weeklyVolume.any { vol ->
+                muscleGroups.any { it.contains(vol.muscleGroup, ignoreCase = true) || vol.muscleGroup.contains(it, ignoreCase = true) } &&
+                    vol.status == "ABOVE_MAV"
+            }
+
+            when {
+                belowMev && exercise.sets < 5 -> exercise.copy(sets = exercise.sets + 1)
+                aboveMav && exercise.sets > 2 -> exercise.copy(sets = exercise.sets - 1)
+                else -> exercise
+            }
+        }
+
+        // 12. Return GeneratedWorkout
         return GeneratedWorkout(
             programName = program.name,
             weekNumber = position.week,
@@ -138,7 +188,7 @@ class ProgramWorkoutGeneratorService(
             periodizationPhase = resolvePeriodizationPhase(program.progressionModel, position),
             workoutType = programDay.workoutType,
             estimatedDuration = programDay.estimatedDurationMinutes,
-            exercises = generatedExercises,
+            exercises = adjustedExercises,
             graduationStatus = if (graduationStatus.shouldGraduate) graduationStatus else null,
             weeklyVolume = weeklyVolume
         )
