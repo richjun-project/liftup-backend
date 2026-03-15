@@ -86,7 +86,8 @@ data class TodayWorkoutResponse(
     val estimatedDuration: Int,
     val exercises: List<TodayExerciseResponse>,
     val graduationStatus: GraduationStatusDto? = null,
-    val weeklyVolume: List<WeeklyVolumeStatusDto>? = null
+    val weeklyVolume: List<WeeklyVolumeStatusDto>? = null,
+    val readinessScore: ReadinessScoreDto? = null
 )
 
 data class TodayExerciseResponse(
@@ -111,6 +112,12 @@ data class WeeklyVolumeStatusDto(
     val mevSets: Int,
     val mavSets: Int,
     val status: String
+)
+
+data class ReadinessScoreDto(
+    val score: Double,
+    val factors: List<String>,
+    val intensityMultiplier: Double
 )
 
 data class WeeklyScheduleResponse(

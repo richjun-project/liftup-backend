@@ -6,12 +6,16 @@ import com.richjun.liftupai.domain.workout.dto.GraduationStatusDto
 import com.richjun.liftupai.domain.workout.dto.ProgramGeneratedExercise
 import com.richjun.liftupai.domain.workout.dto.ProgramSubstituteExercise
 import com.richjun.liftupai.domain.workout.dto.ProgramWarmupSet
+import com.richjun.liftupai.domain.workout.dto.ReadinessScore
 import com.richjun.liftupai.domain.workout.dto.WeeklyVolumeStatus
 import com.richjun.liftupai.domain.workout.entity.InjurySeverity
 import com.richjun.liftupai.domain.workout.entity.ProgressionModel
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
+import com.richjun.liftupai.domain.workout.entity.UserProgramEnrollment
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
+import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
+import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
 import com.richjun.liftupai.domain.workout.repository.InjuryExerciseRestrictionRepository
 import com.richjun.liftupai.domain.workout.repository.ProgramDayExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.ProgramDayRepository
@@ -21,8 +25,11 @@ import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.temporal.ChronoUnit
+import kotlin.math.roundToInt
 
 @Service
 @Transactional(readOnly = true)
@@ -39,7 +46,9 @@ class ProgramWorkoutGeneratorService(
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val workoutExerciseRepository: WorkoutExerciseRepository,
     private val progressionService: ProgramProgressionService,
-    private val injuryExerciseRestrictionRepository: InjuryExerciseRestrictionRepository
+    private val injuryExerciseRestrictionRepository: InjuryExerciseRestrictionRepository,
+    private val exerciseRepository: ExerciseRepository,
+    private val exerciseSetRepository: ExerciseSetRepository
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -68,7 +77,8 @@ class ProgramWorkoutGeneratorService(
             .associateBy { it.originalExercise.id }
 
         // 6. Load injuries once (outside the loop)
-        val profileInjuries = userProfileRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
+        val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
+        val profileInjuries = profile?.injuries ?: emptySet()
         val settingsInjuries = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
         val injuries = profileInjuries + settingsInjuries
 
@@ -79,6 +89,24 @@ class ProgramWorkoutGeneratorService(
                 listOf(InjurySeverity.SEVERE)
             )
         }
+
+        // FIX 3: Compute readiness score
+        val readiness = computeReadiness(user, enrollment)
+
+        // FIX 5: Compute age-based multiplier
+        val userAge = profile?.age
+        val ageMultiplier = when {
+            userAge == null -> 1.0
+            userAge >= 60 -> 0.85   // 60+: 15% intensity reduction
+            userAge >= 50 -> 0.90   // 50-59: 10% reduction
+            userAge >= 40 -> 0.95   // 40-49: 5% reduction
+            else -> 1.0
+        }
+
+        // FIX 1: BLOCK phase adjustment
+        val blockPhaseAdj = if (program.progressionModel == ProgressionModel.BLOCK) {
+            progressiveOverloadService.getBlockPhaseAdjustment(position)
+        } else null
 
         // Map from exerciseId to muscle groups (for volume-reactive set adjustment)
         val exerciseMuscleGroupsMap = mutableMapOf<Long, Set<String>>()
@@ -98,11 +126,25 @@ class ProgramWorkoutGeneratorService(
                 actualExercise = substitute
             }
 
+            // FIX 4: Exercise rotation for isolation exercises every 4 weeks
+            val substitutes = exerciseSubstitutionService
+                .getSubstitutesForInjury(actualExercise.id, injuries)
+            if (!pde.isCompound && substitutes.isNotEmpty()) {
+                val rotationIndex = ((position.week - 1) / 4) % (substitutes.size + 1)
+                if (rotationIndex > 0 && rotationIndex <= substitutes.size) {
+                    val rotatedExercise = exerciseRepository.findById(substitutes[rotationIndex - 1].substituteExercise.id).orElse(null)
+                    if (rotatedExercise != null) {
+                        logger.info("Rotated isolation exercise: ${actualExercise.name} → ${rotatedExercise.name} (week ${position.week}, rotation #$rotationIndex)")
+                        actualExercise = rotatedExercise
+                    }
+                }
+            }
+
             // Record muscle groups for this exercise (keyed by original pde exercise id for volume map lookup)
             exerciseMuscleGroupsMap[pde.exercise.id] = actualExercise.muscleGroups.map { it.name.lowercase() }.toSet()
 
             // Calculate suggested weight
-            val suggestedWeight = progressiveOverloadService.calculateWeight(
+            val rawWeight = progressiveOverloadService.calculateWeight(
                 user = user,
                 exercise = actualExercise,
                 enrollment = enrollment,
@@ -110,36 +152,49 @@ class ProgramWorkoutGeneratorService(
                 dayExercise = pde
             )
 
+            // FIX 3 + FIX 5: Apply readiness and age multipliers to suggested weight
+            val suggestedWeight = rawWeight?.let { it * readiness.intensityMultiplier * ageMultiplier }
+
+            // FIX 1: Apply BLOCK phase sets/reps
+            val adjustedSets = if (blockPhaseAdj != null) {
+                (pde.sets * blockPhaseAdj.setsMultiplier).roundToInt().coerceAtLeast(2)
+            } else pde.sets
+            val adjustedMinReps = blockPhaseAdj?.repRangeLow ?: pde.minReps
+            val adjustedMaxReps = blockPhaseAdj?.repRangeHigh ?: pde.maxReps
+
             // Generate warmup sets for compound exercises
-            val warmupSets = if (pde.isCompound && suggestedWeight != null && suggestedWeight > 20.0) {
+            var warmupSets = if (pde.isCompound && suggestedWeight != null && suggestedWeight > 20.0) {
                 generateWarmupSets(suggestedWeight)
             } else {
                 emptyList()
             }
 
-            // Build substitute list (injury-aware)
-            val substitutes = exerciseSubstitutionService
-                .getSubstitutesForInjury(actualExercise.id, injuries)
-                .map { sub ->
-                    ProgramSubstituteExercise(
-                        exerciseId = sub.substituteExercise.id,
-                        name = sub.substituteExercise.name,
-                        reason = sub.reason.name
-                    )
-                }
+            // FIX 5: Add extra warmup set for users 50+
+            if (userAge != null && userAge >= 50 && warmupSets.isNotEmpty()) {
+                warmupSets = listOf(ProgramWarmupSet(weight = 10.0, reps = 15)) + warmupSets
+            }
+
+            // Build substitute list (injury-aware) — reuse already-fetched substitutes
+            val substituteResponses = substitutes.map { sub ->
+                ProgramSubstituteExercise(
+                    exerciseId = sub.substituteExercise.id,
+                    name = sub.substituteExercise.name,
+                    reason = sub.reason.name
+                )
+            }
 
             ProgramGeneratedExercise(
                 exerciseId = actualExercise.id,
                 name = actualExercise.name,
-                sets = pde.sets,
-                minReps = pde.minReps,
-                maxReps = pde.maxReps,
+                sets = adjustedSets,
+                minReps = adjustedMinReps,
+                maxReps = adjustedMaxReps,
                 restSeconds = pde.restSeconds,
                 suggestedWeight = suggestedWeight,
                 targetRPE = pde.targetRPE,
                 isCompound = pde.isCompound,
                 warmupSets = warmupSets,
-                substitutes = substitutes
+                substitutes = substituteResponses
             )
         }
 
@@ -190,7 +245,58 @@ class ProgramWorkoutGeneratorService(
             estimatedDuration = programDay.estimatedDurationMinutes,
             exercises = adjustedExercises,
             graduationStatus = if (graduationStatus.shouldGraduate) graduationStatus else null,
-            weeklyVolume = weeklyVolume
+            weeklyVolume = weeklyVolume,
+            readinessScore = readiness
+        )
+    }
+
+    private fun computeReadiness(user: User, enrollment: UserProgramEnrollment): ReadinessScore {
+        val factors = mutableListOf<String>()
+        var score = 1.0
+
+        // Factor 1: Days since last workout
+        val daysSinceLast = if (enrollment.lastActiveDate != null) {
+            ChronoUnit.DAYS.between(enrollment.lastActiveDate, AppTime.utcNow())
+        } else 3
+
+        when {
+            daysSinceLast == 0L -> { score -= 0.1; factors.add("오늘 이미 운동함 - 회복 부족 가능") }
+            daysSinceLast == 1L -> { factors.add("적절한 회복 시간") }
+            daysSinceLast in 2..3 -> { factors.add("충분한 회복") }
+            daysSinceLast > 3 -> { score -= 0.05; factors.add("${daysSinceLast}일 공백 - 가볍게 시작 권장") }
+        }
+
+        // Factor 2: Recent RPE trend (from last 3 sessions)
+        val recentSessions = workoutSessionRepository.findByUserAndStatusInOrderByStartTimeDesc(
+            user, listOf(SessionStatus.COMPLETED), PageRequest.of(0, 3)
+        )
+        val recentRPEs = recentSessions.flatMap { session ->
+            workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+                .flatMap { we -> exerciseSetRepository.findByWorkoutExerciseId(we.id) }
+                .mapNotNull { it.rpe?.toDouble() }
+        }
+        val avgRecentRPE = if (recentRPEs.isNotEmpty()) recentRPEs.average() else 7.0
+
+        when {
+            avgRecentRPE >= 9.0 -> { score -= 0.15; factors.add("최근 고강도 훈련 - 강도 조절 권장") }
+            avgRecentRPE >= 8.0 -> { score -= 0.05; factors.add("최근 적절한 강도") }
+            avgRecentRPE < 6.0 -> { score += 0.05; factors.add("최근 낮은 강도 - 여유 있음") }
+            else -> { factors.add("정상 컨디션") }
+        }
+
+        score = score.coerceIn(0.5, 1.1)
+
+        val intensityMultiplier = when {
+            score >= 0.95 -> 1.0
+            score >= 0.85 -> 0.95
+            score >= 0.75 -> 0.90
+            else -> 0.85
+        }
+
+        return ReadinessScore(
+            score = score,
+            factors = factors,
+            intensityMultiplier = intensityMultiplier
         )
     }
 

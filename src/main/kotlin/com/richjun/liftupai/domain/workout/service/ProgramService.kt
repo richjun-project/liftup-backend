@@ -175,6 +175,13 @@ class ProgramService(
                     mavSets = it.mavSets,
                     status = it.status
                 )
+            },
+            readinessScore = workout.readinessScore?.let {
+                ReadinessScoreDto(
+                    score = it.score,
+                    factors = it.factors,
+                    intensityMultiplier = it.intensityMultiplier
+                )
             }
         )
     }

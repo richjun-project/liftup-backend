@@ -20,6 +20,13 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import kotlin.math.roundToInt
 
+data class BlockPhaseAdjustment(
+    val intensityPercent: Double,
+    val setsMultiplier: Double,  // 1.0 = keep seed data sets, 0.75 = reduce 25%
+    val repRangeLow: Int,
+    val repRangeHigh: Int
+)
+
 @Service
 @Transactional(readOnly = true)
 class ProgramProgressiveOverloadService(
@@ -127,8 +134,12 @@ class ProgramProgressiveOverloadService(
         lastRepsAchieved: Int,
         lastRPE: Double
     ): Double {
+        val minReps = dayExercise.minReps
+        val maxReps = dayExercise.maxReps
+
         return when {
-            lastRepsAchieved >= dayExercise.maxReps && lastRPE <= 8.0 -> {
+            // Hit top of rep range with good RPE → add weight (double progression)
+            lastRepsAchieved >= maxReps && lastRPE <= 8.0 -> {
                 val increment = when {
                     exercise.category == ExerciseCategory.LEGS -> 5.0
                     exercise.movementPattern?.uppercase() in listOf("HIP_HINGE", "DEADLIFT") -> 5.0
@@ -136,8 +147,12 @@ class ProgramProgressiveOverloadService(
                 }
                 lastWeight + increment
             }
-            lastRPE > 9.0 -> lastWeight  // maintain
-            else -> lastWeight           // try to add reps at same weight
+            // RPE too high → keep weight (don't increase even if reps met)
+            lastRPE > 9.0 -> lastWeight
+            // Mid-range reps → keep weight, user should aim for more reps next session
+            lastRepsAchieved >= minReps -> lastWeight  // Stay, try to add 1 rep next time
+            // Below minReps → weight might be too heavy, reduce slightly
+            else -> lastWeight * 0.95
         }
     }
 
@@ -231,6 +246,36 @@ class ProgramProgressiveOverloadService(
      * For BLOCK periodization, week 7 of a 7-week block is the deload week.
      * This takes priority over the modulo-based isDeloadWeek flag.
      */
+    /**
+     * Returns the block phase adjustment (intensity %, sets multiplier, rep range) for the given position.
+     * Used by ProgramWorkoutGeneratorService to apply volume waving within BLOCK phases.
+     */
+    fun getBlockPhaseAdjustment(position: ProgramPosition): BlockPhaseAdjustment {
+        val weekInBlock = (position.week - 1) % 7
+        return when {
+            weekInBlock in 0..1 -> BlockPhaseAdjustment(  // Accumulation
+                intensityPercent = 0.70,
+                setsMultiplier = 1.0,     // Full volume
+                repRangeLow = 10, repRangeHigh = 12
+            )
+            weekInBlock in 2..3 -> BlockPhaseAdjustment(  // Intensification
+                intensityPercent = 0.80,
+                setsMultiplier = 0.85,    // Reduce volume 15%
+                repRangeLow = 6, repRangeHigh = 8
+            )
+            weekInBlock in 4..5 -> BlockPhaseAdjustment(  // Realization
+                intensityPercent = 0.88,
+                setsMultiplier = 0.70,    // Reduce volume 30%
+                repRangeLow = 3, repRangeHigh = 5
+            )
+            else -> BlockPhaseAdjustment(  // Deload week 7
+                intensityPercent = 0.55,
+                setsMultiplier = 0.50,
+                repRangeLow = 12, repRangeHigh = 15
+            )
+        }
+    }
+
     private fun isBlockDeloadWeek(model: ProgressionModel, position: ProgramPosition): Boolean {
         if (model != ProgressionModel.BLOCK) return false
         val blockPhase = (position.week - 1) % 7

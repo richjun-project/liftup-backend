@@ -40,6 +40,12 @@ data class WeeklyVolumeStatus(
     val status: String  // "BELOW_MEV", "ON_TARGET", "ABOVE_MAV"
 )
 
+data class ReadinessScore(
+    val score: Double,  // 0.0 to 1.0 (1.0 = fully ready)
+    val factors: List<String>,  // explanations
+    val intensityMultiplier: Double  // 0.85 to 1.05
+)
+
 data class GeneratedWorkout(
     val programName: String,
     val weekNumber: Int,
@@ -51,5 +57,6 @@ data class GeneratedWorkout(
     val estimatedDuration: Int,
     val exercises: List<ProgramGeneratedExercise>,
     val graduationStatus: GraduationStatusDto? = null,
-    val weeklyVolume: List<WeeklyVolumeStatus> = emptyList()
+    val weeklyVolume: List<WeeklyVolumeStatus> = emptyList(),
+    val readinessScore: ReadinessScore? = null
 )
