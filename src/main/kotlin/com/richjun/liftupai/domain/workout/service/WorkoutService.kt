@@ -11,6 +11,7 @@ import com.richjun.liftupai.domain.workout.repository.*
 import com.richjun.liftupai.domain.workout.util.WorkoutFocus
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -1101,11 +1102,11 @@ class WorkoutService(
         return bodyWeight * baseMultiplier * genderMultiplier
     }
 
-    private fun generateWarmupSets(workingWeight: Double): List<WarmupSet> {
+    private fun generateWarmupSets(workingWeight: Double): List<com.richjun.liftupai.domain.workout.dto.WarmupSet> {
         return listOf(
-            WarmupSet(weight = workingWeight * 0.4, reps = 10),
-            WarmupSet(weight = workingWeight * 0.6, reps = 8),
-            WarmupSet(weight = workingWeight * 0.8, reps = 5)
+            com.richjun.liftupai.domain.workout.dto.WarmupSet(weight = workingWeight * 0.4, reps = 10),
+            com.richjun.liftupai.domain.workout.dto.WarmupSet(weight = workingWeight * 0.6, reps = 8),
+            com.richjun.liftupai.domain.workout.dto.WarmupSet(weight = workingWeight * 0.8, reps = 5)
         )
     }
 
@@ -1150,7 +1151,8 @@ class WorkoutService(
                 .map { WorkoutTargetResolver.displayName(it, locale = "en") }
         } else {
             // 기본값: 푸시/풀 분할
-            val dayOfWeek = LocalDateTime.now().dayOfWeek.value
+            val zoneId = AppTime.resolveZoneId(userSettingsRepository.findByUser_Id(userId).orElse(null)?.timeZone)
+            val dayOfWeek = AppTime.currentUserDate(zoneId).dayOfWeek.value
             when (dayOfWeek % 3) {
                 0 -> listOf(WorkoutFocus.CHEST, WorkoutFocus.ARMS)
                 1 -> listOf(WorkoutFocus.BACK, WorkoutFocus.ARMS)

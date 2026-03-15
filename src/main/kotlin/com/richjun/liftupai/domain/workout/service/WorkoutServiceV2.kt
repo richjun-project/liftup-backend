@@ -19,6 +19,7 @@ import com.richjun.liftupai.domain.workout.util.WorkoutFocus
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.time.AppTime
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -52,6 +53,8 @@ class WorkoutServiceV2(
     private val autoProgramSelector: AutoProgramSelector
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
+    @Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
+    private var exerciseMediaBaseUrl: String = "https://liftup-cdn.com"
 
     private data class RecommendationProgramContext(
         val programDays: Int,
@@ -544,7 +547,7 @@ class WorkoutServiceV2(
         }
 
         // MuscleRecovery 엔티티 업데이트 - 운동한 근육들 기록
-        updateMuscleRecoveryAfterWorkout(session.user, request.exercises)
+        updateMuscleRecoveryAfterWorkout(session.user, request.exercises, completedAt)
 
         // 스트릭 업데이트
         val streak = updateWorkoutStreak(session.user)
@@ -818,8 +821,9 @@ class WorkoutServiceV2(
         val locale = resolveLocale(userId, localeOverride)
 
         val yearMonth = YearMonth.of(year, month)
-        val startDate = yearMonth.atDay(1).atStartOfDay()
-        val endDate = yearMonth.atEndOfMonth().atTime(23, 59, 59)
+        val zoneId = resolveTimeZone(userId)
+        val (startDate, _) = AppTime.utcRangeForLocalDate(yearMonth.atDay(1), zoneId)
+        val (_, endDate) = AppTime.utcRangeForLocalDate(yearMonth.atEndOfMonth(), zoneId)
 
         logger.info("Fetching workout sessions for user ${user.id} from $startDate to $endDate")
 
@@ -832,7 +836,7 @@ class WorkoutServiceV2(
 
         val calendarDays = (1..yearMonth.lengthOfMonth()).map { day ->
             val date = LocalDate.of(year, month, day)
-            val daySessions = sessions.filter { it.startTime.toLocalDate() == date }
+            val daySessions = sessions.filter { AppTime.toUserLocalDate(it.startTime, zoneId) == date }
 
             if (daySessions.isNotEmpty()) {
                 println("DEBUG getWorkoutCalendar: Date $date has ${daySessions.size} sessions")
@@ -860,7 +864,7 @@ class WorkoutServiceV2(
         } else 0.0
 
         val mostFrequentDay = sessions
-            .groupBy { it.startTime.dayOfWeek }
+            .groupBy { AppTime.toUserLocalDate(it.startTime, zoneId).dayOfWeek }
             .maxByOrNull { it.value.size }
             ?.key
             ?.let { WorkoutLocalization.message("day.${it.name.lowercase()}", locale) }
@@ -2283,15 +2287,19 @@ class WorkoutServiceV2(
     }
 
     private fun generateGifUrl(exercise: Exercise): String {
-        return "https://liftup-cdn.com/exercises/${exercise.id}/animation.gif"
+        return buildExerciseMediaUrl(exercise, "animation.gif")
     }
 
     private fun generateThumbnailUrl(exercise: Exercise): String {
-        return "https://liftup-cdn.com/exercises/${exercise.id}/thumb.jpg"
+        return buildExerciseMediaUrl(exercise, "thumb.jpg")
     }
 
     private fun generateVideoUrl(exercise: Exercise): String {
-        return "https://liftup-cdn.com/exercises/${exercise.id}/video.mp4"
+        return buildExerciseMediaUrl(exercise, "video.mp4")
+    }
+
+    private fun buildExerciseMediaUrl(exercise: Exercise, fileName: String): String {
+        return "${exerciseMediaBaseUrl.trimEnd('/')}/exercises/${exercise.slug}/$fileName"
     }
 
     private fun generateInstructions(exercise: Exercise, locale: String): List<String> {
@@ -2608,9 +2616,10 @@ class WorkoutServiceV2(
      */
     private fun updateMuscleRecoveryAfterWorkout(
         user: com.richjun.liftupai.domain.auth.entity.User,
-        completedExercises: List<CompletedExerciseV2>
+        completedExercises: List<CompletedExerciseV2>,
+        completedAt: LocalDateTime
     ) {
-        val now = LocalDateTime.now()
+        val now = completedAt
         val muscleGroupsWorked = mutableSetOf<String>()
 
         // 완료된 운동들에서 근육 그룹 추출

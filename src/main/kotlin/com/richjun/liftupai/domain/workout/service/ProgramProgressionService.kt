@@ -16,6 +16,7 @@ import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.domain.workout.util.WorkoutFocus
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -133,7 +134,7 @@ class ProgramProgressionService(
 
         val recoveryByFocus = mutableMapOf<WorkoutFocus, MuscleRecoveryStatusProgression>()
 
-        val now = LocalDateTime.now()
+        val now = AppTime.utcNow()
 
         // 근육군별 마지막 운동 시간 계산
         val muscleLastWorkout = mutableMapOf<WorkoutFocus, LocalDateTime>()
@@ -221,7 +222,7 @@ class ProgramProgressionService(
         }
 
         val programStartDate = findProgramStartDate(recentSessions)
-        val weeksOnProgram = ChronoUnit.WEEKS.between(programStartDate, LocalDateTime.now()).toInt()
+        val weeksOnProgram = ChronoUnit.WEEKS.between(programStartDate, AppTime.utcNow()).toInt()
         val plateauDetected = detectPlateau(recentSessions)
         val goalProgress = calculateGoalProgress(profile, recentSessions)
 
@@ -308,7 +309,7 @@ class ProgramProgressionService(
         val weeksAnalyzed = 4
         val expectedWorkouts = targetDaysPerWeek * weeksAnalyzed
 
-        val fourWeeksAgo = LocalDateTime.now().minusWeeks(weeksAnalyzed.toLong())
+        val fourWeeksAgo = AppTime.utcNow().minusWeeks(weeksAnalyzed.toLong())
         val recentWorkouts = sessions.filter { it.startTime.isAfter(fourWeeksAgo) }.size
 
         return (recentWorkouts.toDouble() / expectedWorkouts * 100).coerceAtMost(100.0)
@@ -316,7 +317,7 @@ class ProgramProgressionService(
 
     private fun analyzeRecoveryStatus(sessions: List<WorkoutSession>): RecoveryStatus {
         val lastWeekSessions = sessions.filter {
-            it.startTime.isAfter(LocalDateTime.now().minusWeeks(1))
+            it.startTime.isAfter(AppTime.utcNow().minusWeeks(1))
         }
 
         val intensity = if (lastWeekSessions.size >= 5) {
@@ -585,7 +586,7 @@ class ProgramProgressionService(
 
     private fun checkDeloadNeed(sessions: List<WorkoutSession>): Boolean {
         val twoWeeksSessions = sessions.filter {
-            it.startTime.isAfter(LocalDateTime.now().minusWeeks(2))
+            it.startTime.isAfter(AppTime.utcNow().minusWeeks(2))
         }
 
         // 2주간 8회 이상 운동했으면 디로드 필요
@@ -594,7 +595,7 @@ class ProgramProgressionService(
 
     private fun generateDeloadReason(sessions: List<WorkoutSession>, locale: String): String {
         val recentCount = sessions.filter {
-            it.startTime.isAfter(LocalDateTime.now().minusWeeks(2))
+            it.startTime.isAfter(AppTime.utcNow().minusWeeks(2))
         }.size
 
         return WorkoutLocalization.message("progression.deload.reason", locale, recentCount)
@@ -613,7 +614,7 @@ class ProgramProgressionService(
         // 프로그램 사이클 1, 일차 1인 세션 찾기
         return sessions
             .filter { it.programCycle == 1 && it.programDay == 1 }
-            .lastOrNull()?.startTime ?: sessions.lastOrNull()?.startTime ?: LocalDateTime.now()
+            .lastOrNull()?.startTime ?: sessions.lastOrNull()?.startTime ?: AppTime.utcNow()
     }
 
     private fun detectPlateau(sessions: List<WorkoutSession>): Boolean {
@@ -636,7 +637,7 @@ class ProgramProgressionService(
         if (profile == null || sessions.isEmpty()) return 0
 
         val targetWorkoutsPerWeek = profile.weeklyWorkoutDays ?: 3
-        val fourWeeksAgo = LocalDateTime.now().minusWeeks(4)
+        val fourWeeksAgo = AppTime.utcNow().minusWeeks(4)
         val recentSessions = sessions.filter { it.startTime.isAfter(fourWeeksAgo) }
 
         val actualWorkoutsPerWeek = recentSessions.size.toDouble() / 4

@@ -13,6 +13,7 @@ import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -69,7 +70,7 @@ class RecoveryService(
                 MuscleRecovery(
                     user = user,
                     muscleGroup = muscleKey,
-                    lastWorked = LocalDateTime.now()
+                    lastWorked = AppTime.utcNow()
                 )
             }
 
@@ -80,7 +81,7 @@ class RecoveryService(
             request.feelingScore,
             request.soreness
         )
-        muscleRecovery.updatedAt = LocalDateTime.now()
+        muscleRecovery.updatedAt = AppTime.utcNow()
 
         val saved = muscleRecoveryRepository.save(muscleRecovery)
 
@@ -119,13 +120,13 @@ class RecoveryService(
                 MuscleRecovery(
                     user = user,
                     muscleGroup = muscleKey,
-                    lastWorked = LocalDateTime.now()
+                    lastWorked = AppTime.utcNow()
                 )
             }
 
-        muscleRecovery.lastWorked = LocalDateTime.now()
+        muscleRecovery.lastWorked = AppTime.utcNow()
         muscleRecovery.recoveryPercentage = 0
-        muscleRecovery.updatedAt = LocalDateTime.now()
+        muscleRecovery.updatedAt = AppTime.utcNow()
 
         muscleRecoveryRepository.save(muscleRecovery)
     }
@@ -154,7 +155,7 @@ class RecoveryService(
     private fun updateRecoveryPercentages(user: com.richjun.liftupai.domain.auth.entity.User) {
         val muscles = muscleRecoveryRepository.findByUser(user)
         muscles.forEach { muscle ->
-            val hoursSinceWorkout = ChronoUnit.HOURS.between(muscle.lastWorked, LocalDateTime.now())
+            val hoursSinceWorkout = ChronoUnit.HOURS.between(muscle.lastWorked, AppTime.utcNow())
             val baseRecovery = calculateBaseRecovery(hoursSinceWorkout)
             val adjustedRecovery = adjustRecoveryBySoreness(baseRecovery, muscle.soreness)
 
@@ -178,7 +179,7 @@ class RecoveryService(
     }
 
     private fun calculateRecoveryPercentage(lastWorked: LocalDateTime, feelingScore: Int, soreness: Int): Int {
-        val hoursSinceWorkout = ChronoUnit.HOURS.between(lastWorked, LocalDateTime.now())
+        val hoursSinceWorkout = ChronoUnit.HOURS.between(lastWorked, AppTime.utcNow())
         val baseRecovery = calculateBaseRecovery(hoursSinceWorkout)
 
         val feelingMultiplier = feelingScore / 10.0
@@ -294,7 +295,7 @@ class RecoveryService(
 
         val newRecoveryPercentage = (recovery.recoveryPercentage + boostPercentage).coerceIn(0, 100)
         recovery.recoveryPercentage = newRecoveryPercentage
-        recovery.updatedAt = LocalDateTime.now()
+        recovery.updatedAt = AppTime.utcNow()
 
         muscleRecoveryRepository.save(recovery)
         logger.info("Boosted recovery for $muscleKey by $boostPercentage% for user $userId")

@@ -12,6 +12,7 @@ import com.richjun.liftupai.domain.chat.entity.MessageType
 import com.richjun.liftupai.domain.chat.entity.MessageStatus
 import com.richjun.liftupai.domain.chat.repository.ChatMessageRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import com.richjun.liftupai.domain.upload.service.FileUploadService
 import com.richjun.liftupai.domain.upload.dto.ImageUploadResponse
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
@@ -120,12 +121,12 @@ class NutritionService(
         val aiResponse = geminiAIService.analyzeMealImage(request.imageUrl, user)
 
         // AI 응답 파싱
-        val response = parseMealAnalysisResponse(aiResponse, locale)
+        val response = parseMealAnalysisResponse(aiResponse, locale, userId)
 
         // 분석 결과를 DB에 저장
         val mealLog = MealLog(
             user = user,
-            mealType = determineMealType(),
+            mealType = determineMealType(userId),
             foods = response.mealInfo.ingredients.joinToString(", "),
             calories = response.calories,
             protein = response.macros.protein,
@@ -226,7 +227,7 @@ class NutritionService(
         """.trimIndent()
     }
 
-    private fun parseMealAnalysisResponse(aiResponse: String, locale: String): MealAnalysisResponse {
+    private fun parseMealAnalysisResponse(aiResponse: String, locale: String, userId: Long): MealAnalysisResponse {
         return try {
             // JSON 응답 파싱
             val cleanedResponse = aiResponse
@@ -259,7 +260,7 @@ class NutritionService(
                     name = mealName,
                     ingredients = ingredients,
                     portion = portion,
-                    type = determineMealTypeString(locale)
+                    type = determineMealTypeString(locale, userId)
                 ),
                 calories = calories,
                 macros = Macros(protein, carbs, fat),
@@ -305,9 +306,10 @@ class NutritionService(
         }
     }
 
-    private fun determineMealTypeString(locale: String): String {
-        val hour = LocalDateTime.now().hour
-        return when (hour) {
+    private fun determineMealTypeString(locale: String, userId: Long): String {
+        val zoneId = AppTime.resolveZoneId(userSettingsRepository.findByUser_Id(userId).orElse(null)?.timeZone)
+        val localHour = AppTime.toUserLocalDateTime(AppTime.utcNow(), zoneId).hour
+        return when (localHour) {
             in 5..10 -> AILocalization.message("nutrition.meal_type.breakfast", locale)
             in 11..14 -> AILocalization.message("nutrition.meal_type.lunch", locale)
             in 17..21 -> AILocalization.message("nutrition.meal_type.dinner", locale)
@@ -525,9 +527,10 @@ class NutritionService(
         return AILocalization.normalizeLocale(language)
     }
 
-    private fun determineMealType(): MealType {
-        val hour = LocalDateTime.now().hour
-        return when (hour) {
+    private fun determineMealType(userId: Long): MealType {
+        val zoneId = AppTime.resolveZoneId(userSettingsRepository.findByUser_Id(userId).orElse(null)?.timeZone)
+        val localHour = AppTime.toUserLocalDateTime(AppTime.utcNow(), zoneId).hour
+        return when (localHour) {
             in 5..10 -> MealType.BREAKFAST
             in 11..14 -> MealType.LUNCH
             in 17..21 -> MealType.DINNER

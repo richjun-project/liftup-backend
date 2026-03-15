@@ -1,9 +1,9 @@
 package com.richjun.liftupai.domain.workout.service
 
 import com.richjun.liftupai.domain.workout.entity.UserProgramEnrollment
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 
 data class AbsenceStatus(
@@ -20,7 +20,7 @@ class AbsenceDetectionService {
 
     fun checkAbsence(enrollment: UserProgramEnrollment): AbsenceStatus {
         val lastActive = enrollment.lastActiveDate ?: enrollment.startDate
-        val now = LocalDateTime.now()
+        val now = AppTime.utcNow()
         val daysAbsent = ChronoUnit.DAYS.between(lastActive, now).toInt()
 
         return when {

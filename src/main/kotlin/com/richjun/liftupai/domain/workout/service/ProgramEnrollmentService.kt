@@ -6,10 +6,10 @@ import com.richjun.liftupai.domain.workout.entity.UserProgramEnrollment
 import com.richjun.liftupai.domain.workout.repository.CanonicalProgramRepository
 import com.richjun.liftupai.domain.workout.repository.UserProgramEnrollmentRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 
 data class ProgramPosition(
     val week: Int,
@@ -33,7 +33,7 @@ class ProgramEnrollmentService(
             .findFirstByUserAndStatusOrderByStartDateDesc(user, EnrollmentStatus.ACTIVE)
         existing?.let {
             it.status = EnrollmentStatus.ABANDONED
-            it.endDate = LocalDateTime.now()
+            it.endDate = AppTime.utcNow()
             userProgramEnrollmentRepository.save(it)
             logger.info("Abandoned previous enrollment id={} for user={}", it.id, user.id)
         }
@@ -45,7 +45,7 @@ class ProgramEnrollmentService(
             user = user,
             program = program,
             programVersion = program.version,
-            startDate = LocalDateTime.now(),
+            startDate = AppTime.utcNow(),
             status = EnrollmentStatus.ACTIVE
         )
         val saved = userProgramEnrollmentRepository.save(enrollment)
@@ -87,7 +87,7 @@ class ProgramEnrollmentService(
 
     fun completeWorkout(enrollment: UserProgramEnrollment) {
         enrollment.totalCompletedWorkouts++
-        enrollment.lastActiveDate = LocalDateTime.now()
+        enrollment.lastActiveDate = AppTime.utcNow()
         userProgramEnrollmentRepository.save(enrollment)
         logger.debug(
             "Completed workout for enrollment={}, total={}",
@@ -107,7 +107,7 @@ class ProgramEnrollmentService(
             .findFirstByUserAndStatusOrderByStartDateDesc(user, EnrollmentStatus.PAUSED)
             ?: throw ResourceNotFoundException("No paused enrollment found for user: ${user.id}")
         enrollment.status = EnrollmentStatus.ACTIVE
-        enrollment.lastActiveDate = LocalDateTime.now()
+        enrollment.lastActiveDate = AppTime.utcNow()
         userProgramEnrollmentRepository.save(enrollment)
     }
 
@@ -115,7 +115,7 @@ class ProgramEnrollmentService(
         val enrollment = getCurrentEnrollment(user)
             ?: throw ResourceNotFoundException("No active enrollment found for user: ${user.id}")
         enrollment.status = EnrollmentStatus.ABANDONED
-        enrollment.endDate = LocalDateTime.now()
+        enrollment.endDate = AppTime.utcNow()
         userProgramEnrollmentRepository.save(enrollment)
     }
 
