@@ -43,13 +43,13 @@ data class ProgramExerciseDetail(
     val exerciseId: Long,
     val name: String,
     val order: Int,
-    val isCompound: Boolean,
+    @com.fasterxml.jackson.annotation.JsonProperty("is_compound") val isCompound: Boolean,
     val sets: Int,
     val minReps: Int,
     val maxReps: Int,
     val restSeconds: Int,
     val targetRPE: Double,
-    val isOptional: Boolean,
+    @com.fasterxml.jackson.annotation.JsonProperty("is_optional") val isOptional: Boolean,
     val notes: String?
 )
 
@@ -69,7 +69,7 @@ data class EnrollmentStatusResponse(
     val currentWeek: Int,
     val currentDay: Int,
     val totalCompletedWorkouts: Int,
-    val isDeloadWeek: Boolean,
+    @com.fasterxml.jackson.annotation.JsonProperty("is_deload_week") val isDeloadWeek: Boolean,
     val status: String,
     val startDate: String,
     val lastActiveDate: String?
@@ -80,7 +80,7 @@ data class TodayWorkoutResponse(
     val weekNumber: Int,
     val dayNumber: Int,
     val dayName: String,
-    val isDeloadWeek: Boolean,
+    @com.fasterxml.jackson.annotation.JsonProperty("is_deload_week") val isDeloadWeek: Boolean,
     val periodizationPhase: String,
     val workoutType: String,
     val estimatedDuration: Int,
@@ -99,7 +99,7 @@ data class TodayExerciseResponse(
     val restSeconds: Int,
     val suggestedWeight: Double?,
     val targetRPE: Double,
-    val isCompound: Boolean,
+    @com.fasterxml.jackson.annotation.JsonProperty("is_compound") val isCompound: Boolean,
     val warmupSets: List<WarmupSetResponse>,
     val substitutes: List<SubstituteResponse>
 )
@@ -123,7 +123,7 @@ data class ReadinessScoreDto(
 data class WeeklyScheduleResponse(
     val programName: String,
     val currentWeek: Int,
-    val isDeloadWeek: Boolean,
+    @com.fasterxml.jackson.annotation.JsonProperty("is_deload_week") val isDeloadWeek: Boolean,
     val days: List<ScheduleDayResponse>
 )
 
@@ -131,8 +131,8 @@ data class ScheduleDayResponse(
     val dayNumber: Int,
     val name: String,
     val workoutType: String,
-    val isCompleted: Boolean,
-    val isToday: Boolean
+    @com.fasterxml.jackson.annotation.JsonProperty("is_completed") val isCompleted: Boolean,
+    @com.fasterxml.jackson.annotation.JsonProperty("is_today") val isToday: Boolean
 )
 
 data class ExerciseOverrideRequest(
