@@ -49,7 +49,7 @@ class ProgramProgressiveOverloadService(
             if (estimatedMaxes != null) {
                 try {
                     val maxesMap = objectMapper.readValue<Map<String, Double>>(estimatedMaxes)
-                    val exerciseKey = exercise.slug.replace("-", "_")
+                    val exerciseKey = exercise.slug
                     val est1RM = maxesMap[exerciseKey]
                         ?: maxesMap.entries.firstOrNull { exerciseKey.contains(it.key) || it.key.contains(exerciseKey) }?.value
                     if (est1RM != null && est1RM > 0) {

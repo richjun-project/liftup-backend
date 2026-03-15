@@ -23,7 +23,7 @@ class UserProgramEnrollment(
     val programVersion: Int,
 
     @Column(nullable = false)
-    val startDate: LocalDateTime = LocalDateTime.now(),
+    val startDate: LocalDateTime,
 
     @Column(nullable = false)
     var totalCompletedWorkouts: Int = 0,
