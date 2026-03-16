@@ -52,7 +52,13 @@ class User(
     var emailVerified: Boolean = false,
 
     @Column(name = "deleted_at")
-    var deletedAt: LocalDateTime? = null
+    var deletedAt: LocalDateTime? = null,
+
+    @Column(name = "oauth_provider")
+    var oauthProvider: String? = null,
+
+    @Column(name = "oauth_id")
+    var oauthId: String? = null
 )
 
 enum class UserLevel {

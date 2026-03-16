@@ -25,6 +25,8 @@ app:
     mode: ${APP_EXERCISE_CATALOG_MODE:if_empty}
     resource: ${APP_EXERCISE_CATALOG_RESOURCE:catalog/exercise-catalog.json}
     exit-after-bootstrap: ${APP_EXERCISE_CATALOG_EXIT_AFTER_BOOTSTRAP:false}
+  exercise-media:
+    base-url: ${APP_EXERCISE_MEDIA_BASE_URL:https://dearglobe.s3.ap-northeast-2.amazonaws.com/liftupai}
 
 # JWT 설정
 jwt:
@@ -38,6 +40,15 @@ gemini:
   model: gemini-2.0-flash-lite
   max-tokens: 2048
   temperature: 0.7
+
+# OAuth2 소셜 로그인 설정
+oauth:
+  google:
+    client-id: ${OAUTH_GOOGLE_CLIENT_ID:NOT_SET}
+  apple:
+    client-id: ${OAUTH_APPLE_CLIENT_ID:NOT_SET}
+  kakao:
+    rest-api-key: ${OAUTH_KAKAO_REST_API_KEY:NOT_SET}
 
 # AWS S3 설정
 cloud:

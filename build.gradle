@@ -84,4 +84,8 @@ dependencies {
 
     // Firebase Admin SDK for FCM
     implementation 'com.google.firebase:firebase-admin:9.2.0'
+
+    // OAuth2 token verification
+    implementation 'com.google.api-client:google-api-client:2.2.0'
+    implementation 'com.google.http-client:google-http-client-jackson2:1.43.3'
 }

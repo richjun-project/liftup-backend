@@ -30,4 +30,6 @@ interface UserRepository : JpaRepository<User, Long> {
     fun findByDeviceIdWithProfile(deviceId: String): Optional<User>
 
     fun existsByDeviceId(deviceId: String): Boolean
+
+    fun findByOauthProviderAndOauthId(oauthProvider: String, oauthId: String): Optional<User>
 }

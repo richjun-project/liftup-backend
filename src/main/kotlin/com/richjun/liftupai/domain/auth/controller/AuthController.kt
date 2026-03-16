@@ -2,6 +2,7 @@ package com.richjun.liftupai.domain.auth.controller
 
 import com.richjun.liftupai.domain.auth.dto.*
 import com.richjun.liftupai.domain.auth.service.AuthService
+import com.richjun.liftupai.domain.auth.service.OAuthService
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.security.CustomUserDetails
 import jakarta.validation.Valid
@@ -13,7 +14,8 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/auth")
 class AuthController(
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val oAuthService: OAuthService
 ) {
 
     @PostMapping("/register")
@@ -105,5 +107,23 @@ class AuthController(
         // LoginRequest를 재사용하여 이메일과 비밀번호를 받음
         val result = authService.reactivateAccount(request.email, request.password)
         return ResponseEntity.ok(ApiResponse.success(result))
+    }
+
+    @PostMapping("/oauth/google")
+    fun loginWithGoogle(@RequestBody request: GoogleLoginRequest): ResponseEntity<ApiResponse<OAuthResponse>> {
+        val response = oAuthService.loginWithGoogle(request)
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
+    @PostMapping("/oauth/apple")
+    fun loginWithApple(@RequestBody request: AppleLoginRequest): ResponseEntity<ApiResponse<OAuthResponse>> {
+        val response = oAuthService.loginWithApple(request)
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
+    @PostMapping("/oauth/kakao")
+    fun loginWithKakao(@RequestBody request: KakaoLoginRequest): ResponseEntity<ApiResponse<OAuthResponse>> {
+        val response = oAuthService.loginWithKakao(request)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 }

@@ -50,6 +50,7 @@ class SecurityConfig(
                         "/api/auth/device/check",
                         "/api/auth/check-device",
                         "/api/auth/reactivate",
+                        "/api/auth/oauth/**",
                         "/api/version/check",
                         "/api/version/history",
                         "/api/exercises/**",
