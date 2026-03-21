@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.notification.service
 
+import com.richjun.liftupai.domain.notification.entity.NotificationType
 import com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository
 import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
@@ -20,7 +21,9 @@ class NotificationSchedulerService(
     fun processScheduledNotifications() {
         try {
             val currentTime = AppTime.utcNow()
+            // AI_MESSAGE는 PTMessageScheduler가 처리하므로 제외
             val schedulesToTrigger = notificationScheduleRepository.findSchedulesToTrigger(currentTime)
+                .filter { it.notificationType != NotificationType.AI_MESSAGE }
 
             if (schedulesToTrigger.isNotEmpty()) {
                 logger.info("Found ${schedulesToTrigger.size} notifications to send at $currentTime")
@@ -40,9 +43,10 @@ class NotificationSchedulerService(
     }
 
     /**
-     * 매일 자정에 실행되어 다음날의 알림 스케줄을 업데이트합니다.
+     * 4시간마다 실행하여 모든 타임존의 알림 스케줄을 업데이트합니다.
+     * UTC 자정 1회가 아닌 주기적 실행으로 글로벌 타임존을 지원합니다.
      */
-    @Scheduled(cron = "0 0 0 * * *") // 매일 자정
+    @Scheduled(fixedRate = 14400000) // 4시간마다 (4 * 60 * 60 * 1000)
     fun updateNextTriggerTimes() {
         try {
             logger.info("Updating next trigger times for all active schedules")

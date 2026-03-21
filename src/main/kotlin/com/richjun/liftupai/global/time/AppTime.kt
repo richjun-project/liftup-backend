@@ -81,6 +81,18 @@ object AppTime {
         return toUtc(localDateTime, userZoneId)
     }
 
+    val UTC_ZONE: ZoneId = ZoneId.of("UTC")
+
     const val DEFAULT_TIME_ZONE: String = "Asia/Seoul"
     val DEFAULT_USER_ZONE: ZoneId = ZoneId.of(DEFAULT_TIME_ZONE)
+
+    fun isValidTimeZone(timeZone: String?): Boolean {
+        if (timeZone.isNullOrBlank()) return false
+        return try {
+            ZoneId.of(timeZone.trim())
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
 }

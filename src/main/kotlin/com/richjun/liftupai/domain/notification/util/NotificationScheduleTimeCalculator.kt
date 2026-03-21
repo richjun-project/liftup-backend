@@ -18,18 +18,25 @@ object NotificationScheduleTimeCalculator {
         val todayTime = now.toLocalTime()
         val javaDays = days.map(::toJavaDayOfWeek).toSet()
 
+        // 오늘이 대상 요일이고 아직 시간이 안 지났으면 오늘 발송
         if (javaDays.contains(today) && !todayTime.isAfter(time)) {
-            return AppTime.toUtc(now.toLocalDate().atTime(time), zoneId)
+            // ZonedDateTime 산술로 DST gap/overlap 자동 처리
+            val target = now.with(time)
+            return target.withZoneSameInstant(AppTime.UTC_ZONE).toLocalDateTime()
         }
 
+        // 다음 대상 요일 찾기
         for (offset in 1..7) {
             val nextDay = today.plus(offset.toLong())
             if (javaDays.contains(nextDay)) {
-                return AppTime.toUtc(now.toLocalDate().plusDays(offset.toLong()).atTime(time), zoneId)
+                val target = now.plusDays(offset.toLong()).with(time)
+                return target.withZoneSameInstant(AppTime.UTC_ZONE).toLocalDateTime()
             }
         }
 
-        return AppTime.toUtc(now.toLocalDate().plusDays(1).atTime(time), zoneId)
+        // 폴백: 내일 같은 시간
+        val target = now.plusDays(1).with(time)
+        return target.withZoneSameInstant(AppTime.UTC_ZONE).toLocalDateTime()
     }
 
     private fun toJavaDayOfWeek(day: DayOfWeek): java.time.DayOfWeek {

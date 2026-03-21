@@ -20,6 +20,9 @@ import com.richjun.liftupai.domain.workout.util.WorkoutFocus
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.time.AppTime
+import com.richjun.liftupai.domain.notification.dto.PushNotificationRequest
+import com.richjun.liftupai.domain.notification.service.NotificationService
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -52,7 +55,10 @@ class WorkoutServiceV2(
     private val exerciseRecommendationService: ExerciseRecommendationService,
     private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService,
     private val autoProgramSelector: AutoProgramSelector,
-    private val userProgramEnrollmentRepository: UserProgramEnrollmentRepository
+    private val userProgramEnrollmentRepository: UserProgramEnrollmentRepository,
+    private val programProgressiveOverloadService: ProgramProgressiveOverloadService,
+    @Autowired(required = false)
+    private val notificationService: NotificationService?
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     @Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
@@ -576,6 +582,23 @@ class WorkoutServiceV2(
 
         // 통계 계산
         val stats = calculateWorkoutStats(session.user)
+
+        // FCM 운동 완료 알림 발송
+        try {
+            val prText = if (personalRecords.isNotEmpty()) {
+                " 🏆 ${personalRecords.size}개 개인 기록 달성!"
+            } else ""
+            notificationService?.sendPushNotification(
+                PushNotificationRequest(
+                    userId = userId,
+                    title = "운동 완료!",
+                    body = "${normalizedDuration}분, ${totalSets}세트, ${String.format("%.0f", totalVolume)}kg$prText",
+                    data = mapOf("type" to "workout_complete", "sessionId" to sessionId.toString())
+                )
+            )
+        } catch (e: Exception) {
+            logger.error("Failed to send workout completion notification for user $userId", e)
+        }
 
         return CompleteWorkoutResponseV2(
             success = true,
@@ -1118,34 +1141,21 @@ class WorkoutServiceV2(
 
         // Create quick exercise details
         val quickExercises = exercises.take(targetExerciseCount).mapIndexed { index, exercise ->
-            // Calculate suggested weight for each exercise
-            val suggestedWeight = calculateSuggestedWeight(user, exercise)
+            // PT 시스템으로 세트/렙/무게/휴식 전부 계산
+            val ptRec = try {
+                calculateFullPTRecommendation(user, exercise)
+            } catch (e: Exception) {
+                null
+            }
 
             QuickExerciseDetail(
                 exerciseId = exercise.id.toString(),
                 name = localizedName(exercise, locale, translations),
-                sets = when (exercise.category) {
-                    ExerciseCategory.CHEST, ExerciseCategory.BACK -> 3
-                    ExerciseCategory.LEGS -> 4
-                    ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS -> 3
-                    ExerciseCategory.CORE -> 2
-                    else -> 3
-                },
-                reps = when (exercise.category) {
-                    ExerciseCategory.CHEST, ExerciseCategory.BACK -> "8-12"
-                    ExerciseCategory.LEGS -> "12-15"
-                    ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS -> "10-12"
-                    ExerciseCategory.CORE -> "15-20"
-                    else -> "10-12"
-                },
-                rest = when (exercise.category) {
-                    ExerciseCategory.CHEST, ExerciseCategory.BACK, ExerciseCategory.LEGS -> 90
-                    ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS -> 60
-                    ExerciseCategory.CORE -> 45
-                    else -> 60
-                },
+                sets = ptRec?.sets ?: 3,
+                reps = ptRec?.reps ?: "10-12",
+                rest = ptRec?.restSeconds ?: 60,
                 order = index + 1,
-                suggestedWeight = suggestedWeight
+                suggestedWeight = ptRec?.weight ?: try { calculateSuggestedWeight(user, exercise) } catch (e: Exception) { 0.0 }
             )
         }
 
@@ -1337,6 +1347,74 @@ class WorkoutServiceV2(
     }
 
     /**
+     * 전체 PT 추천 데이터 반환 (세트/렙/휴식/무게 포함)
+     * AI 추천 파이프라인에서 Gemini 대신 사용
+     */
+    fun calculateFullPTRecommendation(
+        user: com.richjun.liftupai.domain.auth.entity.User,
+        exercise: Exercise
+    ): PTRecommendation {
+        val logger = LoggerFactory.getLogger(this::class.java)
+        val locale = resolveLocale(user.id)
+
+        val userProfile = userProfileRepository.findByUser_Id(user.id).orElse(null)
+        val bodyWeight = userProfile?.bodyInfo?.weight ?: 70.0
+        val gender = userProfile?.gender?.lowercase() ?: "male"
+        val experienceLevel = userProfile?.experienceLevel ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
+
+        val recentSessions = getRecentWorkoutHistory(user, exercise, 28)
+        val personalRecord = personalRecordRepository.findTopByUserAndExerciseOrderByWeightDesc(user, exercise)
+
+        // 프로그램 등록자이면 프로그램의 주기화 모델로 phase 결정
+        val activeEnrollment = userProgramEnrollmentRepository
+            .findFirstByUserAndStatusOrderByStartDateDesc(user, EnrollmentStatus.ACTIVE)
+
+        val programPhaseOverride: PeriodizationPhase? = if (activeEnrollment != null) {
+            val program = activeEnrollment.program
+            val totalCompleted = activeEnrollment.totalCompletedWorkouts
+            val programDays = program.daysPerWeek.coerceAtLeast(1)
+            val currentWeek = (totalCompleted / programDays) + 1
+
+            when (program.progressionModel) {
+                ProgressionModel.BLOCK -> {
+                    val blockPhase = (currentWeek - 1) % 7
+                    when (blockPhase) {
+                        0, 1 -> PeriodizationPhase.ACCUMULATION
+                        2, 3 -> PeriodizationPhase.INTENSIFICATION
+                        4, 5 -> PeriodizationPhase.REALIZATION
+                        else -> PeriodizationPhase.DELOAD
+                    }
+                }
+                ProgressionModel.UNDULATING -> {
+                    // Undulating: 주 단위 강도 변화, 4주 후 deload
+                    if (currentWeek % 4 == 0L.toInt()) PeriodizationPhase.DELOAD
+                    else PeriodizationPhase.ACCUMULATION // 일별 변화는 운동 내에서 처리
+                }
+                ProgressionModel.LINEAR -> {
+                    // Linear: 3주 진행 + 1주 deload
+                    when ((currentWeek - 1) % 4) {
+                        0, 1 -> PeriodizationPhase.ACCUMULATION
+                        2 -> PeriodizationPhase.INTENSIFICATION
+                        else -> PeriodizationPhase.DELOAD
+                    }
+                }
+            }
+        } else null
+
+        return calculateAdvancedPTRecommendation(
+            user = user,
+            exercise = exercise,
+            bodyWeight = bodyWeight,
+            gender = gender,
+            experienceLevel = experienceLevel,
+            personalRecord = personalRecord,
+            recentHistory = recentSessions,
+            locale = locale,
+            programPhaseOverride = programPhaseOverride
+        )
+    }
+
+    /**
      * 10년차 PT의 고급 추천 시스템
      * RPE, 피로도, 회복, 주기화를 모두 고려한 정교한 시스템
      */
@@ -1348,7 +1426,8 @@ class WorkoutServiceV2(
         experienceLevel: com.richjun.liftupai.domain.user.entity.ExperienceLevel,
         personalRecord: com.richjun.liftupai.domain.workout.entity.PersonalRecord?,
         recentHistory: List<WorkoutData>,
-        locale: String
+        locale: String,
+        programPhaseOverride: PeriodizationPhase? = null
     ): PTRecommendation {
 
         // 1. 기본 무게 계산
@@ -1360,8 +1439,8 @@ class WorkoutServiceV2(
         // 3. 피로도 및 회복 상태 평가
         val recoveryStatus = assessRecoveryStatus(user, exercise, recentHistory)
 
-        // 4. 주기화 단계 결정 (메소사이클)
-        val periodizationPhase = determinePeriodizationPhase(user, recentHistory)
+        // 4. 주기화 단계 결정 — 프로그램 등록자는 프로그램 phase 사용
+        val periodizationPhase = programPhaseOverride ?: determinePeriodizationPhase(user, recentHistory)
 
         // 5. 점진적 과부하 계획
         val progressionPlan = calculateProgressiveOverload(
@@ -1534,7 +1613,7 @@ class WorkoutServiceV2(
         locale: String
     ): ProgressionPlan {
 
-        val lastWeight = recentHistory.lastOrNull()?.weight ?: baseWeight
+        val lastWeight = recentHistory.firstOrNull()?.weight ?: baseWeight
         // prWeight가 0이 되지 않도록 보장
         val prWeight = (personalRecord?.weight ?: lastWeight * 1.2).takeIf { it > 0 } ?: baseWeight.takeIf { it > 0 } ?: 10.0
 
@@ -1683,9 +1762,10 @@ class WorkoutServiceV2(
 
         val experienceMultiplier = when (experienceLevel) {
             com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER -> 0.5
+            com.richjun.liftupai.domain.user.entity.ExperienceLevel.NOVICE -> 0.6
             com.richjun.liftupai.domain.user.entity.ExperienceLevel.INTERMEDIATE -> 0.75
             com.richjun.liftupai.domain.user.entity.ExperienceLevel.ADVANCED -> 1.0
-            else -> 0.6
+            com.richjun.liftupai.domain.user.entity.ExperienceLevel.EXPERT -> 1.1
         }
 
         val baseWeight = getExerciseBaseWeight(exercise, bodyWeight)

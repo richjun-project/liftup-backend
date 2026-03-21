@@ -1,10 +1,6 @@
 package com.richjun.liftupai.domain.notification.service
 
 import com.richjun.liftupai.domain.auth.repository.UserRepository
-import com.richjun.liftupai.domain.chat.entity.ChatMessage
-import com.richjun.liftupai.domain.chat.entity.MessageStatus
-import com.richjun.liftupai.domain.chat.entity.MessageType
-import com.richjun.liftupai.domain.chat.repository.ChatMessageRepository
 import com.richjun.liftupai.domain.notification.dto.*
 import com.richjun.liftupai.domain.notification.entity.DevicePlatform
 import com.richjun.liftupai.domain.notification.entity.NotificationDevice
@@ -40,7 +36,6 @@ class NotificationService(
     private val notificationSettingsRepository: NotificationSettingsRepository,
     private val notificationScheduleRepository: NotificationScheduleRepository,
     private val notificationHistoryRepository: NotificationHistoryRepository,
-    private val chatMessageRepository: ChatMessageRepository,
     @Autowired(required = false)
     private val fcmNotificationService: FcmNotificationService?
 ) {
@@ -427,17 +422,7 @@ class NotificationService(
 
         notificationHistoryRepository.save(history)
 
-        // Save to chat history as well - AI 메시지인 경우 채팅 히스토리에도 저장
-        if (schedule.notificationType == NotificationType.AI_MESSAGE) {
-            val chatMessage = ChatMessage(
-                user = schedule.user,
-                userMessage = NotificationLocalization.message("notification.chat.system_message", locale),
-                aiResponse = schedule.message,
-                messageType = MessageType.TEXT,
-                status = MessageStatus.COMPLETED
-            )
-            chatMessageRepository.save(chatMessage)
-        }
+        // AI_MESSAGE 채팅 저장은 PTScheduledMessageService에서 처리하므로 여기서는 생략
 
         // Send the actual notification
         val request = PushNotificationRequest(
