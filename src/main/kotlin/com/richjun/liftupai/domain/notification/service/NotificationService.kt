@@ -60,7 +60,7 @@ class NotificationService(
         val device = if (existingDevice.isPresent) {
             val dev = existingDevice.get()
             dev.isActive = true
-            dev.lastUsedAt = LocalDateTime.now()
+            dev.lastUsedAt = AppTime.utcNow()
             dev.deviceName = request.deviceName ?: dev.deviceName
             dev.appVersion = request.appVersion ?: dev.appVersion
             dev
@@ -113,7 +113,7 @@ class NotificationService(
         request.socialUpdates?.let { settings.socialUpdates = it }
         request.recoveryAlerts?.let { settings.recoveryAlerts = it }
 
-        settings.updatedAt = LocalDateTime.now()
+        settings.updatedAt = AppTime.utcNow()
 
         val saved = notificationSettingsRepository.save(settings)
 
@@ -386,7 +386,7 @@ class NotificationService(
 
         if (!notification.isRead) {
             notification.isRead = true
-            notification.readAt = LocalDateTime.now()
+            notification.readAt = AppTime.utcNow()
             notificationHistoryRepository.save(notification)
         }
 

@@ -126,7 +126,7 @@ class PTScheduledMessageService(
 
         // PT 스타일 업데이트
         profile.ptStyle = newStyle
-        profile.updatedAt = LocalDateTime.now()
+        profile.updatedAt = AppTime.utcNow()
         userProfileRepository.save(profile)
 
         logger.info("PT style updated to $newStyle for user $userId")

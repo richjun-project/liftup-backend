@@ -6,8 +6,8 @@ import com.richjun.liftupai.domain.notification.entity.NotificationDevice
 import com.richjun.liftupai.domain.notification.repository.NotificationDeviceRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Component
-import java.time.LocalDateTime
 
 /**
  * Firebase Cloud Messaging을 사용한 푸시 알림 전송 서비스
@@ -58,7 +58,7 @@ class FcmNotificationService(
             val response = firebaseMessaging.send(messageBuilder.build())
             logger.info("Successfully sent notification to device: ${device.deviceToken}, response: $response")
 
-            device.lastUsedAt = LocalDateTime.now()
+            device.lastUsedAt = AppTime.utcNow()
             notificationDeviceRepository.save(device)
             true
         } catch (e: FirebaseMessagingException) {
