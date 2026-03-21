@@ -28,6 +28,12 @@ app:
   exercise-media:
     base-url: ${APP_EXERCISE_MEDIA_BASE_URL:https://dearglobe.s3.ap-northeast-2.amazonaws.com/liftupai}
 
+# Firebase FCM 설정
+firebase:
+  enabled: ${FIREBASE_ENABLED:true}
+  config:
+    path: ${FIREBASE_CONFIG_PATH:firebase-service-account.json}
+
 # JWT 설정
 jwt:
   secret: ${JWT_SECRET:mySecretKeyForJWTTokenGenerationAndValidation12345678}

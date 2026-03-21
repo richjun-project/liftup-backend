@@ -19,7 +19,7 @@ import com.richjun.liftupai.domain.notification.entity.*
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
-import com.google.firebase.messaging.*
+import com.richjun.liftupai.domain.notification.service.FcmNotificationService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -41,8 +41,6 @@ class NotificationService(
     private val notificationScheduleRepository: NotificationScheduleRepository,
     private val notificationHistoryRepository: NotificationHistoryRepository,
     private val chatMessageRepository: ChatMessageRepository,
-    @Autowired(required = false)
-    private val firebaseMessaging: FirebaseMessaging?,
     @Autowired(required = false)
     private val fcmNotificationService: FcmNotificationService?
 ) {
@@ -276,35 +274,12 @@ class NotificationService(
         data: Map<String, String>?,
         imageUrl: String?
     ) {
-        // 실제 구현에서는 Firebase Admin SDK를 사용하여 FCM 메시지 전송
-        // 여기서는 로그만 남기는 모의 구현
-        logger.info("Sending notification to device: ${device.deviceToken}")
-        logger.info("Title: $title, Body: $body")
-
-        // FCM 메시지 전송 로직
-        when (device.platform) {
-            DevicePlatform.ANDROID -> sendAndroidNotification(device.deviceToken, title, body, data, imageUrl)
-            DevicePlatform.IOS -> sendIOSNotification(device.deviceToken, title, body, data, imageUrl)
-            DevicePlatform.WEB -> sendWebNotification(device.deviceToken, title, body, data, imageUrl)
+        if (fcmNotificationService == null) {
+            logger.warn("FcmNotificationService is not available. Notification not sent to device: ${device.deviceToken}")
+            return
         }
 
-        device.lastUsedAt = LocalDateTime.now()
-        notificationDeviceRepository.save(device)
-    }
-
-    private fun sendAndroidNotification(token: String, title: String, body: String, data: Map<String, String>?, imageUrl: String?) {
-        // Android FCM 전송 로직
-        logger.info("Sending Android notification to token: $token")
-    }
-
-    private fun sendIOSNotification(token: String, title: String, body: String, data: Map<String, String>?, imageUrl: String?) {
-        // iOS APNs 전송 로직
-        logger.info("Sending iOS notification to token: $token")
-    }
-
-    private fun sendWebNotification(token: String, title: String, body: String, data: Map<String, String>?, imageUrl: String?) {
-        // Web Push 전송 로직
-        logger.info("Sending Web notification to token: $token")
+        fcmNotificationService.sendNotification(device, title, body, data, imageUrl)
     }
 
     // Notification Scheduling Methods

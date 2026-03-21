@@ -44,6 +44,14 @@ out/
 .env.local
 .env.*.local
 
+### Firebase ###
+firebase-service-account.json
+*-firebase-adminsdk-*.json
+
 ### macOS ###
 .DS_Store
 **/.DS_Store
+
+### Local media assets ###
+/FULL HD 1080P/
+/ILLUSTRATIONS/

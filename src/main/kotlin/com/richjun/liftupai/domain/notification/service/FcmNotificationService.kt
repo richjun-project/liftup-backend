@@ -128,7 +128,7 @@ class FcmNotificationService(
                 .setNotification(
                     AndroidNotification.builder()
                         .setSound("default")
-                        .setChannelId("workout_channel")
+                        .setChannelId("liftupai_notifications")
                         .build()
                 )
                 .build()
