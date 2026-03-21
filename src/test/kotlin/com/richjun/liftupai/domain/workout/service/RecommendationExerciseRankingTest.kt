@@ -94,6 +94,7 @@ class RecommendationExerciseRankingTest {
     ): Exercise {
         return Exercise(
             id = 1L,
+            slug = name.lowercase().replace(" ", "-"),
             name = name,
             category = category,
             muscleGroups = mutableSetOf(defaultMuscleGroup(category)),

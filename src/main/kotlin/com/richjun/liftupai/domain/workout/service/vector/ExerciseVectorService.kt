@@ -104,7 +104,7 @@ class ExerciseVectorService(
      */
     fun generateEmbedding(text: String): List<Float> {
         return try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=$apiKey"
+            val url = "https://generativelanguage.googleapis.com/v1/models/text-embedding-004:embedContent?key=$apiKey"
 
             val requestBody = mapOf(
                 "model" to "models/text-embedding-004",

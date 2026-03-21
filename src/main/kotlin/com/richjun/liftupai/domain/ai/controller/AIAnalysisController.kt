@@ -48,28 +48,6 @@ class AIAnalysisController(
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
-    // AI 운동 추천 (호환성 유지)
-    @Deprecated("Use GET /api/ai/recommendations/personalized instead")
-    @GetMapping("/recommendations/workout")
-    fun getAIWorkoutRecommendation(
-        @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @RequestParam(required = false) duration: Int?,
-        @RequestParam(required = false) equipment: String?,
-        @RequestParam(required = false, name = "target_muscle") targetMuscle: String?,
-        @RequestParam(required = false) difficulty: String?,
-        @RequestParam(required = false) locale: String?
-    ): ResponseEntity<ApiResponse<AIWorkoutRecommendationResponse>> {
-        val response = aiAnalysisService.getAIWorkoutRecommendation(
-            userDetails.getId(),
-            duration,
-            equipment,
-            targetMuscle,
-            difficulty,
-            locale
-        )
-        return ResponseEntity.ok(ApiResponse.success(response))
-    }
-
     // AI 채팅
     @PostMapping("/chat")
     fun chat(

@@ -52,7 +52,8 @@ class AIAnalysisService(
     private val exerciseSetRepository: com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository,
     private val muscleRecoveryRepository: com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository,
     private val autoProgramSelector: AutoProgramSelector,
-    private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService
+    private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService,
+    private val injuryFilterService: com.richjun.liftupai.domain.workout.service.InjuryFilterService
 ) {
 
     private data class RecommendationProgramContext(
@@ -328,7 +329,7 @@ class AIAnalysisService(
         }
 
         // 1단계: 벡터 검색으로 후보 운동 가져오기 (DB에서만 선택)
-        val candidateExercises = vectorWorkoutRecommendationService.recommendExercises(
+        val rawCandidates = vectorWorkoutRecommendationService.recommendExercises(
             user = user,
             profile = profile,
             duration = duration,
@@ -339,7 +340,15 @@ class AIAnalysisService(
             limit = 20 // 충분한 후보 확보
         )
 
-        println("Loaded ${candidateExercises.size} candidate exercises from vector search")
+        // 부상 기반 운동 제외
+        val userInjuries = settings?.injuries ?: profile?.injuries ?: emptySet()
+        val candidateExercises = if (userInjuries.isNotEmpty()) {
+            injuryFilterService.filterExercises(rawCandidates, userInjuries)
+        } else {
+            rawCandidates
+        }
+
+        println("Loaded ${rawCandidates.size} candidates, ${rawCandidates.size - candidateExercises.size} filtered by injuries, ${candidateExercises.size} remaining")
 
         // 2단계: 구조화된 프롬프트 생성 with 후보 운동 목록
         val prompt = buildStructuredWorkoutPrompt(
@@ -426,12 +435,21 @@ class AIAnalysisService(
         val workoutSplit = resolvedProgramType ?: settings?.workoutSplit ?: profile?.workoutSplit
         val workoutDurationPreference = settings?.workoutDuration ?: profile?.workoutDuration
 
+        val userGender = profile?.gender ?: "not set"
+        val userAge = profile?.age
+        val userBodyWeight = profile?.bodyInfo?.weight
+        val userInjuries = settings?.injuries ?: profile?.injuries ?: emptySet()
+
         val profileInfo = """
             User profile:
             - Name: ${user.nickname}
+            - Gender: $userGender
+            - Age: ${userAge?.let { "${it}세" } ?: "not set"}
+            - Body weight: ${userBodyWeight?.let { "${it}kg" } ?: "not set"}
             - PT style persona: $ptStyle
             - Experience level: ${profile?.experienceLevel ?: ExperienceLevel.BEGINNER}
             - Goals: ${profile?.goals?.takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "general fitness"}
+            - Injuries: ${userInjuries.takeIf { it.isNotEmpty() }?.joinToString(", ") ?: "none"}
             - Weekly workout days: ${weeklyWorkoutDays ?: "not set"}
             - Preferred workout time: ${preferredWorkoutTime ?: "not set"}
             - Workout split: ${workoutSplit ?: "not set"}
@@ -796,25 +814,45 @@ class AIAnalysisService(
 
                 usedExerciseIds.add(exerciseId)
 
-                val suggestedWeight = try {
-                    workoutServiceV2.calculateSuggestedWeight(user, matchedExercise)
+                // PT 시스템으로 세트/렙/무게/휴식 전부 계산 (Gemini 값 대신)
+                val ptRec = try {
+                    workoutServiceV2.calculateFullPTRecommendation(user, matchedExercise)
                 } catch (e: Exception) {
-                    calculateWeightByExerciseName(user, matchedExercise.name)
+                    null
                 }
+
+                val suggestedWeight = ptRec?.weight
+                    ?: try { workoutServiceV2.calculateSuggestedWeight(user, matchedExercise) }
+                    catch (e: Exception) { calculateWeightByExerciseName(user, matchedExercise.name) }
 
                 AIExerciseDetail(
                     exerciseId = matchedExercise.id.toString(),
                     name = localizedExerciseName(matchedExercise, locale, translations),
-                    sets = (exerciseMap["sets"] as? Number)?.toInt() ?: 3,
-                    reps = exerciseMap["reps"] as? String ?: "10-12",
-                    rest = (exerciseMap["rest_seconds"] as? Number)?.toInt() ?: 60,
+                    sets = ptRec?.sets ?: (exerciseMap["sets"] as? Number)?.toInt() ?: 3,
+                    reps = ptRec?.reps ?: exerciseMap["reps"] as? String ?: "10-12",
+                    rest = ptRec?.restSeconds ?: (exerciseMap["rest_seconds"] as? Number)?.toInt() ?: 60,
                     order = (exerciseMap["order"] as? Number)?.toInt() ?: (index + 1),
                     suggestedWeight = suggestedWeight,
                     targetMuscles = getExerciseTargetMuscles(matchedExercise, locale),
                     equipmentNeeded = localizeEquipment(matchedExercise.equipment?.name, locale).ifBlank { null },
                     difficultyLevel = difficulty
                 )
-            }.sortedBy { it.order }
+            }.let { exerciseList ->
+                // 서버 사이드 운동 순서 강제: 대근육→소근육, 복합→고립 (exerciseById 맵 재사용)
+                val categoryPriority = mapOf(
+                    "LEGS" to 0, "BACK" to 1, "CHEST" to 2,
+                    "SHOULDERS" to 3, "ARMS" to 4, "CORE" to 5, "CARDIO" to 6
+                )
+                exerciseList.sortedWith(
+                    compareBy<AIExerciseDetail> { detail ->
+                        val ex = exerciseById[detail.exerciseId.toLongOrNull() ?: 0]
+                        categoryPriority[ex?.category?.name] ?: 99
+                    }.thenBy { detail ->
+                        val ex = exerciseById[detail.exerciseId.toLongOrNull() ?: 0]
+                        if (ex != null && isCompoundExercise(ex)) 0 else 1
+                    }
+                ).mapIndexed { idx, ex -> ex.copy(order = idx + 1) }
+            }
 
             val workoutDuration = duration ?: 30
             val minExercises = when {
@@ -868,7 +906,7 @@ class AIAnalysisService(
 
         } catch (e: Exception) {
             println("Failed to parse AI response: ${e.message}")
-            generateFallbackRecommendation(duration, equipment, targetMuscle, locale)
+            generateFallbackRecommendation(user, duration, equipment, targetMuscle, locale)
         }
     }
 
@@ -972,13 +1010,14 @@ class AIAnalysisService(
     }
 
     private fun generateFallbackRecommendation(
+        user: com.richjun.liftupai.domain.auth.entity.User,
         duration: Int?,
         equipment: String?,
         targetMuscle: String?,
         locale: String
     ): AIWorkoutDetail {
         val workoutDuration = duration ?: 30
-        val exercises = getDefaultExercises(equipment, targetMuscle, workoutDuration, locale)
+        val exercises = getDefaultExercises(user, equipment, targetMuscle, workoutDuration, locale)
 
         return AIWorkoutDetail(
             workoutId = "fallback_${System.currentTimeMillis()}",
@@ -994,6 +1033,7 @@ class AIAnalysisService(
     }
 
     private fun getDefaultExercises(
+        user: com.richjun.liftupai.domain.auth.entity.User,
         equipment: String?,
         targetMuscle: String?,
         duration: Int,
@@ -1032,28 +1072,21 @@ class AIAnalysisService(
 
         val translations = translationMap(selectedExercises, locale)
         return selectedExercises.take(exerciseCount).mapIndexed { index, exercise ->
+            val ptRec = try {
+                workoutServiceV2.calculateFullPTRecommendation(user, exercise)
+            } catch (e: Exception) { null }
+
             AIExerciseDetail(
                 exerciseId = exercise.id.toString(),
                 name = localizedExerciseName(exercise, locale, translations),
-                sets = when (exercise.category) {
-                    ExerciseCategory.LEGS -> 4
-                    ExerciseCategory.CHEST, ExerciseCategory.BACK -> 3
-                    else -> 3
-                },
-                reps = when (exercise.category) {
-                    ExerciseCategory.LEGS -> "12-15"
-                    ExerciseCategory.CHEST, ExerciseCategory.BACK -> "8-12"
-                    else -> "10-12"
-                },
-                rest = when (exercise.category) {
-                    ExerciseCategory.LEGS, ExerciseCategory.CHEST, ExerciseCategory.BACK -> 90
-                    else -> 60
-                },
+                sets = ptRec?.sets ?: 3,
+                reps = ptRec?.reps ?: "10-12",
+                rest = ptRec?.restSeconds ?: 60,
                 order = index + 1,
+                suggestedWeight = ptRec?.weight,
                 targetMuscles = getExerciseTargetMuscles(exercise, locale),
                 equipmentNeeded = localizeEquipment(exercise.equipment?.name, locale).ifBlank { null },
                 difficultyLevel = localizeDifficulty(null, locale)
-                // AI가 생성하지 못한 경우 null로 처리
             )
         }
     }

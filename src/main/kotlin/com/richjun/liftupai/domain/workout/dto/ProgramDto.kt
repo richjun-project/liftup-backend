@@ -48,7 +48,7 @@ data class ProgramExerciseDetail(
     val minReps: Int,
     val maxReps: Int,
     val restSeconds: Int,
-    val targetRPE: Double,
+    @com.fasterxml.jackson.annotation.JsonProperty("target_rpe") val targetRPE: Double,
     @com.fasterxml.jackson.annotation.JsonProperty("is_optional") val isOptional: Boolean,
     val notes: String?
 )
@@ -98,7 +98,7 @@ data class TodayExerciseResponse(
     val maxReps: Int,
     val restSeconds: Int,
     val suggestedWeight: Double?,
-    val targetRPE: Double,
+    @com.fasterxml.jackson.annotation.JsonProperty("target_rpe") val targetRPE: Double,
     @com.fasterxml.jackson.annotation.JsonProperty("is_compound") val isCompound: Boolean,
     val warmupSets: List<WarmupSetResponse>,
     val substitutes: List<SubstituteResponse>

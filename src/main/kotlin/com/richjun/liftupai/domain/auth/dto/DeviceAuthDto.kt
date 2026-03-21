@@ -39,7 +39,10 @@ data class DeviceRegisterRequest(
     val injuries: List<InjuryInput>? = null,
 
     @JsonProperty("strength_assessment")
-    val strengthAssessment: Map<String, Any>? = null
+    val strengthAssessment: Map<String, Any>? = null,
+
+    @JsonProperty("notification_enabled")
+    val notificationEnabled: Boolean = true
 )
 
 data class DeviceLoginRequest(

@@ -118,16 +118,6 @@ class WorkoutController(
             .body(ApiResponse.success(response))
     }
 
-    // 오늘의 운동 추천 (Deprecated - Use AI recommendations instead)
-    @Deprecated("Use GET /api/ai/recommendations/workout instead")
-    @GetMapping("/recommendations/today")
-    fun getTodayRecommendations(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
-    ): ResponseEntity<ApiResponse<TodayWorkoutRecommendation>> {
-        val response = workoutService.getTodayRecommendations(userDetails.getId())
-        return ResponseEntity.ok(ApiResponse.success(response))
-    }
-
     // 운동 프로그램 생성
     @PostMapping("/programs/generate")
     fun generateProgram(

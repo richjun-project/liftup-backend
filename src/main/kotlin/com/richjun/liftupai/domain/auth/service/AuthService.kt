@@ -259,9 +259,9 @@ class AuthService(
                 when (goal.uppercase()) {
                     "MUSCLE_GAIN" -> profile.goals.add(FitnessGoal.MUSCLE_GAIN)
                     "FAT_LOSS", "WEIGHT_LOSS" -> profile.goals.add(FitnessGoal.WEIGHT_LOSS)
-                    "STRENGTH" -> profile.goals.add(FitnessGoal.STRENGTH)
+                    "STRENGTH", "STRENGTH_GAIN" -> profile.goals.add(FitnessGoal.STRENGTH)
                     "ENDURANCE" -> profile.goals.add(FitnessGoal.ENDURANCE)
-                    "GENERAL_FITNESS" -> profile.goals.add(FitnessGoal.GENERAL_FITNESS)
+                    "GENERAL_FITNESS", "BODY_CORRECTION", "HEALTH_MAINTENANCE" -> profile.goals.add(FitnessGoal.GENERAL_FITNESS)
                     "ATHLETIC_PERFORMANCE" -> profile.goals.add(FitnessGoal.ATHLETIC_PERFORMANCE)
                     else -> profile.goals.add(FitnessGoal.GENERAL_FITNESS)
                 }
@@ -328,6 +328,9 @@ class AuthService(
                 profile.estimatedMaxes = objectMapper.writeValueAsString(estimatedMaxes)
             }
         }
+
+        // Notification 설정
+        profile.notificationEnabled = request.notificationEnabled
 
         user.profile = profile
 

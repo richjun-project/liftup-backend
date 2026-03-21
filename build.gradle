@@ -37,6 +37,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'io.mockk:mockk:1.13.10'
 
 	// Google Gemini AI API
 	implementation 'com.google.cloud:google-cloud-aiplatform:3.29.0'

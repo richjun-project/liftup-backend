@@ -18,6 +18,18 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+private fun parseFitnessGoal(value: String): FitnessGoal? {
+    return when (value.uppercase()) {
+        "MUSCLE_GAIN" -> FitnessGoal.MUSCLE_GAIN
+        "FAT_LOSS", "WEIGHT_LOSS" -> FitnessGoal.WEIGHT_LOSS
+        "STRENGTH", "STRENGTH_GAIN" -> FitnessGoal.STRENGTH
+        "ENDURANCE" -> FitnessGoal.ENDURANCE
+        "GENERAL_FITNESS", "BODY_CORRECTION", "HEALTH_MAINTENANCE" -> FitnessGoal.GENERAL_FITNESS
+        "ATHLETIC_PERFORMANCE" -> FitnessGoal.ATHLETIC_PERFORMANCE
+        else -> null
+    }
+}
+
 @Service
 @Transactional
 class UserService(
@@ -66,9 +78,7 @@ class UserService(
         // Update goals
         request.goals?.let { goals ->
             profile.goals.clear()
-            profile.goals.addAll(goals.mapNotNull {
-                try { FitnessGoal.valueOf(it) } catch (e: Exception) { null }
-            })
+            profile.goals.addAll(goals.mapNotNull { parseFitnessGoal(it) })
         }
 
         // Update PT style
@@ -124,9 +134,7 @@ class UserService(
 
         // Update goals
         profile.goals.clear()
-        profile.goals.addAll(request.goals.mapNotNull {
-            try { FitnessGoal.valueOf(it) } catch (e: Exception) { null }
-        })
+        profile.goals.addAll(request.goals.mapNotNull { parseFitnessGoal(it) })
 
         // Update PT style
         try {
@@ -281,9 +289,7 @@ class UserService(
                     muscleMass = null
                 )
             } else null,
-            goals = request.goals.mapNotNull {
-                try { FitnessGoal.valueOf(it.uppercase()) } catch (e: Exception) { null }
-            }.toMutableSet(),
+            goals = request.goals.mapNotNull { parseFitnessGoal(it) }.toMutableSet(),
             ptStyle = try { PTStyle.valueOf(request.ptStyle.uppercase()) } catch (e: Exception) { PTStyle.GAME_MASTER },
             experienceLevel = try { ExperienceLevel.valueOf(request.experienceLevel.uppercase()) } catch (e: Exception) { ExperienceLevel.BEGINNER },
             notificationEnabled = request.notificationEnabled,
@@ -348,9 +354,7 @@ class UserService(
         // Update goals
         request.goals?.let { goals ->
             profile.goals.clear()
-            profile.goals.addAll(goals.mapNotNull {
-                try { FitnessGoal.valueOf(it.uppercase()) } catch (e: Exception) { null }
-            })
+            profile.goals.addAll(goals.mapNotNull { parseFitnessGoal(it) })
         }
 
         request.ptStyle?.let {

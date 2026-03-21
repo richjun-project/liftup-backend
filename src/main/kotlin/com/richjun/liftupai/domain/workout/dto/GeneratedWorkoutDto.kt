@@ -18,8 +18,8 @@ data class ProgramGeneratedExercise(
     val maxReps: Int,
     val restSeconds: Int,
     val suggestedWeight: Double?,
-    val targetRPE: Double,
-    val isCompound: Boolean,
+    @com.fasterxml.jackson.annotation.JsonProperty("target_rpe") val targetRPE: Double,
+    @com.fasterxml.jackson.annotation.JsonProperty("is_compound") val isCompound: Boolean,
     val warmupSets: List<ProgramWarmupSet>,
     val substitutes: List<ProgramSubstituteExercise>
 )

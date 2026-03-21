@@ -182,19 +182,6 @@ class WorkoutControllerV2(
             .body(ApiResponse.success(program))
     }
 
-    // 오늘의 운동 추천 (프로필 기반) - Deprecated, use AI recommendations instead
-    @Deprecated("Use GET /api/ai/recommendations/workout instead")
-    @PostMapping("/recommendations/today")
-    fun getTodayWorkoutRecommendation(
-        @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Valid @RequestBody request: com.richjun.liftupai.domain.user.dto.TodayWorkoutRequest
-    ): ResponseEntity<ApiResponse<com.richjun.liftupai.domain.user.dto.TodayWorkoutResponse>> {
-        val recommendation = workoutPlanService.getTodayWorkoutRecommendation(
-            userDetails.getId(), request
-        )
-        return ResponseEntity.ok(ApiResponse.success(recommendation))
-    }
-
     // 기본 운동 추천
     @GetMapping("/recommendations/basic")
     fun getBasicWorkoutRecommendation(
@@ -214,23 +201,4 @@ class WorkoutControllerV2(
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
-    // 빠른 운동 추천 (호환성 유지, 내부적으로는 basic 추천 사용)
-    @Deprecated("Use GET /api/v2/workouts/recommendations/basic instead")
-    @GetMapping("/recommendations/quick")
-    fun getQuickWorkoutRecommendation(
-        @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @RequestParam(required = false) duration: Int?,
-        @RequestParam(required = false) equipment: String?,
-        @RequestParam(required = false) targetMuscle: String?,
-        @RequestParam(required = false) locale: String?
-    ): ResponseEntity<ApiResponse<QuickWorkoutRecommendationResponse>> {
-        val response = workoutServiceV2.getBasicWorkoutRecommendation(
-            userDetails.getId(),
-            duration,
-            equipment,
-            targetMuscle,
-            locale
-        )
-        return ResponseEntity.ok(ApiResponse.success(response))
-    }
 }
