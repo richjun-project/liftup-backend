@@ -22,6 +22,7 @@ import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.time.AppTime
 import com.richjun.liftupai.domain.notification.dto.PushNotificationRequest
 import com.richjun.liftupai.domain.notification.service.NotificationService
+import com.richjun.liftupai.domain.notification.util.NotificationLocalization
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -586,13 +587,14 @@ class WorkoutServiceV2(
         // FCM 운동 완료 알림 발송
         try {
             val prText = if (personalRecords.isNotEmpty()) {
-                " 🏆 ${personalRecords.size}개 개인 기록 달성!"
+                NotificationLocalization.message("notification.workout_complete.pr", locale, personalRecords.size)
             } else ""
+            val volumeStr = String.format("%.0f", totalVolume)
             notificationService?.sendPushNotification(
                 PushNotificationRequest(
                     userId = userId,
-                    title = "운동 완료!",
-                    body = "${normalizedDuration}분, ${totalSets}세트, ${String.format("%.0f", totalVolume)}kg$prText",
+                    title = NotificationLocalization.message("notification.title.workout_complete", locale),
+                    body = NotificationLocalization.message("notification.workout_complete.body", locale, normalizedDuration, totalSets, volumeStr) + prText,
                     data = mapOf("type" to "workout_complete", "sessionId" to sessionId.toString())
                 )
             )

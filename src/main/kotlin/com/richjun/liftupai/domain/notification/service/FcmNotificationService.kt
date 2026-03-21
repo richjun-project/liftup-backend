@@ -103,7 +103,7 @@ class FcmNotificationService(
                     .build()
             }
 
-            val batchResponse = firebaseMessaging.sendAll(messages)
+            val batchResponse = firebaseMessaging.sendEach(messages)
             logger.info("Batch notification sent. Success: ${batchResponse.successCount}, Failed: ${batchResponse.failureCount}")
 
             // 실패한 토큰 처리
