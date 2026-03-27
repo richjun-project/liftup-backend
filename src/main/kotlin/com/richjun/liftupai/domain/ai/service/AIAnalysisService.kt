@@ -627,6 +627,14 @@ class AIAnalysisService(
 
             $candidateExercisesText
 
+            Training prescription guide by exercise type (server calculates exact values, follow for structural consistency):
+            - Primary compounds (squat, deadlift, bench press, overhead press): 4-5 sets, 1-8 reps, 180-300s rest
+            - Secondary compounds (rows, lunges, incline press, pullups, dips): 3-4 sets, 3-12 reps, 90-180s rest
+            - Isolation (curls, raises, extensions, pushdowns, flyes): 2-3 sets, 8-20 reps, 45-90s rest
+            - Core/stability (planks, crunches, leg raises): 2-3 sets, time-based or 12-20 reps, 30-60s rest
+            - Olympic lifts (clean, snatch): 3-6 sets, 1-3 reps, 180-300s rest
+            Current phase: $periodizationPhase
+
             Hard rules:
             1. Avoid muscle groups trained in the last 48 hours or still marked as recovering below 80%.
             2. Avoid muscle groups already above 20 weekly sets when possible.

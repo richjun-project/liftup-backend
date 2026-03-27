@@ -45,6 +45,7 @@ class WorkoutServiceV2PTTest {
     private lateinit var exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService
     private lateinit var autoProgramSelector: AutoProgramSelector
     private lateinit var programProgressiveOverloadService: ProgramProgressiveOverloadService
+    private lateinit var exerciseTrainingProfileResolver: ExerciseTrainingProfileResolver
 
     private lateinit var testUser: User
     private lateinit var testExercise: Exercise
@@ -71,6 +72,7 @@ class WorkoutServiceV2PTTest {
         exerciseCatalogLocalizationService = mockk()
         autoProgramSelector = mockk()
         programProgressiveOverloadService = mockk()
+        exerciseTrainingProfileResolver = ExerciseTrainingProfileResolver(exercisePatternClassifier)
 
         workoutServiceV2 = WorkoutServiceV2(
             userRepository,
@@ -93,6 +95,7 @@ class WorkoutServiceV2PTTest {
             userProgramEnrollmentRepository,
             programProgressiveOverloadService,
             null,
+            exerciseTrainingProfileResolver,
             null
         )
 
