@@ -151,7 +151,7 @@ class RecoveryService(
         val muscles = muscleRecoveryRepository.findByUser(user)
         muscles.forEach { muscle ->
             val hoursSinceWorkout = ChronoUnit.HOURS.between(muscle.lastWorked, AppTime.utcNow())
-            val baseRecovery = calculateBaseRecovery(hoursSinceWorkout)
+            val baseRecovery = calculateBaseRecovery(hoursSinceWorkout, muscle.muscleGroup)
             val adjustedRecovery = adjustRecoveryBySoreness(baseRecovery, muscle.soreness)
 
             muscle.recoveryPercentage = minOf(adjustedRecovery, 100)
@@ -159,18 +159,51 @@ class RecoveryService(
         }
     }
 
-    private fun calculateBaseRecovery(hoursSinceWorkout: Long): Int {
+    /**
+     * 근육별 차별화된 회복 곡선
+     *
+     * 과학적 근거:
+     * - 대근육(대퇴사두, 둔근): 72-96시간 (NSCA Essentials)
+     * - 중간 근육(가슴, 등, 어깨): 48-72시간
+     * - 소근육(이두, 삼두, 종아리): 24-48시간
+     * - 복근/코어: 24시간 (높은 지근 비율)
+     */
+    private fun calculateBaseRecovery(hoursSinceWorkout: Long, muscleGroup: String? = null): Int {
+        val fullRecoveryHours = getFullRecoveryHours(muscleGroup)
+        val ratio = hoursSinceWorkout.toDouble() / fullRecoveryHours
+
         return when {
-            hoursSinceWorkout < 24 -> (hoursSinceWorkout * 2).toInt()
-            hoursSinceWorkout < 48 -> 50 + ((hoursSinceWorkout - 24) * 1.5).toInt()
-            hoursSinceWorkout < 72 -> 85 + ((hoursSinceWorkout - 48) * 0.5).toInt()
+            ratio < 0.33 -> (ratio * 150).toInt()       // 초기: 느린 회복
+            ratio < 0.67 -> (50 + (ratio - 0.33) * 100).toInt()  // 중기: 빠른 회복
+            ratio < 1.0  -> (85 + (ratio - 0.67) * 45).toInt()   // 후기: 완만한 마무리
             else -> 100
+        }.coerceIn(0, 100)
+    }
+
+    private fun getFullRecoveryHours(muscleGroup: String?): Int {
+        if (muscleGroup == null) return 48  // 기본값
+
+        return when (muscleGroup.lowercase()) {
+            // 대근육: 72-96시간
+            "quadriceps", "hamstrings", "glutes" -> 84
+            "legs" -> 84
+            // 중간 근육: 48-72시간
+            "chest", "back", "lats" -> 60
+            "shoulders", "traps" -> 56
+            // 소근육: 24-48시간
+            "biceps", "triceps" -> 36
+            "forearms" -> 36
+            "calves" -> 36
+            "neck" -> 36
+            // 코어: 24시간
+            "abs", "core" -> 24
+            else -> 48
         }
     }
 
     private fun adjustRecoveryBySoreness(baseRecovery: Int, soreness: Int): Int {
         val clampedSoreness = soreness.coerceIn(0, 10)
-        val sorenessMultiplier = (1.0 - (clampedSoreness * 0.05)).coerceIn(0.0, 1.0)
+        val sorenessMultiplier = (1.0 - (clampedSoreness * 0.015)).coerceIn(0.0, 1.0)
         return (baseRecovery * sorenessMultiplier).toInt().coerceIn(0, 100)
     }
 
@@ -181,7 +214,7 @@ class RecoveryService(
         val clampedFeeling = feelingScore.coerceIn(1, 10)
         val clampedSoreness = soreness.coerceIn(0, 10)
         val feelingMultiplier = clampedFeeling / 10.0
-        val sorenessMultiplier = (1.0 - (clampedSoreness * 0.05)).coerceIn(0.0, 1.0)
+        val sorenessMultiplier = (1.0 - (clampedSoreness * 0.015)).coerceIn(0.0, 1.0)
 
         return (baseRecovery * feelingMultiplier * sorenessMultiplier).toInt().coerceIn(0, 100)
     }
@@ -292,7 +325,15 @@ class RecoveryService(
             it.muscleGroup.equals(muscleKey, ignoreCase = true)
         } ?: return
 
-        val newRecoveryPercentage = (recovery.recoveryPercentage + boostPercentage).coerceIn(0, 100)
+        // 시간 기반 회복 상한선 — 운동 후 경과 시간에 따라 부스트 상한 제한
+        val hoursSinceWorkout = ChronoUnit.HOURS.between(recovery.lastWorked, AppTime.utcNow())
+        val maxRecoveryForTime = when {
+            hoursSinceWorkout < 12 -> 40   // 12시간 이내: 최대 40%
+            hoursSinceWorkout < 24 -> 70   // 24시간 이내: 최대 70%
+            hoursSinceWorkout < 48 -> 90   // 48시간 이내: 최대 90%
+            else -> 100
+        }
+        val newRecoveryPercentage = (recovery.recoveryPercentage + boostPercentage).coerceIn(0, maxRecoveryForTime)
         recovery.recoveryPercentage = newRecoveryPercentage
         recovery.updatedAt = AppTime.utcNow()
 

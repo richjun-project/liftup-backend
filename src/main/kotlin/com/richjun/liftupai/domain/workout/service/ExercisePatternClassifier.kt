@@ -132,6 +132,13 @@ class ExercisePatternClassifier {
     }
 
     private fun findMatchingPattern(name: String): MovementPattern? {
+        // 구체적인 패턴을 먼저 체크 (incline lateral raise → LATERAL_RAISE, not INCLINE_PRESS)
+        for ((pattern, keywords) in simplePatternKeywords) {
+            if (containsAny(name, keywords)) {
+                return pattern
+            }
+        }
+
         if (containsAny(name, inclineKeywords)) {
             return when {
                 containsAny(name, barbellKeywords) -> MovementPattern.INCLINE_PRESS_BARBELL
@@ -178,12 +185,7 @@ class ExercisePatternClassifier {
             }
         }
 
-        for ((pattern, keywords) in simplePatternKeywords) {
-            if (containsAny(name, keywords)) {
-                return pattern
-            }
-        }
-
+        // simplePatternKeywords는 이미 위에서 체크했으므로 여기서는 squat만 체크
         if (name.contains("squat")) {
             return MovementPattern.SQUAT
         }

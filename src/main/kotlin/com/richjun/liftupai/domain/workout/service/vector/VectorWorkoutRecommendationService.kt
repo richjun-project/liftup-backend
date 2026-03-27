@@ -146,13 +146,14 @@ class VectorWorkoutRecommendationService(
         logger.info("Vector search returned ${searchResults.size} results")
 
         // 결과를 Exercise로 변환 및 필터링
+        // 회복/안전 필터를 먼저 적용하여 대안 운동이 소실되지 않도록 함
         return searchResults
             .mapNotNull { (id, _) -> exerciseRepository.findById(id).orElse(null) }
+            .let { filterByRecovery(it, context.recoveringMuscles) }
             .let { filterByTier(it) }
             .let { filterByGoal(it, profile?.goals) }
             .let { filterByDifficulty(it, profile?.experienceLevel) }
             .let { sortByRelevance(it) }
-            .let { filterByRecovery(it, context.recoveringMuscles) }
             .let { removeDuplicatePatterns(it) }
             .let { orderByPriority(it) }
             .distinctBy { it.id }
@@ -255,9 +256,17 @@ class VectorWorkoutRecommendationService(
                 parts.add("Frequently done: ${frequent.joinToString(", ") { "${it.key} (${it.value}x)" }}")
             }
 
-            // 정체기 감지: 최근 3회 이상 같은 무게
-            val plateaued = exerciseWeights.filter { (_, weights) ->
-                weights.size >= 3 && weights.takeLast(3).distinct().size == 1
+            // 정체기 감지: 무게+렙 볼륨 기반 (무게만 비교하면 렙수 증가를 놓침)
+            // 100kg x 6회 → 100kg x 8회 → 100kg x 10회 = 진행 중 (정체 아님)
+            val plateaued = exerciseWeights.filter { (name, weights) ->
+                if (weights.size < 3) return@filter false
+                val lastThreeWeights = weights.takeLast(3)
+                val weightStagnant = lastThreeWeights.distinct().size == 1
+                // 무게가 같아도 RPE가 감소하고 있으면 진행 중
+                val rpes = exerciseRPEs[name]
+                val rpeDecreasing = rpes != null && rpes.size >= 3 &&
+                    rpes.takeLast(3).let { it[2] < it[0] }
+                weightStagnant && !rpeDecreasing
             }.keys.take(3)
             if (plateaued.isNotEmpty()) {
                 parts.add("Plateaued exercises (need variation): ${plateaued.joinToString(", ")}")
