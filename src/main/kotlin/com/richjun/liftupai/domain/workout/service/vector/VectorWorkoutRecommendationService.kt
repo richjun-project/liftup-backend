@@ -157,6 +157,8 @@ class VectorWorkoutRecommendationService(
         return exercises
             .let { filterByRecovery(it, context.recoveringMuscles) }
             .let { filterByTier(it) }
+            .let { filterByTargetMuscle(it, targetMuscle) }
+            .let { filterByEquipment(it, equipment) }
             .let { filterByGoal(it, profile?.goals) }
             .let { filterByDifficulty(it, profile?.experienceLevel) }
             .let { sortByRelevance(it) }
@@ -404,6 +406,53 @@ class VectorWorkoutRecommendationService(
         return exercises.filter { exercise ->
             // 모든 근육 그룹 체크 (primary + secondary)
             exercise.muscleGroups.none { it in recoveringMuscles }
+        }
+    }
+
+    /**
+     * 타겟 근육 필터 — 시맨틱 검색 결과에서 관련 없는 근육군 제거
+     * 안전장치: 필터 후 3개 미만이면 원본 반환
+     */
+    private fun filterByTargetMuscle(exercises: List<Exercise>, targetMuscle: String?): List<Exercise> {
+        if (targetMuscle == null) return exercises
+        val key = com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver.recommendationKey(targetMuscle) ?: return exercises
+        val targetGroups = getMuscleGroupsForTarget(key)
+        if (targetGroups.isEmpty()) return exercises
+
+        val filtered = exercises.filter { exercise ->
+            exercise.muscleGroups.any { it in targetGroups }
+        }
+        return if (filtered.size >= 3) filtered else exercises
+    }
+
+    /**
+     * 장비 필터 — 시맨틱 검색 결과에서 다른 장비 제거
+     * 안전장치: 필터 후 3개 미만이면 원본 반환
+     */
+    private fun filterByEquipment(exercises: List<Exercise>, equipment: String?): List<Exercise> {
+        if (equipment == null) return exercises
+        val equipmentEnum = try {
+            Equipment.valueOf(equipment.uppercase().replace(" ", "_"))
+        } catch (e: IllegalArgumentException) {
+            return exercises
+        }
+        val filtered = exercises.filter { it.equipment == equipmentEnum }
+        return if (filtered.size >= 3) filtered else exercises
+    }
+
+    private fun getMuscleGroupsForTarget(target: String): Set<MuscleGroup> {
+        return when (target.lowercase()) {
+            "full_body" -> emptySet()
+            "push" -> setOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleGroup.TRICEPS)
+            "pull" -> setOf(MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.BICEPS)
+            "legs", "lower" -> setOf(MuscleGroup.QUADRICEPS, MuscleGroup.HAMSTRINGS, MuscleGroup.GLUTES, MuscleGroup.CALVES)
+            "upper" -> setOf(MuscleGroup.CHEST, MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS)
+            "chest" -> setOf(MuscleGroup.CHEST)
+            "back" -> setOf(MuscleGroup.BACK, MuscleGroup.LATS)
+            "shoulders" -> setOf(MuscleGroup.SHOULDERS)
+            "arms" -> setOf(MuscleGroup.BICEPS, MuscleGroup.TRICEPS, MuscleGroup.FOREARMS)
+            "core" -> setOf(MuscleGroup.ABS, MuscleGroup.CORE)
+            else -> emptySet()
         }
     }
 
