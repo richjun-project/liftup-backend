@@ -390,7 +390,9 @@ class VectorWorkoutRecommendationService(
             ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT -> 30..100
             else -> 20..70
         }
-        return exercises.filter { it.difficulty in range }
+        val filtered = exercises.filter { it.difficulty in range }
+        // 필터 후 너무 적으면 원본 반환 (안전 장치)
+        return if (filtered.size >= 3) filtered else exercises
     }
 
     private fun sortByRelevance(exercises: List<Exercise>): List<Exercise> {

@@ -233,7 +233,7 @@ class ExerciseRecommendationService(
     }
 
     /**
-     * 회복 중인 근육군 (회복률 30% 미만)
+     * 회복 중인 근육군 (회복률 50% 미만)
      */
     private fun getRecoveringMuscles(user: User): Set<MuscleGroup> {
         return try {

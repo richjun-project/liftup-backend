@@ -112,8 +112,8 @@ class AutoProgramSelector(
                 )
             }
 
-            // 주 5회 이상 + 고급자
-            weeklyDays >= 5 && experienceLevel == ExperienceLevel.ADVANCED -> {
+            // 주 5회 이상 + 고급자/전문가
+            weeklyDays >= 5 && (experienceLevel == ExperienceLevel.ADVANCED || experienceLevel == ExperienceLevel.EXPERT) -> {
                 // PPLUL 하이브리드: Bro Split 대비 상체 빈도 2x 확보
                 ProgramRecommendation(
                     programType = "PPLUL",
