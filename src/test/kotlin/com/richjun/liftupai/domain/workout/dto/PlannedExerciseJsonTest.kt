@@ -1,12 +1,17 @@
 package com.richjun.liftupai.domain.workout.dto
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.richjun.liftupai.config.TestConfig
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
+import org.springframework.test.context.ActiveProfiles
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
 @SpringBootTest
+@ActiveProfiles("test")
+@Import(TestConfig::class)
 class PlannedExerciseJsonTest {
 
     @Autowired

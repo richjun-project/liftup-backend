@@ -1,0 +1,61 @@
+# 테스트 환경: H2 인메모리 DB, 외부 서비스 비활성화
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MYSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# 외부 서비스 비활성화
+firebase:
+  enabled: false
+
+qdrant:
+  enabled: false
+  host: localhost
+  port: 6334
+
+gemini:
+  api-key: test-api-key-dummy
+
+jwt:
+  secret: testSecretKeyForJWTTokenGenerationAndValidation12345678
+  access-token-expiration: 3600000
+  refresh-token-expiration: 2592000000
+
+cors:
+  allowed-origins: http://localhost:3000
+
+vector:
+  migration:
+    enabled: false
+
+app:
+  exercise-catalog:
+    mode: none
+    exit-after-bootstrap: false
+  exercise-media:
+    base-url: https://test-cdn.example.com
+
+logging:
+  level:
+    root: WARN
+    com.richjun.liftupai: INFO

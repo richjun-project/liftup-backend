@@ -250,9 +250,45 @@ class ExerciseRecommendationService(
     }
 
     /**
-     * 운동 우선순위 정렬 (큰 근육 → 작은 근육, 복합 → 고립)
+     * 카테고리 균형 정렬 (라운드 로빈)
+     *
+     * 단순 카테고리 우선순위 정렬 대신, 각 카테고리에서 최고 운동을 하나씩
+     * 돌아가며 배치합니다. 이렇게 하면 전신 추천 시 다리/등/가슴/어깨/팔/코어가
+     * 골고루 포함됩니다.
+     *
+     * 카테고리 순서: LEGS → BACK → CHEST → SHOULDERS → ARMS → CORE → CARDIO
+     * 각 카테고리 내부: 복합운동 > 고립운동, ESSENTIAL > STANDARD, 인기도 순
      */
     private fun orderByPriority(exercises: List<Exercise>): List<Exercise> {
-        return exercises.sortedWith(RecommendationExerciseRanking.displayOrderComparator())
+        // 카테고리별로 그룹화하고, 각 그룹 내에서 우선순위 정렬
+        val byCategory = exercises
+            .groupBy { it.category }
+            .mapValues { (_, group) ->
+                group.sortedWith(RecommendationExerciseRanking.displayOrderComparator())
+                    .toMutableList()
+            }
+
+        // 카테고리 우선순위 순서
+        val categoryOrder = listOf(
+            ExerciseCategory.LEGS, ExerciseCategory.BACK, ExerciseCategory.CHEST,
+            ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS, ExerciseCategory.CORE,
+            ExerciseCategory.CARDIO, ExerciseCategory.FULL_BODY
+        )
+
+        // 라운드 로빈: 각 카테고리에서 1개씩 순서대로 뽑기
+        val result = mutableListOf<Exercise>()
+        var hasMore = true
+        while (hasMore) {
+            hasMore = false
+            for (category in categoryOrder) {
+                val queue = byCategory[category]
+                if (queue != null && queue.isNotEmpty()) {
+                    result.add(queue.removeFirst())
+                    hasMore = true
+                }
+            }
+        }
+
+        return result
     }
 }

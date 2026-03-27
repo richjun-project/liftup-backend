@@ -379,8 +379,37 @@ class VectorWorkoutRecommendationService(
             }
     }
 
+    /**
+     * 카테고리 균형 라운드 로빈 정렬
+     * 각 카테고리에서 최고 운동을 하나씩 돌아가며 배치
+     */
     private fun orderByPriority(exercises: List<Exercise>): List<Exercise> {
-        return exercises.sortedWith(RecommendationExerciseRanking.displayOrderComparator())
+        val byCategory = exercises
+            .groupBy { it.category }
+            .mapValues { (_, group) ->
+                group.sortedWith(RecommendationExerciseRanking.displayOrderComparator())
+                    .toMutableList()
+            }
+
+        val categoryOrder = listOf(
+            ExerciseCategory.LEGS, ExerciseCategory.BACK, ExerciseCategory.CHEST,
+            ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS, ExerciseCategory.CORE,
+            ExerciseCategory.CARDIO, ExerciseCategory.FULL_BODY
+        )
+
+        val result = mutableListOf<Exercise>()
+        var hasMore = true
+        while (hasMore) {
+            hasMore = false
+            for (category in categoryOrder) {
+                val queue = byCategory[category]
+                if (queue != null && queue.isNotEmpty()) {
+                    result.add(queue.removeFirst())
+                    hasMore = true
+                }
+            }
+        }
+        return result
     }
 
     // === 헬퍼 메서드 ===
