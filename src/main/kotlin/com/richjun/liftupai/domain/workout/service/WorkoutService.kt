@@ -230,7 +230,7 @@ class WorkoutService(
             ?: 3
         var programType = userSettings?.workoutSplit
             ?: userProfile?.workoutSplit
-            ?: "PPL"
+            ?: "FULL_BODY"
 
         // AUTO인 경우 실제 프로그램 선택
         val autoRecommendation = if (programType.uppercase() == "AUTO") {
@@ -594,7 +594,7 @@ class WorkoutService(
         val settings = userSettingsRepository.findByUser_Id(userId).orElse(null)
         val profile = userProfileRepository.findByUser_Id(userId).orElse(null)
         val weeklyDays = settings?.weeklyWorkoutDays ?: profile?.weeklyWorkoutDays ?: 3
-        val split = settings?.workoutSplit ?: profile?.workoutSplit ?: "push_pull_legs"
+        val split = settings?.workoutSplit ?: profile?.workoutSplit ?: "FULL_BODY"
         val availableEquipment = settings?.availableEquipment?.toList() ?: emptyList()
         val programPosition = workoutProgressTracker.getNextWorkoutInProgram(user, weeklyDays)
         val sequence = workoutProgressTracker.getWorkoutTypeSequence(split).ifEmpty { listOf(WorkoutType.FULL_BODY) }

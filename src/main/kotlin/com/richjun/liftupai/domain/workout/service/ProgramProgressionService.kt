@@ -45,7 +45,7 @@ class ProgramProgressionService(
 
         if (recentSessions.isEmpty()) {
             return ProgramProgressionAnalysis(
-                currentProgram = profile?.workoutSplit ?: "PPL",
+                currentProgram = profile?.workoutSplit ?: "FULL_BODY",
                 currentDaysPerWeek = profile?.weeklyWorkoutDays ?: 3,
                 completedCycles = 0,
                 recommendation = null,
@@ -69,7 +69,7 @@ class ProgramProgressionService(
         )
 
         return ProgramProgressionAnalysis(
-            currentProgram = profile?.workoutSplit ?: "PPL",
+            currentProgram = profile?.workoutSplit ?: "FULL_BODY",
             currentDaysPerWeek = profile?.weeklyWorkoutDays ?: 3,
             completedCycles = completedCycles,
             currentCycle = recentSessions.firstOrNull()?.programCycle ?: 1,
@@ -353,7 +353,7 @@ class ProgramProgressionService(
         }
 
         val currentDays = profile?.weeklyWorkoutDays ?: 3
-        val currentProgram = profile?.workoutSplit ?: "PPL"
+        val currentProgram = profile?.workoutSplit ?: "FULL_BODY"
 
         return when {
             currentDays == 3 && currentProgram == "PPL" -> {
@@ -677,7 +677,7 @@ class ProgramProgressionService(
     }
 
     private fun generateProgramSuggestions(profile: UserProfile?, locale: String): List<ProgramSuggestion> {
-        val currentProgram = profile?.workoutSplit ?: "PPL"
+        val currentProgram = profile?.workoutSplit ?: "FULL_BODY"
         val experienceLevel = profile?.experienceLevel ?: ExperienceLevel.BEGINNER
 
         // Find programs that are one step up, excluding the current program
