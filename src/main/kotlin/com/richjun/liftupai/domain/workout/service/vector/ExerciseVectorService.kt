@@ -105,15 +105,16 @@ class ExerciseVectorService(
      */
     fun generateEmbedding(text: String): List<Float> {
         return try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=$apiKey"
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=$apiKey"
 
             val requestBody = mapOf(
-                "model" to "models/text-embedding-004",
+                "model" to "models/gemini-embedding-001",
                 "content" to mapOf(
                     "parts" to listOf(
                         mapOf("text" to text)
                     )
-                )
+                ),
+                "outputDimensionality" to 768
             )
 
             val jsonBody = objectMapper.writeValueAsString(requestBody)
