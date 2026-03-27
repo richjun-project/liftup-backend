@@ -1322,6 +1322,7 @@ class WorkoutServiceV2(
         // 사용자 프로필 및 데이터 수집
         val userProfile = userProfileRepository.findByUser_Id(user.id).orElse(null)
         val bodyWeight = userProfile?.bodyInfo?.weight ?: 70.0
+        val bodyFatPercentage = userProfile?.bodyInfo?.bodyFat
         val gender = userProfile?.gender?.lowercase() ?: "male"
         val experienceLevel = userProfile?.experienceLevel ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
 
@@ -1338,7 +1339,9 @@ class WorkoutServiceV2(
             experienceLevel = experienceLevel,
             personalRecord = personalRecord,
             recentHistory = recentSessions,
-            locale = locale
+            locale = locale,
+            bodyFatPercentage = bodyFatPercentage,
+            age = userProfile?.age
         )
 
         logger.info("Advanced PT System - Exercise: ${exercise.name}, " +
@@ -1362,6 +1365,7 @@ class WorkoutServiceV2(
 
         val userProfile = userProfileRepository.findByUser_Id(user.id).orElse(null)
         val bodyWeight = userProfile?.bodyInfo?.weight ?: 70.0
+        val bodyFatPercentage = userProfile?.bodyInfo?.bodyFat
         val gender = userProfile?.gender?.lowercase() ?: "male"
         val experienceLevel = userProfile?.experienceLevel ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
 
@@ -1413,7 +1417,9 @@ class WorkoutServiceV2(
             personalRecord = personalRecord,
             recentHistory = recentSessions,
             locale = locale,
-            programPhaseOverride = programPhaseOverride
+            programPhaseOverride = programPhaseOverride,
+            bodyFatPercentage = bodyFatPercentage,
+            age = userProfile?.age
         )
     }
 
@@ -1430,22 +1436,24 @@ class WorkoutServiceV2(
         personalRecord: com.richjun.liftupai.domain.workout.entity.PersonalRecord?,
         recentHistory: List<WorkoutData>,
         locale: String,
-        programPhaseOverride: PeriodizationPhase? = null
+        programPhaseOverride: PeriodizationPhase? = null,
+        bodyFatPercentage: Double? = null,
+        age: Int? = null
     ): PTRecommendation {
 
-        // 1. 기본 무게 계산
-        val baseWeight = calculateBaseWeight(exercise, bodyWeight, gender, experienceLevel)
+        // 1. 기본 무게 계산 (체조성 보정 포함)
+        val baseWeight = calculateBaseWeight(exercise, bodyWeight, gender, experienceLevel, bodyFatPercentage)
 
         // 2. 최근 운동 분석
         val performanceAnalysis = analyzeRecentPerformance(recentHistory)
 
-        // 3. 피로도 및 회복 상태 평가
-        val recoveryStatus = assessRecoveryStatus(user, exercise, recentHistory)
+        // 3. 피로도 및 회복 상태 평가 (연령 보정 포함)
+        val recoveryStatus = assessRecoveryStatus(user, exercise, recentHistory, age)
 
         // 4. 주기화 단계 결정 — 프로그램 등록자는 프로그램 phase 사용
-        val periodizationPhase = programPhaseOverride ?: determinePeriodizationPhase(user, recentHistory)
+        val periodizationPhase = programPhaseOverride ?: determinePeriodizationPhase(user, recentHistory, experienceLevel)
 
-        // 5. 점진적 과부하 계획 (운동 특성별 분화된 처방)
+        // 5. 점진적 과부하 계획 (운동 특성별 분화된 처방, 연령 보정 포함)
         val progressionPlan = calculateProgressiveOverload(
             exercise = exercise,
             baseWeight = baseWeight,
@@ -1454,7 +1462,8 @@ class WorkoutServiceV2(
             performanceAnalysis = performanceAnalysis,
             recoveryStatus = recoveryStatus,
             periodizationPhase = periodizationPhase,
-            locale = locale
+            locale = locale,
+            age = age
         )
 
         // 6. 최종 추천 생성
@@ -1463,6 +1472,7 @@ class WorkoutServiceV2(
             progressionPlan = progressionPlan,
             periodizationPhase = periodizationPhase,
             recoveryStatus = recoveryStatus,
+            performanceAnalysis = performanceAnalysis,
             locale = locale
         )
     }
@@ -1517,7 +1527,8 @@ class WorkoutServiceV2(
     private fun assessRecoveryStatus(
         user: com.richjun.liftupai.domain.auth.entity.User,
         exercise: Exercise,
-        recentHistory: List<WorkoutData>
+        recentHistory: List<WorkoutData>,
+        age: Int? = null
     ): RecoveryStatus {
         val daysSinceSameExercise = recentHistory.firstOrNull()?.let {
             ChronoUnit.DAYS.between(it.completedAt, AppTime.utcNow())
@@ -1532,17 +1543,31 @@ class WorkoutServiceV2(
                 }
             }
 
-        // 근육군별 회복 시간 (48-72시간)
-        val optimalRecoveryDays = when (exercise.category) {
-            ExerciseCategory.LEGS -> 3..4
-            ExerciseCategory.BACK, ExerciseCategory.CHEST -> 2..3
-            else -> 1..2
-        }
+        // 운동의 주요 근육군 중 가장 긴 회복 시간 적용 (보수적 접근)
+        val baseRecoveryDays = exercise.muscleGroups
+            .map { RecommendationConstants.getOptimalRecoveryDays(it) }
+            .maxByOrNull { it.first }
+            ?: when (exercise.category) {
+                ExerciseCategory.LEGS -> 3..4
+                ExerciseCategory.BACK, ExerciseCategory.CHEST -> 2..3
+                else -> 1..2
+            }
+
+        // 연령 기반 회복 시간 보정 (40대 이상 회복 시간 증가)
+        val ageMultiplier = RecommendationConstants.getAgeRecoveryMultiplier(age)
+        val adjustedMinDays = (baseRecoveryDays.first * ageMultiplier).toInt()
+        val adjustedMaxDays = (baseRecoveryDays.last * ageMultiplier).toInt()
+        val optimalRecoveryDays = adjustedMinDays..adjustedMaxDays
+
+        // 주당 같은 근육군 빈도 상한 (대근육 2-3회, 소근육 3-4회)
+        val maxWeeklyFrequency = if (exercise.muscleGroups.any {
+            it in RecommendationConstants.LARGE_MUSCLE_GROUPS
+        }) 3 else 4
 
         return when {
             daysSinceSameExercise < optimalRecoveryDays.first -> RecoveryStatus.UNDER_RECOVERED
             daysSinceSameExercise > optimalRecoveryDays.last * 2 -> RecoveryStatus.DETRAINED
-            targetedFrequency >= 4 -> RecoveryStatus.OVERREACHING
+            targetedFrequency >= maxWeeklyFrequency -> RecoveryStatus.OVERREACHING
             daysSinceSameExercise in optimalRecoveryDays -> RecoveryStatus.OPTIMAL
             else -> RecoveryStatus.WELL_RECOVERED
         }
@@ -1555,7 +1580,7 @@ class WorkoutServiceV2(
      * - 4주 메소사이클: 3주 로딩 + 1주 디로드
      * - 실제 날짜 기반 계산으로 휴식 기간 반영
      */
-    private fun determinePeriodizationPhase(user: com.richjun.liftupai.domain.auth.entity.User, recentHistory: List<WorkoutData>): PeriodizationPhase {
+    private fun determinePeriodizationPhase(user: com.richjun.liftupai.domain.auth.entity.User, recentHistory: List<WorkoutData>, experienceLevel: ExperienceLevel = ExperienceLevel.BEGINNER): PeriodizationPhase {
         val now = AppTime.utcNow()
 
         // 마지막 운동 이후 경과 일수
@@ -1582,10 +1607,35 @@ class WorkoutServiceV2(
             }
         }
 
-        // 과훈련 체크 (최근 4주 평균이 주 5회 이상)
+        // 과훈련 체크 (경험 수준별 주간 빈도 임계값 차등 적용)
         val recentAvg = last8Weeks.take(4).average()
-        if (recentAvg >= 5.0) {
-            return PeriodizationPhase.DELOAD
+        val maxWeeklyFrequency = when (experienceLevel) {
+            ExperienceLevel.BEGINNER -> 3.5
+            ExperienceLevel.NOVICE -> 4.0
+            ExperienceLevel.INTERMEDIATE -> 5.0
+            ExperienceLevel.ADVANCED -> 6.0
+            ExperienceLevel.EXPERT -> 7.0
+        }
+
+        // 과훈련 단계별 대응
+        val overtrainingRatio = recentAvg / maxWeeklyFrequency
+        when {
+            overtrainingRatio >= 1.2 -> {
+                // 120% 이상: 강제 DELOAD
+                logger.warn("User ${user.id} significantly overtrained (${recentAvg} vs max ${maxWeeklyFrequency}). Forcing DELOAD.")
+                return PeriodizationPhase.DELOAD
+            }
+            overtrainingRatio >= 1.0 -> {
+                // 100-120%: DELOAD 권고 (ACCUMULATION 대신 DELOAD)
+                logger.info("User ${user.id} approaching overtraining (${recentAvg} vs max ${maxWeeklyFrequency}). Recommending DELOAD.")
+                return PeriodizationPhase.DELOAD
+            }
+            overtrainingRatio >= 0.85 -> {
+                // 85-100%: 주의 — 현재 사이클 유지하되 볼륨 감소 신호
+                logger.debug("User ${user.id} nearing training limit (${recentAvg} vs max ${maxWeeklyFrequency}).")
+                // 사이클 계산을 계속하되 REALIZATION은 피함
+                // (아래 사이클 로직에서 REALIZATION이 나오면 INTENSIFICATION으로 다운그레이드)
+            }
         }
 
         // 최근 28일 내 연속 활동 주 수 기반 사이클 계산 (전체 히스토리 X)
@@ -1593,13 +1643,23 @@ class WorkoutServiceV2(
 
         val cycleWeek = if (consecutiveActiveWeeks == 0) 1 else ((consecutiveActiveWeeks - 1) % 4) + 1
 
-        return when (cycleWeek) {
+        val cyclePhase = when (cycleWeek) {
             1 -> PeriodizationPhase.ACCUMULATION
             2 -> PeriodizationPhase.INTENSIFICATION
             3 -> PeriodizationPhase.REALIZATION
             4 -> PeriodizationPhase.DELOAD
             else -> PeriodizationPhase.ACCUMULATION
         }
+
+        // 85-100% 범위일 때 REALIZATION을 피함 (과부하 위험)
+        val finalPhase = when {
+            overtrainingRatio >= 0.85 && cyclePhase == PeriodizationPhase.REALIZATION -> {
+                logger.info("Downgrading REALIZATION to INTENSIFICATION due to training load proximity (ratio: $overtrainingRatio)")
+                PeriodizationPhase.INTENSIFICATION
+            }
+            else -> cyclePhase
+        }
+        return finalPhase
     }
 
     /**
@@ -1613,7 +1673,8 @@ class WorkoutServiceV2(
         performanceAnalysis: PerformanceAnalysis,
         recoveryStatus: RecoveryStatus,
         periodizationPhase: PeriodizationPhase,
-        locale: String
+        locale: String,
+        age: Int? = null
     ): ProgressionPlan {
 
         val lastWeight = recentHistory.firstOrNull()?.weight ?: baseWeight
@@ -1628,8 +1689,9 @@ class WorkoutServiceV2(
             PeriodizationPhase.DELOAD -> 0.50..0.60  // 50-60% 1RM
         }
 
-        // 수행 분석에 따른 조정
-        val progressionMultiplier = when (performanceAnalysis.trend) {
+        // 수행 분석에 따른 조정 + 연령 기반 progression 보정
+        val ageProgressionFactor = RecommendationConstants.getAgeProgressionMultiplier(age)
+        val baseProgressionMultiplier = when (performanceAnalysis.trend) {
             PerformanceTrend.READY_TO_PROGRESS -> 1.05  // 5% 증가
             PerformanceTrend.IMPROVING -> 1.025  // 2.5% 증가
             PerformanceTrend.MAINTAINING -> 1.0  // 유지
@@ -1637,6 +1699,12 @@ class WorkoutServiceV2(
             PerformanceTrend.TECHNIQUE_FOCUS -> 0.9  // 10% 감소
             PerformanceTrend.DECLINING -> 0.95  // 5% 감소
             PerformanceTrend.NEW_EXERCISE -> 1.0  // 기본값
+        }
+        // 증가 방향일 때만 연령 보정 적용 (감소 방향은 그대로 유지)
+        val progressionMultiplier = if (baseProgressionMultiplier > 1.0) {
+            1.0 + (baseProgressionMultiplier - 1.0) * ageProgressionFactor
+        } else {
+            baseProgressionMultiplier
         }
 
         // 회복 상태에 따른 조정
@@ -1687,8 +1755,39 @@ class WorkoutServiceV2(
 
         // 운동 특성별 분화된 세트/횟수/휴식 처방
         val config = exerciseTrainingProfileResolver.resolveConfig(exercise, periodizationPhase)
-        val sets = config.sets
-        val reps = config.reps
+
+        // 점진적 과부하 전략 결정: 무게→렙→세트→템포 순으로 로테이션
+        val strategy = when (performanceAnalysis.trend) {
+            PerformanceTrend.READY_TO_PROGRESS -> ProgressionStrategy.WEIGHT_INCREASE
+            PerformanceTrend.IMPROVING -> ProgressionStrategy.WEIGHT_INCREASE
+            PerformanceTrend.MAINTAINING -> ProgressionStrategy.REP_INCREASE      // 정체 시 렙 먼저
+            PerformanceTrend.TECHNIQUE_FOCUS -> ProgressionStrategy.TEMPO_CHANGE
+            PerformanceTrend.DECLINING -> ProgressionStrategy.REP_INCREASE        // 무게 줄이고 렙 증가
+            PerformanceTrend.NEEDS_DELOAD -> ProgressionStrategy.WEIGHT_INCREASE  // 무게 감소 적용됨
+            PerformanceTrend.NEW_EXERCISE -> ProgressionStrategy.REP_INCREASE
+        }
+
+        // 전략에 따른 세트/렙 조정
+        val sets: Int
+        val reps: String
+        when (strategy) {
+            ProgressionStrategy.WEIGHT_INCREASE -> {
+                sets = config.sets
+                reps = config.reps
+            }
+            ProgressionStrategy.REP_INCREASE -> {
+                sets = config.sets
+                reps = increaseRepRange(config.reps)
+            }
+            ProgressionStrategy.SET_INCREASE -> {
+                sets = (config.sets + 1).coerceAtMost(6) // 절대 최대 6세트
+                reps = config.reps
+            }
+            ProgressionStrategy.TEMPO_CHANGE -> {
+                sets = config.sets
+                reps = config.reps
+            }
+        }
 
         // intensity 계산 시 NaN 방지
         val intensity = if (prWeight > 0 && targetWeight.isFinite()) {
@@ -1703,8 +1802,23 @@ class WorkoutServiceV2(
             reps = reps,
             restSeconds = config.restSeconds,
             intensity = intensity,
-            focus = determineFocus(performanceAnalysis, periodizationPhase, locale)
+            focus = determineFocus(performanceAnalysis, periodizationPhase, strategy, locale)
         )
+    }
+
+    /**
+     * 렙 범위를 +2씩 올리는 헬퍼
+     * 예: "6-8" → "8-10", "10" → "12"
+     * 시간 기반("30s", "30-60s", "time-based")은 변경하지 않음
+     */
+    private fun increaseRepRange(reps: String): String {
+        if (reps.contains("s") || reps == "time-based") return reps
+        val parts = reps.split("-")
+        return when (parts.size) {
+            2 -> "${parts[0].trim().toIntOrNull()?.plus(2) ?: parts[0]}-${parts[1].trim().toIntOrNull()?.plus(2) ?: parts[1]}"
+            1 -> parts[0].trim().toIntOrNull()?.plus(2)?.toString() ?: reps
+            else -> reps
+        }
     }
 
     /**
@@ -1715,6 +1829,7 @@ class WorkoutServiceV2(
         progressionPlan: ProgressionPlan,
         periodizationPhase: PeriodizationPhase,
         recoveryStatus: RecoveryStatus,
+        performanceAnalysis: PerformanceAnalysis,
         locale: String
     ): PTRecommendation {
 
@@ -1723,6 +1838,7 @@ class WorkoutServiceV2(
             exercise = exercise,
             phase = periodizationPhase,
             recovery = recoveryStatus,
+            performanceTrend = performanceAnalysis.trend,
             focus = progressionPlan.focus,
             locale = locale
         )
@@ -1758,7 +1874,14 @@ class WorkoutServiceV2(
     }
 
     // Helper 함수들
-    private fun calculateBaseWeight(exercise: Exercise, bodyWeight: Double, gender: String, experienceLevel: com.richjun.liftupai.domain.user.entity.ExperienceLevel): Double {
+    private fun calculateBaseWeight(exercise: Exercise, bodyWeight: Double, gender: String, experienceLevel: com.richjun.liftupai.domain.user.entity.ExperienceLevel, bodyFatPercentage: Double? = null): Double {
+        // 체조성 보정: 제지방량(LBM) 기반 계산
+        val effectiveWeight = if (bodyFatPercentage != null && bodyFatPercentage in 5.0..50.0) {
+            bodyWeight * (1.0 - bodyFatPercentage / 100.0)  // 제지방량
+        } else {
+            bodyWeight * 0.80  // 체지방률 미입력 시 기본 20% 가정
+        }
+
         val genderMultiplier = when (gender) {
             "female" -> when (exercise.category) {
                 ExerciseCategory.CHEST, ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS -> 0.7
@@ -1776,7 +1899,7 @@ class WorkoutServiceV2(
             com.richjun.liftupai.domain.user.entity.ExperienceLevel.EXPERT -> 1.1
         }
 
-        val baseWeight = getExerciseBaseWeight(exercise, bodyWeight)
+        val baseWeight = getExerciseBaseWeight(exercise, effectiveWeight)
         return baseWeight * genderMultiplier * experienceMultiplier
     }
 
@@ -1889,13 +2012,25 @@ class WorkoutServiceV2(
         }
     }
 
-    private fun determineFocus(analysis: PerformanceAnalysis, phase: PeriodizationPhase, locale: String): String {
-        return when {
+    private fun determineFocus(
+        analysis: PerformanceAnalysis,
+        phase: PeriodizationPhase,
+        strategy: ProgressionStrategy = ProgressionStrategy.WEIGHT_INCREASE,
+        locale: String
+    ): String {
+        val baseFocus = when {
             analysis.trend == PerformanceTrend.TECHNIQUE_FOCUS -> WorkoutLocalization.message("pt.focus.technique", locale)
             phase == PeriodizationPhase.DELOAD -> WorkoutLocalization.message("pt.focus.deload", locale)
             phase == PeriodizationPhase.REALIZATION -> WorkoutLocalization.message("pt.focus.realization", locale)
             analysis.avgRPE > 8 -> WorkoutLocalization.message("pt.focus.high_rpe", locale)
             else -> WorkoutLocalization.message("pt.focus.default", locale)
+        }
+
+        // TEMPO_CHANGE 전략일 때 템포 지시 추가
+        return if (strategy == ProgressionStrategy.TEMPO_CHANGE) {
+            "$baseFocus ${WorkoutLocalization.message("pt.focus.tempo_instruction", locale)}"
+        } else {
+            baseFocus
         }
     }
 
@@ -1903,9 +2038,11 @@ class WorkoutServiceV2(
         exercise: Exercise,
         phase: PeriodizationPhase,
         recovery: RecoveryStatus,
+        performanceTrend: PerformanceTrend,
         focus: String,
         locale: String
     ): String {
+        // Layer 1: 운동 패턴별 기술 팁
         val pattern = exercisePatternClassifier.classifyExercise(exercise)
         val exerciseTip = when (pattern) {
             ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_BARBELL,
@@ -1949,7 +2086,37 @@ class WorkoutServiceV2(
             else -> WorkoutLocalization.message("pt.coaching.generic", locale)
         }
 
-        return WorkoutLocalization.message("pt.coaching.combined", locale, exerciseTip, focus)
+        // Layer 2: 주기화 단계별 팁
+        val phaseTip = when (phase) {
+            PeriodizationPhase.ACCUMULATION -> WorkoutLocalization.message("pt.coaching.phase.accumulation", locale)
+            PeriodizationPhase.INTENSIFICATION -> WorkoutLocalization.message("pt.coaching.phase.intensification", locale)
+            PeriodizationPhase.REALIZATION -> WorkoutLocalization.message("pt.coaching.phase.realization", locale)
+            PeriodizationPhase.DELOAD -> WorkoutLocalization.message("pt.coaching.phase.deload", locale)
+        }
+
+        // Layer 3: 회복 상태별 팁 (OPTIMAL/WELL_RECOVERED는 별도 팁 없음)
+        val recoveryTip = when (recovery) {
+            RecoveryStatus.UNDER_RECOVERED -> WorkoutLocalization.message("pt.coaching.recovery.under_recovered", locale)
+            RecoveryStatus.OVERREACHING -> WorkoutLocalization.message("pt.coaching.recovery.overreaching", locale)
+            RecoveryStatus.DETRAINED -> WorkoutLocalization.message("pt.coaching.recovery.detrained", locale)
+            RecoveryStatus.OPTIMAL, RecoveryStatus.WELL_RECOVERED -> null
+        }
+
+        // Layer 4: 퍼포먼스 트렌드별 팁 (MAINTAINING/NEW_EXERCISE는 별도 팁 없음)
+        val performanceTip = when (performanceTrend) {
+            PerformanceTrend.READY_TO_PROGRESS -> WorkoutLocalization.message("pt.coaching.performance.ready_to_progress", locale)
+            PerformanceTrend.IMPROVING -> WorkoutLocalization.message("pt.coaching.performance.improving", locale)
+            PerformanceTrend.DECLINING -> WorkoutLocalization.message("pt.coaching.performance.declining", locale)
+            PerformanceTrend.NEEDS_DELOAD -> WorkoutLocalization.message("pt.coaching.performance.needs_deload", locale)
+            PerformanceTrend.TECHNIQUE_FOCUS -> WorkoutLocalization.message("pt.coaching.performance.technique_focus", locale)
+            PerformanceTrend.MAINTAINING, PerformanceTrend.NEW_EXERCISE -> null
+        }
+
+        // 조합: 운동 팁 + focus + 추가 팁 (우선순위: 회복 > 주기화 > 퍼포먼스, 최대 2개)
+        val baseTip = WorkoutLocalization.message("pt.coaching.combined", locale, exerciseTip, focus)
+        val additionalTips = listOfNotNull(recoveryTip, phaseTip, performanceTip).take(2)
+        return if (additionalTips.isEmpty()) baseTip
+        else "$baseTip ${additionalTips.joinToString(" ")}"
     }
 
     // 데이터 클래스들
@@ -1996,6 +2163,13 @@ class WorkoutServiceV2(
         NEEDS_DELOAD,
         TECHNIQUE_FOCUS,
         NEW_EXERCISE
+    }
+
+    enum class ProgressionStrategy {
+        WEIGHT_INCREASE,    // 무게 증가 (기본)
+        REP_INCREASE,       // 같은 무게에서 렙 증가
+        SET_INCREASE,       // 세트 수 증가
+        TEMPO_CHANGE        // 템포 변경 (느린 네거티브 등)
     }
 
     enum class RecoveryStatus {

@@ -22,6 +22,7 @@ import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.domain.ai.service.GeminiAIService
 import com.richjun.liftupai.domain.workout.service.AutoProgramSelector
 import com.richjun.liftupai.domain.workout.service.ExerciseCatalogLocalizationService
+import com.richjun.liftupai.domain.workout.service.RecommendationConstants
 import com.richjun.liftupai.domain.workout.service.RecommendationExerciseRanking
 import com.richjun.liftupai.domain.workout.service.WorkoutProgressTracker
 import com.richjun.liftupai.domain.workout.service.WorkoutProgramPosition
@@ -456,6 +457,28 @@ class AIAnalysisService(
             - Preferred session duration: ${workoutDurationPreference?.let { "$it min" } ?: "not set"}
         """.trimIndent()
 
+        // 체조성 정보 (IMP-11)
+        val bodyCompositionInfo = profile?.bodyInfo?.bodyFat?.let { bf ->
+            val lbm = (profile.bodyInfo?.weight ?: 70.0) * (1.0 - bf / 100.0)
+            """
+            Body composition:
+            - Body fat: ${bf}%
+            - Lean body mass: ${String.format("%.1f", lbm)}kg
+            - Weight recommendations are based on lean body mass, not total weight.
+            """.trimIndent()
+        } ?: ""
+
+        // 연령 보정 정보 (IMP-13)
+        val ageInfo = profile?.age?.let { age ->
+            if (age >= 30) """
+            Age consideration: User is $age years old.
+            - Recovery time multiplier: ${RecommendationConstants.getAgeRecoveryMultiplier(age)}x
+            - Progression rate: ${(RecommendationConstants.getAgeProgressionMultiplier(age) * 100).toInt()}% of standard
+            - Prioritize joint-friendly exercises and longer warm-ups for older users.
+            """.trimIndent()
+            else ""
+        } ?: ""
+
         // 최근 운동 이력 분석 추가
         val recentWorkouts = workoutSessionRepository.findTop7ByUserOrderByStartTimeDesc(user)
 
@@ -604,10 +627,20 @@ class AIAnalysisService(
             " (prescribe lighter intensity ~50-60% 1RM, reduced volume)"
         else ""
 
+        val currentPhaseGuide = when (periodizationPhase) {
+            "ACCUMULATION" -> "Current phase is ACCUMULATION: prioritize higher volume (more reps) with moderate weight."
+            "INTENSIFICATION" -> "Current phase is INTENSIFICATION: prioritize moderate volume with heavier weight."
+            "REALIZATION" -> "Current phase is REALIZATION: prioritize low volume with near-maximal weight."
+            "DELOAD" -> "Current phase is DELOAD: reduce both volume and intensity significantly for recovery."
+            else -> ""
+        }
+
         return """
             Build a personalized workout program and respond with JSON only.
 
             $profileInfo
+            $bodyCompositionInfo
+            $ageInfo
             $workoutHistoryInfo
             $recentAchievements
             $volumeAnalysis
@@ -634,6 +667,7 @@ class AIAnalysisService(
             - Core/stability (planks, crunches, leg raises): 2-3 sets, time-based or 12-20 reps, 30-60s rest
             - Olympic lifts (clean, snatch): 3-6 sets, 1-3 reps, 180-300s rest
             Current phase: $periodizationPhase
+            $currentPhaseGuide
 
             Hard rules:
             1. Avoid muscle groups trained in the last 48 hours or still marked as recovering below 80%.
@@ -822,7 +856,7 @@ class AIAnalysisService(
 
                 usedExerciseIds.add(exerciseId)
 
-                // PT 시스템으로 세트/렙/무게/휴식 전부 계산 (Gemini 값 대신)
+                // PT 시스템으로 세트/렙/무게/휴식 전부 계산
                 val ptRec = try {
                     workoutServiceV2.calculateFullPTRecommendation(user, matchedExercise)
                 } catch (e: Exception) {
@@ -833,12 +867,27 @@ class AIAnalysisService(
                     ?: try { workoutServiceV2.calculateSuggestedWeight(user, matchedExercise) }
                     catch (e: Exception) { calculateWeightByExerciseName(user, matchedExercise.name) }
 
+                // AI 제안값 추출
+                val aiSets = (exerciseMap["sets"] as? Number)?.toInt()
+                val aiReps = exerciseMap["reps"] as? String
+                val aiRest = (exerciseMap["rest_seconds"] as? Number)?.toInt()
+
+                // PT 기준값
+                val ptSets = ptRec?.sets ?: 3
+                val ptReps = ptRec?.reps ?: "10-12"
+                val ptRest = ptRec?.restSeconds ?: 60
+
+                // 하이브리드: AI 값이 PT 허용 범위 내면 AI 값 존중, 범위 밖이면 PT 값으로 보정
+                val finalSets = if (aiSets != null && aiSets in (ptSets - 1)..(ptSets + 1)) aiSets else ptSets
+                val finalReps = mergeReps(aiReps, ptReps)
+                val finalRest = if (aiRest != null && aiRest in (ptRest - 30)..(ptRest + 30)) aiRest else ptRest
+
                 AIExerciseDetail(
                     exerciseId = matchedExercise.id.toString(),
                     name = localizedExerciseName(matchedExercise, locale, translations),
-                    sets = ptRec?.sets ?: (exerciseMap["sets"] as? Number)?.toInt() ?: 3,
-                    reps = ptRec?.reps ?: exerciseMap["reps"] as? String ?: "10-12",
-                    rest = ptRec?.restSeconds ?: (exerciseMap["rest_seconds"] as? Number)?.toInt() ?: 60,
+                    sets = finalSets,
+                    reps = finalReps,
+                    rest = finalRest,
                     order = (exerciseMap["order"] as? Number)?.toInt() ?: (index + 1),
                     suggestedWeight = suggestedWeight,
                     targetMuscles = getExerciseTargetMuscles(matchedExercise, locale),
@@ -1824,5 +1873,39 @@ class AIAnalysisService(
 
         // 신선한 운동 우선, 그 다음 변형, 마지막으로 최근 한 운동
         return (freshExercises + variations + candidates).distinctBy { it.id }
+    }
+
+    /**
+     * AI가 제안한 reps 문자열과 PT 시스템의 reps 기준값을 병합.
+     * 시간 기반이면 PT 우선, 범위 중간값 차이가 ±3 이내면 AI 값 존중.
+     */
+    private fun mergeReps(aiReps: String?, ptReps: String): String {
+        if (aiReps == null) return ptReps
+        // 시간 기반이면 PT 우선
+        if (ptReps.contains("s") || ptReps == "time-based") return ptReps
+
+        val ptRange = parseRepRange(ptReps) ?: return ptReps
+        val aiRange = parseRepRange(aiReps) ?: return ptReps
+
+        // AI 범위가 PT 범위 ±3 이내면 AI 값 존중
+        val ptMid = (ptRange.first + ptRange.second) / 2
+        val aiMid = (aiRange.first + aiRange.second) / 2
+        return if (kotlin.math.abs(aiMid - ptMid) <= 3) aiReps else ptReps
+    }
+
+    /**
+     * "10-12", "8", "6-10" 같은 reps 문자열을 (low, high) 쌍으로 파싱.
+     */
+    private fun parseRepRange(reps: String): Pair<Int, Int>? {
+        val parts = reps.split("-")
+        return when (parts.size) {
+            1 -> parts[0].trim().toIntOrNull()?.let { it to it }
+            2 -> {
+                val low = parts[0].trim().toIntOrNull() ?: return null
+                val high = parts[1].trim().toIntOrNull() ?: return null
+                low to high
+            }
+            else -> null
+        }
     }
 }
