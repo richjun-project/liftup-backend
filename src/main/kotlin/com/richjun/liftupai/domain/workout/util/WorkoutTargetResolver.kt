@@ -251,4 +251,26 @@ object WorkoutTargetResolver {
     fun displayNamesForWorkoutType(type: WorkoutType, locale: String = "en"): List<String> {
         return targetsForWorkoutType(type).map { displayName(it, locale) }
     }
+
+    /**
+     * 추천용 타겟 키("push", "chest" 등)를 근육군 집합으로 변환.
+     * ExerciseRecommendationService, VectorWorkoutRecommendationService 양쪽에서 사용.
+     */
+    fun muscleGroupsForKey(target: String): Set<MuscleGroup> {
+        val focus = resolveFocus(target)
+        if (focus != null) return muscleGroupsForFocus(focus)
+        // resolveFocus가 못 찾으면 직접 매핑
+        return when (target.lowercase()) {
+            "full_body" -> emptySet()
+            else -> resolveMuscleGroup(target)?.let { setOf(it) } ?: emptySet()
+        }
+    }
+
+    /**
+     * WorkoutType → 추천 API용 타겟 문자열 변환.
+     * PUSH→"push"(가슴+어깨+삼두), PULL→"pull"(등+이두) 등.
+     */
+    fun recommendationTargetForType(workoutType: WorkoutType): String {
+        return key(primaryFocusForWorkoutType(workoutType))
+    }
 }

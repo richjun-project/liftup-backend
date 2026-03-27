@@ -10,7 +10,6 @@ import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.time.LocalDateTime
 
 /**
  * Recommendation-only service for filtering, recovery checks, and ordering.
@@ -26,10 +25,9 @@ class ExerciseRecommendationService(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     companion object {
-        // 설정 상수
-        private const val MIN_EXERCISES_THRESHOLD = 3  // 회복 필터 후 최소 운동 개수 (6→3: 회복 우선)
-        private const val RECOVERY_THRESHOLD_PERCENT = 50
-        private const val RECENT_WORKOUT_HOURS = 24
+        private const val MIN_EXERCISES_THRESHOLD = RecommendationConstants.SAFETY_MIN_EXERCISES
+        private const val RECOVERY_THRESHOLD_PERCENT = RecommendationConstants.RECOVERY_THRESHOLD_PERCENT
+        private const val RECENT_WORKOUT_HOURS = RecommendationConstants.RECENT_WORKOUT_HOURS
     }
 
     /**
@@ -279,23 +277,8 @@ class ExerciseRecommendationService(
         }.also { logger.debug("Target filter result: ${it.size} ($normalizedTarget)") }
     }
 
-    /**
-     * 타겟 이름을 근육군 집합으로 변환
-     */
     private fun getMuscleGroupsForTarget(target: String): Set<MuscleGroup> {
-        return when (target.lowercase()) {
-            "full_body" -> emptySet()
-            "push" -> setOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleGroup.TRICEPS)
-            "pull" -> setOf(MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.BICEPS)
-            "legs", "lower" -> setOf(MuscleGroup.QUADRICEPS, MuscleGroup.HAMSTRINGS, MuscleGroup.GLUTES, MuscleGroup.CALVES)
-            "upper" -> setOf(MuscleGroup.CHEST, MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS)
-            "chest" -> setOf(MuscleGroup.CHEST)
-            "back" -> setOf(MuscleGroup.BACK, MuscleGroup.LATS)
-            "shoulders" -> setOf(MuscleGroup.SHOULDERS)
-            "arms" -> setOf(MuscleGroup.BICEPS, MuscleGroup.TRICEPS, MuscleGroup.FOREARMS)
-            "core" -> setOf(MuscleGroup.ABS, MuscleGroup.CORE)
-            else -> emptySet()
-        }
+        return WorkoutTargetResolver.muscleGroupsForKey(target)
     }
 
     /**

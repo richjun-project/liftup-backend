@@ -61,6 +61,7 @@ class WorkoutServiceV2(
     private val programProgressiveOverloadService: ProgramProgressiveOverloadService,
     @Autowired(required = false)
     private val notificationService: NotificationService?,
+    private val exerciseTrainingProfileResolver: ExerciseTrainingProfileResolver,
     @Autowired(required = false)
     private val vectorRecommendationService: VectorWorkoutRecommendationService?
 ) {
@@ -1048,7 +1049,7 @@ class WorkoutServiceV2(
                     null // fall through to program position
                 } else {
                     val currentWorkoutType = activeSession.workoutType ?: WorkoutType.FULL_BODY
-                    val sessionMuscle = workoutTypeToTargetMuscle(currentWorkoutType)
+                    val sessionMuscle = WorkoutTargetResolver.recommendationTargetForType(currentWorkoutType)
                     logger.debug("Selected target muscle from current session: {} (current type: {})", sessionMuscle, currentWorkoutType)
                     sessionMuscle
                 }
@@ -1057,7 +1058,7 @@ class WorkoutServiceV2(
             } ?: run {
                 // 진행 중인 세션이 없거나 오래된 경우 프로그램 위치에 따라 선택
                 val workoutType = programContext.workoutSequence.getOrNull(programPosition.day - 1) ?: WorkoutType.FULL_BODY
-                val programMuscle = workoutTypeToTargetMuscle(workoutType)
+                val programMuscle = WorkoutTargetResolver.recommendationTargetForType(workoutType)
                 logger.debug("Selected target muscle from program state: {} (next: {}, day {})", programMuscle, workoutType, programPosition.day)
                 programMuscle
             }
@@ -1444,8 +1445,9 @@ class WorkoutServiceV2(
         // 4. 주기화 단계 결정 — 프로그램 등록자는 프로그램 phase 사용
         val periodizationPhase = programPhaseOverride ?: determinePeriodizationPhase(user, recentHistory)
 
-        // 5. 점진적 과부하 계획
+        // 5. 점진적 과부하 계획 (운동 특성별 분화된 처방)
         val progressionPlan = calculateProgressiveOverload(
+            exercise = exercise,
             baseWeight = baseWeight,
             personalRecord = personalRecord,
             recentHistory = recentHistory,
@@ -1604,6 +1606,7 @@ class WorkoutServiceV2(
      * 점진적 과부하 계획 수립
      */
     private fun calculateProgressiveOverload(
+        exercise: Exercise,
         baseWeight: Double,
         personalRecord: com.richjun.liftupai.domain.workout.entity.PersonalRecord?,
         recentHistory: List<WorkoutData>,
@@ -1682,13 +1685,10 @@ class WorkoutServiceV2(
             targetWeight = targetWeight.coerceAtMost(prWeight * 1.1)
         }
 
-        // 반복 횟수 및 세트 추천
-        val (sets, reps) = when (periodizationPhase) {
-            PeriodizationPhase.ACCUMULATION -> 4 to "10-12"  // 고볼륨
-            PeriodizationPhase.INTENSIFICATION -> 4 to "6-8"  // 중강도
-            PeriodizationPhase.REALIZATION -> 3 to "3-5"  // 고강도
-            PeriodizationPhase.DELOAD -> 3 to "12-15"  // 저강도 회복
-        }
+        // 운동 특성별 분화된 세트/횟수/휴식 처방
+        val config = exerciseTrainingProfileResolver.resolveConfig(exercise, periodizationPhase)
+        val sets = config.sets
+        val reps = config.reps
 
         // intensity 계산 시 NaN 방지
         val intensity = if (prWeight > 0 && targetWeight.isFinite()) {
@@ -1701,7 +1701,7 @@ class WorkoutServiceV2(
             weight = roundToPlate(targetWeight),
             sets = sets,
             reps = reps,
-            restSeconds = getRestTime(periodizationPhase),
+            restSeconds = config.restSeconds,
             intensity = intensity,
             focus = determineFocus(performanceAnalysis, periodizationPhase, locale)
         )
@@ -1879,6 +1879,7 @@ class WorkoutServiceV2(
         return (Math.round(weight / 2.5) * 2.5).coerceAtLeast(2.5)
     }
 
+    @Deprecated("Use ExerciseTrainingProfileResolver.resolveConfig() instead", ReplaceWith("exerciseTrainingProfileResolver.resolveConfig(exercise, phase).restSeconds"))
     private fun getRestTime(phase: PeriodizationPhase): Int {
         return when (phase) {
             PeriodizationPhase.ACCUMULATION -> 90
@@ -2088,7 +2089,7 @@ class WorkoutServiceV2(
         val userSettings = userSettingsRepository.findByUser_Id(userId).orElse(null)
         val configuredProgramType = userSettings?.workoutSplit
             ?: userProfile?.workoutSplit
-            ?: "FULL_BODY"
+            ?: RecommendationConstants.DEFAULT_PROGRAM_TYPE
         val programDays = userSettings?.weeklyWorkoutDays
             ?: userProfile?.weeklyWorkoutDays
             ?: 3
@@ -2179,27 +2180,6 @@ class WorkoutServiceV2(
         val baseCalories = duration * 5
         val exerciseBonus = exerciseCount * 8
         return baseCalories + exerciseBonus
-    }
-
-    /**
-     * WorkoutType → 추천용 타겟 근육 문자열 변환
-     * PUSH = chest + shoulders + triceps, PULL = back + biceps
-     */
-    private fun workoutTypeToTargetMuscle(workoutType: WorkoutType): String {
-        return when (workoutType) {
-            WorkoutType.PUSH -> "push"
-            WorkoutType.PULL -> "pull"
-            WorkoutType.LEGS -> "legs"
-            WorkoutType.UPPER -> "upper"
-            WorkoutType.LOWER -> "lower"
-            WorkoutType.CHEST -> "chest"
-            WorkoutType.BACK -> "back"
-            WorkoutType.ARMS -> "arms"
-            WorkoutType.SHOULDERS -> "shoulders"
-            WorkoutType.ABS -> "core"
-            WorkoutType.CARDIO -> "full_body"
-            WorkoutType.FULL_BODY -> "full_body"
-        }
     }
 
     // Helper methods

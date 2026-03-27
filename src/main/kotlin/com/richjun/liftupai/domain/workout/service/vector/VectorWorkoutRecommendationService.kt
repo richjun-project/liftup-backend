@@ -12,13 +12,13 @@ import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.domain.workout.service.ExercisePatternClassifier
 import com.richjun.liftupai.domain.workout.service.ExerciseRecommendationService
+import com.richjun.liftupai.domain.workout.service.RecommendationConstants
 import com.richjun.liftupai.domain.workout.service.RecommendationExerciseRanking
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import com.richjun.liftupai.global.time.AppTime
-import java.time.LocalDateTime
 
 /**
  * 벡터 기반 운동 추천 서비스
@@ -43,9 +43,10 @@ class VectorWorkoutRecommendationService(
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     companion object {
-        private const val VECTOR_SEARCH_MULTIPLIER = 3  // 필터링 후 부족할 수 있으므로 더 많이 검색
-        private const val MIN_SIMILARITY_SCORE = 0.55f  // 0.4→0.55: 느슨한 매칭 방지
-        private const val RECOVERY_THRESHOLD = 50
+        private const val VECTOR_SEARCH_MULTIPLIER = 3
+        private const val MIN_SIMILARITY_SCORE = 0.55f
+        private const val RECOVERY_THRESHOLD = RecommendationConstants.RECOVERY_THRESHOLD_PERCENT
+        private const val SAFETY_MIN = RecommendationConstants.SAFETY_MIN_EXERCISES
     }
 
     /**
@@ -368,7 +369,7 @@ class VectorWorkoutRecommendationService(
                 // compound 70% 비율 보장
                 val maxIsolation = (compounds.size * 3) / 7  // compound:isolation = 7:3
                 val result = compounds + isolations.take(maxIsolation)
-                if (result.size >= 3) result else nonCardio.ifEmpty { exercises }
+                if (result.size >= SAFETY_MIN) result else nonCardio.ifEmpty { exercises }
             }
             com.richjun.liftupai.domain.user.entity.FitnessGoal.WEIGHT_LOSS, com.richjun.liftupai.domain.user.entity.FitnessGoal.ENDURANCE -> {
                 // 체중감량/지구력: 전신/유산소 우선, 고난이도 고립 제외
@@ -381,8 +382,7 @@ class VectorWorkoutRecommendationService(
             else -> exercises // GENERAL_FITNESS, ATHLETIC_PERFORMANCE: 다양성 유지
         }
 
-        // 필터 후 너무 적으면 원본 반환 (안전 장치)
-        return if (filtered.size >= 5) filtered else exercises
+        return if (filtered.size >= SAFETY_MIN) filtered else exercises
     }
 
     private fun filterByDifficulty(exercises: List<Exercise>, level: ExperienceLevel?): List<Exercise> {
@@ -393,8 +393,7 @@ class VectorWorkoutRecommendationService(
             else -> 20..70
         }
         val filtered = exercises.filter { it.difficulty in range }
-        // 필터 후 너무 적으면 원본 반환 (안전 장치)
-        return if (filtered.size >= 3) filtered else exercises
+        return if (filtered.size >= SAFETY_MIN) filtered else exercises
     }
 
     private fun sortByRelevance(exercises: List<Exercise>): List<Exercise> {
@@ -409,26 +408,18 @@ class VectorWorkoutRecommendationService(
         }
     }
 
-    /**
-     * 타겟 근육 필터 — 시맨틱 검색 결과에서 관련 없는 근육군 제거
-     * 안전장치: 필터 후 3개 미만이면 원본 반환
-     */
     private fun filterByTargetMuscle(exercises: List<Exercise>, targetMuscle: String?): List<Exercise> {
         if (targetMuscle == null) return exercises
-        val key = com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver.recommendationKey(targetMuscle) ?: return exercises
-        val targetGroups = getMuscleGroupsForTarget(key)
+        val key = WorkoutTargetResolver.recommendationKey(targetMuscle) ?: return exercises
+        val targetGroups = WorkoutTargetResolver.muscleGroupsForKey(key)
         if (targetGroups.isEmpty()) return exercises
 
         val filtered = exercises.filter { exercise ->
             exercise.muscleGroups.any { it in targetGroups }
         }
-        return if (filtered.size >= 3) filtered else exercises
+        return if (filtered.size >= SAFETY_MIN) filtered else exercises
     }
 
-    /**
-     * 장비 필터 — 시맨틱 검색 결과에서 다른 장비 제거
-     * 안전장치: 필터 후 3개 미만이면 원본 반환
-     */
     private fun filterByEquipment(exercises: List<Exercise>, equipment: String?): List<Exercise> {
         if (equipment == null) return exercises
         val equipmentEnum = try {
@@ -437,23 +428,7 @@ class VectorWorkoutRecommendationService(
             return exercises
         }
         val filtered = exercises.filter { it.equipment == equipmentEnum }
-        return if (filtered.size >= 3) filtered else exercises
-    }
-
-    private fun getMuscleGroupsForTarget(target: String): Set<MuscleGroup> {
-        return when (target.lowercase()) {
-            "full_body" -> emptySet()
-            "push" -> setOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleGroup.TRICEPS)
-            "pull" -> setOf(MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.BICEPS)
-            "legs", "lower" -> setOf(MuscleGroup.QUADRICEPS, MuscleGroup.HAMSTRINGS, MuscleGroup.GLUTES, MuscleGroup.CALVES)
-            "upper" -> setOf(MuscleGroup.CHEST, MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS)
-            "chest" -> setOf(MuscleGroup.CHEST)
-            "back" -> setOf(MuscleGroup.BACK, MuscleGroup.LATS)
-            "shoulders" -> setOf(MuscleGroup.SHOULDERS)
-            "arms" -> setOf(MuscleGroup.BICEPS, MuscleGroup.TRICEPS, MuscleGroup.FOREARMS)
-            "core" -> setOf(MuscleGroup.ABS, MuscleGroup.CORE)
-            else -> emptySet()
-        }
+        return if (filtered.size >= SAFETY_MIN) filtered else exercises
     }
 
     private fun removeDuplicatePatterns(exercises: List<Exercise>): List<Exercise> {
