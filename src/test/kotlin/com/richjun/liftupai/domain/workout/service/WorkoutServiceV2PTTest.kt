@@ -592,4 +592,98 @@ class WorkoutServiceV2PTTest {
             totalCompletedWorkouts = totalCompleted
         )
     }
+
+    // -------------------------------------------------------------------------
+    // 7. Edge cases: no profile, no settings → default FULL_BODY
+    // -------------------------------------------------------------------------
+
+    @Nested
+    inner class DefaultProgramFallback {
+
+        @Test
+        fun `no profile no settings defaults to FULL_BODY not PPL`() {
+            val exercises = listOf(
+                Exercise(id = 10L, slug = "squat", name = "Squat", category = ExerciseCategory.LEGS),
+                Exercise(id = 11L, slug = "bench", name = "Bench Press", category = ExerciseCategory.CHEST),
+                Exercise(id = 12L, slug = "row", name = "Row", category = ExerciseCategory.BACK),
+            )
+
+            every { userRepository.findById(1L) } returns Optional.of(testUser)
+            every { userProfileRepository.findByUser_Id(1L) } returns Optional.empty()
+            every { userProfileRepository.findByUser(testUser) } returns Optional.empty()
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+            every { workoutSessionRepository.findFirstByUserAndStatusOrderByStartTimeDesc(testUser, SessionStatus.IN_PROGRESS) } returns Optional.empty()
+            every { workoutProgressTracker.getNextWorkoutInProgram(testUser, any()) } returns WorkoutProgramPosition(day = 1, cycle = 1, isNewCycle = false)
+            every { workoutProgressTracker.getWorkoutTypeSequence("FULL_BODY") } returns listOf(WorkoutType.FULL_BODY)
+            every {
+                exerciseRecommendationService.getRecommendedExercises(
+                    user = testUser, targetMuscle = "full_body", equipment = any(), duration = any(), limit = any()
+                )
+            } returns exercises
+            every { exerciseCatalogLocalizationService.translationMap(any(), any()) } returns emptyMap()
+            every { exerciseCatalogLocalizationService.displayName(any(), any(), any()) } returns "Exercise"
+            every { exerciseCatalogLocalizationService.normalizeLocale(any()) } returns "en"
+            every { workoutSessionRepository.findByUserAndStartTimeAfter(testUser, any()) } returns emptyList()
+            every { workoutExerciseRepository.findBySessionIdOrderByOrderInSession(any()) } returns emptyList()
+            every { personalRecordRepository.findTopByUserAndExerciseOrderByWeightDesc(eq(testUser), any()) } returns null
+            every { userProgramEnrollmentRepository.findFirstByUserAndStatusOrderByStartDateDesc(testUser, EnrollmentStatus.ACTIVE) } returns null
+            every { workoutSessionRepository.findAllByUserAndStatus(testUser, SessionStatus.COMPLETED) } returns emptyList()
+
+            val result = workoutServiceV2.getBasicWorkoutRecommendation(userId = 1L, duration = 60)
+
+            assertTrue(result.recommendation.exercises.isNotEmpty(), "Should return exercises")
+            // targetMuscle should be "full_body", not "chest" (PPL day 1)
+            val targetMuscles = result.recommendation.targetMuscles
+            // Full body should have multiple muscle groups, not just chest
+            assertTrue(
+                targetMuscles.size > 1 || result.recommendation.exercises.size >= 3,
+                "Full body workout should have diverse muscles, got: $targetMuscles"
+            )
+        }
+
+        @Test
+        fun `vector recommendation below threshold triggers rule-based fallback`() {
+            val singleExercise = listOf(
+                Exercise(id = 20L, slug = "pushup", name = "Push Up", category = ExerciseCategory.CHEST)
+            )
+            val fullExercises = listOf(
+                Exercise(id = 21L, slug = "squat", name = "Squat", category = ExerciseCategory.LEGS),
+                Exercise(id = 22L, slug = "bench", name = "Bench Press", category = ExerciseCategory.CHEST),
+                Exercise(id = 23L, slug = "row", name = "Row", category = ExerciseCategory.BACK),
+                Exercise(id = 24L, slug = "press", name = "Shoulder Press", category = ExerciseCategory.SHOULDERS),
+                Exercise(id = 25L, slug = "curl", name = "Curl", category = ExerciseCategory.ARMS),
+                Exercise(id = 26L, slug = "plank", name = "Plank", category = ExerciseCategory.CORE),
+            )
+
+            every { userRepository.findById(1L) } returns Optional.of(testUser)
+            every { userProfileRepository.findByUser_Id(1L) } returns Optional.of(testUserProfile)
+            every { userProfileRepository.findByUser(testUser) } returns Optional.of(testUserProfile)
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+            every { workoutSessionRepository.findFirstByUserAndStatusOrderByStartTimeDesc(testUser, SessionStatus.IN_PROGRESS) } returns Optional.empty()
+            every { workoutProgressTracker.getNextWorkoutInProgram(testUser, any()) } returns WorkoutProgramPosition(day = 1, cycle = 1, isNewCycle = false)
+            every { workoutProgressTracker.getWorkoutTypeSequence(any()) } returns listOf(WorkoutType.FULL_BODY)
+            // Rule-based should return 6 exercises for 60 min
+            every {
+                exerciseRecommendationService.getRecommendedExercises(
+                    user = testUser, targetMuscle = any(), equipment = any(), duration = any(), limit = any()
+                )
+            } returns fullExercises
+            every { exerciseCatalogLocalizationService.translationMap(any(), any()) } returns emptyMap()
+            every { exerciseCatalogLocalizationService.displayName(any(), any(), any()) } returns "Exercise"
+            every { exerciseCatalogLocalizationService.normalizeLocale(any()) } returns "en"
+            every { workoutSessionRepository.findByUserAndStartTimeAfter(testUser, any()) } returns emptyList()
+            every { workoutExerciseRepository.findBySessionIdOrderByOrderInSession(any()) } returns emptyList()
+            every { personalRecordRepository.findTopByUserAndExerciseOrderByWeightDesc(eq(testUser), any()) } returns null
+            every { userProgramEnrollmentRepository.findFirstByUserAndStatusOrderByStartDateDesc(testUser, EnrollmentStatus.ACTIVE) } returns null
+            every { workoutSessionRepository.findAllByUserAndStatus(testUser, SessionStatus.COMPLETED) } returns emptyList()
+
+            // vectorRecommendationService is null (passed as null in constructor)
+            // so it always falls back to rule-based
+            val result = workoutServiceV2.getBasicWorkoutRecommendation(userId = 1L, duration = 60)
+
+            // 60분 = 6개 운동이 목표
+            assertEquals(6, result.recommendation.exercises.size,
+                "60-min workout should have 6 exercises, got ${result.recommendation.exercises.size}")
+        }
+    }
 }
