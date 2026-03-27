@@ -82,7 +82,8 @@ class RealCatalogRecommendationTest {
         equipment: Equipment? = null,
         target: Set<MuscleGroup> = emptySet(),
         noCardio: Boolean = false,
-        limit: Int = 6
+        limit: Int = 6,
+        targetCategory: ExerciseCategory? = null
     ): List<Exercise> {
         if (allExercises.isEmpty()) return emptyList()
         return allExercises
@@ -93,16 +94,17 @@ class RealCatalogRecommendationTest {
             .let { list -> if (noCardio) list.filter { it.category != ExerciseCategory.CARDIO } else list }
             .groupBy { classifier.classifyExercise(it) }
             .mapNotNull { (_, g) -> g.minWithOrNull(RecommendationExerciseRanking.patternSelectionComparator()) }
-            .let { orderRoundRobin(it) }
+            .let { orderRoundRobin(it, targetCategory) }
             .take(limit)
     }
 
-    private fun orderRoundRobin(exercises: List<Exercise>): List<Exercise> {
+    private fun orderRoundRobin(exercises: List<Exercise>, targetCategory: ExerciseCategory? = null): List<Exercise> {
         val byCategory = exercises.groupBy { it.category }
             .mapValues { (_, g) -> g.sortedWith(RecommendationExerciseRanking.displayOrderComparator()).toMutableList() }
-        val order = listOf(ExerciseCategory.LEGS, ExerciseCategory.BACK, ExerciseCategory.CHEST,
+        val defaultOrder = listOf(ExerciseCategory.LEGS, ExerciseCategory.BACK, ExerciseCategory.CHEST,
             ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS, ExerciseCategory.CORE,
             ExerciseCategory.CARDIO, ExerciseCategory.FULL_BODY)
+        val order = if (targetCategory != null) listOf(targetCategory) + defaultOrder.filter { it != targetCategory } else defaultOrder
         val result = mutableListOf<Exercise>()
         var hasMore = true
         while (hasMore) { hasMore = false; for (c in order) { val q = byCategory[c]; if (q!=null && q.isNotEmpty()) { result.add(q.removeFirst()); hasMore = true } } }
@@ -257,10 +259,10 @@ class RealCatalogRecommendationTest {
     inner class RealTarget {
 
         @Test
-        @DisplayName("가슴 타겟: 5개, 모두 CHEST 근육 포함")
+        @DisplayName("가슴 타겟: 5개, 모두 CHEST 근육 포함, CHEST 카테고리 먼저")
         fun `chest target from real catalog`() {
             skip()
-            val result = recommend(target = setOf(MuscleGroup.CHEST), limit = 5)
+            val result = recommend(target = setOf(MuscleGroup.CHEST), limit = 5, targetCategory = ExerciseCategory.CHEST)
             assertTrue(result.all { MuscleGroup.CHEST in it.muscleGroups })
             println("\n=== 실제 가슴 타겟 5개 ===")
             result.forEach { println("  ${it.name} [${it.category}] ${classifier.classifyExercise(it)}") }
@@ -271,7 +273,7 @@ class RealCatalogRecommendationTest {
         fun `legs target from real catalog`() {
             skip()
             val legMuscles = setOf(MuscleGroup.QUADRICEPS, MuscleGroup.HAMSTRINGS, MuscleGroup.GLUTES, MuscleGroup.CALVES)
-            val result = recommend(target = legMuscles, limit = 5)
+            val result = recommend(target = legMuscles, limit = 5, targetCategory = ExerciseCategory.LEGS)
             assertTrue(result.all { ex -> ex.muscleGroups.any { it in legMuscles } })
             println("\n=== 실제 하체 타겟 5개 ===")
             result.forEach { println("  ${it.name} [${it.category}] ${classifier.classifyExercise(it)}") }
@@ -282,7 +284,7 @@ class RealCatalogRecommendationTest {
         fun `pull target from real catalog`() {
             skip()
             val pullMuscles = setOf(MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.BICEPS, MuscleGroup.TRAPS)
-            val result = recommend(target = pullMuscles, limit = 5)
+            val result = recommend(target = pullMuscles, limit = 5, targetCategory = ExerciseCategory.BACK)
             assertTrue(result.all { ex -> ex.muscleGroups.any { it in pullMuscles } })
             // 첫 운동은 BACK 근육을 타겟하는 복합운동이어야 함
             // (데드리프트는 LEGS 카테고리이지만 BACK 근육 포함이므로 허용)
@@ -370,7 +372,7 @@ class RealCatalogRecommendationTest {
         fun `leg day hamstring recovering`() {
             skip()
             val legTarget = setOf(MuscleGroup.QUADRICEPS, MuscleGroup.HAMSTRINGS, MuscleGroup.GLUTES, MuscleGroup.CALVES)
-            val result = recommend(target = legTarget, recovering = setOf(MuscleGroup.HAMSTRINGS), limit = 5)
+            val result = recommend(target = legTarget, recovering = setOf(MuscleGroup.HAMSTRINGS), limit = 5, targetCategory = ExerciseCategory.LEGS)
 
             assertTrue(result.none { MuscleGroup.HAMSTRINGS in it.muscleGroups },
                 "햄 운동: ${result.filter { MuscleGroup.HAMSTRINGS in it.muscleGroups }.map { it.name }}")

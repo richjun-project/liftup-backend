@@ -79,13 +79,31 @@ class ExerciseRecommendationService(
         equipment: String?,
         coreOnly: Boolean
     ): List<Exercise> {
+        val targetCategory = resolveTargetCategory(targetMuscle)
         return exercises
             .let { filterByRecommendationPool(it, coreOnly) }
             .let { filterByRecoveryStatus(it, user) }
             .let { filterByEquipment(it, equipment) }
             .let { filterByTargetMuscle(it, targetMuscle) }
             .let { removeDuplicatePatterns(it) }
-            .let { orderByPriority(it) }
+            .let { orderByPriority(it, targetCategory) }
+    }
+
+    /**
+     * 타겟 근육을 주 카테고리로 변환
+     */
+    private fun resolveTargetCategory(targetMuscle: String?): ExerciseCategory? {
+        if (targetMuscle == null) return null
+        val key = WorkoutTargetResolver.recommendationKey(targetMuscle) ?: return null
+        return when (key.lowercase()) {
+            "chest" -> ExerciseCategory.CHEST
+            "back" -> ExerciseCategory.BACK
+            "legs", "lower" -> ExerciseCategory.LEGS
+            "shoulders" -> ExerciseCategory.SHOULDERS
+            "arms" -> ExerciseCategory.ARMS
+            "core" -> ExerciseCategory.CORE
+            else -> null
+        }
     }
 
     // === 필터링 메서드들 ===
@@ -259,8 +277,17 @@ class ExerciseRecommendationService(
      * 카테고리 순서: LEGS → BACK → CHEST → SHOULDERS → ARMS → CORE → CARDIO
      * 각 카테고리 내부: 복합운동 > 고립운동, ESSENTIAL > STANDARD, 인기도 순
      */
-    private fun orderByPriority(exercises: List<Exercise>): List<Exercise> {
-        // 카테고리별로 그룹화하고, 각 그룹 내에서 우선순위 정렬
+    /**
+     * 카테고리 균형 정렬 (라운드 로빈 + 타겟 우선)
+     *
+     * 타겟이 지정되면 해당 카테고리를 최우선으로 배치하고,
+     * 타겟이 없으면(전신) 기본 순서로 라운드 로빈합니다.
+     *
+     * 전신: LEGS → BACK → CHEST → SHOULDERS → ARMS → CORE → CARDIO
+     * 가슴데이: CHEST → SHOULDERS → ARMS → LEGS → BACK → CORE
+     * 등데이: BACK → ARMS → LEGS → CHEST → SHOULDERS → CORE
+     */
+    private fun orderByPriority(exercises: List<Exercise>, targetCategory: ExerciseCategory? = null): List<Exercise> {
         val byCategory = exercises
             .groupBy { it.category }
             .mapValues { (_, group) ->
@@ -268,14 +295,18 @@ class ExerciseRecommendationService(
                     .toMutableList()
             }
 
-        // 카테고리 우선순위 순서
-        val categoryOrder = listOf(
+        // 타겟 카테고리가 있으면 그것을 맨 앞으로
+        val defaultOrder = listOf(
             ExerciseCategory.LEGS, ExerciseCategory.BACK, ExerciseCategory.CHEST,
             ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS, ExerciseCategory.CORE,
             ExerciseCategory.CARDIO, ExerciseCategory.FULL_BODY
         )
+        val categoryOrder = if (targetCategory != null) {
+            listOf(targetCategory) + defaultOrder.filter { it != targetCategory }
+        } else {
+            defaultOrder
+        }
 
-        // 라운드 로빈: 각 카테고리에서 1개씩 순서대로 뽑기
         val result = mutableListOf<Exercise>()
         var hasMore = true
         while (hasMore) {
