@@ -42,7 +42,7 @@ class VectorWorkoutRecommendationService(
     companion object {
         private const val VECTOR_SEARCH_MULTIPLIER = 3  // 필터링 후 부족할 수 있으므로 더 많이 검색
         private const val MIN_SIMILARITY_SCORE = 0.4f
-        private const val RECOVERY_THRESHOLD = 80
+        private const val RECOVERY_THRESHOLD = 50
     }
 
     /**
@@ -214,30 +214,36 @@ class VectorWorkoutRecommendationService(
             val sessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoff)
             if (sessions.isEmpty()) return null
 
+            val sessionIds = sessions.map { it.id }
+            val allWorkoutExercises = workoutExerciseRepository.findBySessionIdInWithExercise(sessionIds)
+            if (allWorkoutExercises.isEmpty()) return null
+
+            val weIds = allWorkoutExercises.map { it.id }
+            val allSets = exerciseSetRepository.findByWorkoutExerciseIdIn(weIds)
+            val setsByWeId = allSets.groupBy { it.workoutExercise.id }
+
             val exerciseFrequency = mutableMapOf<String, Int>()
             val exerciseWeights = mutableMapOf<String, MutableList<Double>>()
             val exerciseRPEs = mutableMapOf<String, MutableList<Double>>()
             val exerciseCompletionRate = mutableMapOf<String, Pair<Int, Int>>() // completed sets / total sets
 
-            sessions.forEach { session ->
-                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).forEach { we ->
-                    val name = we.exercise.name
-                    exerciseFrequency[name] = (exerciseFrequency[name] ?: 0) + 1
-                    val sets = exerciseSetRepository.findByWorkoutExerciseId(we.id)
-                    if (sets.isNotEmpty()) {
-                        exerciseWeights.getOrPut(name) { mutableListOf() }
-                            .add(sets.maxOf { it.weight })
-                        // RPE 추적
-                        sets.mapNotNull { it.rpe?.toDouble() }.let { rpes ->
-                            if (rpes.isNotEmpty()) {
-                                exerciseRPEs.getOrPut(name) { mutableListOf() }.addAll(rpes)
-                            }
+            allWorkoutExercises.forEach { we ->
+                val name = we.exercise.name
+                exerciseFrequency[name] = (exerciseFrequency[name] ?: 0) + 1
+                val sets = setsByWeId[we.id] ?: emptyList()
+                if (sets.isNotEmpty()) {
+                    exerciseWeights.getOrPut(name) { mutableListOf() }
+                        .add(sets.maxOf { it.weight })
+                    // RPE 추적
+                    sets.mapNotNull { it.rpe?.toDouble() }.let { rpes ->
+                        if (rpes.isNotEmpty()) {
+                            exerciseRPEs.getOrPut(name) { mutableListOf() }.addAll(rpes)
                         }
-                        // 완료율 추적
-                        val completed = sets.count { it.completed }
-                        val prev = exerciseCompletionRate[name] ?: Pair(0, 0)
-                        exerciseCompletionRate[name] = Pair(prev.first + completed, prev.second + sets.size)
                     }
+                    // 완료율 추적
+                    val completed = sets.count { it.completed }
+                    val prev = exerciseCompletionRate[name] ?: Pair(0, 0)
+                    exerciseCompletionRate[name] = Pair(prev.first + completed, prev.second + sets.size)
                 }
             }
 
@@ -282,13 +288,12 @@ class VectorWorkoutRecommendationService(
             }
 
             // 최근 안 한 패턴 감지 (세분화된 enum → broad 카테고리로 매핑)
-            val doneBroadPatterns = sessions.flatMap { session ->
-                workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-                    .map { broadPatternCategory(exercisePatternClassifier.classifyExercise(it.exercise)) }
-            }.toSet()
+            val doneBroadPatterns = allWorkoutExercises
+                .map { broadPatternCategory(exercisePatternClassifier.classifyExercise(it.exercise)) }
+                .toSet()
 
             val allBroadPatterns = setOf("HORIZONTAL_PUSH", "HORIZONTAL_PULL", "VERTICAL_PUSH", "VERTICAL_PULL",
-                "HIP_HINGE", "SQUAT", "LUNGE", "CARRY", "ROTATION", "ISOLATION")
+                "HIP_HINGE", "SQUAT", "LUNGE", "CARRY", "ROTATION", "ISOLATION", "CORE")
             val missingPatterns = allBroadPatterns - doneBroadPatterns
             if (missingPatterns.isNotEmpty() && missingPatterns.size < allBroadPatterns.size) {
                 parts.add("Missing movement patterns (recommend): ${missingPatterns.take(3).joinToString(", ")}")
@@ -320,9 +325,14 @@ class VectorWorkoutRecommendationService(
         val primaryGoal = goals.first()
         val filtered = when (primaryGoal) {
             com.richjun.liftupai.domain.user.entity.FitnessGoal.STRENGTH -> {
-                // 근력: 복합운동 70% 이상 보장 — CARDIO 제외, 고립 비율 제한
-                val compounds = exercises.filter { it.category != ExerciseCategory.CARDIO && it.difficulty >= 30 }
-                if (compounds.size >= 3) compounds else exercises
+                // 근력: 복합운동 70% 이상 보장 — CARDIO 제외, compound 우선
+                val nonCardio = exercises.filter { it.category != ExerciseCategory.CARDIO }
+                val compounds = nonCardio.filter { it.muscleGroups.size >= 2 }
+                val isolations = nonCardio.filter { it.muscleGroups.size < 2 }
+                // compound 70% 비율 보장
+                val maxIsolation = (compounds.size * 3) / 7  // compound:isolation = 7:3
+                val result = compounds + isolations.take(maxIsolation)
+                if (result.size >= 3) result else nonCardio.ifEmpty { exercises }
             }
             com.richjun.liftupai.domain.user.entity.FitnessGoal.WEIGHT_LOSS, com.richjun.liftupai.domain.user.entity.FitnessGoal.ENDURANCE -> {
                 // 체중감량/지구력: 전신/유산소 우선, 고난이도 고립 제외
@@ -391,16 +401,20 @@ class VectorWorkoutRecommendationService(
         return try {
             val cutoff = LocalDateTime.now().minusDays(7)
             val sessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoff)
+            if (sessions.isEmpty()) return emptyMap()
+
+            val sessionIds = sessions.map { it.id }
+            val allWorkoutExercises = workoutExerciseRepository.findBySessionIdInWithExercise(sessionIds)
+            if (allWorkoutExercises.isEmpty()) return emptyMap()
+
+            val weIds = allWorkoutExercises.map { it.id }
+            val allSets = exerciseSetRepository.findByWorkoutExerciseIdIn(weIds)
+            val setCountByWeId = allSets.groupBy { it.workoutExercise.id }.mapValues { it.value.size }
 
             MuscleGroup.values().associate { muscle ->
-                var totalSets = 0
-                sessions.forEach { session ->
-                    workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-                        .filter { we -> we.exercise.muscleGroups.contains(muscle) }
-                        .forEach { we ->
-                            totalSets += exerciseSetRepository.findByWorkoutExerciseId(we.id).size
-                        }
-                }
+                val totalSets = allWorkoutExercises
+                    .filter { we -> we.exercise.muscleGroups.contains(muscle) }
+                    .sumOf { we -> setCountByWeId[we.id] ?: 0 }
                 translateMuscleGroup(muscle) to totalSets
             }.filter { it.value > 0 }
         } catch (e: Exception) {
@@ -410,11 +424,11 @@ class VectorWorkoutRecommendationService(
     }
 
     private fun getTargetMusclesForWorkoutType(type: WorkoutType): List<String> {
-        return WorkoutTargetResolver.displayNamesForWorkoutType(type, locale = "ko")
+        return WorkoutTargetResolver.displayNamesForWorkoutType(type, locale = "en")
     }
 
     private fun translateMuscleGroup(muscle: MuscleGroup): String {
-        return WorkoutTargetResolver.displayName(muscle, locale = "ko")
+        return WorkoutTargetResolver.displayName(muscle, locale = "en")
     }
 
     /**

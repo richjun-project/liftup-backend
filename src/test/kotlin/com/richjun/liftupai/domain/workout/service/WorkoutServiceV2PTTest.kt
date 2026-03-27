@@ -91,7 +91,9 @@ class WorkoutServiceV2PTTest {
             exerciseCatalogLocalizationService,
             autoProgramSelector,
             userProgramEnrollmentRepository,
-            programProgressiveOverloadService
+            programProgressiveOverloadService,
+            null,
+            null
         )
 
         testUser = User(id = 1L, email = "test@test.com", nickname = "TestUser", level = UserLevel.INTERMEDIATE)

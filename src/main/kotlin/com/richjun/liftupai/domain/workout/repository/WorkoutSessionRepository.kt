@@ -5,7 +5,9 @@ import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.workout.entity.WorkoutSession
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -15,6 +17,10 @@ import java.util.Optional
 @Repository
 interface WorkoutSessionRepository : JpaRepository<WorkoutSession, Long> {
     fun findFirstByUserAndStatusOrderByStartTimeDesc(user: User, status: SessionStatus): Optional<WorkoutSession>
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT ws FROM WorkoutSession ws WHERE ws.user = :user AND ws.status = :status ORDER BY ws.startTime DESC LIMIT 1")
+    fun findFirstByUserAndStatusWithLock(@Param("user") user: User, @Param("status") status: SessionStatus): Optional<WorkoutSession>
 
     fun findByUserOrderByStartTimeDesc(user: User, pageable: Pageable): Page<WorkoutSession>
 

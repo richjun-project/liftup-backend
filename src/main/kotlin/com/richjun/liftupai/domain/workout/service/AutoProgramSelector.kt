@@ -51,8 +51,8 @@ class AutoProgramSelector(
 
         // 프로그램 선택 로직
         val recommendation = when {
-            // 초보자는 전신 운동으로 시작
-            experienceLevel == ExperienceLevel.BEGINNER -> {
+            // 초보자 또는 주 1회 이하는 전신 운동
+            experienceLevel == ExperienceLevel.BEGINNER || experienceLevel == ExperienceLevel.NOVICE || weeklyDays <= 1 -> {
                 ProgramRecommendation(
                     programType = "FULL_BODY",
                     workoutSequence = listOf(

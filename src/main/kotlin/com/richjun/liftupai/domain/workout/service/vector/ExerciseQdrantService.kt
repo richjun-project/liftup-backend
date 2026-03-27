@@ -13,20 +13,21 @@ class ExerciseQdrantService(
     private val qdrantClient: QdrantClient,
     @Value("\${qdrant.enabled:true}") private val qdrantEnabled: Boolean = true
 ) {
+    private val logger = org.slf4j.LoggerFactory.getLogger(this::class.java)
     private val collectionName = "exercises"
     private val vectorSize = 768 // Gemini text-embedding-004 dimension
 
     @PostConstruct
     fun initialize() {
         if (!qdrantEnabled) {
-            println("Qdrant initialization is disabled (qdrant.enabled=false)")
+            logger.info("Qdrant initialization is disabled (qdrant.enabled=false)")
             return
         }
 
         try {
             createCollectionIfNotExists()
         } catch (e: Exception) {
-            println("Warning: Failed to initialize Qdrant collection: ${e.message}")
+            logger.error("Failed to initialize Qdrant collection: {}", e.message, e)
         }
     }
 
@@ -42,12 +43,12 @@ class ExerciseQdrantService(
                 vectorParams
             ).get()
 
-            println("Qdrant collection '$collectionName' created successfully")
+            logger.info("Qdrant collection '{}' created successfully", collectionName)
         } catch (e: Exception) {
             if (e.message?.contains("already exists") == true || e.message?.contains("ALREADY_EXISTS") == true) {
-                println("Qdrant collection '$collectionName' already exists")
+                logger.debug("Qdrant collection '{}' already exists", collectionName)
             } else {
-                println("Warning: Error creating Qdrant collection: ${e.message}")
+                logger.warn("Error creating Qdrant collection: {}", e.message)
             }
         }
     }
@@ -128,8 +129,7 @@ class ExerciseQdrantService(
                 Pair(exerciseId, score)
             }
         } catch (e: Exception) {
-            println("Error searching similar exercises: ${e.message}")
-            e.printStackTrace()
+            logger.error("Error searching similar exercises: {}", e.message, e)
             return emptyList()
         }
     }
@@ -144,7 +144,7 @@ class ExerciseQdrantService(
                 listOf(PointId.newBuilder().setUuid(vectorId).build())
             ).get()
         } catch (e: Exception) {
-            println("Error deleting vector: ${e.message}")
+            logger.warn("Error deleting vector: {}", e.message)
         }
     }
 
@@ -171,7 +171,7 @@ class ExerciseQdrantService(
                 filterCondition
             ).get()
         } catch (e: Exception) {
-            println("Error deleting vector by exercise ID: ${e.message}")
+            logger.warn("Error deleting vector by exercise ID {}: {}", exerciseId, e.message)
         }
     }
 

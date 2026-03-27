@@ -1,8 +1,12 @@
 package com.richjun.liftupai.domain.workout.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import jakarta.validation.Valid
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.PositiveOrZero
 
 // V2 Request/Response DTOs
 
@@ -55,7 +59,9 @@ data class RestTimerSettings(
 
 // 운동 완료 V2
 data class CompleteWorkoutRequestV2(
+    @field:Valid
     val exercises: List<CompletedExerciseV2> = emptyList(),
+    @field:Min(0) @field:Max(720)
     val duration: Int = 0,
     @JsonProperty("ended_at")
     val endedAt: String? = null,
@@ -70,7 +76,9 @@ data class CompletedExerciseV2(
 )
 
 data class ExerciseSetV2(
+    @field:PositiveOrZero @field:Max(500)
     val weight: Double,
+    @field:Min(0) @field:Max(100)
     val reps: Int,
     val completed: Boolean = true,
 
@@ -78,10 +86,11 @@ data class ExerciseSetV2(
     val completedAt: String? = null,
 
     @JsonProperty("rest_taken")
+    @field:Min(0) @field:Max(600)
     val restTaken: Int? = null,
 
     // Rate of Perceived Exertion (1-10)
-    // 1-3: 매우 쉬움, 4-6: 적당함, 7-8: 힘듦, 9: 매우 힘듦, 10: 최대 노력
+    @field:Min(1) @field:Max(10)
     val rpe: Int? = null
 )
 

@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit
 class ExerciseVectorService(
     private val objectMapper: ObjectMapper
 ) {
+    private val logger = org.slf4j.LoggerFactory.getLogger(this::class.java)
     @Value("\${gemini.api-key}")
     private lateinit var apiKey: String
 
@@ -124,7 +125,7 @@ class ExerciseVectorService(
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     val errorBody = response.body?.string()
-                    println("Gemini Embedding API Error: $errorBody")
+                    logger.warn("Gemini Embedding API Error: {}", errorBody)
                     return getDefaultEmbedding()
                 }
 
@@ -135,13 +136,12 @@ class ExerciseVectorService(
                 if (values != null && values.isArray) {
                     values.map { it.floatValue() }
                 } else {
-                    println("Invalid embedding response")
+                    logger.warn("Invalid embedding response: no values array found")
                     getDefaultEmbedding()
                 }
             }
         } catch (e: Exception) {
-            println("Error generating embedding: ${e.message}")
-            e.printStackTrace()
+            logger.error("Error generating embedding: {}", e.message, e)
             getDefaultEmbedding()
         }
     }

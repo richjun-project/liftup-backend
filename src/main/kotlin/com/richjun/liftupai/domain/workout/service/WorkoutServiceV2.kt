@@ -23,6 +23,7 @@ import com.richjun.liftupai.global.time.AppTime
 import com.richjun.liftupai.domain.notification.dto.PushNotificationRequest
 import com.richjun.liftupai.domain.notification.service.NotificationService
 import com.richjun.liftupai.domain.notification.util.NotificationLocalization
+import com.richjun.liftupai.domain.workout.service.vector.VectorWorkoutRecommendationService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -59,7 +60,9 @@ class WorkoutServiceV2(
     private val userProgramEnrollmentRepository: UserProgramEnrollmentRepository,
     private val programProgressiveOverloadService: ProgramProgressiveOverloadService,
     @Autowired(required = false)
-    private val notificationService: NotificationService?
+    private val notificationService: NotificationService?,
+    @Autowired(required = false)
+    private val vectorRecommendationService: VectorWorkoutRecommendationService?
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
     @Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
@@ -144,7 +147,7 @@ class WorkoutServiceV2(
                 orderInSession = planned.orderIndex ?: index
             )
             val savedWorkoutExercise = workoutExerciseRepository.save(workoutExercise)
-            println("DEBUG: Saved WorkoutExercise ID: ${savedWorkoutExercise.id}, Session ID: ${savedSession.id}, Exercise: ${exercise.name}")
+            logger.debug("Saved WorkoutExercise ID: {}, Session ID: {}, Exercise: {}", savedWorkoutExercise.id, savedSession.id, exercise.name)
 
             toExerciseDto(exercise, locale, translations)
         }
@@ -336,7 +339,7 @@ class WorkoutServiceV2(
     }
 
     private fun cancelExistingSessions(user: com.richjun.liftupai.domain.auth.entity.User) {
-        val existingSession = workoutSessionRepository.findFirstByUserAndStatusOrderByStartTimeDesc(user, SessionStatus.IN_PROGRESS)
+        val existingSession = workoutSessionRepository.findFirstByUserAndStatusWithLock(user, SessionStatus.IN_PROGRESS)
         if (existingSession.isPresent) {
             val session = existingSession.get()
             session.status = SessionStatus.ABANDONED
@@ -460,9 +463,9 @@ class WorkoutServiceV2(
         }
         val translations = translationMap(completedExerciseMap.values, locale)
 
-        println("DEBUG: completeWorkout - sessionId: $sessionId")
-        println("DEBUG: request.exercises.size: ${request.exercises.size}")
-        println("DEBUG: request.duration: ${request.duration}")
+        logger.debug("completeWorkout - sessionId: {}", sessionId)
+        logger.debug("request.exercises.size: {}", request.exercises.size)
+        logger.debug("request.duration: {}", request.duration)
 
         val completedAt = request.endedAt?.let { AppTime.parseClientDateTime(it, resolveTimeZone(userId)) } ?: AppTime.utcNow()
         val serverDuration = ChronoUnit.MINUTES.between(session.startTime, completedAt).toInt().coerceAtLeast(0)
@@ -492,14 +495,15 @@ class WorkoutServiceV2(
                     workoutExerciseRepository.save(it)
                 }
 
-            println("DEBUG: Exercise ${exercise.name} (ID: ${completedExercise.exerciseId})")
-            println("DEBUG: - Sets count: ${completedExercise.sets.size}")
-            println("DEBUG: - Completed sets: ${completedExercise.sets.filter { it.completed }.size}")
+            logger.debug("Exercise {} (ID: {}), sets: {}, completed: {}",
+                exercise.name, completedExercise.exerciseId,
+                completedExercise.sets.size, completedExercise.sets.count { it.completed })
 
             completedExercise.sets.filter { it.completed }.forEach { setDto ->
-                println("DEBUG: - Set: weight=${setDto.weight}, reps=${setDto.reps}, volume=${setDto.weight * setDto.reps}, completed=${setDto.completed}")
+                val safeWeight = setDto.weight.coerceIn(0.0, 500.0)
+                val safeReps = setDto.reps.coerceIn(0, 100)
                 totalSets++
-                val volume = setDto.weight * setDto.reps
+                val volume = safeWeight * safeReps
                 totalVolume += volume
 
                 val exerciseSet = ExerciseSet(
@@ -541,14 +545,14 @@ class WorkoutServiceV2(
             }
         }
 
-        println("DEBUG: Final totalVolume: $totalVolume")
-        println("DEBUG: Final totalSets: $totalSets")
+        logger.debug("Final totalVolume: {}", totalVolume)
+        logger.debug("Final totalSets: {}", totalSets)
 
         session.totalVolume = totalVolume
         session.caloriesBurned = calculateCaloriesBurned(normalizedDuration, totalVolume)
         workoutSessionRepository.save(session)
 
-        println("DEBUG: Saved session with totalVolume: ${session.totalVolume}")
+        logger.debug("Saved session with totalVolume: {}", session.totalVolume)
 
         // UserProfile 업데이트 - lastWorkoutDate
         val profile = userProfileRepository.findByUser_Id(userId)
@@ -883,9 +887,9 @@ class WorkoutServiceV2(
             val daySessions = sessions.filter { AppTime.toUserLocalDate(it.startTime, zoneId) == date }
 
             if (daySessions.isNotEmpty()) {
-                println("DEBUG getWorkoutCalendar: Date $date has ${daySessions.size} sessions")
+                logger.debug("getWorkoutCalendar: Date {} has {} sessions", date, daySessions.size)
                 daySessions.forEach { session ->
-                    println("DEBUG: - Session ID: ${session.id}, Volume: ${session.totalVolume}, Status: ${session.status}")
+                    logger.debug("- Session ID: {}, Volume: {}, Status: {}", session.id, session.totalVolume, session.status)
                 }
             }
 
@@ -1053,7 +1057,7 @@ class WorkoutServiceV2(
                     WorkoutType.CARDIO -> "full_body"
                     WorkoutType.FULL_BODY -> "full_body"
                 }
-                println("Selected target muscle from current session: $sessionMuscle (current type: $currentWorkoutType)")
+                logger.debug("Selected target muscle from current session: {} (current type: {})", sessionMuscle, currentWorkoutType)
                 sessionMuscle
             } else {
                 // 진행 중인 세션이 없으면 프로그램 위치에 따라 선택
@@ -1073,11 +1077,11 @@ class WorkoutServiceV2(
                     WorkoutType.CARDIO -> "full_body"
                     WorkoutType.FULL_BODY -> "full_body"
                 }
-                println("Selected target muscle from program state: $programMuscle (next: $workoutType, day ${programPosition.day})")
+                logger.debug("Selected target muscle from program state: {} (next: {}, day {})", programMuscle, workoutType, programPosition.day)
                 programMuscle
             }
         } else {
-            println("Using user-selected target muscle: $normalizedTargetMuscle")
+            logger.debug("Using user-selected target muscle: {}", normalizedTargetMuscle)
             normalizedTargetMuscle
         }
 
@@ -1112,7 +1116,7 @@ class WorkoutServiceV2(
         targetMuscle: String?,
         locale: String
     ): WorkoutRecommendationDetail {
-        val workoutDuration = duration ?: 30
+        val workoutDuration = (duration ?: 30).coerceIn(10, 180)
         val workoutId = generateWorkoutId(workoutDuration, equipment, targetMuscle)
 
         // Get user profile to determine difficulty
@@ -1129,8 +1133,21 @@ class WorkoutServiceV2(
         // Calculate optimal exercise count based on duration
         val targetExerciseCount = getTargetExerciseCount(workoutDuration)
 
-        // 새로운 추천 서비스 사용
-        val exercises = exerciseRecommendationService.getRecommendedExercises(
+        // 벡터 추천 우선 시도, 실패 시 rule-based 폴백
+        val exercises = try {
+            vectorRecommendationService?.recommendExercises(
+                user = user,
+                profile = userProfile,
+                duration = workoutDuration,
+                targetMuscle = targetMuscle,
+                equipment = equipment,
+                difficulty = difficultyKey,
+                limit = targetExerciseCount
+            )?.takeIf { it.isNotEmpty() }
+        } catch (e: Exception) {
+            logger.warn("Vector recommendation failed, falling back to rule-based: ${e.message}")
+            null
+        } ?: exerciseRecommendationService.getRecommendedExercises(
             user = user,
             targetMuscle = targetMuscle,
             equipment = equipment,
@@ -1554,20 +1571,6 @@ class WorkoutServiceV2(
     private fun determinePeriodizationPhase(user: com.richjun.liftupai.domain.auth.entity.User, recentHistory: List<WorkoutData>): PeriodizationPhase {
         val now = AppTime.utcNow()
 
-        // 최근 8주간의 주별 운동 빈도 계산
-        val last8Weeks = (0..7).map { weekOffset ->
-            val weekStart = now.minusWeeks(weekOffset.toLong()).with(java.time.DayOfWeek.MONDAY)
-            val weekEnd = weekStart.plusDays(6)
-
-            val workoutsThisWeek = workoutSessionRepository.findByUserAndStartTimeAfter(user, weekStart)
-                .count { it.startTime <= weekEnd && it.status == SessionStatus.COMPLETED }
-
-            workoutsThisWeek
-        }
-
-        // 평균 주간 운동 빈도
-        val avgWorkoutsPerWeek = last8Weeks.average().takeIf { !it.isNaN() } ?: 3.0
-
         // 마지막 운동 이후 경과 일수
         val daysSinceLastWorkout = recentHistory.firstOrNull()?.let { lastWorkout ->
             java.time.Duration.between(lastWorkout.completedAt, now).toDays()
@@ -1575,29 +1578,39 @@ class WorkoutServiceV2(
 
         // 디트레이닝 체크 (2주 이상 쉼)
         if (daysSinceLastWorkout >= 14) {
-            return PeriodizationPhase.DELOAD // 복귀 시 가볍게 시작
+            return PeriodizationPhase.DELOAD
         }
 
-        // 실제 주간 운동 횟수로 사이클 주차 계산
-        val totalWeeks = workoutSessionRepository.findAllByUserAndStatus(user, SessionStatus.COMPLETED)
-            .map { it.startTime.toLocalDate().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)) }
-            .distinct()
-            .count()
+        // 최근 8주 세션을 1회 쿼리로 가져와 주별로 분류
+        val eightWeeksAgo = now.minusWeeks(8)
+        val recentSessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, eightWeeksAgo)
+            .filter { it.status == SessionStatus.COMPLETED }
 
-        // 4주 메소사이클 (주차 기준)
-        val cycleWeek = ((totalWeeks % 4) + 1).toInt()
+        val last8Weeks = (0..7).map { weekOffset ->
+            val weekStart = now.minusWeeks(weekOffset.toLong()).with(java.time.DayOfWeek.MONDAY).toLocalDate()
+            val weekEnd = weekStart.plusDays(6)
+            recentSessions.count { session ->
+                val sessionDate = session.startTime.toLocalDate()
+                sessionDate in weekStart..weekEnd
+            }
+        }
 
         // 과훈련 체크 (최근 4주 평균이 주 5회 이상)
         val recentAvg = last8Weeks.take(4).average()
         if (recentAvg >= 5.0) {
-            return PeriodizationPhase.DELOAD // 과훈련 방지
+            return PeriodizationPhase.DELOAD
         }
 
+        // 최근 28일 내 연속 활동 주 수 기반 사이클 계산 (전체 히스토리 X)
+        val consecutiveActiveWeeks = last8Weeks.take(4).takeWhile { it > 0 }.size
+
+        val cycleWeek = if (consecutiveActiveWeeks == 0) 1 else ((consecutiveActiveWeeks - 1) % 4) + 1
+
         return when (cycleWeek) {
-            1 -> PeriodizationPhase.ACCUMULATION  // 1주차: 볼륨 증가 (65-75% 1RM)
-            2 -> PeriodizationPhase.INTENSIFICATION  // 2주차: 강도 증가 (75-85% 1RM)
-            3 -> PeriodizationPhase.REALIZATION  // 3주차: 피크 (85-95% 1RM)
-            4 -> PeriodizationPhase.DELOAD  // 4주차: 회복주 (50-60% 1RM)
+            1 -> PeriodizationPhase.ACCUMULATION
+            2 -> PeriodizationPhase.INTENSIFICATION
+            3 -> PeriodizationPhase.REALIZATION
+            4 -> PeriodizationPhase.DELOAD
             else -> PeriodizationPhase.ACCUMULATION
         }
     }
@@ -1649,13 +1662,19 @@ class WorkoutServiceV2(
 
         // 최종 무게 계산 (NaN 방지 + 안전 마진 강화)
         var targetWeight = if (lastWeight > 0 && lastWeight.isFinite()) {
-            lastWeight * progressionMultiplier * recoveryMultiplier
+            val computed = lastWeight * progressionMultiplier * recoveryMultiplier
+            if (computed.isFinite() && computed > 0) computed else prWeight * 0.7
         } else {
-            prWeight * 0.7 // 기본값: PR의 70%
+            (prWeight * 0.7).takeIf { it > 0 } ?: 10.0
+        }
+
+        // NaN/Infinity 최종 방어
+        if (!targetWeight.isFinite() || targetWeight <= 0) {
+            targetWeight = 10.0
         }
 
         // 안전 마진 적용 (과학적 근거: NSCA Guidelines)
-        if (targetWeight.isFinite() && prWeight > 0) {
+        if (prWeight > 0) {
             // 1. 주기화 범위 내로 제한
             targetWeight = targetWeight.coerceIn(
                 prWeight * intensityRange.start,
@@ -1663,10 +1682,12 @@ class WorkoutServiceV2(
             )
 
             // 2. 급격한 증가 방지 (주당 최대 5% 증가)
-            val maxWeeklyIncrease = lastWeight * 1.05
-            if (progressionMultiplier > 1.0 && targetWeight > maxWeeklyIncrease) {
-                targetWeight = maxWeeklyIncrease
-                println("Safety cap applied: maximum weekly increase is 5%")
+            if (progressionMultiplier > 1.0 && lastWeight > 0 && lastWeight.isFinite()) {
+                val maxWeeklyIncrease = lastWeight * 1.05
+                if (targetWeight > maxWeeklyIncrease) {
+                    targetWeight = maxWeeklyIncrease
+                    logger.debug("Safety cap applied: maximum weekly increase is 5%")
+                }
             }
 
             // 3. 절대 최소값 보장 (2.5kg)
@@ -1814,7 +1835,7 @@ class WorkoutServiceV2(
                 .let { filterOutliers(it) }
 
         } catch (e: Exception) {
-            println("Failed to load recent workout history: ${e.message}")
+            logger.warn("Failed to load recent workout history: {}", e.message)
             emptyList()
         }
     }
@@ -2165,10 +2186,14 @@ class WorkoutServiceV2(
         )
     }
 
+    /**
+     * 운동 전 추정 칼로리 (예측값)
+     * 기본 5kcal/min + 운동 수 보정 (completeWorkout과 동일 기준)
+     */
     private fun calculateEstimatedCalories(duration: Int, exerciseCount: Int): Int {
-        val baseCaloriesPerMinute = 6
-        val exerciseMultiplier = 1 + (exerciseCount * 0.1)
-        return (duration * baseCaloriesPerMinute * exerciseMultiplier).toInt()
+        val baseCalories = duration * 5
+        val exerciseBonus = exerciseCount * 8
+        return baseCalories + exerciseBonus
     }
 
     // Helper methods
@@ -2265,11 +2290,12 @@ class WorkoutServiceV2(
         val definition = WorkoutAchievementCatalog.definition(code)
             ?: throw IllegalArgumentException("Unknown achievement code: $code")
 
+        val locale = resolveLocale(user.id)
         return Achievement(
             user = user,
             code = code,
-            name = WorkoutAchievementCatalog.name(code, "en"),
-            description = WorkoutAchievementCatalog.description(code, "en"),
+            name = WorkoutAchievementCatalog.name(code, locale),
+            description = WorkoutAchievementCatalog.description(code, locale),
             icon = definition.icon,
             type = definition.type,
             unlockedAt = AppTime.utcNow()
@@ -2301,7 +2327,9 @@ class WorkoutServiceV2(
         var streak = 0
         var currentDate = today
 
-        while (true) {
+        val maxStreakDays = 365
+        var iterations = 0
+        while (iterations < maxStreakDays) {
             val hasWorkout = workoutDays.contains(currentDate)
             if (hasWorkout) {
                 streak++
@@ -2311,6 +2339,7 @@ class WorkoutServiceV2(
             } else {
                 break
             }
+            iterations++
         }
 
         return streak
@@ -2726,15 +2755,15 @@ class WorkoutServiceV2(
         completedExercises.forEach { completedExercise ->
             val exercise = exerciseRepository.findById(completedExercise.exerciseId).orElse(null)
             if (exercise != null) {
-                println("DEBUG: Exercise ${exercise.name} (ID: ${exercise.id})")
-                println("DEBUG: - Category: ${exercise.category}")
-                println("DEBUG: - MuscleGroups: ${exercise.muscleGroups.map { it.name }}")
+                logger.debug("Exercise {} (ID: {})", exercise.name, exercise.id)
+                logger.debug("- Category: {}", exercise.category)
+                logger.debug("- MuscleGroups: {}", exercise.muscleGroups.map { it.name })
 
                 // Exercise의 muscleGroups에서 canonical key 가져오기
                 exercise.muscleGroups.forEach { muscleGroup ->
                     val muscleKey = muscleGroup.name.lowercase()
                     muscleGroupsWorked.add(muscleKey)
-                    println("DEBUG: Added muscle group: ${muscleGroup.name} -> $muscleKey")
+                    logger.debug("Added muscle group: {} -> {}", muscleGroup.name, muscleKey)
                 }
 
                 // Exercise의 category를 기본 target key로도 추가
@@ -2742,20 +2771,20 @@ class WorkoutServiceV2(
                     ?.let { WorkoutTargetResolver.key(it) }
                 categoryMuscle?.let {
                     muscleGroupsWorked.add(it)
-                    println("DEBUG: Added category muscle: ${exercise.category} -> $it")
+                    logger.debug("Added category muscle: {} -> {}", exercise.category, it)
                 }
             }
         }
 
-        println("DEBUG: Total muscle groups to save: $muscleGroupsWorked")
+        logger.debug("Total muscle groups to save: {}", muscleGroupsWorked)
 
         // 각 근육 그룹에 대해 MuscleRecovery 업데이트
         muscleGroupsWorked.forEach { muscleGroup ->
-            println("DEBUG: Processing muscle group: $muscleGroup")
+            logger.debug("Processing muscle group: {}", muscleGroup)
 
             val muscleRecovery = muscleRecoveryRepository.findByUserAndMuscleGroup(user, muscleGroup)
                 .orElseGet {
-                    println("DEBUG: Creating new MuscleRecovery for $muscleGroup")
+                    logger.debug("Creating new MuscleRecovery for {}", muscleGroup)
                     MuscleRecovery(
                         user = user,
                         muscleGroup = muscleGroup,
@@ -2772,7 +2801,7 @@ class WorkoutServiceV2(
             muscleRecovery.updatedAt = now
 
             val saved = muscleRecoveryRepository.save(muscleRecovery)
-            println("DEBUG: Saved MuscleRecovery ID: ${saved.id} for muscle: $muscleGroup")
+            logger.debug("Saved MuscleRecovery ID: {} for muscle: {}", saved.id, muscleGroup)
         }
 
         // UserProfile의 muscleRecovery JSON 업데이트 (하위 호환성)

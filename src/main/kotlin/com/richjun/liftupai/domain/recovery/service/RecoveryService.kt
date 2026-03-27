@@ -32,29 +32,24 @@ class RecoveryService(
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    @Transactional(readOnly = true)
+    @Transactional
     fun getRecoveryStatus(userId: Long, localeOverride: String? = null): RecoveryStatusResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
         val locale = resolveLocale(userId, localeOverride)
 
-        println("DEBUG RecoveryService.getRecoveryStatus - userId: $userId")
+        logger.debug("getRecoveryStatus - userId: {}", userId)
 
         updateRecoveryPercentages(user)
 
         val muscles = muscleRecoveryRepository.findByUser(user)
-        println("DEBUG RecoveryService.getRecoveryStatus - found ${muscles.size} muscle recovery records from DB")
-        muscles.forEach { muscle ->
-            println("DEBUG RecoveryService.getRecoveryStatus - DB record: muscleGroup=${muscle.muscleGroup}, " +
-                    "recoveryPercentage=${muscle.recoveryPercentage}, lastWorked=${muscle.lastWorked}")
-        }
+        logger.debug("getRecoveryStatus - found {} muscle recovery records", muscles.size)
 
         val muscleStatuses = muscles.map { muscle ->
             toMuscleRecoveryStatus(muscle, locale)
         }.plus(getDefaultMuscleGroups(muscles, locale))
 
-        println("DEBUG RecoveryService.getRecoveryStatus - total muscle statuses: ${muscleStatuses.size}")
-        println("DEBUG RecoveryService.getRecoveryStatus - muscle groups: ${muscleStatuses.map { it.name }}")
+        logger.debug("getRecoveryStatus - total muscle statuses: {}", muscleStatuses.size)
 
         return RecoveryStatusResponse(muscles = muscleStatuses)
     }
@@ -74,8 +69,8 @@ class RecoveryService(
                 )
             }
 
-        muscleRecovery.feelingScore = request.feelingScore
-        muscleRecovery.soreness = request.soreness
+        muscleRecovery.feelingScore = request.feelingScore.coerceIn(1, 10)
+        muscleRecovery.soreness = request.soreness.coerceIn(0, 10)
         muscleRecovery.recoveryPercentage = calculateRecoveryPercentage(
             muscleRecovery.lastWorked,
             request.feelingScore,
@@ -174,27 +169,31 @@ class RecoveryService(
     }
 
     private fun adjustRecoveryBySoreness(baseRecovery: Int, soreness: Int): Int {
-        val sorenessMultiplier = 1.0 - (soreness * 0.05)
-        return (baseRecovery * sorenessMultiplier).toInt()
+        val clampedSoreness = soreness.coerceIn(0, 10)
+        val sorenessMultiplier = (1.0 - (clampedSoreness * 0.05)).coerceIn(0.0, 1.0)
+        return (baseRecovery * sorenessMultiplier).toInt().coerceIn(0, 100)
     }
 
     private fun calculateRecoveryPercentage(lastWorked: LocalDateTime, feelingScore: Int, soreness: Int): Int {
         val hoursSinceWorkout = ChronoUnit.HOURS.between(lastWorked, AppTime.utcNow())
         val baseRecovery = calculateBaseRecovery(hoursSinceWorkout)
 
-        val feelingMultiplier = feelingScore / 10.0
-        val sorenessMultiplier = 1.0 - (soreness * 0.05)
+        val clampedFeeling = feelingScore.coerceIn(1, 10)
+        val clampedSoreness = soreness.coerceIn(0, 10)
+        val feelingMultiplier = clampedFeeling / 10.0
+        val sorenessMultiplier = (1.0 - (clampedSoreness * 0.05)).coerceIn(0.0, 1.0)
 
-        return minOf((baseRecovery * feelingMultiplier * sorenessMultiplier).toInt(), 100)
+        return (baseRecovery * feelingMultiplier * sorenessMultiplier).toInt().coerceIn(0, 100)
     }
 
     private fun calculateEstimatedRecoveryTime(muscle: MuscleRecovery): Int {
         if (muscle.recoveryPercentage >= 100) return 0
 
-        val remainingRecovery = 100 - muscle.recoveryPercentage
-        val recoveryRate = 100.0 / (48 + muscle.soreness * 4)
+        val remainingRecovery = (100 - muscle.recoveryPercentage).coerceAtLeast(0)
+        val clampedSoreness = muscle.soreness.coerceIn(0, 10)
+        val recoveryRate = 100.0 / (48 + clampedSoreness * 4)
 
-        return (remainingRecovery / recoveryRate).toInt()
+        return (remainingRecovery / recoveryRate).toInt().coerceAtLeast(0)
     }
 
     private fun determineRecoveryStatusKey(recoveryPercentage: Int): String {
@@ -334,7 +333,8 @@ class RecoveryService(
         val bodyPartKeys = request.bodyParts.map(::canonicalMuscleKey).toMutableSet()
 
         val recoveryScore = calculateRecoveryScore(request)
-        val recoveryBoost = calculateRecoveryBoost(request)
+        val boostValue = calculateRecoveryBoostValue(request)
+        val recoveryBoost = "+${boostValue}%"
 
         val activity = RecoveryActivity(
             user = user,
@@ -350,7 +350,7 @@ class RecoveryService(
 
         val saved = recoveryActivityRepository.save(activity)
 
-        updateMuscleRecoveryForActivity(userId, bodyPartKeys, recoveryBoost)
+        applyRecoveryBoost(userId, bodyPartKeys, boostValue)
 
         val nextRecommendation = generateNextRecommendation(request.activityType, locale)
 
@@ -455,34 +455,31 @@ class RecoveryService(
         return score.coerceIn(0, 100)
     }
 
-    private fun calculateRecoveryBoost(request: RecordActivityRequest): String {
-        val boostPercentage = when (request.activityType) {
-            RecoveryActivityType.SLEEP -> {
-                if (request.duration >= 420) "+15%" else "+10%"
+    private fun calculateRecoveryBoostValue(request: RecordActivityRequest): Int {
+        return when (request.activityType) {
+            RecoveryActivityType.SLEEP -> if (request.duration >= 420) 15 else 10
+            RecoveryActivityType.MASSAGE -> 12
+            RecoveryActivityType.STRETCHING -> when (request.intensity) {
+                RecoveryIntensity.INTENSE -> 8
+                RecoveryIntensity.MODERATE -> 5
+                RecoveryIntensity.LIGHT -> 3
             }
-            RecoveryActivityType.MASSAGE -> "+12%"
-            RecoveryActivityType.STRETCHING -> {
-                when (request.intensity) {
-                    RecoveryIntensity.INTENSE -> "+8%"
-                    RecoveryIntensity.MODERATE -> "+5%"
-                    RecoveryIntensity.LIGHT -> "+3%"
-                }
-            }
-            RecoveryActivityType.FOAM_ROLLING -> "+7%"
-            RecoveryActivityType.COLD_BATH -> "+6%"
-            RecoveryActivityType.SAUNA -> "+5%"
+            RecoveryActivityType.FOAM_ROLLING -> 7
+            RecoveryActivityType.COLD_BATH -> 6
+            RecoveryActivityType.SAUNA -> 5
         }
-
-        return boostPercentage
     }
 
-    private fun updateMuscleRecoveryForActivity(userId: Long, bodyParts: Set<String>, recoveryBoost: String) {
+    @Deprecated("Use calculateRecoveryBoostValue instead")
+    private fun calculateRecoveryBoost(request: RecordActivityRequest): String {
+        return "+${calculateRecoveryBoostValue(request)}%"
+    }
+
+    private fun applyRecoveryBoost(userId: Long, bodyParts: Set<String>, boostValue: Int) {
         if (bodyParts.isEmpty()) return
 
-        val boostValue = recoveryBoost.removeSuffix("%").removePrefix("+").toIntOrNull() ?: 0
-
         bodyParts.forEach { bodyPart ->
-            boostMuscleRecovery(userId, bodyPart, boostValue)
+            boostMuscleRecovery(userId, bodyPart, boostValue.coerceIn(1, 50))
         }
     }
 

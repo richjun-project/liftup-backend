@@ -155,7 +155,7 @@ class SubscriptionService(
     private fun calculateExpiryDate(plan: SubscriptionPlan): LocalDateTime? {
         return when (plan) {
             SubscriptionPlan.FREE -> null
-            SubscriptionPlan.BASIC, SubscriptionPlan.PREMIUM -> AppTime.utcNow().plusMonths(1)
+            SubscriptionPlan.BASIC, SubscriptionPlan.PREMIUM, SubscriptionPlan.PRO -> AppTime.utcNow().plusMonths(1)
         }
     }
 

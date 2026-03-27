@@ -27,7 +27,7 @@ class ExerciseRecommendationService(
     companion object {
         // 설정 상수
         private const val MIN_EXERCISES_THRESHOLD = 6
-        private const val RECOVERY_THRESHOLD_PERCENT = 30
+        private const val RECOVERY_THRESHOLD_PERCENT = 50
         private const val RECENT_WORKOUT_HOURS = 24
     }
 
@@ -127,8 +127,7 @@ class ExerciseRecommendationService(
         }
 
         val filtered = exercises.filter { exercise ->
-            val primaryMuscle = exercise.muscleGroups.firstOrNull()
-            primaryMuscle == null || primaryMuscle !in avoidMuscles
+            exercise.muscleGroups.none { it in avoidMuscles }
         }
 
         // 최소 운동 개수 보장
@@ -156,11 +155,12 @@ class ExerciseRecommendationService(
     private fun getRecentlyWorkedMuscles(user: User, hours: Int): Set<MuscleGroup> {
         return try {
             val cutoff = LocalDateTime.now().minusHours(hours.toLong())
-            workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoff)
-                .flatMap { session ->
-                    workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-                        .flatMap { it.exercise.muscleGroups }
-                }
+            val sessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoff)
+            if (sessions.isEmpty()) return emptySet()
+
+            val sessionIds = sessions.map { it.id }
+            workoutExerciseRepository.findBySessionIdInWithExercise(sessionIds)
+                .flatMap { it.exercise.muscleGroups }
                 .toSet()
         } catch (e: Exception) {
             logger.warn("Failed to load recently trained muscles: ${e.message}")

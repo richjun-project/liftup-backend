@@ -3,6 +3,7 @@ package com.richjun.liftupai.domain.workout.repository
 import com.richjun.liftupai.domain.workout.entity.WorkoutExercise
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -16,4 +17,7 @@ interface WorkoutExerciseRepository : JpaRepository<WorkoutExercise, Long> {
     fun findBySessionIdOrderByOrderInSession(sessionId: Long): List<WorkoutExercise>
 
     fun findBySessionIdAndExerciseId(sessionId: Long, exerciseId: Long): WorkoutExercise?
+
+    @Query("SELECT we FROM WorkoutExercise we JOIN FETCH we.exercise WHERE we.session.id IN :sessionIds ORDER BY we.session.id, we.orderInSession")
+    fun findBySessionIdInWithExercise(@Param("sessionIds") sessionIds: List<Long>): List<WorkoutExercise>
 }

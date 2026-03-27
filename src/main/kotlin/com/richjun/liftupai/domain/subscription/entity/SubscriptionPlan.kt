@@ -37,6 +37,18 @@ enum class SubscriptionPlan(
             "오프라인 동기화",
             "우선 지원"
         )
+    ),
+    PRO(
+        displayName = "Pro",
+        price = 4990,
+        features = listOf(
+            "무제한 AI PT 채팅",
+            "AI 맞춤 운동 추천",
+            "상세 통계 분석",
+            "전체 회복 추적",
+            "AI 프로그레션",
+            "영양 분석"
+        )
     )
 }
 

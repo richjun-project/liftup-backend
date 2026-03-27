@@ -1,10 +1,12 @@
 package com.richjun.liftupai.domain.subscription.controller
 
 import com.richjun.liftupai.domain.subscription.dto.*
+import com.richjun.liftupai.domain.subscription.service.RevenueCatWebhookService
 import com.richjun.liftupai.domain.subscription.service.SubscriptionService
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.security.CustomUserDetails
 import jakarta.validation.Valid
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -13,8 +15,10 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/subscription")
 class SubscriptionController(
-    private val subscriptionService: SubscriptionService
+    private val subscriptionService: SubscriptionService,
+    private val revenueCatWebhookService: RevenueCatWebhookService
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @GetMapping("/status")
     fun getSubscriptionStatus(
@@ -49,5 +53,24 @@ class SubscriptionController(
     ): ResponseEntity<ApiResponse<ValidateReceiptResponse>> {
         val response = subscriptionService.validateReceipt(request)
         return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
+    @PostMapping("/webhook")
+    fun handleRevenueCatWebhook(
+        @RequestHeader("Authorization", required = false) authHeader: String?,
+        @RequestBody webhookEvent: RevenueCatWebhookEvent
+    ): ResponseEntity<Any> {
+        if (!revenueCatWebhookService.validateAuthorization(authHeader)) {
+            log.warn("[RevenueCat] Webhook unauthorized")
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        }
+
+        try {
+            revenueCatWebhookService.handleWebhookEvent(webhookEvent)
+            return ResponseEntity.ok().build()
+        } catch (e: Exception) {
+            log.error("[RevenueCat] Webhook processing error", e)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+        }
     }
 }

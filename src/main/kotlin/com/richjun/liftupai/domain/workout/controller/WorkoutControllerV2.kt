@@ -9,6 +9,7 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -18,6 +19,7 @@ class WorkoutControllerV2(
     private val workoutService: com.richjun.liftupai.domain.workout.service.WorkoutService,
     private val workoutPlanService: com.richjun.liftupai.domain.workout.service.WorkoutPlanService
 ) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
 
     // 기존 운동 세션 시작 (호환성 유지 - 진행 중인 세션이 있으면 반환, 없으면 새로 생성)
     @PostMapping("/start")
@@ -97,13 +99,8 @@ class WorkoutControllerV2(
         @PathVariable sessionId: Long,
         @Valid @RequestBody request: CompleteWorkoutRequestV2
     ): ResponseEntity<ApiResponse<CompleteWorkoutResponseV2>> {
-        println("DEBUG Controller: completeWorkout endpoint called")
-        println("DEBUG Controller: userId=${userDetails.getId()}, sessionId=$sessionId")
-        println("DEBUG Controller: request.exercises.size=${request.exercises.size}")
-        println("DEBUG Controller: request.duration=${request.duration}")
-        request.exercises.forEach { exercise ->
-            println("DEBUG Controller: - exerciseId=${exercise.exerciseId}, sets=${exercise.sets.size}")
-        }
+        logger.debug("completeWorkout called: userId={}, sessionId={}, exercises={}, duration={}",
+            userDetails.getId(), sessionId, request.exercises.size, request.duration)
         val response = workoutServiceV2.completeWorkout(userDetails.getId(), sessionId, request)
         return ResponseEntity.ok(ApiResponse.success(response))
     }

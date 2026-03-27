@@ -12,6 +12,9 @@ import java.time.LocalDateTime
 interface ExerciseSetRepository : JpaRepository<ExerciseSet, Long> {
     fun findByWorkoutExerciseId(workoutExerciseId: Long): List<ExerciseSet>
 
+    @Query("SELECT es FROM ExerciseSet es WHERE es.workoutExercise.id IN :workoutExerciseIds")
+    fun findByWorkoutExerciseIdIn(@Param("workoutExerciseIds") workoutExerciseIds: List<Long>): List<ExerciseSet>
+
     @Query("""
         SELECT es FROM ExerciseSet es
         JOIN es.workoutExercise we
