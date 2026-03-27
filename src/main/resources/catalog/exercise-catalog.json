@@ -184,10 +184,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -217,10 +217,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -338,7 +338,7 @@
   {
     "slug": "45-degree-hyperextension-arms-in-front-of-chest",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "MACHINE",
     "equipmentDetail": "Hyperextension Bench",
     "sourceCategory": "Bodyweight",
@@ -348,10 +348,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -370,7 +370,7 @@
   {
     "slug": "45-degree-hyperextension-arms-to-chest",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "MACHINE",
     "equipmentDetail": "Hyperextension Bench",
     "sourceCategory": "Bodyweight",
@@ -380,10 +380,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -445,10 +445,10 @@
       "CORE",
       "GLUTES"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -767,10 +767,10 @@
       "CORE",
       "LEGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -1415,10 +1415,10 @@
       "LEGS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -1451,10 +1451,10 @@
       "LEGS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -1487,10 +1487,10 @@
       "LEGS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -1676,10 +1676,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -1810,10 +1810,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -2048,10 +2048,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -2349,10 +2349,10 @@
       "QUADRICEPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -2415,10 +2415,10 @@
       "QUADRICEPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -2640,10 +2640,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -2674,10 +2674,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -3362,10 +3362,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -3431,10 +3431,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -3465,10 +3465,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -3499,10 +3499,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -3533,10 +3533,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -3635,10 +3635,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -3735,10 +3735,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -3858,7 +3858,7 @@
   {
     "slug": "back-extension-machine",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "MACHINE",
     "equipmentDetail": "Hyperextension Bench",
     "sourceCategory": "Bodyweight",
@@ -3868,10 +3868,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -3890,7 +3890,7 @@
   {
     "slug": "back-extension-on-exercise-ball",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "OTHER",
     "equipmentDetail": "Exercise Ball",
     "sourceCategory": "Bodyweight",
@@ -3900,10 +3900,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -4305,10 +4305,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -4440,10 +4440,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -4474,10 +4474,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -4602,10 +4602,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -4687,7 +4687,7 @@
   {
     "slug": "band-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "RESISTANCE_BAND",
     "equipmentDetail": "Resistance Band",
     "sourceCategory": "Resistance",
@@ -4697,10 +4697,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5114,10 +5114,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5148,10 +5148,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5182,10 +5182,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5372,10 +5372,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5405,10 +5405,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5438,10 +5438,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5531,7 +5531,7 @@
   {
     "slug": "barbell-clean-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -5643,10 +5643,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5708,10 +5708,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5730,7 +5730,7 @@
   {
     "slug": "barbell-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -5764,7 +5764,7 @@
   {
     "slug": "barbell-deadlift-360-degrees",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -5776,10 +5776,10 @@
       "QUADRICEPS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5798,7 +5798,7 @@
   {
     "slug": "barbell-deadlift-high-pull",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -5812,10 +5812,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5939,10 +5939,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -5972,10 +5972,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6005,10 +6005,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6038,10 +6038,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6103,10 +6103,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6205,10 +6205,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6238,10 +6238,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6272,10 +6272,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6326,7 +6326,7 @@
   {
     "slug": "barbell-good-morning",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -6433,10 +6433,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6466,10 +6466,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6596,10 +6596,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6661,10 +6661,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6695,10 +6695,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6728,10 +6728,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -6827,10 +6827,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7026,10 +7026,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7058,10 +7058,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7080,7 +7080,7 @@
   {
     "slug": "barbell-one-arm-single-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -7092,10 +7092,10 @@
       "QUADRICEPS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7158,10 +7158,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7224,10 +7224,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7502,10 +7502,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7535,10 +7535,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7635,10 +7635,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7731,10 +7731,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7763,10 +7763,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7797,10 +7797,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -7884,7 +7884,7 @@
   {
     "slug": "barbell-romanian-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -7981,7 +7981,7 @@
   {
     "slug": "barbell-seated-good-morning",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -8278,10 +8278,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -8331,7 +8331,7 @@
   {
     "slug": "barbell-single-leg-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -8497,7 +8497,7 @@
   {
     "slug": "barbell-snatch-deadlift-close-grip",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -8531,7 +8531,7 @@
   {
     "slug": "barbell-snatch-deadlift-wide-grip",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -8716,10 +8716,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -8749,10 +8749,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -8782,10 +8782,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -8874,10 +8874,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -8967,10 +8967,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -9030,10 +9030,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -9125,10 +9125,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -9180,7 +9180,7 @@
   {
     "slug": "barbell-stiff-leg-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -9190,10 +9190,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -9212,7 +9212,7 @@
   {
     "slug": "barbell-straight-leg-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -9222,10 +9222,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -9244,7 +9244,7 @@
   {
     "slug": "barbell-sumo-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -9278,7 +9278,7 @@
   {
     "slug": "barbell-sumo-romanian-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -9288,10 +9288,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -9354,10 +9354,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -9801,10 +9801,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -9834,10 +9834,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -9867,10 +9867,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -10063,10 +10063,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -10323,10 +10323,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -10420,10 +10420,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -10454,10 +10454,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -10708,10 +10708,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11044,10 +11044,10 @@
       "LEGS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11112,10 +11112,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11241,10 +11241,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11309,10 +11309,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11343,10 +11343,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11377,10 +11377,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11512,10 +11512,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11545,10 +11545,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11678,10 +11678,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11742,10 +11742,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11775,10 +11775,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11808,10 +11808,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11841,10 +11841,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11875,10 +11875,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11897,7 +11897,7 @@
   {
     "slug": "bodyweight-single-leg-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BODYWEIGHT",
     "equipmentDetail": "None",
     "sourceCategory": "Bodyweight",
@@ -11941,10 +11941,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -11975,10 +11975,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -12008,10 +12008,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -12042,10 +12042,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -12075,10 +12075,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -12239,10 +12239,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -12272,10 +12272,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -12468,10 +12468,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -13168,10 +13168,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -13201,10 +13201,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -13234,10 +13234,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -13267,10 +13267,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -13302,10 +13302,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -13335,10 +13335,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -13368,10 +13368,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -13472,10 +13472,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -13757,10 +13757,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -13955,10 +13955,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -14342,10 +14342,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -14406,10 +14406,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -14568,10 +14568,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -14667,10 +14667,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -14798,10 +14798,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -15498,10 +15498,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -15748,10 +15748,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -15849,10 +15849,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -15917,10 +15917,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -16203,10 +16203,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -16235,10 +16235,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -16457,10 +16457,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -16591,10 +16591,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -16624,10 +16624,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -16657,10 +16657,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -16690,10 +16690,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -17441,10 +17441,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -17540,10 +17540,10 @@
       "LATS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -17608,10 +17608,10 @@
       "LATS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -17642,10 +17642,10 @@
       "LATS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -17676,10 +17676,10 @@
       "LATS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -17710,10 +17710,10 @@
       "LATS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -17811,10 +17811,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -17881,10 +17881,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -17951,10 +17951,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -17983,10 +17983,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -18015,10 +18015,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -18119,10 +18119,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -18153,10 +18153,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -18455,10 +18455,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -18489,10 +18489,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -19215,10 +19215,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -19248,10 +19248,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -19280,10 +19280,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -19313,10 +19313,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -19604,10 +19604,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -19636,10 +19636,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -19668,10 +19668,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -19700,10 +19700,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -19764,10 +19764,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -19796,10 +19796,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -20058,10 +20058,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -20158,10 +20158,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -20190,10 +20190,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -20731,10 +20731,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -20957,10 +20957,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -21152,10 +21152,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -21186,10 +21186,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -21218,10 +21218,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -21283,10 +21283,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -21316,10 +21316,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -21513,10 +21513,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -21566,7 +21566,7 @@
   {
     "slug": "dumbbell-close-legs-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -21576,10 +21576,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -21609,10 +21609,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -21800,10 +21800,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -22242,10 +22242,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -22436,10 +22436,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -22533,10 +22533,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -22599,10 +22599,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -22632,10 +22632,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -22664,10 +22664,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -22696,10 +22696,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -22729,10 +22729,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -22791,10 +22791,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -22887,10 +22887,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -23423,10 +23423,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -24062,10 +24062,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -24194,10 +24194,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -24227,10 +24227,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -24421,10 +24421,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -24579,10 +24579,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -24896,10 +24896,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -24957,10 +24957,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -25271,10 +25271,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -25337,10 +25337,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -25465,10 +25465,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -25797,10 +25797,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -25894,10 +25894,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -25927,10 +25927,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -26057,10 +26057,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -26090,10 +26090,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -26173,7 +26173,7 @@
   {
     "slug": "dumbbell-romanian-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -26184,10 +26184,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -26377,10 +26377,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -26689,10 +26689,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -26874,10 +26874,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -26970,10 +26970,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -27003,10 +27003,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -27135,10 +27135,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -27516,7 +27516,7 @@
   {
     "slug": "dumbbell-single-leg-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -27722,10 +27722,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -27755,10 +27755,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -27789,10 +27789,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -27821,10 +27821,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -28601,10 +28601,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -28689,7 +28689,7 @@
   {
     "slug": "dumbbell-stiff-leg-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -28699,10 +28699,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -28785,7 +28785,7 @@
   {
     "slug": "dumbbell-straight-leg-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -28795,10 +28795,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -28897,10 +28897,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -28929,10 +28929,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -29246,10 +29246,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -29280,10 +29280,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -29317,10 +29317,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -29803,10 +29803,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30022,10 +30022,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30246,10 +30246,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30597,10 +30597,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30629,10 +30629,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30661,10 +30661,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30758,10 +30758,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30792,10 +30792,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30814,7 +30814,7 @@
   {
     "slug": "good-mornings-barbell",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BARBELL",
     "equipmentDetail": "Barbell",
     "sourceCategory": "Free Weights",
@@ -30846,7 +30846,7 @@
   {
     "slug": "good-mornings-dumbbells",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -30856,10 +30856,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30878,7 +30878,7 @@
   {
     "slug": "good-mornings-kettlebell",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "KETTLEBELL",
     "equipmentDetail": "Kettlebells",
     "sourceCategory": "Free Weights",
@@ -30888,10 +30888,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30958,10 +30958,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -30990,10 +30990,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -32208,10 +32208,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -32337,10 +32337,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -32787,10 +32787,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -32820,10 +32820,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -32851,10 +32851,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -32882,10 +32882,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33051,10 +33051,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33084,10 +33084,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33115,10 +33115,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33182,10 +33182,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33204,7 +33204,7 @@
   {
     "slug": "kettlebell-sumo-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "KETTLEBELL",
     "equipmentDetail": "Kettlebells",
     "sourceCategory": "Free Weights",
@@ -33216,10 +33216,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33238,7 +33238,7 @@
   {
     "slug": "kettlebell-sumo-deadlift-with-high-pull",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "KETTLEBELL",
     "equipmentDetail": "Kettlebells",
     "sourceCategory": "Free Weights",
@@ -33252,10 +33252,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33286,10 +33286,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33320,10 +33320,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33354,10 +33354,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33481,7 +33481,7 @@
   {
     "slug": "kettlebells-sumo-deadlift-with-high-pull",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "KETTLEBELL",
     "equipmentDetail": "Kettlebells",
     "sourceCategory": "Free Weights",
@@ -33495,10 +33495,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -33920,10 +33920,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -34213,10 +34213,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 25,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -34439,10 +34439,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -34471,10 +34471,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -34505,10 +34505,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -34539,10 +34539,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -34572,10 +34572,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -34605,10 +34605,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -34638,10 +34638,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -34671,10 +34671,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -34756,7 +34756,7 @@
   {
     "slug": "lying-back-extension",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "BODYWEIGHT",
     "equipmentDetail": "None",
     "sourceCategory": "Bodyweight",
@@ -34766,10 +34766,10 @@
       "GLUTES",
       "HAMSTRINGS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -35372,10 +35372,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -35408,10 +35408,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -35861,10 +35861,10 @@
       "LEGS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -35929,10 +35929,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -35964,10 +35964,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -35997,10 +35997,10 @@
       "CORE",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36031,10 +36031,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36099,10 +36099,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36422,10 +36422,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36456,10 +36456,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36490,10 +36490,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36524,10 +36524,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36558,10 +36558,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36690,10 +36690,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36724,10 +36724,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36758,10 +36758,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36794,10 +36794,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -36862,10 +36862,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -37091,10 +37091,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -37186,10 +37186,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -37242,7 +37242,7 @@
   {
     "slug": "resistance-band-floor-hyperextension",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "RESISTANCE_BAND",
     "equipmentDetail": "Loop Resistance Band",
     "sourceCategory": "Resistance",
@@ -37253,10 +37253,10 @@
       "HAMSTRINGS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -37451,10 +37451,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -37712,10 +37712,10 @@
       "CORE",
       "GLUTES"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -38002,10 +38002,10 @@
       "CORE",
       "GLUTES"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -38036,10 +38036,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -38590,10 +38590,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -38783,10 +38783,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -39005,10 +39005,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -39197,10 +39197,10 @@
       "LATS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -39260,10 +39260,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -39582,10 +39582,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -39741,10 +39741,10 @@
       "CORE",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -39773,10 +39773,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -39839,10 +39839,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -40032,7 +40032,7 @@
   {
     "slug": "single-kettlebell-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "KETTLEBELL",
     "equipmentDetail": "Kettlebells",
     "sourceCategory": "Free Weights",
@@ -40046,10 +40046,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -40135,7 +40135,7 @@
   {
     "slug": "single-leg-romanian-deadlift-dumbbell",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -40170,7 +40170,7 @@
   {
     "slug": "single-leg-romanian-deadlifts-right-cable-resistance-band",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "RESISTANCE_BAND",
     "equipmentDetail": "Resistance Band",
     "sourceCategory": "Resistance",
@@ -40249,10 +40249,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 55,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -40540,10 +40540,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -40804,10 +40804,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -41224,10 +41224,10 @@
       "TRAPS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 45,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -41671,10 +41671,10 @@
       "LEGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -41705,10 +41705,10 @@
       "QUADRICEPS",
       "SHOULDERS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -41881,10 +41881,10 @@
       "SHOULDERS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -41999,7 +41999,7 @@
   {
     "slug": "trap-bar-deadlift",
     "defaultLocale": "en",
-    "category": "LEGS",
+    "category": "BACK",
     "equipment": "OTHER",
     "equipmentDetail": "Trap Bar",
     "sourceCategory": "Free Weights",
@@ -42012,10 +42012,10 @@
       "QUADRICEPS",
       "TRAPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -42573,10 +42573,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -42608,10 +42608,10 @@
       "HAMSTRINGS",
       "QUADRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 95,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -42639,10 +42639,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 40,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
@@ -42737,10 +42737,10 @@
       "SHOULDERS",
       "TRICEPS"
     ],
-    "recommendationTier": "ESSENTIAL",
+    "recommendationTier": "STANDARD",
     "popularity": 85,
     "difficulty": 35,
-    "basicExercise": true,
+    "basicExercise": false,
     "translations": [
       {
         "locale": "en",
