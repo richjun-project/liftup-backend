@@ -1134,6 +1134,8 @@ class WorkoutServiceV2(
         val targetExerciseCount = getTargetExerciseCount(workoutDuration)
 
         // 벡터 추천 우선 시도, 실패 시 rule-based 폴백
+        // 벡터 결과가 목표의 절반 미만이면 rule-based로 폴백 (인덱싱 미완료 등 대비)
+        val minAcceptableCount = (targetExerciseCount + 1) / 2
         val exercises = try {
             vectorRecommendationService?.recommendExercises(
                 user = user,
@@ -1143,7 +1145,7 @@ class WorkoutServiceV2(
                 equipment = equipment,
                 difficulty = difficultyKey,
                 limit = targetExerciseCount
-            )?.takeIf { it.isNotEmpty() }
+            )?.takeIf { it.size >= minAcceptableCount }
         } catch (e: Exception) {
             logger.warn("Vector recommendation failed, falling back to rule-based: ${e.message}")
             null
@@ -2105,7 +2107,7 @@ class WorkoutServiceV2(
         val userSettings = userSettingsRepository.findByUser_Id(userId).orElse(null)
         val configuredProgramType = userSettings?.workoutSplit
             ?: userProfile?.workoutSplit
-            ?: "PPL"
+            ?: "FULL_BODY"
         val programDays = userSettings?.weeklyWorkoutDays
             ?: userProfile?.weeklyWorkoutDays
             ?: 3

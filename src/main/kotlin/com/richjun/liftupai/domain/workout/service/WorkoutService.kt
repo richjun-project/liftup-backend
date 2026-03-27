@@ -9,6 +9,7 @@ import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.repository.*
 import com.richjun.liftupai.domain.workout.util.WorkoutFocus
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
@@ -251,7 +252,7 @@ class WorkoutService(
         val nextWorkoutType = sequence.getOrNull(programPosition.day - 1) ?: WorkoutType.FULL_BODY
 
         // 다음 운동 설명 - nextWorkoutType과 동일한 시퀀스 사용하여 불일치 방지
-        val locale = resolveLocale(userId)
+        val locale = resolveLocale(userId, localeOverride)
         val nextWorkoutDescription = workoutProgressTracker.getProgramSequenceDescriptionFromSequence(
             sequence,
             programPosition.day,
@@ -272,6 +273,7 @@ class WorkoutService(
                 WorkoutHistoryItem(
                     dayNumber = session.programDay ?: 0,
                     workoutType = session.workoutType?.name ?: "UNKNOWN",
+                    workoutTypeName = session.workoutType?.let { WorkoutLocalization.workoutTypeName(it, locale) },
                     date = session.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                     status = session.status.name,
                     cycleNumber = session.programCycle ?: 1
@@ -286,8 +288,10 @@ class WorkoutService(
             totalDays = sequence.size,
             currentCycle = programPosition.cycle,
             nextWorkoutType = nextWorkoutType.name,
+            nextWorkoutTypeName = WorkoutLocalization.workoutTypeName(nextWorkoutType, locale),
             nextWorkoutDescription = nextWorkoutDescription,
             programType = programType,
+            programTypeName = WorkoutLocalization.splitName(programType, locale),
             lastWorkoutDate = lastWorkoutDate,
             isNewCycle = programPosition.isNewCycle,
             workoutHistory = workoutHistory,
@@ -1347,7 +1351,12 @@ class WorkoutService(
         return selectedExercises
     }
 
-    private fun resolveLocale(userId: Long): String {
-        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.language ?: "en"
+    private fun resolveLocale(userId: Long, localeOverride: String? = null): String {
+        if (!localeOverride.isNullOrBlank()) {
+            return WorkoutLocalization.normalizeLocale(localeOverride)
+        }
+        return WorkoutLocalization.normalizeLocale(
+            userSettingsRepository.findByUser_Id(userId).orElse(null)?.language
+        )
     }
 }

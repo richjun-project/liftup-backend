@@ -16,11 +16,17 @@ data class ProgramStatusResponse(
     @JsonProperty("next_workout_type")
     val nextWorkoutType: String,  // 다음 운동 유형 (PUSH, PULL, LEGS 등)
 
+    @JsonProperty("next_workout_type_name")
+    val nextWorkoutTypeName: String? = null,  // 로케일별 번역된 운동 유형 이름
+
     @JsonProperty("next_workout_description")
     val nextWorkoutDescription: String,  // Example: "Day 2 of a 3-day program: pull workout (back/biceps)"
 
     @JsonProperty("program_type")
     val programType: String,  // PPL, UPPER_LOWER, BRO_SPLIT 등
+
+    @JsonProperty("program_type_name")
+    val programTypeName: String? = null,  // 로케일별 번역된 프로그램 타입 이름
 
     @JsonProperty("last_workout_date")
     val lastWorkoutDate: String?,  // 마지막 운동 날짜
@@ -44,6 +50,9 @@ data class WorkoutHistoryItem(
 
     @JsonProperty("workout_type")
     val workoutType: String,
+
+    @JsonProperty("workout_type_name")
+    val workoutTypeName: String? = null,  // 로케일별 번역된 운동 유형 이름
 
     val date: String,
 

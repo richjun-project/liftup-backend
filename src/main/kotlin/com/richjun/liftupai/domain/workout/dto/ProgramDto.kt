@@ -9,7 +9,9 @@ data class ProgramSummary(
     val code: String,
     val name: String,
     val splitType: String,
+    @com.fasterxml.jackson.annotation.JsonProperty("split_type_name") val splitTypeName: String? = null,
     val experienceLevel: String,
+    @com.fasterxml.jackson.annotation.JsonProperty("experience_level_name") val experienceLevelName: String? = null,
     val goal: String,
     val daysPerWeek: Int,
     val durationWeeks: Int,
@@ -21,7 +23,9 @@ data class ProgramDetailResponse(
     val code: String,
     val name: String,
     val splitType: String,
+    @com.fasterxml.jackson.annotation.JsonProperty("split_type_name") val splitTypeName: String? = null,
     val experienceLevel: String,
+    @com.fasterxml.jackson.annotation.JsonProperty("experience_level_name") val experienceLevelName: String? = null,
     val goal: String,
     val daysPerWeek: Int,
     val durationWeeks: Int,
@@ -35,6 +39,7 @@ data class ProgramDayDetail(
     val dayNumber: Int,
     val name: String,
     val workoutType: String,
+    @com.fasterxml.jackson.annotation.JsonProperty("workout_type_name") val workoutTypeName: String? = null,
     val estimatedDuration: Int,
     val exercises: List<ProgramExerciseDetail>
 )

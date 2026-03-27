@@ -1,9 +1,12 @@
 package com.richjun.liftupai.domain.workout.service
 
 import com.richjun.liftupai.domain.auth.repository.UserRepository
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.repository.*
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
+import com.richjun.liftupai.domain.workout.util.WorkoutTranslations
 import com.richjun.liftupai.global.exception.BadRequestException
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import org.springframework.stereotype.Service
@@ -24,7 +27,8 @@ class ProgramService(
     private val canonicalProgramService: CanonicalProgramService,
     private val enrollmentService: ProgramEnrollmentService,
     private val workoutGeneratorService: ProgramWorkoutGeneratorService,
-    private val absenceDetectionService: AbsenceDetectionService
+    private val absenceDetectionService: AbsenceDetectionService,
+    private val userSettingsRepository: UserSettingsRepository
 ) {
 
     private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -32,11 +36,13 @@ class ProgramService(
     // ── Catalog ──────────────────────────────────────────────────────────────
 
     fun getAllPrograms(localeOverride: String? = null): ProgramListResponse {
+        val locale = localeOverride?.let { WorkoutLocalization.normalizeLocale(it) } ?: "en"
         val programs = canonicalProgramRepository.findByIsActiveTrue()
-        return ProgramListResponse(programs.map { it.toSummary() })
+        return ProgramListResponse(programs.map { it.toSummary(locale) })
     }
 
     fun getProgramDetail(code: String, localeOverride: String? = null): ProgramDetailResponse {
+        val locale = localeOverride?.let { WorkoutLocalization.normalizeLocale(it) } ?: "en"
         val program = canonicalProgramRepository.findByCode(code)
             ?: throw ResourceNotFoundException("Program not found: $code")
         val days = programDayRepository.findByProgramIdOrderByDayNumber(program.id)
@@ -46,14 +52,16 @@ class ProgramService(
                 dayNumber = day.dayNumber,
                 name = day.name,
                 workoutType = day.workoutType.name,
+                workoutTypeName = WorkoutLocalization.workoutTypeName(day.workoutType, locale),
                 estimatedDuration = day.estimatedDurationMinutes,
                 exercises = exercises.map { it.toDetail() }
             )
         }
-        return program.toDetailResponse(dayDetails)
+        return program.toDetailResponse(dayDetails, locale)
     }
 
     fun getRecommendedProgram(userId: Long, localeOverride: String? = null): ProgramDetailResponse {
+        val locale = resolveLocale(userId, localeOverride)
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
         val program = canonicalProgramService.getRecommendedProgram(user)
@@ -64,11 +72,12 @@ class ProgramService(
                 dayNumber = day.dayNumber,
                 name = day.name,
                 workoutType = day.workoutType.name,
+                workoutTypeName = WorkoutLocalization.workoutTypeName(day.workoutType, locale),
                 estimatedDuration = day.estimatedDurationMinutes,
                 exercises = exercises.map { it.toDetail() }
             )
         }
-        return program.toDetailResponse(dayDetails)
+        return program.toDetailResponse(dayDetails, locale)
     }
 
     // ── Enrollment ───────────────────────────────────────────────────────────
@@ -119,6 +128,7 @@ class ProgramService(
     // ── Today's Workout ──────────────────────────────────────────────────────
 
     fun getTodayWorkout(userId: Long, subjectiveReadiness: Int? = null, localeOverride: String? = null): TodayWorkoutResponse {
+        val locale = resolveLocale(userId, localeOverride)
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
 
@@ -156,8 +166,12 @@ class ProgramService(
             )
         }
 
+        val programSplitName = WorkoutLocalization.splitName(
+            enrollment.program.splitType.name, locale
+        )
+
         return TodayWorkoutResponse(
-            programName = workout.programName,
+            programName = programSplitName,
             weekNumber = workout.weekNumber,
             dayNumber = workout.dayNumber,
             dayName = workout.dayName,
@@ -189,6 +203,7 @@ class ProgramService(
     // ── Weekly Schedule ──────────────────────────────────────────────────────
 
     fun getWeeklySchedule(userId: Long, localeOverride: String? = null): WeeklyScheduleResponse {
+        val locale = resolveLocale(userId, localeOverride)
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
         val enrollment = userProgramEnrollmentRepository.findFirstByUserAndStatusOrderByStartDateDesc(
@@ -216,7 +231,7 @@ class ProgramService(
         }
 
         return WeeklyScheduleResponse(
-            programName = program.name,
+            programName = WorkoutLocalization.splitName(program.splitType.name, locale),
             currentWeek = weekNumber,
             isDeloadWeek = isDeloadWeek,
             days = scheduleDays
@@ -277,11 +292,13 @@ class ProgramService(
 
     // ── Private helpers ──────────────────────────────────────────────────────
 
-    private fun CanonicalProgram.toSummary() = ProgramSummary(
+    private fun CanonicalProgram.toSummary(locale: String = "en") = ProgramSummary(
         code = code,
-        name = name,
+        name = WorkoutTranslations.createProgramName(daysPerWeek, splitType.name, targetExperienceLevel.name, locale),
         splitType = splitType.name,
+        splitTypeName = WorkoutLocalization.splitName(splitType.name, locale),
         experienceLevel = targetExperienceLevel.name,
+        experienceLevelName = WorkoutLocalization.difficultyDisplayName(targetExperienceLevel.name, locale),
         goal = targetGoal.name,
         daysPerWeek = daysPerWeek,
         durationWeeks = programDurationWeeks,
@@ -289,11 +306,13 @@ class ProgramService(
         description = description
     )
 
-    private fun CanonicalProgram.toDetailResponse(days: List<ProgramDayDetail>) = ProgramDetailResponse(
+    private fun CanonicalProgram.toDetailResponse(days: List<ProgramDayDetail>, locale: String = "en") = ProgramDetailResponse(
         code = code,
-        name = name,
+        name = WorkoutTranslations.createProgramName(daysPerWeek, splitType.name, targetExperienceLevel.name, locale),
         splitType = splitType.name,
+        splitTypeName = WorkoutLocalization.splitName(splitType.name, locale),
         experienceLevel = targetExperienceLevel.name,
+        experienceLevelName = WorkoutLocalization.difficultyDisplayName(targetExperienceLevel.name, locale),
         goal = targetGoal.name,
         daysPerWeek = daysPerWeek,
         durationWeeks = programDurationWeeks,
@@ -302,6 +321,15 @@ class ProgramService(
         description = description,
         days = days
     )
+
+    private fun resolveLocale(userId: Long, localeOverride: String? = null): String {
+        if (!localeOverride.isNullOrBlank()) {
+            return WorkoutLocalization.normalizeLocale(localeOverride)
+        }
+        return WorkoutLocalization.normalizeLocale(
+            userSettingsRepository.findByUser_Id(userId).orElse(null)?.language
+        )
+    }
 
     private fun ProgramDayExercise.toDetail() = ProgramExerciseDetail(
         exerciseId = exercise.id,
@@ -317,7 +345,7 @@ class ProgramService(
         notes = notes
     )
 
-    private fun UserProgramEnrollment.toStatusResponse(): EnrollmentStatusResponse {
+    private fun UserProgramEnrollment.toStatusResponse(locale: String = "en"): EnrollmentStatusResponse {
         val daysPerWeek = program.daysPerWeek.coerceAtLeast(1)
         val currentDayInCycle = totalCompletedWorkouts % daysPerWeek + 1
         val currentWeek = totalCompletedWorkouts / daysPerWeek + 1
@@ -326,7 +354,7 @@ class ProgramService(
             currentWeek % program.deloadEveryNWeeks == 0
         return EnrollmentStatusResponse(
             programCode = program.code,
-            programName = program.name,
+            programName = WorkoutLocalization.splitName(program.splitType.name, locale),
             currentWeek = currentWeek,
             currentDay = currentDayInCycle,
             totalCompletedWorkouts = totalCompletedWorkouts,

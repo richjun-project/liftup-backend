@@ -112,8 +112,8 @@ class WorkoutProgressTracker(
                 WorkoutType.ARMS,
                 WorkoutType.LEGS
             )
-            "AUTO", "" -> listOf(WorkoutType.PUSH, WorkoutType.PULL, WorkoutType.LEGS)
-            else -> listOf(WorkoutType.PUSH, WorkoutType.PULL, WorkoutType.LEGS)
+            "AUTO", "" -> listOf(WorkoutType.FULL_BODY, WorkoutType.FULL_BODY, WorkoutType.FULL_BODY)
+            else -> listOf(WorkoutType.FULL_BODY, WorkoutType.FULL_BODY, WorkoutType.FULL_BODY)
         }
     }
 
