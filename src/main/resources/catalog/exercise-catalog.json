@@ -41,7 +41,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "ABS",
-      "CHEST",
       "CORE",
       "GLUTES",
       "QUADRICEPS",
@@ -1051,7 +1050,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -3163,7 +3161,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -3999,7 +3996,6 @@
     "muscleGroups": [
       "BACK",
       "BICEPS",
-      "CHEST",
       "LATS",
       "SHOULDERS",
       "TRAPS",
@@ -4035,7 +4031,6 @@
     "muscleGroups": [
       "BACK",
       "BICEPS",
-      "CHEST",
       "SHOULDERS",
       "TRAPS",
       "TRICEPS"
@@ -4070,7 +4065,6 @@
     "muscleGroups": [
       "BACK",
       "BICEPS",
-      "CHEST",
       "SHOULDERS",
       "TRAPS",
       "TRICEPS"
@@ -4985,7 +4979,7 @@
       "TRICEPS"
     ],
     "recommendationTier": "ESSENTIAL",
-    "popularity": 95,
+    "popularity": 96,
     "difficulty": 55,
     "basicExercise": true,
     "translations": [
@@ -5149,7 +5143,7 @@
       "TRAPS"
     ],
     "recommendationTier": "STANDARD",
-    "popularity": 85,
+    "popularity": 96,
     "difficulty": 55,
     "basicExercise": false,
     "translations": [
@@ -5743,7 +5737,7 @@
       "TRAPS"
     ],
     "recommendationTier": "ESSENTIAL",
-    "popularity": 95,
+    "popularity": 96,
     "difficulty": 55,
     "basicExercise": true,
     "translations": [
@@ -6173,7 +6167,7 @@
       "QUADRICEPS"
     ],
     "recommendationTier": "ESSENTIAL",
-    "popularity": 95,
+    "popularity": 96,
     "difficulty": 55,
     "basicExercise": true,
     "translations": [
@@ -8963,12 +8957,11 @@
     "sourceCategory": "Free Weights",
     "movementPattern": "VERTICAL_PRESS_BARBELL",
     "muscleGroups": [
-      "CHEST",
       "SHOULDERS",
       "TRICEPS"
     ],
     "recommendationTier": "STANDARD",
-    "popularity": 85,
+    "popularity": 96,
     "difficulty": 55,
     "basicExercise": false,
     "translations": [
@@ -9026,7 +9019,6 @@
     "sourceCategory": "Free Weights",
     "movementPattern": "VERTICAL_PRESS_BARBELL",
     "muscleGroups": [
-      "CHEST",
       "SHOULDERS",
       "TRICEPS"
     ],
@@ -9121,7 +9113,6 @@
     "sourceCategory": "Free Weights",
     "movementPattern": "VERTICAL_PRESS_BARBELL",
     "muscleGroups": [
-      "CHEST",
       "SHOULDERS",
       "TRICEPS"
     ],
@@ -10058,7 +10049,6 @@
     "movementPattern": "PLANK",
     "muscleGroups": [
       "ABS",
-      "CHEST",
       "CORE",
       "SHOULDERS",
       "TRICEPS"
@@ -10156,7 +10146,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -11505,7 +11494,6 @@
     "muscleGroups": [
       "ABS",
       "BACK",
-      "CHEST",
       "CORE",
       "LATS",
       "SHOULDERS",
@@ -12138,7 +12126,6 @@
     "muscleGroups": [
       "ABS",
       "BACK",
-      "CHEST",
       "CORE",
       "LEGS"
     ],
@@ -12234,7 +12221,6 @@
     "movementPattern": "VERTICAL_PRESS_BARBELL",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS",
       "TRICEPS"
@@ -12268,7 +12254,6 @@
     "movementPattern": "VERTICAL_PRESS_BARBELL",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -13397,7 +13382,6 @@
     "movementPattern": "PLYOMETRIC",
     "muscleGroups": [
       "CALVES",
-      "CHEST",
       "GLUTES",
       "HAMSTRINGS",
       "QUADRICEPS",
@@ -16521,7 +16505,6 @@
     "muscleGroups": [
       "ABS",
       "BACK",
-      "CHEST",
       "CORE",
       "NECK"
     ],
@@ -17401,7 +17384,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -17502,7 +17484,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -18182,7 +18163,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS",
       "TRICEPS"
@@ -18216,7 +18196,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS",
       "TRICEPS"
@@ -18417,7 +18396,6 @@
     "muscleGroups": [
       "BACK",
       "BICEPS",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -19406,7 +19384,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "FOREARMS",
       "LATS",
       "SHOULDERS"
@@ -20989,7 +20966,7 @@
       "TRICEPS"
     ],
     "recommendationTier": "ESSENTIAL",
-    "popularity": 85,
+    "popularity": 96,
     "difficulty": 45,
     "basicExercise": true,
     "translations": [
@@ -21187,7 +21164,7 @@
       "TRAPS"
     ],
     "recommendationTier": "STANDARD",
-    "popularity": 85,
+    "popularity": 96,
     "difficulty": 45,
     "basicExercise": false,
     "translations": [
@@ -21508,7 +21485,6 @@
     "movementPattern": "VERTICAL_PRESS_DUMBBELL",
     "muscleGroups": [
       "ABS",
-      "CHEST",
       "CORE",
       "SHOULDERS",
       "TRICEPS"
@@ -22730,7 +22706,7 @@
       "QUADRICEPS"
     ],
     "recommendationTier": "STANDARD",
-    "popularity": 95,
+    "popularity": 96,
     "difficulty": 45,
     "basicExercise": false,
     "translations": [
@@ -23419,7 +23395,6 @@
     "sourceCategory": "Free Weights",
     "movementPattern": "VERTICAL_PRESS_DUMBBELL",
     "muscleGroups": [
-      "CHEST",
       "SHOULDERS",
       "TRICEPS"
     ],
@@ -25458,7 +25433,6 @@
     "sourceCategory": "Free Weights",
     "movementPattern": "SQUAT",
     "muscleGroups": [
-      "CHEST",
       "GLUTES",
       "HAMSTRINGS",
       "QUADRICEPS",
@@ -25957,7 +25931,6 @@
     "muscleGroups": [
       "BACK",
       "BICEPS",
-      "CHEST",
       "LATS",
       "SHOULDERS",
       "TRAPS"
@@ -27817,7 +27790,6 @@
     "sourceCategory": "Free Weights",
     "movementPattern": "VERTICAL_PRESS_DUMBBELL",
     "muscleGroups": [
-      "CHEST",
       "SHOULDERS",
       "TRICEPS"
     ],
@@ -29377,7 +29349,6 @@
     "movementPattern": "PLYOMETRIC",
     "muscleGroups": [
       "ABS",
-      "CHEST",
       "CORE",
       "QUADRICEPS",
       "SHOULDERS",
@@ -29412,7 +29383,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -29445,7 +29415,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -30562,7 +30531,6 @@
     "sourceCategory": "Resistance",
     "movementPattern": "STRETCHING",
     "muscleGroups": [
-      "CHEST",
       "SHOULDERS"
     ],
     "recommendationTier": "SPECIALIZED",
@@ -32009,7 +31977,6 @@
     "movementPattern": "PLANK",
     "muscleGroups": [
       "ABS",
-      "CHEST",
       "CORE",
       "SHOULDERS"
     ],
@@ -32978,7 +32945,6 @@
     "sourceCategory": "Free Weights",
     "movementPattern": "GLUTE_FOCUSED",
     "muscleGroups": [
-      "CHEST",
       "GLUTES",
       "HAMSTRINGS",
       "SHOULDERS",
@@ -33916,7 +33882,6 @@
     "sourceCategory": "Resistance",
     "movementPattern": "VERTICAL_PRESS_BARBELL",
     "muscleGroups": [
-      "CHEST",
       "SHOULDERS",
       "TRICEPS"
     ],
@@ -35998,7 +35963,7 @@
       "SHOULDERS"
     ],
     "recommendationTier": "STANDARD",
-    "popularity": 85,
+    "popularity": 96,
     "difficulty": 35,
     "basicExercise": false,
     "translations": [
@@ -36691,7 +36656,7 @@
       "TRAPS"
     ],
     "recommendationTier": "STANDARD",
-    "popularity": 85,
+    "popularity": 96,
     "difficulty": 40,
     "basicExercise": false,
     "translations": [
@@ -36863,7 +36828,7 @@
       "TRICEPS"
     ],
     "recommendationTier": "STANDARD",
-    "popularity": 85,
+    "popularity": 96,
     "difficulty": 35,
     "basicExercise": false,
     "translations": [
@@ -38650,7 +38615,6 @@
     "sourceCategory": "Bodyweight",
     "movementPattern": "STRETCHING",
     "muscleGroups": [
-      "CHEST",
       "SHOULDERS"
     ],
     "recommendationTier": "SPECIALIZED",
@@ -40406,7 +40370,6 @@
     "movementPattern": "VERTICAL_PRESS_BARBELL",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS",
       "TRICEPS"
@@ -41061,7 +41024,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -41094,7 +41056,6 @@
     "movementPattern": "STRETCHING",
     "muscleGroups": [
       "BACK",
-      "CHEST",
       "SHOULDERS",
       "TRAPS"
     ],
@@ -41188,7 +41149,6 @@
     "sourceCategory": "Bodyweight",
     "movementPattern": "STRETCHING",
     "muscleGroups": [
-      "CHEST",
       "SHOULDERS"
     ],
     "recommendationTier": "SPECIALIZED",
