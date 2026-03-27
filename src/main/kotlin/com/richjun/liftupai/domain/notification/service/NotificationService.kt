@@ -12,6 +12,7 @@ import com.richjun.liftupai.domain.notification.repository.NotificationSettingsR
 import com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository
 import com.richjun.liftupai.domain.notification.repository.NotificationHistoryRepository
 import com.richjun.liftupai.domain.notification.entity.*
+import com.richjun.liftupai.domain.user.entity.UserSettings
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
@@ -75,6 +76,17 @@ class NotificationService(
         }
 
         notificationDeviceRepository.save(device)
+
+        // Update user locale/timezone if provided
+        if (request.language != null || request.timezone != null) {
+            val settings = userSettingsRepository.findByUser_Id(userId).orElse(
+                UserSettings(user = user)
+            )
+            request.language?.let { settings.language = it }
+            request.timezone?.let { settings.timeZone = it }
+            settings.updatedAt = AppTime.utcNow()
+            userSettingsRepository.save(settings)
+        }
 
         return RegisterDeviceResponse(
             success = true,

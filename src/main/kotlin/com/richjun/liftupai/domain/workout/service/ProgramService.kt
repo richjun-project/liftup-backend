@@ -31,12 +31,12 @@ class ProgramService(
 
     // ── Catalog ──────────────────────────────────────────────────────────────
 
-    fun getAllPrograms(): ProgramListResponse {
+    fun getAllPrograms(localeOverride: String? = null): ProgramListResponse {
         val programs = canonicalProgramRepository.findByIsActiveTrue()
         return ProgramListResponse(programs.map { it.toSummary() })
     }
 
-    fun getProgramDetail(code: String): ProgramDetailResponse {
+    fun getProgramDetail(code: String, localeOverride: String? = null): ProgramDetailResponse {
         val program = canonicalProgramRepository.findByCode(code)
             ?: throw ResourceNotFoundException("Program not found: $code")
         val days = programDayRepository.findByProgramIdOrderByDayNumber(program.id)
@@ -53,7 +53,7 @@ class ProgramService(
         return program.toDetailResponse(dayDetails)
     }
 
-    fun getRecommendedProgram(userId: Long): ProgramDetailResponse {
+    fun getRecommendedProgram(userId: Long, localeOverride: String? = null): ProgramDetailResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
         val program = canonicalProgramService.getRecommendedProgram(user)
@@ -118,7 +118,7 @@ class ProgramService(
 
     // ── Today's Workout ──────────────────────────────────────────────────────
 
-    fun getTodayWorkout(userId: Long, subjectiveReadiness: Int? = null): TodayWorkoutResponse {
+    fun getTodayWorkout(userId: Long, subjectiveReadiness: Int? = null, localeOverride: String? = null): TodayWorkoutResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
 
@@ -188,7 +188,7 @@ class ProgramService(
 
     // ── Weekly Schedule ──────────────────────────────────────────────────────
 
-    fun getWeeklySchedule(userId: Long): WeeklyScheduleResponse {
+    fun getWeeklySchedule(userId: Long, localeOverride: String? = null): WeeklyScheduleResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
         val enrollment = userProgramEnrollmentRepository.findFirstByUserAndStatusOrderByStartDateDesc(

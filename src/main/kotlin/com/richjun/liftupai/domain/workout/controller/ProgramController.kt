@@ -18,24 +18,28 @@ class ProgramController(
     // ── Program Catalog ───────────────────────────────────────────────────────
 
     @GetMapping("/programs")
-    fun getAllPrograms(): ResponseEntity<ApiResponse<ProgramListResponse>> {
-        val response = programService.getAllPrograms()
+    fun getAllPrograms(
+        @RequestParam(required = false) locale: String?
+    ): ResponseEntity<ApiResponse<ProgramListResponse>> {
+        val response = programService.getAllPrograms(locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/programs/recommended")
     fun getRecommendedProgram(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ProgramDetailResponse>> {
-        val response = programService.getRecommendedProgram(userDetails.getId())
+        val response = programService.getRecommendedProgram(userDetails.getId(), locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/programs/{code}")
     fun getProgramDetail(
-        @PathVariable code: String
+        @PathVariable code: String,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ProgramDetailResponse>> {
-        val response = programService.getProgramDetail(code)
+        val response = programService.getProgramDetail(code, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -81,17 +85,19 @@ class ProgramController(
     @GetMapping("/programs/enrollment/today")
     fun getTodayWorkout(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @RequestParam(required = false) readiness: Int?
+        @RequestParam(required = false) readiness: Int?,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<TodayWorkoutResponse>> {
-        val response = programService.getTodayWorkout(userDetails.getId(), readiness)
+        val response = programService.getTodayWorkout(userDetails.getId(), readiness, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @GetMapping("/programs/enrollment/schedule")
     fun getWeeklySchedule(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<WeeklyScheduleResponse>> {
-        val response = programService.getWeeklySchedule(userDetails.getId())
+        val response = programService.getWeeklySchedule(userDetails.getId(), locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

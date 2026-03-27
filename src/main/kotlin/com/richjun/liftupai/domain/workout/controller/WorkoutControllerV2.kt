@@ -86,9 +86,10 @@ class WorkoutControllerV2(
     // 현재 프로그램 진행 상황 조회
     @GetMapping("/program-status")
     fun getProgramStatus(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ProgramStatusResponse>> {
-        val response = workoutService.getProgramStatus(userDetails.getId())
+        val response = workoutService.getProgramStatus(userDetails.getId(), locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

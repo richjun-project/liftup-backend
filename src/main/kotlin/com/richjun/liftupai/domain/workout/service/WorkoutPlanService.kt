@@ -5,6 +5,7 @@ import com.richjun.liftupai.domain.ai.service.AIAnalysisService
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.user.dto.*
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.user.service.UserService
 import com.richjun.liftupai.domain.workout.entity.WorkoutPlan
 import com.richjun.liftupai.domain.workout.repository.WorkoutPlanRepository
@@ -37,6 +38,7 @@ import java.time.LocalDateTime
 class WorkoutPlanService(
     val userRepository: UserRepository,
     val userProfileRepository: UserProfileRepository,
+    private val userSettingsRepository: UserSettingsRepository,
     private val workoutPlanRepository: WorkoutPlanRepository,
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val userService: UserService,
@@ -94,7 +96,8 @@ class WorkoutPlanService(
         val aiResponse = "AI generated program"
 
         // Parse AI response to create program schedule
-        val schedule = parseAIResponseToSchedule(aiResponse, request)
+        val locale = resolveLocale(userId)
+        val schedule = parseAIResponseToSchedule(aiResponse, request, locale)
 
         // Save as workout plan
         val programName = "${request.weeklyWorkoutDays}-day ${translateSplit(request.workoutSplit)} ${translateGoals(request.goals)} program"
@@ -146,7 +149,8 @@ class WorkoutPlanService(
             ?: com.richjun.liftupai.domain.workout.entity.WorkoutType.FULL_BODY
 
         // 운동 타입에 따른 타겟 근육 결정
-        val (workoutName, targetMuscles) = getWorkoutDetailsFromType(workoutType)
+        val locale = resolveLocale(userId)
+        val (workoutName, targetMuscles) = getWorkoutDetailsFromType(workoutType, locale)
 
         // DB에서 실제 운동 데이터 필터링해서 가져오기
         val targetMuscleForFilter = mapWorkoutTypeToTargetMuscle(workoutType)
@@ -334,7 +338,7 @@ class WorkoutPlanService(
         """.trimIndent()
     }
 
-    private fun parseAIResponseToSchedule(aiResponse: String, request: GenerateProgramRequest): ProgramSchedule {
+    private fun parseAIResponseToSchedule(aiResponse: String, request: GenerateProgramRequest, locale: String = "en"): ProgramSchedule {
         val experienceLevel = resolveExperienceLevel(request.experienceLevel)
         val workoutGoal = resolveWorkoutGoal(request.goals)
         val availableEquipment = request.availableEquipment.map { it.uppercase() }.toSet()
@@ -346,12 +350,12 @@ class WorkoutPlanService(
         }
 
         return ProgramSchedule(
-            monday = buildWorkoutDay(1, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit),
-            tuesday = buildWorkoutDay(2, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit),
+            monday = buildWorkoutDay(1, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit, locale),
+            tuesday = buildWorkoutDay(2, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit, locale),
             wednesday = null,
-            thursday = buildWorkoutDay(3, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit),
-            friday = buildWorkoutDay(4, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit),
-            saturday = buildWorkoutDay(5, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit),
+            thursday = buildWorkoutDay(3, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit, locale),
+            friday = buildWorkoutDay(4, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit, locale),
+            saturday = buildWorkoutDay(5, request.weeklyWorkoutDays, workoutTypes, availableEquipment, experienceLevel, workoutGoal, exerciseLimit, locale),
             sunday = null
         )
     }
@@ -363,14 +367,15 @@ class WorkoutPlanService(
         availableEquipment: Set<String>,
         experienceLevel: ExperienceLevel,
         workoutGoal: WorkoutGoal,
-        exerciseLimit: Int
+        exerciseLimit: Int,
+        locale: String = "en"
     ): WorkoutDay? {
         if (dayNumber > weeklyWorkoutDays) return null
 
         val workoutType = workoutTypes.getOrElse((dayNumber - 1) % workoutTypes.size) {
             WorkoutType.FULL_BODY
         }
-        val (workoutName, targetMuscles) = getWorkoutDetailsFromType(workoutType)
+        val (workoutName, targetMuscles) = getWorkoutDetailsFromType(workoutType, locale)
 
         return WorkoutDay(
             name = "Day $dayNumber",
@@ -671,12 +676,12 @@ class WorkoutPlanService(
      * 운동 타입에 따른 운동 이름과 타겟 근육 반환
      * WorkoutProgressTracker의 determineWorkoutType()와 역방향 매핑
      */
-    private fun getWorkoutDetailsFromType(workoutType: com.richjun.liftupai.domain.workout.entity.WorkoutType): Pair<String, List<String>> {
+    private fun getWorkoutDetailsFromType(workoutType: com.richjun.liftupai.domain.workout.entity.WorkoutType, locale: String = "en"): Pair<String, List<String>> {
         val primaryFocus = WorkoutTargetResolver.primaryFocusForWorkoutType(workoutType)
         val focusTargets = WorkoutTargetResolver.targetsForWorkoutType(workoutType)
-        val workoutName = "${WorkoutTargetResolver.displayName(primaryFocus, locale = "en")} workout"
+        val workoutName = "${WorkoutTargetResolver.displayName(primaryFocus, locale = locale)} workout"
         val targetLabels = focusTargets.map { focus ->
-            WorkoutTargetResolver.displayName(focus, locale = "en")
+            WorkoutTargetResolver.displayName(focus, locale = locale)
         }
 
         return workoutName to targetLabels
@@ -877,5 +882,9 @@ class WorkoutPlanService(
             .mapNotNull { (_, groupExercises) ->
                 groupExercises.minWithOrNull(RecommendationExerciseRanking.patternSelectionComparator())
             }
+    }
+
+    private fun resolveLocale(userId: Long): String {
+        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.language ?: "en"
     }
 }

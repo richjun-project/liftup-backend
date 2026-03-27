@@ -4,6 +4,7 @@ import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository
 import com.richjun.liftupai.domain.user.entity.ExperienceLevel
 import com.richjun.liftupai.domain.user.entity.UserProfile
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
@@ -35,6 +36,7 @@ class VectorWorkoutRecommendationService(
     private val workoutExerciseRepository: WorkoutExerciseRepository,
     private val exerciseSetRepository: ExerciseSetRepository,
     private val muscleRecoveryRepository: MuscleRecoveryRepository,
+    private val userSettingsRepository: UserSettingsRepository,
     private val exercisePatternClassifier: ExercisePatternClassifier,
     private val exerciseRecommendationService: ExerciseRecommendationService
 ) {
@@ -190,18 +192,19 @@ class VectorWorkoutRecommendationService(
     )
 
     private fun buildUserContext(user: User, profile: UserProfile?, targetMuscle: String?, workoutType: WorkoutType?): UserContext {
+        val locale = resolveLocale(user.id)
         val goals = profile?.goals?.joinToString(", ") { it.name } ?: "general fitness"
         val level = profile?.experienceLevel?.name ?: "BEGINNER"
 
         val targetMuscles = when {
             targetMuscle != null -> listOf(targetMuscle)
-            workoutType != null -> getTargetMusclesForWorkoutType(workoutType)
+            workoutType != null -> getTargetMusclesForWorkoutType(workoutType, locale)
             else -> emptyList()
         }
 
         val recoveringMuscles = getRecoveringMuscles(user)
-        val avoidMuscles = recoveringMuscles.map { translateMuscleGroup(it) }
-        val weeklyVolume = getWeeklyVolume(user)
+        val avoidMuscles = recoveringMuscles.map { translateMuscleGroup(it, locale) }
+        val weeklyVolume = getWeeklyVolume(user, locale)
         val workoutHistory = buildWorkoutHistorySummary(user)
 
         return UserContext(goals, level, targetMuscles, avoidMuscles, weeklyVolume, recoveringMuscles, workoutHistory)
@@ -457,7 +460,7 @@ class VectorWorkoutRecommendationService(
         }
     }
 
-    private fun getWeeklyVolume(user: User): Map<String, Int> {
+    private fun getWeeklyVolume(user: User, locale: String = "en"): Map<String, Int> {
         return try {
             val cutoff = AppTime.utcNow().minusDays(7)
             val sessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoff)
@@ -475,7 +478,7 @@ class VectorWorkoutRecommendationService(
                 val totalSets = allWorkoutExercises
                     .filter { we -> we.exercise.muscleGroups.contains(muscle) }
                     .sumOf { we -> setCountByWeId[we.id] ?: 0 }
-                translateMuscleGroup(muscle) to totalSets
+                translateMuscleGroup(muscle, locale) to totalSets
             }.filter { it.value > 0 }
         } catch (e: Exception) {
             logger.warn("Failed to get weekly volume: ${e.message}")
@@ -483,12 +486,12 @@ class VectorWorkoutRecommendationService(
         }
     }
 
-    private fun getTargetMusclesForWorkoutType(type: WorkoutType): List<String> {
-        return WorkoutTargetResolver.displayNamesForWorkoutType(type, locale = "en")
+    private fun getTargetMusclesForWorkoutType(type: WorkoutType, locale: String = "en"): List<String> {
+        return WorkoutTargetResolver.displayNamesForWorkoutType(type, locale = locale)
     }
 
-    private fun translateMuscleGroup(muscle: MuscleGroup): String {
-        return WorkoutTargetResolver.displayName(muscle, locale = "en")
+    private fun translateMuscleGroup(muscle: MuscleGroup, locale: String = "en"): String {
+        return WorkoutTargetResolver.displayName(muscle, locale = locale)
     }
 
     /**
@@ -552,5 +555,9 @@ class VectorWorkoutRecommendationService(
 
             else -> "OTHER"
         }
+    }
+
+    private fun resolveLocale(userId: Long): String {
+        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.language ?: "en"
     }
 }

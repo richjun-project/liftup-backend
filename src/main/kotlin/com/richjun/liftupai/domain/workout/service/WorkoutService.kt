@@ -216,7 +216,7 @@ class WorkoutService(
     }
 
     @Transactional(readOnly = true)
-    fun getProgramStatus(userId: Long): ProgramStatusResponse {
+    fun getProgramStatus(userId: Long, localeOverride: String? = null): ProgramStatusResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
 
@@ -251,10 +251,12 @@ class WorkoutService(
         val nextWorkoutType = sequence.getOrNull(programPosition.day - 1) ?: WorkoutType.FULL_BODY
 
         // 다음 운동 설명 - nextWorkoutType과 동일한 시퀀스 사용하여 불일치 방지
+        val locale = resolveLocale(userId)
         val nextWorkoutDescription = workoutProgressTracker.getProgramSequenceDescriptionFromSequence(
             sequence,
             programPosition.day,
-            programDays
+            programDays,
+            locale
         )
 
         // 최근 운동 기록 조회
@@ -566,10 +568,12 @@ class WorkoutService(
             volumeProgression = "Progressive increase"
         )
 
+        val locale = resolveLocale(userId)
         val weeklySchedule = generateWeeklySchedule(
             request.weeklyWorkoutDays,
             request.workoutSplit,
-            request.availableEquipment
+            request.availableEquipment,
+            locale
         )
 
         return WorkoutProgramResponse(
@@ -591,18 +595,19 @@ class WorkoutService(
         val programPosition = workoutProgressTracker.getNextWorkoutInProgram(user, weeklyDays)
         val sequence = workoutProgressTracker.getWorkoutTypeSequence(split).ifEmpty { listOf(WorkoutType.FULL_BODY) }
         val nextWorkoutType = sequence.getOrElse(programPosition.day - 1) { WorkoutType.FULL_BODY }
+        val locale = resolveLocale(userId)
         val nextExercises = selectPreviewExercisesForWorkoutType(nextWorkoutType, availableEquipment, 3)
-        val weeklySchedule = generateWeeklySchedule(weeklyDays, split, availableEquipment)
+        val weeklySchedule = generateWeeklySchedule(weeklyDays, split, availableEquipment, locale)
 
         return CurrentProgramResponse(
             programId = 1L,
-            programName = "${formatWorkoutTypeName(nextWorkoutType)} focused program",
+            programName = "${formatWorkoutTypeName(nextWorkoutType, locale)} focused program",
             currentWeek = programPosition.cycle,
             totalWeeks = 8,
-            workoutSplit = formatWorkoutSplit(split, sequence),
+            workoutSplit = formatWorkoutSplit(split, sequence, locale),
             nextWorkout = NextWorkoutInfo(
                 dayName = "Day ${programPosition.day}",
-                targetMuscles = workoutTargetsForType(nextWorkoutType),
+                targetMuscles = workoutTargetsForType(nextWorkoutType, locale),
                 exercises = nextExercises.map { it.name },
                 estimatedDuration = maxOf(30, nextExercises.size * 15)
             ),
@@ -1000,7 +1005,8 @@ class WorkoutService(
     private fun generateWeeklySchedule(
         weeklyDays: Int,
         workoutSplit: String,
-        equipment: List<String>
+        equipment: List<String>,
+        locale: String = "en"
     ): List<WeeklyWorkout> {
         val sequence = workoutProgressTracker.getWorkoutTypeSequence(workoutSplit).ifEmpty { listOf(WorkoutType.FULL_BODY) }
         return (0 until weeklyDays).map { index ->
@@ -1009,7 +1015,7 @@ class WorkoutService(
 
             WeeklyWorkout(
                 day = "Day ${index + 1}",
-                targetMuscles = workoutTargetsForType(workoutType),
+                targetMuscles = workoutTargetsForType(workoutType, locale),
                 exercises = exercises.map { it.name }
             )
         }
@@ -1062,19 +1068,19 @@ class WorkoutService(
             .take(limit)
     }
 
-    private fun workoutTargetsForType(workoutType: WorkoutType): List<String> {
-        return WorkoutTargetResolver.displayNamesForWorkoutType(workoutType, locale = "en")
-            .ifEmpty { listOf(formatWorkoutTypeName(workoutType)) }
+    private fun workoutTargetsForType(workoutType: WorkoutType, locale: String = "en"): List<String> {
+        return WorkoutTargetResolver.displayNamesForWorkoutType(workoutType, locale = locale)
+            .ifEmpty { listOf(formatWorkoutTypeName(workoutType, locale)) }
     }
 
-    private fun formatWorkoutTypeName(workoutType: WorkoutType): String {
+    private fun formatWorkoutTypeName(workoutType: WorkoutType, locale: String = "en"): String {
         val primaryFocus = WorkoutTargetResolver.primaryFocusForWorkoutType(workoutType)
-        return WorkoutTargetResolver.displayName(primaryFocus, locale = "en")
+        return WorkoutTargetResolver.displayName(primaryFocus, locale = locale)
     }
 
-    private fun formatWorkoutSplit(split: String, sequence: List<WorkoutType>): String {
+    private fun formatWorkoutSplit(split: String, sequence: List<WorkoutType>, locale: String = "en"): String {
         val labels = sequence
-            .map(::formatWorkoutTypeName)
+            .map { formatWorkoutTypeName(it, locale) }
             .distinct()
 
         return if (labels.isNotEmpty()) {
@@ -1148,7 +1154,7 @@ class WorkoutService(
         return if (underworkedMuscles.isNotEmpty()) {
             underworkedMuscles
                 .take(2)
-                .map { WorkoutTargetResolver.displayName(it, locale = "en") }
+                .map { WorkoutTargetResolver.displayName(it, locale = resolveLocale(userId)) }
         } else {
             // 기본값: 푸시/풀 분할
             val zoneId = AppTime.resolveZoneId(userSettingsRepository.findByUser_Id(userId).orElse(null)?.timeZone)
@@ -1158,7 +1164,7 @@ class WorkoutService(
                 1 -> listOf(WorkoutFocus.BACK, WorkoutFocus.ARMS)
                 else -> listOf(WorkoutFocus.LEGS, WorkoutFocus.CORE)
             }
-                .map { WorkoutTargetResolver.displayName(it, locale = "en") }
+                .map { WorkoutTargetResolver.displayName(it, locale = resolveLocale(userId)) }
         }
     }
 
@@ -1339,5 +1345,9 @@ class WorkoutService(
         }
 
         return selectedExercises
+    }
+
+    private fun resolveLocale(userId: Long): String {
+        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.language ?: "en"
     }
 }

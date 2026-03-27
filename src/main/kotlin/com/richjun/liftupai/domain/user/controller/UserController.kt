@@ -73,6 +73,15 @@ class UserController(
         return ResponseEntity.ok(ApiResponse.success(settings))
     }
 
+    @PatchMapping("/preferences")
+    fun updatePreferences(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @Valid @RequestBody request: UpdatePreferencesRequest
+    ): ResponseEntity<ApiResponse<UpdatePreferencesResponse>> {
+        val response = userService.updatePreferences(userDetails.getId(), request)
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
     @DeleteMapping("/account")
     fun deactivateAccount(
         @AuthenticationPrincipal userDetails: CustomUserDetails
