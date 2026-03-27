@@ -1502,7 +1502,9 @@ class WorkoutServiceV2(
         // 일관성 분석 (무게 변동성)
         val weights = recentHistory.map { it.weight }
         val weightConsistency = if (weights.size > 1) {
-            1.0 - (weights.maxOrNull()!! - weights.minOrNull()!!) / weights.average()
+            val range = (weights.maxOrNull() ?: 0.0) - (weights.minOrNull() ?: 0.0)
+            val avg = weights.average().takeIf { it != 0.0 } ?: 1.0
+            (1.0 - range / avg).coerceIn(0.0, 1.0)
         } else 1.0
 
         // 볼륨 트렌드 (증가/감소/유지)
@@ -2202,7 +2204,7 @@ class WorkoutServiceV2(
             .orElseThrow { ResourceNotFoundException("WORKOUT002: Workout session not found") }
 
         if (session.user.id != userId) {
-            throw ResourceNotFoundException("Access denied")
+            throw org.springframework.security.access.AccessDeniedException("Access denied")
         }
 
         return session
@@ -2554,7 +2556,7 @@ class WorkoutServiceV2(
             .orElseThrow { ResourceNotFoundException("Workout session not found") }
 
         if (session.user.id != userId) {
-            throw ResourceNotFoundException("Access denied")
+            throw org.springframework.security.access.AccessDeniedException("Access denied")
         }
 
         // 진행 중인 세션만 업데이트 가능
@@ -2707,18 +2709,18 @@ class WorkoutServiceV2(
     }
 
     private fun localizedAchievementName(achievement: Achievement, locale: String): String {
-        val code = achievement.code
+        val code = achievement.code ?: return achievement.name
         return if (WorkoutAchievementCatalog.contains(code)) {
-            WorkoutAchievementCatalog.name(code!!, locale)
+            WorkoutAchievementCatalog.name(code, locale)
         } else {
             achievement.name
         }
     }
 
     private fun localizedAchievementDescription(achievement: Achievement, locale: String): String {
-        val code = achievement.code
+        val code = achievement.code ?: return achievement.description
         return if (WorkoutAchievementCatalog.contains(code)) {
-            WorkoutAchievementCatalog.description(code!!, locale)
+            WorkoutAchievementCatalog.description(code, locale)
         } else {
             achievement.description
         }

@@ -16,6 +16,7 @@ import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import com.richjun.liftupai.global.time.AppTime
 import java.time.LocalDateTime
 
 /**
@@ -211,7 +212,7 @@ class VectorWorkoutRecommendationService(
      */
     private fun buildWorkoutHistorySummary(user: User): String? {
         return try {
-            val cutoff = LocalDateTime.now().minusDays(28)
+            val cutoff = AppTime.utcNow().minusDays(28)
             val sessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoff)
             if (sessions.isEmpty()) return null
 
@@ -437,7 +438,7 @@ class VectorWorkoutRecommendationService(
 
     private fun getWeeklyVolume(user: User): Map<String, Int> {
         return try {
-            val cutoff = LocalDateTime.now().minusDays(7)
+            val cutoff = AppTime.utcNow().minusDays(7)
             val sessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoff)
             if (sessions.isEmpty()) return emptyMap()
 

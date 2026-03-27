@@ -511,11 +511,6 @@ class RecoveryService(
         }
     }
 
-    @Deprecated("Use calculateRecoveryBoostValue instead")
-    private fun calculateRecoveryBoost(request: RecordActivityRequest): String {
-        return "+${calculateRecoveryBoostValue(request)}%"
-    }
-
     private fun applyRecoveryBoost(userId: Long, bodyParts: Set<String>, boostValue: Int) {
         if (bodyParts.isEmpty()) return
 
