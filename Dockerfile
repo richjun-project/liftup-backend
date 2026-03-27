@@ -1,29 +1,12 @@
-# Build stage
-FROM gradle:8.5-jdk21 AS builder
-WORKDIR /app
-
-# Copy gradle wrapper and dependencies files
-COPY build.gradle settings.gradle gradlew ./
-COPY gradle ./gradle
-
-# Download dependencies
-RUN ./gradlew dependencies --no-daemon
-
-# Copy source code
-COPY src ./src
-
-# Build application
-RUN ./gradlew bootJar --no-daemon
-
-# Runtime stage
 FROM eclipse-temurin:21-jre
+
 WORKDIR /app
 
-# Copy built jar from builder stage
-COPY --from=builder /app/build/libs/*.jar app.jar
+# 미리 빌드된 JAR 파일 복사
+COPY build/libs/*.jar app.jar
 
-# Expose application port
+# 포트 노출
 EXPOSE 8081
 
-# Run application
+# 애플리케이션 실행
 ENTRYPOINT ["java", "-jar", "app.jar"]
