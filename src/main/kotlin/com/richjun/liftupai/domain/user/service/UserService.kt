@@ -244,31 +244,6 @@ class UserService(
         return getSettings(userId)
     }
 
-    fun updatePreferences(userId: Long, request: UpdatePreferencesRequest): UpdatePreferencesResponse {
-        val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
-
-        val settings = userSettingsRepository.findByUser_Id(userId).orElse(
-            UserSettings(user = user)
-        )
-        val previousTimeZone = settings.timeZone
-
-        request.language?.let { settings.language = it }
-        request.timezone?.let { settings.timeZone = validateTimeZone(it) }
-        settings.updatedAt = AppTime.utcNow()
-        userSettingsRepository.save(settings)
-
-        if (previousTimeZone != settings.timeZone) {
-            notificationService.refreshScheduleTimesForUser(userId)
-        }
-
-        return UpdatePreferencesResponse(
-            success = true,
-            language = settings.language,
-            timezone = settings.timeZone
-        )
-    }
-
     fun updateWorkoutProgram(userId: Long, newProgram: String, newDaysPerWeek: Int) {
         val profile = userProfileRepository.findByUser_Id(userId)
             .orElseThrow { ResourceNotFoundException("프로필을 찾을 수 없습니다") }

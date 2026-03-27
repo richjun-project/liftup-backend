@@ -106,19 +106,11 @@ class FcmNotificationService(
             val batchResponse = firebaseMessaging.sendEach(messages)
             logger.info("Batch notification sent. Success: ${batchResponse.successCount}, Failed: ${batchResponse.failureCount}")
 
-            // 실패한 토큰 처리 — 유효하지 않은 토큰은 비활성화
+            // 실패한 토큰 처리
             batchResponse.responses.forEachIndexed { index, response ->
                 if (!response.isSuccessful) {
                     val token = tokens[index]
                     logger.error("Failed to send to token $token: ${response.exception?.message}")
-                    val errorCode = response.exception?.messagingErrorCode
-                    if (errorCode == MessagingErrorCode.INVALID_ARGUMENT || errorCode == MessagingErrorCode.UNREGISTERED) {
-                        notificationDeviceRepository.findByDeviceToken(token).ifPresent { device ->
-                            device.isActive = false
-                            notificationDeviceRepository.save(device)
-                            logger.warn("Deactivated invalid token from batch: $token")
-                        }
-                    }
                 }
             }
 

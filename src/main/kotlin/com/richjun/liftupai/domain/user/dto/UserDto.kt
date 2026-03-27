@@ -172,15 +172,3 @@ data class UpdateSettingsRequest(
     val privacy: PrivacySettings?,
     val app: AppSettings?
 )
-
-data class UpdatePreferencesRequest(
-    val language: String? = null,
-    val timezone: String? = null,
-    val timezoneOffset: String? = null
-)
-
-data class UpdatePreferencesResponse(
-    val success: Boolean,
-    val language: String?,
-    val timezone: String?
-)

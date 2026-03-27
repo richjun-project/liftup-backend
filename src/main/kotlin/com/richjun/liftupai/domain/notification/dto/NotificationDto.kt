@@ -11,13 +11,7 @@ data class RegisterDeviceRequest(
 
     val deviceName: String? = null,
 
-    val appVersion: String? = null,
-
-    val language: String? = null,
-
-    val timezone: String? = null,
-
-    val timezoneOffset: String? = null
+    val appVersion: String? = null
 )
 
 data class RegisterDeviceResponse(
