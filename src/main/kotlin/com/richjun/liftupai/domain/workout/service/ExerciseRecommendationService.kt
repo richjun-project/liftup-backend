@@ -134,8 +134,8 @@ class ExerciseRecommendationService(
     /**
      * 회복 상태 기반 필터링
      * - 24시간 이내 운동한 근육 제외
-     * - 회복률 30% 미만인 근육 제외
-     * - 최소 운동 개수 보장 (6개 미만이면 필터 스킵)
+     * - 회복률 50% 미만인 근육 제외
+     * - 최소 운동 개수 보장 (3개 미만이면 필터 스킵)
      */
     private fun filterByRecoveryStatus(exercises: List<Exercise>, user: User): List<Exercise> {
         val avoidMuscles = getMusclesToAvoid(user)

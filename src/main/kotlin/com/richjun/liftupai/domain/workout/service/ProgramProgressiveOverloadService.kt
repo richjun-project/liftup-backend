@@ -108,15 +108,25 @@ class ProgramProgressiveOverloadService(
             else -> targetWeight
         }
 
-        // Plateau detection: same max weight for 3+ distinct sessions → reduce 10%
-        val sessionWeights = lastSets
+        // Plateau detection: volume (weight × avg reps) 기반
+        // 무게만 비교하면 100kg×6→100kg×8→100kg×10 (진행 중)을 정체로 오판함
+        val sessionVolumes = lastSets
             .groupBy { it.workoutExercise.session.id }
-            .map { (_, sets) -> sets.maxOf { it.weight } }
+            .map { (_, sets) ->
+                val maxWeight = sets.maxOf { it.weight }
+                val avgReps = sets.map { it.reps }.average()
+                maxWeight * avgReps  // 볼륨 = 무게 × 평균 렙수
+            }
             .take(3)
 
-        if (sessionWeights.size >= 3 && sessionWeights.distinct().size == 1) {
-            logger.info("Plateau detected: ${sessionWeights.first()}kg for ${sessionWeights.size} sessions")
-            targetWeight = lastWeight * 0.90
+        if (sessionVolumes.size >= 3) {
+            val volumeRange = sessionVolumes.max() - sessionVolumes.min()
+            val avgVolume = sessionVolumes.average()
+            // 볼륨 변동이 평균의 3% 이내이면 정체
+            if (avgVolume > 0 && volumeRange / avgVolume < 0.03) {
+                logger.info("Plateau detected: volume ~${avgVolume.roundToInt()} for ${sessionVolumes.size} sessions")
+                targetWeight = lastWeight * 0.90
+            }
         }
 
         // LINEAR: reload if below minReps for 2 consecutive sessions
@@ -135,10 +145,16 @@ class ProgramProgressiveOverloadService(
         // Clamp: ±10% / ±20% of last weight
         targetWeight = targetWeight.coerceIn(lastWeight * 0.80, lastWeight * 1.10)
 
-        // Bodyweight-relative safety ceiling for new/light users
+        // Bodyweight-relative safety ceiling — 경험 수준에 따라 상한 조정
         val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
         val bodyWeight = profile?.bodyInfo?.weight ?: 70.0
-        val maxSafeMultiplier = when (exercise.category) {
+        val experienceMultiplier = when (profile?.experienceLevel?.name?.uppercase()) {
+            "BEGINNER", "NOVICE" -> 0.7  // 초보자는 상한 30% 하향
+            "INTERMEDIATE" -> 1.0
+            "ADVANCED", "EXPERT" -> 1.2  // 상급자는 상한 20% 상향
+            else -> 0.85
+        }
+        val maxSafeMultiplier = experienceMultiplier * when (exercise.category) {
             ExerciseCategory.LEGS -> 2.0
             ExerciseCategory.BACK -> 2.0
             ExerciseCategory.CHEST -> 1.5
@@ -292,12 +308,9 @@ class ProgramProgressiveOverloadService(
     }
 
     /**
-     * For BLOCK periodization, week 7 of a 7-week block is the deload week.
-     * This takes priority over the modulo-based isDeloadWeek flag.
-     */
-    /**
      * Returns the block phase adjustment (intensity %, sets multiplier, rep range) for the given position.
      * Used by ProgramWorkoutGeneratorService to apply volume waving within BLOCK phases.
+     * For BLOCK periodization, week 7 of a 7-week block is the deload week.
      */
     fun getBlockPhaseAdjustment(position: ProgramPosition): BlockPhaseAdjustment {
         val weekInBlock = (position.week - 1) % 7

@@ -26,23 +26,44 @@ class InjuryFilterService(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    /**
+     * 여러 부상이 있을 때 각 부상별 제한 운동을 합산(union)
+     * → 어깨 부상 + 무릎 부상이면 어깨 제한 운동 ∪ 무릎 제한 운동 모두 제외
+     *
+     * 복합 부상 시 더 보수적으로 동작 (안전 우선)
+     */
     fun getRestrictedExercises(injuries: Set<String>): List<InjuryExerciseRestriction> {
         if (injuries.isEmpty()) return emptyList()
-        return injuries.flatMap { injury ->
+
+        val allRestrictions = mutableMapOf<Long, InjuryExerciseRestriction>()
+
+        injuries.forEach { injury ->
             val injuryType = injury.substringBefore(":")
             val userSeverity = injury.substringAfter(":", "ALL")
 
-            // MILD: only block the most dangerous exercises (SEVERE restrictions)
-            // MODERATE: block MODERATE and SEVERE
-            // SEVERE or ALL (legacy format without severity): block all restrictions
+            // 부상 심각도별 제한 운동 필터링 기준:
+            // - MILD 부상 → SEVERE 제한 운동만 차단 (가벼운 부상이므로 가장 위험한 운동만 피함)
+            // - MODERATE 부상 → MODERATE+SEVERE 제한 운동 차단
+            // - SEVERE 부상 → 모든 제한 운동 차단
+            // 즉, 부상이 심할수록 더 많은 운동이 차단됨 (보수적 안전 원칙)
             val applicableSeverities = when (userSeverity.uppercase()) {
                 "MILD" -> listOf(InjurySeverity.SEVERE)
                 "MODERATE" -> listOf(InjurySeverity.MODERATE, InjurySeverity.SEVERE)
                 else -> InjurySeverity.values().toList()
             }
 
-            injuryExerciseRestrictionRepository.findByInjuryTypeAndSeverityIn(injuryType, applicableSeverities)
-        }.distinctBy { it.id }
+            val restrictions = injuryExerciseRestrictionRepository.findByInjuryTypeAndSeverityIn(injuryType, applicableSeverities)
+            restrictions.forEach { restriction ->
+                val exerciseId = restriction.restrictedExercise.id
+                val existing = allRestrictions[exerciseId]
+                // 같은 운동이 여러 부상에 의해 제한되면, 더 높은 심각도를 유지
+                if (existing == null || restriction.severity.ordinal > existing.severity.ordinal) {
+                    allRestrictions[exerciseId] = restriction
+                }
+            }
+        }
+
+        return allRestrictions.values.toList()
     }
 
     fun filterExercises(exercises: List<Exercise>, injuries: Set<String>): List<Exercise> {
@@ -86,6 +107,17 @@ class InjuryFilterService(
                     )
                     return@run null
                 } ?: continue
+
+                // 대체 운동 검증: DB에 존재하는지 + 같은 부상에 의해 제한되지 않는지
+                val substituteExists = exerciseRepository.findById(substituteExercise.id).isPresent
+                val substituteAlsoRestricted = restrictedById.containsKey(substituteExercise.id)
+                if (!substituteExists || substituteAlsoRestricted) {
+                    logger.warn(
+                        "Substitute exercise invalid: id={} exists={} alsoRestricted={} for injury={}",
+                        substituteExercise.id, substituteExists, substituteAlsoRestricted, restriction.injuryType
+                    )
+                    continue
+                }
 
                 val override = UserExerciseOverride(
                     enrollment = enrollment,

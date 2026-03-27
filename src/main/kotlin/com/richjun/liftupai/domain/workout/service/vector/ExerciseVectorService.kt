@@ -80,8 +80,9 @@ class ExerciseVectorService(
         }
 
         if (weeklyVolume.isNotEmpty()) {
-            val lowVolume = weeklyVolume.filter { it.value < 10 }.keys
-            val highVolume = weeklyVolume.filter { it.value > 20 }.keys
+            // Schoenfeld (2016): 주당 12-20세트가 근비대 적정 볼륨
+            val lowVolume = weeklyVolume.filter { it.value < 12 }.keys
+            val highVolume = weeklyVolume.filter { it.value > 25 }.keys
 
             if (lowVolume.isNotEmpty()) {
                 parts.add("Low-volume muscles (prioritize): ${lowVolume.joinToString(", ")}")
@@ -100,50 +101,86 @@ class ExerciseVectorService(
         return parts.joinToString(". ")
     }
 
+    companion object {
+        private const val MAX_RETRIES = 3
+        private const val INITIAL_BACKOFF_MS = 500L
+    }
+
     /**
      * 텍스트를 벡터로 변환 (Gemini Embedding API)
+     * 지수 백오프 재시도 (최대 3회) — 429/5xx 등 일시적 오류 대응
      */
     fun generateEmbedding(text: String): List<Float> {
-        return try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=$apiKey"
+        var lastException: Exception? = null
 
-            val requestBody = mapOf(
-                "model" to "models/gemini-embedding-001",
-                "content" to mapOf(
-                    "parts" to listOf(
-                        mapOf("text" to text)
-                    )
-                ),
-                "outputDimensionality" to 768
-            )
+        for (attempt in 1..MAX_RETRIES) {
+            try {
+                val result = callEmbeddingApi(text)
+                if (result != null) return result
 
-            val jsonBody = objectMapper.writeValueAsString(requestBody)
-            val request = Request.Builder()
-                .url(url)
-                .post(jsonBody.toRequestBody("application/json".toMediaType()))
-                .build()
-
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val errorBody = response.body?.string()
-                    logger.warn("Gemini Embedding API Error: {}", errorBody)
-                    return getDefaultEmbedding()
-                }
-
-                val responseBody = response.body?.string()
-                val jsonResponse = objectMapper.readTree(responseBody)
-                val values = jsonResponse.get("embedding")?.get("values")
-
-                if (values != null && values.isArray) {
-                    values.map { it.floatValue() }
-                } else {
-                    logger.warn("Invalid embedding response: no values array found")
-                    getDefaultEmbedding()
+                // API 응답은 성공했으나 파싱 실패 — 재시도 의미 없음
+                logger.warn("Embedding parse failed on attempt $attempt")
+                return getDefaultEmbedding()
+            } catch (e: Exception) {
+                lastException = e
+                if (attempt < MAX_RETRIES) {
+                    val backoff = INITIAL_BACKOFF_MS * (1L shl (attempt - 1))  // 500ms, 1000ms
+                    logger.warn("Embedding API attempt $attempt failed: ${e.message}, retrying in ${backoff}ms")
+                    Thread.sleep(backoff)
                 }
             }
-        } catch (e: Exception) {
-            logger.error("Error generating embedding: {}", e.message, e)
-            getDefaultEmbedding()
+        }
+
+        logger.error("Embedding API failed after $MAX_RETRIES attempts: {}", lastException?.message, lastException)
+        return getDefaultEmbedding()
+    }
+
+    /**
+     * 실제 Gemini Embedding API 호출
+     * @return 성공 시 벡터, API 오류(재시도 가능) 시 예외 throw, 파싱 실패 시 null
+     */
+    private fun callEmbeddingApi(text: String): List<Float>? {
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=$apiKey"
+
+        val requestBody = mapOf(
+            "model" to "models/gemini-embedding-001",
+            "content" to mapOf(
+                "parts" to listOf(
+                    mapOf("text" to text)
+                )
+            ),
+            "outputDimensionality" to 768
+        )
+
+        val jsonBody = objectMapper.writeValueAsString(requestBody)
+        val request = Request.Builder()
+            .url(url)
+            .post(jsonBody.toRequestBody("application/json".toMediaType()))
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val errorBody = response.body?.string()
+                val code = response.code
+                // 429(Rate Limit), 5xx(Server Error) → 재시도 가능
+                if (code == 429 || code >= 500) {
+                    throw RuntimeException("Gemini API retryable error ($code): $errorBody")
+                }
+                // 4xx(Bad Request 등) → 재시도 무의미
+                logger.warn("Gemini Embedding API non-retryable error ($code): {}", errorBody)
+                return null
+            }
+
+            val responseBody = response.body?.string()
+            val jsonResponse = objectMapper.readTree(responseBody)
+            val values = jsonResponse.get("embedding")?.get("values")
+
+            return if (values != null && values.isArray) {
+                values.map { it.floatValue() }
+            } else {
+                logger.warn("Invalid embedding response: no values array found")
+                null
+            }
         }
     }
 

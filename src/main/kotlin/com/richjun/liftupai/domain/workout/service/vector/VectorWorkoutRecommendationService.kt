@@ -42,7 +42,7 @@ class VectorWorkoutRecommendationService(
 
     companion object {
         private const val VECTOR_SEARCH_MULTIPLIER = 3  // 필터링 후 부족할 수 있으므로 더 많이 검색
-        private const val MIN_SIMILARITY_SCORE = 0.4f
+        private const val MIN_SIMILARITY_SCORE = 0.55f  // 0.4→0.55: 느슨한 매칭 방지
         private const val RECOVERY_THRESHOLD = 50
     }
 
@@ -146,10 +146,13 @@ class VectorWorkoutRecommendationService(
 
         logger.info("Vector search returned ${searchResults.size} results")
 
-        // 결과를 Exercise로 변환 및 필터링
+        // 결과를 Exercise로 변환 — 배치 조회로 N+1 쿼리 방지
+        val exerciseIds = searchResults.map { it.first }
+        val exerciseMap = exerciseRepository.findAllById(exerciseIds).associateBy { it.id }
+        val exercises = searchResults.mapNotNull { (id, _) -> exerciseMap[id] }
+
         // 회복/안전 필터를 먼저 적용하여 대안 운동이 소실되지 않도록 함
-        return searchResults
-            .mapNotNull { (id, _) -> exerciseRepository.findById(id).orElse(null) }
+        return exercises
             .let { filterByRecovery(it, context.recoveringMuscles) }
             .let { filterByTier(it) }
             .let { filterByGoal(it, profile?.goals) }
@@ -212,107 +215,125 @@ class VectorWorkoutRecommendationService(
      */
     private fun buildWorkoutHistorySummary(user: User): String? {
         return try {
-            val cutoff = AppTime.utcNow().minusDays(28)
-            val sessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoff)
-            if (sessions.isEmpty()) return null
-
-            val sessionIds = sessions.map { it.id }
-            val allWorkoutExercises = workoutExerciseRepository.findBySessionIdInWithExercise(sessionIds)
-            if (allWorkoutExercises.isEmpty()) return null
-
-            val weIds = allWorkoutExercises.map { it.id }
-            val allSets = exerciseSetRepository.findByWorkoutExerciseIdIn(weIds)
-            val setsByWeId = allSets.groupBy { it.workoutExercise.id }
-
-            val exerciseFrequency = mutableMapOf<String, Int>()
-            val exerciseWeights = mutableMapOf<String, MutableList<Double>>()
-            val exerciseRPEs = mutableMapOf<String, MutableList<Double>>()
-            val exerciseCompletionRate = mutableMapOf<String, Pair<Int, Int>>() // completed sets / total sets
-
-            allWorkoutExercises.forEach { we ->
-                val name = we.exercise.name
-                exerciseFrequency[name] = (exerciseFrequency[name] ?: 0) + 1
-                val sets = setsByWeId[we.id] ?: emptyList()
-                if (sets.isNotEmpty()) {
-                    exerciseWeights.getOrPut(name) { mutableListOf() }
-                        .add(sets.maxOf { it.weight })
-                    // RPE 추적
-                    sets.mapNotNull { it.rpe?.toDouble() }.let { rpes ->
-                        if (rpes.isNotEmpty()) {
-                            exerciseRPEs.getOrPut(name) { mutableListOf() }.addAll(rpes)
-                        }
-                    }
-                    // 완료율 추적
-                    val completed = sets.count { it.completed }
-                    val prev = exerciseCompletionRate[name] ?: Pair(0, 0)
-                    exerciseCompletionRate[name] = Pair(prev.first + completed, prev.second + sets.size)
-                }
-            }
-
+            val stats = collectExerciseStats(user) ?: return null
             val parts = mutableListOf<String>()
 
-            // 자주 하는 운동 상위 5개
-            val frequent = exerciseFrequency.entries.sortedByDescending { it.value }.take(5)
-            if (frequent.isNotEmpty()) {
-                parts.add("Frequently done: ${frequent.joinToString(", ") { "${it.key} (${it.value}x)" }}")
-            }
-
-            // 정체기 감지: 무게+렙 볼륨 기반 (무게만 비교하면 렙수 증가를 놓침)
-            // 100kg x 6회 → 100kg x 8회 → 100kg x 10회 = 진행 중 (정체 아님)
-            val plateaued = exerciseWeights.filter { (name, weights) ->
-                if (weights.size < 3) return@filter false
-                val lastThreeWeights = weights.takeLast(3)
-                val weightStagnant = lastThreeWeights.distinct().size == 1
-                // 무게가 같아도 RPE가 감소하고 있으면 진행 중
-                val rpes = exerciseRPEs[name]
-                val rpeDecreasing = rpes != null && rpes.size >= 3 &&
-                    rpes.takeLast(3).let { it[2] < it[0] }
-                weightStagnant && !rpeDecreasing
-            }.keys.take(3)
-            if (plateaued.isNotEmpty()) {
-                parts.add("Plateaued exercises (need variation): ${plateaued.joinToString(", ")}")
-            }
-
-            // 힘들어하는 운동 (평균 RPE >= 8.5): 대체 운동 고려
-            val hardExercises = exerciseRPEs.filter { (_, rpes) ->
-                rpes.size >= 2 && rpes.average() >= 8.5
-            }.keys.take(3)
-            if (hardExercises.isNotEmpty()) {
-                parts.add("User finds these very hard (consider easier alternatives): ${hardExercises.joinToString(", ")}")
-            }
-
-            // 편하게 하는 운동 (평균 RPE <= 5): 더 도전적인 변형 추천
-            val easyExercises = exerciseRPEs.filter { (_, rpes) ->
-                rpes.size >= 2 && rpes.average() <= 5.0
-            }.keys.take(3)
-            if (easyExercises.isNotEmpty()) {
-                parts.add("User finds these too easy (suggest harder variations): ${easyExercises.joinToString(", ")}")
-            }
-
-            // 낮은 완료율 운동 (< 70%): 사용자가 기피하는 운동
-            val avoidedExercises = exerciseCompletionRate.filter { (_, pair) ->
-                pair.second >= 4 && (pair.first.toDouble() / pair.second) < 0.7
-            }.keys.take(3)
-            if (avoidedExercises.isNotEmpty()) {
-                parts.add("Low completion rate (user may dislike): ${avoidedExercises.joinToString(", ")}")
-            }
-
-            // 최근 안 한 패턴 감지 (세분화된 enum → broad 카테고리로 매핑)
-            val doneBroadPatterns = allWorkoutExercises
-                .map { broadPatternCategory(exercisePatternClassifier.classifyExercise(it.exercise)) }
-                .toSet()
-
-            val allBroadPatterns = setOf("HORIZONTAL_PUSH", "HORIZONTAL_PULL", "VERTICAL_PUSH", "VERTICAL_PULL",
-                "HIP_HINGE", "SQUAT", "LUNGE", "CARRY", "ROTATION", "ISOLATION", "CORE")
-            val missingPatterns = allBroadPatterns - doneBroadPatterns
-            if (missingPatterns.isNotEmpty() && missingPatterns.size < allBroadPatterns.size) {
-                parts.add("Missing movement patterns (recommend): ${missingPatterns.take(3).joinToString(", ")}")
-            }
+            analyzeFrequency(stats, parts)
+            analyzePlateau(stats, parts)
+            analyzeRPE(stats, parts)
+            analyzeCompletionRate(stats, parts)
+            analyzeMissingPatterns(stats, parts)
 
             if (parts.isEmpty()) null else parts.joinToString(". ")
         } catch (e: Exception) {
             logger.warn("Failed to build workout history summary: ${e.message}")
             null
+        }
+    }
+
+    /** 최근 28일 운동 이력을 운동별 통계로 집계 */
+    private data class ExerciseStats(
+        val frequency: Map<String, Int>,
+        val weights: Map<String, List<Double>>,
+        val rpes: Map<String, List<Double>>,
+        val completionRate: Map<String, Pair<Int, Int>>,  // completed / total
+        val doneBroadPatterns: Set<String>
+    )
+
+    private fun collectExerciseStats(user: User): ExerciseStats? {
+        val cutoff = AppTime.utcNow().minusDays(28)
+        val sessions = workoutSessionRepository.findByUserAndStartTimeAfter(user, cutoff)
+        if (sessions.isEmpty()) return null
+
+        val sessionIds = sessions.map { it.id }
+        val allWorkoutExercises = workoutExerciseRepository.findBySessionIdInWithExercise(sessionIds)
+        if (allWorkoutExercises.isEmpty()) return null
+
+        val weIds = allWorkoutExercises.map { it.id }
+        val allSets = exerciseSetRepository.findByWorkoutExerciseIdIn(weIds)
+        val setsByWeId = allSets.groupBy { it.workoutExercise.id }
+
+        val frequency = mutableMapOf<String, Int>()
+        val weights = mutableMapOf<String, MutableList<Double>>()
+        val rpes = mutableMapOf<String, MutableList<Double>>()
+        val completionRate = mutableMapOf<String, Pair<Int, Int>>()
+
+        allWorkoutExercises.forEach { we ->
+            val name = we.exercise.name
+            frequency[name] = (frequency[name] ?: 0) + 1
+            val sets = setsByWeId[we.id] ?: emptyList()
+            if (sets.isNotEmpty()) {
+                weights.getOrPut(name) { mutableListOf() }.add(sets.maxOf { it.weight })
+                sets.mapNotNull { it.rpe?.toDouble() }.let { r ->
+                    if (r.isNotEmpty()) rpes.getOrPut(name) { mutableListOf() }.addAll(r)
+                }
+                val completed = sets.count { it.completed }
+                val prev = completionRate[name] ?: Pair(0, 0)
+                completionRate[name] = Pair(prev.first + completed, prev.second + sets.size)
+            }
+        }
+
+        val doneBroadPatterns = allWorkoutExercises
+            .map { broadPatternCategory(exercisePatternClassifier.classifyExercise(it.exercise)) }
+            .toSet()
+
+        return ExerciseStats(frequency, weights, rpes, completionRate, doneBroadPatterns)
+    }
+
+    /** 자주 하는 운동 상위 5개 */
+    private fun analyzeFrequency(stats: ExerciseStats, parts: MutableList<String>) {
+        val frequent = stats.frequency.entries.sortedByDescending { it.value }.take(5)
+        if (frequent.isNotEmpty()) {
+            parts.add("Frequently done: ${frequent.joinToString(", ") { "${it.key} (${it.value}x)" }}")
+        }
+    }
+
+    /** 정체기 감지: 무게 정체 + RPE 미감소 = 진행 중단 */
+    private fun analyzePlateau(stats: ExerciseStats, parts: MutableList<String>) {
+        val plateaued = stats.weights.filter { (name, weights) ->
+            if (weights.size < 3) return@filter false
+            val weightStagnant = weights.takeLast(3).distinct().size == 1
+            val rpes = stats.rpes[name]
+            val rpeDecreasing = rpes != null && rpes.size >= 3 &&
+                rpes.takeLast(3).let { it[2] < it[0] }
+            weightStagnant && !rpeDecreasing
+        }.keys.take(3)
+        if (plateaued.isNotEmpty()) {
+            parts.add("Plateaued exercises (need variation): ${plateaued.joinToString(", ")}")
+        }
+    }
+
+    /** RPE 분석: 너무 어려운/쉬운 운동 감지 */
+    private fun analyzeRPE(stats: ExerciseStats, parts: MutableList<String>) {
+        val hard = stats.rpes.filter { (_, r) -> r.size >= 2 && r.average() >= 8.5 }.keys.take(3)
+        if (hard.isNotEmpty()) {
+            parts.add("User finds these very hard (consider easier alternatives): ${hard.joinToString(", ")}")
+        }
+        val easy = stats.rpes.filter { (_, r) -> r.size >= 2 && r.average() <= 5.0 }.keys.take(3)
+        if (easy.isNotEmpty()) {
+            parts.add("User finds these too easy (suggest harder variations): ${easy.joinToString(", ")}")
+        }
+    }
+
+    /** 낮은 완료율 (< 70%): 사용자 기피 운동 */
+    private fun analyzeCompletionRate(stats: ExerciseStats, parts: MutableList<String>) {
+        val avoided = stats.completionRate.filter { (_, pair) ->
+            pair.second >= 4 && (pair.first.toDouble() / pair.second) < 0.7
+        }.keys.take(3)
+        if (avoided.isNotEmpty()) {
+            parts.add("Low completion rate (user may dislike): ${avoided.joinToString(", ")}")
+        }
+    }
+
+    /** 최근 28일간 안 한 동작 패턴 감지 */
+    private fun analyzeMissingPatterns(stats: ExerciseStats, parts: MutableList<String>) {
+        val allBroadPatterns = setOf(
+            "HORIZONTAL_PUSH", "HORIZONTAL_PULL", "VERTICAL_PUSH", "VERTICAL_PULL",
+            "HIP_HINGE", "SQUAT", "LUNGE", "CARRY", "ROTATION", "ISOLATION", "CORE"
+        )
+        val missing = allBroadPatterns - stats.doneBroadPatterns
+        if (missing.isNotEmpty() && missing.size < allBroadPatterns.size) {
+            parts.add("Missing movement patterns (recommend): ${missing.take(3).joinToString(", ")}")
         }
     }
 

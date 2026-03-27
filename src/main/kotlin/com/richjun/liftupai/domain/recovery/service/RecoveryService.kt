@@ -149,14 +149,17 @@ class RecoveryService(
 
     private fun updateRecoveryPercentages(user: com.richjun.liftupai.domain.auth.entity.User) {
         val muscles = muscleRecoveryRepository.findByUser(user)
+        if (muscles.isEmpty()) return
+
         muscles.forEach { muscle ->
             val hoursSinceWorkout = ChronoUnit.HOURS.between(muscle.lastWorked, AppTime.utcNow())
             val baseRecovery = calculateBaseRecovery(hoursSinceWorkout, muscle.muscleGroup)
             val adjustedRecovery = adjustRecoveryBySoreness(baseRecovery, muscle.soreness)
-
             muscle.recoveryPercentage = minOf(adjustedRecovery, 100)
-            muscleRecoveryRepository.save(muscle)
         }
+
+        // 배치 저장 — 루프 내 개별 save() 대신 한 번에 저장
+        muscleRecoveryRepository.saveAll(muscles)
     }
 
     /**
@@ -168,16 +171,20 @@ class RecoveryService(
      * - 소근육(이두, 삼두, 종아리): 24-48시간
      * - 복근/코어: 24시간 (높은 지근 비율)
      */
+    /**
+     * 연속 S자 회복 곡선 — smoothstep 보간으로 경계값 불연속 제거
+     *
+     * smoothstep: 3t² - 2t³
+     * - ratio 0.0 → 0% (운동 직후)
+     * - ratio 0.5 → 50% (중간 회복)
+     * - ratio 1.0 → 100% (완전 회복)
+     * - 경계에서 기울기 연속 (불연속 점프 없음)
+     */
     private fun calculateBaseRecovery(hoursSinceWorkout: Long, muscleGroup: String? = null): Int {
         val fullRecoveryHours = getFullRecoveryHours(muscleGroup)
-        val ratio = hoursSinceWorkout.toDouble() / fullRecoveryHours
-
-        return when {
-            ratio < 0.33 -> (ratio * 150).toInt()       // 초기: 느린 회복
-            ratio < 0.67 -> (50 + (ratio - 0.33) * 100).toInt()  // 중기: 빠른 회복
-            ratio < 1.0  -> (85 + (ratio - 0.67) * 45).toInt()   // 후기: 완만한 마무리
-            else -> 100
-        }.coerceIn(0, 100)
+        val t = (hoursSinceWorkout.toDouble() / fullRecoveryHours).coerceIn(0.0, 1.0)
+        val smooth = t * t * (3 - 2 * t)
+        return (smooth * 100).toInt().coerceIn(0, 100)
     }
 
     private fun getFullRecoveryHours(muscleGroup: String?): Int {
@@ -207,26 +214,52 @@ class RecoveryService(
         return (baseRecovery * sorenessMultiplier).toInt().coerceIn(0, 100)
     }
 
+    /**
+     * 수동 업데이트 시 회복률 계산 — updateRecoveryPercentages()와 동일 공식 기반
+     *
+     * feeling은 가산 보정(±15%)으로 적용:
+     * - feeling 5 (보통) → 0% 보정
+     * - feeling 10 (매우 좋음) → +15%
+     * - feeling 1 (매우 나쁨) → -12%
+     *
+     * 기존 곱셈 방식(feeling/10)은 feeling=1일 때 회복률이 10%로 급락하는 문제가 있었음
+     */
     private fun calculateRecoveryPercentage(lastWorked: LocalDateTime, feelingScore: Int, soreness: Int): Int {
         val hoursSinceWorkout = ChronoUnit.HOURS.between(lastWorked, AppTime.utcNow())
         val baseRecovery = calculateBaseRecovery(hoursSinceWorkout)
+        val afterSoreness = adjustRecoveryBySoreness(baseRecovery, soreness)
 
         val clampedFeeling = feelingScore.coerceIn(1, 10)
-        val clampedSoreness = soreness.coerceIn(0, 10)
-        val feelingMultiplier = clampedFeeling / 10.0
-        val sorenessMultiplier = (1.0 - (clampedSoreness * 0.015)).coerceIn(0.0, 1.0)
+        val feelingBonus = ((clampedFeeling - 5) * 3).coerceIn(-12, 15)
 
-        return (baseRecovery * feelingMultiplier * sorenessMultiplier).toInt().coerceIn(0, 100)
+        return (afterSoreness + feelingBonus).coerceIn(0, 100)
     }
 
+    /**
+     * 남은 회복 시간 추정 — smoothstep 역함수 기반
+     *
+     * smoothstep: recovery = 3t² - 2t³ (t = hours / fullRecoveryHours)
+     * 현재 회복률에서 100%까지 남은 시간을 근육별 fullRecoveryHours 기준으로 계산
+     */
     private fun calculateEstimatedRecoveryTime(muscle: MuscleRecovery): Int {
         if (muscle.recoveryPercentage >= 100) return 0
 
-        val remainingRecovery = (100 - muscle.recoveryPercentage).coerceAtLeast(0)
-        val clampedSoreness = muscle.soreness.coerceIn(0, 10)
-        val recoveryRate = 100.0 / (48 + clampedSoreness * 4)
+        val fullRecoveryHours = getFullRecoveryHours(muscle.muscleGroup)
+        val currentRecovery = muscle.recoveryPercentage.coerceIn(0, 99) / 100.0
 
-        return (remainingRecovery / recoveryRate).toInt().coerceAtLeast(0)
+        // smoothstep 역함수: f(t) = 3t² - 2t³ 에서 f(t) = currentRecovery 일 때의 t를 구함
+        // 해석적 역함수가 복잡하므로 이진 탐색 사용 (20회 → 오차 < 0.0001%)
+        var low = 0.0
+        var high = 1.0
+        repeat(20) {
+            val mid = (low + high) / 2
+            val smoothAtMid = mid * mid * (3 - 2 * mid)
+            if (smoothAtMid < currentRecovery) low = mid else high = mid
+        }
+        val currentT = (low + high) / 2
+        val remainingHours = ((1.0 - currentT) * fullRecoveryHours).toInt()
+
+        return remainingHours.coerceAtLeast(0)
     }
 
     private fun determineRecoveryStatusKey(recoveryPercentage: Int): String {
@@ -317,6 +350,12 @@ class RecoveryService(
         return exercises
     }
 
+    /**
+     * 회복 활동 부스트 적용
+     *
+     * 시간 기반 상한선: smoothstep 곡선의 현재 기대 회복률을 넘지 못하도록 제한
+     * → calculateBaseRecovery와 동일 공식으로 일관성 유지
+     */
     fun boostMuscleRecovery(userId: Long, muscleGroup: String, boostPercentage: Int) {
         val muscleRecoveries = muscleRecoveryRepository.findByUser_Id(userId)
         val muscleKey = canonicalMuscleKey(muscleGroup)
@@ -325,20 +364,18 @@ class RecoveryService(
             it.muscleGroup.equals(muscleKey, ignoreCase = true)
         } ?: return
 
-        // 시간 기반 회복 상한선 — 운동 후 경과 시간에 따라 부스트 상한 제한
+        // 시간 기반 회복 상한선 — smoothstep 기대값 + 여유분(15%)으로 제한
+        // 부스트가 시간 기반 자연 회복을 크게 초과하지 못하도록 함
         val hoursSinceWorkout = ChronoUnit.HOURS.between(recovery.lastWorked, AppTime.utcNow())
-        val maxRecoveryForTime = when {
-            hoursSinceWorkout < 12 -> 40   // 12시간 이내: 최대 40%
-            hoursSinceWorkout < 24 -> 70   // 24시간 이내: 최대 70%
-            hoursSinceWorkout < 48 -> 90   // 48시간 이내: 최대 90%
-            else -> 100
-        }
+        val naturalRecovery = calculateBaseRecovery(hoursSinceWorkout, muscleKey)
+        val maxRecoveryForTime = (naturalRecovery + 15).coerceAtMost(100)
+
         val newRecoveryPercentage = (recovery.recoveryPercentage + boostPercentage).coerceIn(0, maxRecoveryForTime)
         recovery.recoveryPercentage = newRecoveryPercentage
         recovery.updatedAt = AppTime.utcNow()
 
         muscleRecoveryRepository.save(recovery)
-        logger.info("Boosted recovery for $muscleKey by $boostPercentage% for user $userId")
+        logger.info("Boosted recovery for $muscleKey by $boostPercentage% (cap: $maxRecoveryForTime%) for user $userId")
     }
 
     private fun generateNutritionTips(locale: String): List<NutritionTip> {
