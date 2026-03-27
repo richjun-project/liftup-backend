@@ -45,6 +45,52 @@ class ExerciseRecommendationService(
         logger.info("Recommendation request started - user: ${user.id}, target: $targetMuscle, equipment: $equipment, duration: $duration")
 
         val allExercises = exerciseRepository.findAll()
+
+        // 1차: 전체 필터 적용 (core → general 폴백)
+        val result = buildWithFallback(allExercises, user, targetMuscle, equipment, limit)
+
+        // 2차: 결과 부족 시 장비 필터 제거
+        if (result.size < limit && equipment != null) {
+            logger.info("Fallback: removing equipment filter (had ${result.size}/$limit)")
+            val withoutEquipment = buildWithFallback(allExercises, user, targetMuscle, null, limit)
+            if (withoutEquipment.size > result.size) {
+                return withoutEquipment.take(limit).also {
+                    logger.info("After equipment fallback: ${it.size} recommendations")
+                }
+            }
+        }
+
+        // 3차: 여전히 부족하면 회복 필터 없이 재시도
+        if (result.size < limit) {
+            logger.info("Fallback: rebuilding without recovery filter (had ${result.size}/$limit)")
+            val targetCategory = resolveTargetCategory(targetMuscle)
+            val relaxed = allExercises
+                .let { filterByRecommendationPool(it, false) }
+                .let { filterByEquipment(it, equipment) }
+                .let { filterByTargetMuscle(it, targetMuscle) }
+                .let { removeDuplicatePatterns(it) }
+                .let { orderByPriority(it, targetCategory) }
+            if (relaxed.size > result.size) {
+                return relaxed.take(limit).also {
+                    logger.info("After recovery fallback: ${it.size} recommendations")
+                }
+            }
+        }
+
+        return result.take(limit).also {
+            if (it.size < limit) {
+                logger.warn("Recommendation shortfall: delivered ${it.size}/$limit exercises")
+            }
+        }
+    }
+
+    private fun buildWithFallback(
+        allExercises: List<Exercise>,
+        user: User,
+        targetMuscle: String?,
+        equipment: String?,
+        limit: Int
+    ): List<Exercise> {
         val coreRecommendations = buildRecommendationCandidates(
             exercises = allExercises,
             user = user,
@@ -67,9 +113,8 @@ class ExerciseRecommendationService(
 
         return (coreRecommendations + fallbackRecommendations)
             .distinctBy { it.id }
-            .take(limit)
             .also {
-                logger.info("Core candidates: ${coreRecommendations.size}, final recommendations: ${it.size}")
+                logger.info("Core candidates: ${coreRecommendations.size}, total: ${it.size}")
             }
     }
 
@@ -97,8 +142,8 @@ class ExerciseRecommendationService(
         if (targetMuscle == null) return null
         val key = WorkoutTargetResolver.recommendationKey(targetMuscle) ?: return null
         return when (key.lowercase()) {
-            "chest" -> ExerciseCategory.CHEST
-            "back" -> ExerciseCategory.BACK
+            "push", "chest" -> ExerciseCategory.CHEST
+            "pull", "back" -> ExerciseCategory.BACK
             "legs", "lower" -> ExerciseCategory.LEGS
             "shoulders" -> ExerciseCategory.SHOULDERS
             "arms" -> ExerciseCategory.ARMS
@@ -240,6 +285,8 @@ class ExerciseRecommendationService(
     private fun getMuscleGroupsForTarget(target: String): Set<MuscleGroup> {
         return when (target.lowercase()) {
             "full_body" -> emptySet()
+            "push" -> setOf(MuscleGroup.CHEST, MuscleGroup.SHOULDERS, MuscleGroup.TRICEPS)
+            "pull" -> setOf(MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.BICEPS)
             "legs", "lower" -> setOf(MuscleGroup.QUADRICEPS, MuscleGroup.HAMSTRINGS, MuscleGroup.GLUTES, MuscleGroup.CALVES)
             "upper" -> setOf(MuscleGroup.CHEST, MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.SHOULDERS, MuscleGroup.BICEPS, MuscleGroup.TRICEPS)
             "chest" -> setOf(MuscleGroup.CHEST)

@@ -1041,42 +1041,23 @@ class WorkoutServiceV2(
         // 사용자가 명시적으로 근육을 지정하지 않으면 현재 세션 또는 프로그램 상태를 따름
         val adjustedTargetMuscle = if (normalizedTargetMuscle == null) {
             if (activeSession != null) {
-                // 현재 진행 중인 세션이 있으면 그 세션의 workout type을 따름
-                val currentWorkoutType = activeSession.workoutType ?: WorkoutType.FULL_BODY
-                val sessionMuscle = when (currentWorkoutType) {
-                    WorkoutType.PUSH -> "chest"
-                    WorkoutType.PULL -> "back"
-                    WorkoutType.LEGS -> "legs"
-                    WorkoutType.UPPER -> "upper"
-                    WorkoutType.LOWER -> "lower"
-                    WorkoutType.CHEST -> "chest"
-                    WorkoutType.BACK -> "back"
-                    WorkoutType.ARMS -> "arms"
-                    WorkoutType.SHOULDERS -> "shoulders"
-                    WorkoutType.ABS -> "core"
-                    WorkoutType.CARDIO -> "full_body"
-                    WorkoutType.FULL_BODY -> "full_body"
+                // 오래된 세션(6시간 이상) 무시 — 프로그램 순서 사용
+                val sessionAge = java.time.Duration.between(activeSession.startTime, java.time.LocalDateTime.now(java.time.ZoneOffset.UTC))
+                if (sessionAge.toHours() >= 6) {
+                    logger.info("Ignoring stale IN_PROGRESS session (age: ${sessionAge.toHours()}h), using program position")
+                    null // fall through to program position
+                } else {
+                    val currentWorkoutType = activeSession.workoutType ?: WorkoutType.FULL_BODY
+                    val sessionMuscle = workoutTypeToTargetMuscle(currentWorkoutType)
+                    logger.debug("Selected target muscle from current session: {} (current type: {})", sessionMuscle, currentWorkoutType)
+                    sessionMuscle
                 }
-                logger.debug("Selected target muscle from current session: {} (current type: {})", sessionMuscle, currentWorkoutType)
-                sessionMuscle
             } else {
-                // 진행 중인 세션이 없으면 프로그램 위치에 따라 선택
+                null // fall through to program position
+            } ?: run {
+                // 진행 중인 세션이 없거나 오래된 경우 프로그램 위치에 따라 선택
                 val workoutType = programContext.workoutSequence.getOrNull(programPosition.day - 1) ?: WorkoutType.FULL_BODY
-
-                val programMuscle = when (workoutType) {
-                    WorkoutType.PUSH -> "chest"
-                    WorkoutType.PULL -> "back"
-                    WorkoutType.LEGS -> "legs"
-                    WorkoutType.UPPER -> "upper"
-                    WorkoutType.LOWER -> "lower"
-                    WorkoutType.CHEST -> "chest"
-                    WorkoutType.BACK -> "back"
-                    WorkoutType.ARMS -> "arms"
-                    WorkoutType.SHOULDERS -> "shoulders"
-                    WorkoutType.ABS -> "core"
-                    WorkoutType.CARDIO -> "full_body"
-                    WorkoutType.FULL_BODY -> "full_body"
-                }
+                val programMuscle = workoutTypeToTargetMuscle(workoutType)
                 logger.debug("Selected target muscle from program state: {} (next: {}, day {})", programMuscle, workoutType, programPosition.day)
                 programMuscle
             }
@@ -2198,6 +2179,27 @@ class WorkoutServiceV2(
         val baseCalories = duration * 5
         val exerciseBonus = exerciseCount * 8
         return baseCalories + exerciseBonus
+    }
+
+    /**
+     * WorkoutType → 추천용 타겟 근육 문자열 변환
+     * PUSH = chest + shoulders + triceps, PULL = back + biceps
+     */
+    private fun workoutTypeToTargetMuscle(workoutType: WorkoutType): String {
+        return when (workoutType) {
+            WorkoutType.PUSH -> "push"
+            WorkoutType.PULL -> "pull"
+            WorkoutType.LEGS -> "legs"
+            WorkoutType.UPPER -> "upper"
+            WorkoutType.LOWER -> "lower"
+            WorkoutType.CHEST -> "chest"
+            WorkoutType.BACK -> "back"
+            WorkoutType.ARMS -> "arms"
+            WorkoutType.SHOULDERS -> "shoulders"
+            WorkoutType.ABS -> "core"
+            WorkoutType.CARDIO -> "full_body"
+            WorkoutType.FULL_BODY -> "full_body"
+        }
     }
 
     // Helper methods
