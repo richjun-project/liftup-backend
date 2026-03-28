@@ -52,7 +52,7 @@ interface WorkoutSessionRepository : JpaRepository<WorkoutSession, Long> {
     @Query("SELECT EXISTS(SELECT 1 FROM WorkoutSession w WHERE w.user = :user AND DATE(w.startTime) = :date AND w.status = 'COMPLETED')")
     fun existsByUserAndDate(user: User, date: java.time.LocalDate): Boolean
 
-    @Query("SELECT COUNT(w) FROM WorkoutSession w WHERE w.user = :user AND w.startTime BETWEEN :startDate AND :endDate AND w.status = 'COMPLETED'")
+    @Query("SELECT COUNT(DISTINCT DATE(w.startTime)) FROM WorkoutSession w WHERE w.user = :user AND w.startTime BETWEEN :startDate AND :endDate AND w.status = 'COMPLETED'")
     fun countByUserAndDateRange(user: User, startDate: LocalDateTime, endDate: LocalDateTime): Int
 
     fun findByUserAndStartTimeBetween(user: User, startDate: LocalDateTime, endDate: LocalDateTime): List<WorkoutSession>
