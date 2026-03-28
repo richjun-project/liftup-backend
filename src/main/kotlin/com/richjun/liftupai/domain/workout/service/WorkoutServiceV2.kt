@@ -690,6 +690,63 @@ class WorkoutServiceV2(
     }
 
     @Transactional(readOnly = true)
+    fun getExercisesV2Paged(
+        category: String?,
+        equipment: String?,
+        hasGif: Boolean,
+        localeOverride: String?,
+        search: String?,
+        pageable: org.springframework.data.domain.Pageable
+    ): Map<String, Any> {
+        val locale = resolveLocale(null, localeOverride)
+
+        val page = when {
+            search != null && search.isNotBlank() && category != null -> {
+                val cat = ExerciseCategory.valueOf(category.uppercase())
+                exerciseRepository.searchByCategory(cat, search, pageable)
+            }
+            search != null && search.isNotBlank() -> {
+                exerciseRepository.searchPaged(search, pageable)
+            }
+            category != null && equipment != null -> {
+                val cat = ExerciseCategory.valueOf(category.uppercase())
+                val eq = Equipment.valueOf(equipment.uppercase())
+                exerciseRepository.findByCategoryAndEquipment(cat, eq, pageable)
+            }
+            category != null -> {
+                val cat = ExerciseCategory.valueOf(category.uppercase())
+                exerciseRepository.findByCategory(cat, pageable)
+            }
+            else -> exerciseRepository.findAll(pageable)
+        }
+
+        val translations = translationMap(page.content, locale)
+
+        val content = page.content.map { exercise ->
+            ExerciseDetailV2(
+                id = exercise.id,
+                name = localizedName(exercise, locale, translations),
+                category = exercise.category.name,
+                muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
+                equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
+                imageUrl = if (hasGif) generateGifUrl(exercise) else exercise.imageUrl,
+                thumbnailUrl = generateThumbnailUrl(exercise),
+                difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale),
+                description = localizedInstructions(exercise, locale, translations)
+            )
+        }
+
+        return mapOf(
+            "content" to content,
+            "totalElements" to page.totalElements,
+            "totalPages" to page.totalPages,
+            "number" to page.number,
+            "last" to page.isLast,
+            "size" to page.size
+        )
+    }
+
+    @Transactional(readOnly = true)
     fun getExercisesV2(category: String?, equipment: String?, hasGif: Boolean, localeOverride: String?): List<ExerciseDetailV2> {
         val locale = resolveLocale(null, localeOverride)
         val exercises = when {

@@ -5,6 +5,8 @@ import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.MuscleGroup
 import com.richjun.liftupai.domain.workout.entity.RecommendationTier
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -23,6 +25,45 @@ interface ExerciseRepository : JpaRepository<Exercise, Long> {
     fun findByEquipment(equipment: Equipment): List<Exercise>
 
     fun findByCategoryAndEquipment(category: ExerciseCategory, equipment: Equipment): List<Exercise>
+
+    // 페이징 쿼리
+    fun findByCategory(category: ExerciseCategory, pageable: Pageable): Page<Exercise>
+
+    fun findByCategoryAndEquipment(category: ExerciseCategory, equipment: Equipment, pageable: Pageable): Page<Exercise>
+
+    @Query("""
+        SELECT DISTINCT e
+        FROM Exercise e
+        LEFT JOIN ExerciseTranslation t ON t.exercise = e
+        WHERE (LOWER(e.name) LIKE LOWER(CONCAT('%', :search, '%'))
+           OR LOWER(t.displayName) LIKE LOWER(CONCAT('%', :search, '%')))
+    """,
+    countQuery = """
+        SELECT COUNT(DISTINCT e)
+        FROM Exercise e
+        LEFT JOIN ExerciseTranslation t ON t.exercise = e
+        WHERE (LOWER(e.name) LIKE LOWER(CONCAT('%', :search, '%'))
+           OR LOWER(t.displayName) LIKE LOWER(CONCAT('%', :search, '%')))
+    """)
+    fun searchPaged(@Param("search") search: String, pageable: Pageable): Page<Exercise>
+
+    @Query("""
+        SELECT DISTINCT e
+        FROM Exercise e
+        LEFT JOIN ExerciseTranslation t ON t.exercise = e
+        WHERE e.category = :category
+        AND (LOWER(e.name) LIKE LOWER(CONCAT('%', :search, '%'))
+           OR LOWER(t.displayName) LIKE LOWER(CONCAT('%', :search, '%')))
+    """,
+    countQuery = """
+        SELECT COUNT(DISTINCT e)
+        FROM Exercise e
+        LEFT JOIN ExerciseTranslation t ON t.exercise = e
+        WHERE e.category = :category
+        AND (LOWER(e.name) LIKE LOWER(CONCAT('%', :search, '%'))
+           OR LOWER(t.displayName) LIKE LOWER(CONCAT('%', :search, '%')))
+    """)
+    fun searchByCategory(@Param("category") category: ExerciseCategory, @Param("search") search: String, pageable: Pageable): Page<Exercise>
 
     @Query(
         """
