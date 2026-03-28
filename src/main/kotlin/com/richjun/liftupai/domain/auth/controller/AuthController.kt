@@ -4,7 +4,9 @@ import com.richjun.liftupai.domain.auth.dto.*
 import com.richjun.liftupai.domain.auth.service.AuthService
 import com.richjun.liftupai.domain.auth.service.OAuthService
 import com.richjun.liftupai.global.common.ApiResponse
+import com.richjun.liftupai.global.i18n.ErrorLocalization
 import com.richjun.liftupai.global.security.CustomUserDetails
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -17,6 +19,16 @@ class AuthController(
     private val authService: AuthService,
     private val oAuthService: OAuthService
 ) {
+
+    private fun resolveLocale(request: HttpServletRequest): String {
+        val acceptLanguage = request.getHeader("Accept-Language") ?: return "en"
+        val primary = acceptLanguage.split(",").firstOrNull()?.trim()?.split(";")?.firstOrNull()?.trim() ?: return "en"
+        return when {
+            primary.startsWith("ko") -> "ko"
+            primary.startsWith("ja") -> "ja"
+            else -> "en"
+        }
+    }
 
     @PostMapping("/register")
     fun register(@Valid @RequestBody request: RegisterRequest): ResponseEntity<ApiResponse<AuthResponse>> {
@@ -44,9 +56,14 @@ class AuthController(
     }
 
     @GetMapping("/check-nickname")
-    fun checkNickname(@RequestParam nickname: String): ResponseEntity<ApiResponse<Map<String, Any>>> {
+    fun checkNickname(@RequestParam nickname: String, httpRequest: HttpServletRequest): ResponseEntity<ApiResponse<Map<String, Any>>> {
+        val locale = resolveLocale(httpRequest)
         val available = authService.checkNickname(nickname)
-        val message = if (available) "사용 가능한 닉네임입니다" else "이미 사용 중인 닉네임입니다"
+        val message = if (available) {
+            ErrorLocalization.message("error.nickname_available", locale)
+        } else {
+            ErrorLocalization.message("error.nickname_already_in_use", locale)
+        }
 
         return ResponseEntity.ok(
             ApiResponse.success(
@@ -59,9 +76,14 @@ class AuthController(
     }
 
     @GetMapping("/check-device")
-    fun checkDevice(@RequestParam deviceId: String): ResponseEntity<ApiResponse<Map<String, Any>>> {
+    fun checkDevice(@RequestParam deviceId: String, httpRequest: HttpServletRequest): ResponseEntity<ApiResponse<Map<String, Any>>> {
+        val locale = resolveLocale(httpRequest)
         val exists = authService.checkExistingDevice(deviceId)
-        val message = if (exists) "기존 계정이 있습니다" else "새로운 디바이스입니다"
+        val message = if (exists) {
+            ErrorLocalization.message("error.existing_account_found", locale)
+        } else {
+            ErrorLocalization.message("error.new_device", locale)
+        }
 
         return ResponseEntity.ok(
             ApiResponse.success(
@@ -88,9 +110,14 @@ class AuthController(
     }
 
     @GetMapping("/device/check")
-    fun checkDeviceStatus(@RequestParam deviceId: String): ResponseEntity<ApiResponse<Map<String, Any>>> {
+    fun checkDeviceStatus(@RequestParam deviceId: String, httpRequest: HttpServletRequest): ResponseEntity<ApiResponse<Map<String, Any>>> {
+        val locale = resolveLocale(httpRequest)
         val exists = authService.checkExistingDevice(deviceId)
-        val message = if (exists) "이미 등록된 디바이스입니다" else "새로운 디바이스입니다"
+        val message = if (exists) {
+            ErrorLocalization.message("error.device_already_registered", locale)
+        } else {
+            ErrorLocalization.message("error.new_device", locale)
+        }
 
         return ResponseEntity.ok(
             ApiResponse.success(

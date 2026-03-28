@@ -12,12 +12,16 @@ import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.auth.repository.DeviceSessionRepository
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
+import com.richjun.liftupai.global.i18n.ErrorLocalization
 import com.richjun.liftupai.global.security.JwtTokenProvider
 import com.richjun.liftupai.global.util.ValidationUtil
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import com.richjun.liftupai.global.time.AppTime
+import org.springframework.web.context.request.RequestContextHolder
+import org.springframework.web.context.request.ServletRequestAttributes
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -35,10 +39,23 @@ class AuthService(
     private val objectMapper: ObjectMapper
 ) {
 
+    private fun resolveLocale(): String {
+        val attributes = RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes
+        val acceptLanguage = attributes?.request?.getHeader("Accept-Language") ?: return "en"
+        val primary = acceptLanguage.split(",").firstOrNull()?.trim()?.split(";")?.firstOrNull()?.trim() ?: return "en"
+        return when {
+            primary.startsWith("ko") -> "ko"
+            primary.startsWith("ja") -> "ja"
+            else -> "en"
+        }
+    }
+
     fun register(request: RegisterRequest): AuthResponse {
+        val locale = resolveLocale()
+
         // 이메일 유효성 검증
         if (!validationUtil.isValidEmail(request.email)) {
-            throw InvalidCredentialsException("유효하지 않은 이메일 형식입니다")
+            throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_email_format", locale))
         }
 
         // 디바이스 계정 여부 확인
@@ -48,13 +65,13 @@ class AuthService(
         if (isDeviceAccount) {
             val deviceId = validationUtil.extractDeviceIdFromEmail(request.email)
             if (!validationUtil.isValidDeviceId(deviceId)) {
-                throw InvalidCredentialsException("유효하지 않은 디바이스 ID입니다")
+                throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_device_id", locale))
             }
         }
 
         // 이메일 중복 확인
         if (userRepository.existsByEmail(request.email)) {
-            throw DuplicateResourceException("이미 사용 중인 이메일입니다")
+            throw DuplicateResourceException(ErrorLocalization.message("error.email_already_in_use", locale))
         }
 
         // 새 사용자 생성
@@ -103,8 +120,10 @@ class AuthService(
     }
 
     fun login(request: LoginRequest): AuthResponse {
+        val locale = resolveLocale()
+
         val user = userRepository.findByEmailWithProfile(request.email)
-            .orElseThrow { InvalidCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다") }
+            .orElseThrow { InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale)) }
 
         // 디바이스 계정인 경우 디바이스 세션 업데이트
         if (user.isDeviceAccount && user.deviceId != null) {
@@ -112,11 +131,11 @@ class AuthService(
         }
 
         if (!passwordEncoder.matches(request.password, user.password)) {
-            throw InvalidCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다")
+            throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale))
         }
 
         if (!user.isActive) {
-            throw InvalidCredentialsException("비활성화된 계정입니다")
+            throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale))
         }
 
         // 마지막 로그인 시간 업데이트
@@ -154,12 +173,14 @@ class AuthService(
     }
 
     fun refreshToken(request: RefreshTokenRequest): AuthResponse {
+        val locale = resolveLocale()
+
         if (!jwtTokenProvider.validateToken(request.refreshToken)) {
-            throw InvalidCredentialsException("유효하지 않은 refresh token입니다")
+            throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale))
         }
 
         val user = userRepository.findByRefreshToken(request.refreshToken)
-            .orElseThrow { InvalidCredentialsException("유효하지 않은 refresh token입니다") }
+            .orElseThrow { InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale)) }
 
         val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.email ?: user.deviceId ?: "")
         val newRefreshToken = jwtTokenProvider.generateRefreshToken(user.id, user.email ?: user.deviceId ?: "")
@@ -175,8 +196,10 @@ class AuthService(
     }
 
     fun logout(userId: Long) {
+        val locale = resolveLocale()
+
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(ErrorLocalization.message("error.user_not_found", locale)) }
 
         user.refreshToken = null
         userRepository.save(user)
@@ -191,14 +214,16 @@ class AuthService(
     }
 
     fun registerDevice(request: DeviceRegisterRequest): DeviceAuthResponse {
+        val locale = resolveLocale()
+
         // 디바이스 ID 유효성 검증
         if (!validationUtil.isValidDeviceId(request.deviceId)) {
-            throw IllegalArgumentException("유효하지 않은 디바이스 ID입니다")
+            throw IllegalArgumentException(ErrorLocalization.message("error.invalid_device_id", locale))
         }
 
         // 디바이스 ID로 기존 사용자 확인
         if (userRepository.existsByDeviceId(request.deviceId)) {
-            throw DuplicateResourceException("이미 등록된 디바이스입니다")
+            throw DuplicateResourceException(ErrorLocalization.message("error.device_already_registered", locale))
         }
 
         // 새 사용자 생성 (이메일/비밀번호 없음)
@@ -366,12 +391,14 @@ class AuthService(
     }
 
     fun loginDevice(request: DeviceLoginRequest): DeviceAuthResponse {
+        val locale = resolveLocale()
+
         // 디바이스 ID로 사용자 조회
         val user = userRepository.findByDeviceIdWithProfile(request.deviceId)
-            .orElseThrow { ResourceNotFoundException("등록되지 않은 디바이스입니다. 회원가입이 필요합니다.") }
+            .orElseThrow { ResourceNotFoundException(ErrorLocalization.message("error.device_not_registered", locale)) }
 
         if (!user.isActive) {
-            throw InvalidCredentialsException("비활성화된 계정입니다")
+            throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale))
         }
 
         // 마지막 로그인 시간 업데이트
@@ -423,24 +450,26 @@ class AuthService(
     }
 
     fun reactivateAccount(email: String, password: String): Map<String, Any> {
+        val locale = resolveLocale()
+
         val user = userRepository.findByEmail(email)
-            .orElseThrow { InvalidCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다") }
+            .orElseThrow { InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale)) }
 
         // 비밀번호 확인
         if (!passwordEncoder.matches(password, user.password)) {
-            throw InvalidCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다")
+            throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale))
         }
 
         // 활성 계정인지 확인
         if (user.isActive) {
-            throw IllegalStateException("이미 활성화된 계정입니다")
+            throw IllegalStateException(ErrorLocalization.message("error.account_already_active", locale))
         }
 
         // 탈퇴 후 30일 경과 확인
         user.deletedAt?.let { deletedAt ->
             val daysSinceDeleted = java.time.Duration.between(deletedAt, AppTime.utcNow()).toDays()
             if (daysSinceDeleted > 30) {
-                throw IllegalStateException("탈퇴 후 30일이 경과하여 복구할 수 없습니다")
+                throw IllegalStateException(ErrorLocalization.message("error.account_recovery_expired", locale))
             }
         }
 
@@ -452,7 +481,7 @@ class AuthService(
 
         return mapOf(
             "success" to true,
-            "message" to "계정이 재활성화되었습니다"
+            "message" to ErrorLocalization.message("error.account_reactivated", locale)
         )
     }
 

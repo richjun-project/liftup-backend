@@ -67,40 +67,40 @@ data class UpdateProfileRequest(
 )
 
 data class BodyInfoUpdateDto(
-    @field:Min(50, message = "키는 50cm 이상이어야 합니다")
-    @field:Max(300, message = "키는 300cm 이하여야 합니다")
+    @field:Min(50, message = "{validation.height_min}")
+    @field:Max(300, message = "{validation.height_max}")
     val height: Double?,
 
-    @field:Min(20, message = "몸무게는 20kg 이상이어야 합니다")
-    @field:Max(500, message = "몸무게는 500kg 이하여야 합니다")
+    @field:Min(20, message = "{validation.weight_min}")
+    @field:Max(500, message = "{validation.weight_max}")
     val weight: Double?,
 
-    @field:Min(3, message = "체지방률은 3% 이상이어야 합니다")
-    @field:Max(60, message = "체지방률은 60% 이하여야 합니다")
+    @field:Min(3, message = "{validation.body_fat_min}")
+    @field:Max(60, message = "{validation.body_fat_max}")
     @JsonProperty("body_fat")
     val bodyFat: Double?,
 
-    @field:Min(10, message = "근육량은 10kg 이상이어야 합니다")
-    @field:Max(200, message = "근육량은 200kg 이하여야 합니다")
+    @field:Min(10, message = "Muscle mass must be at least 10kg")
+    @field:Max(200, message = "Muscle mass must be 200kg or less")
     @JsonProperty("muscle_mass")
     val muscleMass: Double?,
 
-    @field:Min(13, message = "나이는 13세 이상이어야 합니다")
-    @field:Max(100, message = "나이는 100세 이하여야 합니다")
+    @field:Min(13, message = "Age must be at least 13")
+    @field:Max(100, message = "Age must be 100 or less")
     val age: Int?,
 
     val gender: String?
 )
 
 data class OnboardingRequest(
-    @field:NotBlank(message = "닉네임은 필수입니다")
+    @field:NotBlank(message = "{validation.nickname_required}")
     val nickname: String,
 
-    @field:NotBlank(message = "경험 수준은 필수입니다")
+    @field:NotBlank(message = "Experience level is required")
     @JsonProperty("experience_level")
     val experienceLevel: String,
 
-    @field:NotNull(message = "목표는 필수입니다")
+    @field:NotNull(message = "Goals are required")
     val goals: List<String>,
 
     @JsonProperty("body_info")
