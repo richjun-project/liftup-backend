@@ -231,7 +231,8 @@ class ProgramWorkoutGeneratorService(
         }
 
         // 9. Check graduation status
-        val graduationStatus = graduationService.checkGraduation(enrollment).let { gs ->
+        val locale = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.language ?: "en"
+        val graduationStatus = graduationService.checkGraduation(enrollment, locale).let { gs ->
             GraduationStatusDto(
                 shouldGraduate = gs.shouldGraduate,
                 completionRate = gs.completionRate,

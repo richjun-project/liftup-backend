@@ -5,6 +5,7 @@ import com.richjun.liftupai.domain.workout.entity.EnrollmentStatus
 import com.richjun.liftupai.domain.workout.entity.UserProgramEnrollment
 import com.richjun.liftupai.domain.workout.repository.CanonicalProgramRepository
 import com.richjun.liftupai.domain.workout.repository.UserProgramEnrollmentRepository
+import com.richjun.liftupai.global.i18n.ErrorLocalization
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import com.richjun.liftupai.global.time.AppTime
@@ -26,7 +27,7 @@ class ProgramGraduationService(
         val reason: String
     )
 
-    fun checkGraduation(enrollment: UserProgramEnrollment): GraduationStatus {
+    fun checkGraduation(enrollment: UserProgramEnrollment, locale: String = "en"): GraduationStatus {
         val program = enrollment.program
         val position = enrollmentService.getCurrentPosition(enrollment)
         val totalExpectedWorkouts = (program.daysPerWeek * program.programDurationWeeks).coerceAtLeast(1)
@@ -40,11 +41,11 @@ class ProgramGraduationService(
 
         val reason = when {
             shouldGraduate ->
-                "프로그램을 성공적으로 완료했습니다! 다음 단계로 넘어갈 준비가 되었습니다."
+                ErrorLocalization.message("graduation.complete", locale)
             position.week > program.programDurationWeeks && completionRate < 0.8 ->
-                "프로그램 기간이 완료되었지만 출석률이 ${(completionRate * 100).roundToInt()}%입니다. 마지막 4주를 반복하시겠습니까?"
+                ErrorLocalization.message("graduation.low_attendance", locale, (completionRate * 100).roundToInt())
             else ->
-                "프로그램 진행 중 (${position.week}/${program.programDurationWeeks}주)"
+                ErrorLocalization.message("graduation.in_progress", locale, position.week, program.programDurationWeeks)
         }
 
         return GraduationStatus(

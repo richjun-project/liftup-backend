@@ -44,7 +44,7 @@ class WorkoutService(
 
         val session = WorkoutSession(
             user = user,
-            startTime = LocalDateTime.now(),
+            startTime = AppTime.utcNow(),
             status = SessionStatus.IN_PROGRESS
         )
 
@@ -86,7 +86,7 @@ class WorkoutService(
     fun endWorkout(userId: Long, sessionId: Long, request: EndWorkoutRequest): WorkoutSummaryResponse {
         val session = findUserSession(userId, sessionId)
 
-        session.endTime = LocalDateTime.now()
+        session.endTime = AppTime.utcNow()
         session.duration = request.duration
         session.notes = request.notes
         session.status = SessionStatus.COMPLETED
@@ -137,7 +137,7 @@ class WorkoutService(
                         exercise = exercise,
                         weight = setDto.weight,
                         reps = setDto.reps,
-                        date = LocalDateTime.now()
+                        date = AppTime.utcNow()
                     )
                     personalRecordRepository.save(newRecord)
                     personalRecords.add("${exercise.name}: ${setDto.weight}kg x ${setDto.reps} reps")
@@ -157,7 +157,7 @@ class WorkoutService(
         val profile = userProfileRepository.findByUser_Id(userId)
         if (profile.isPresent) {
             val userProfile = profile.get()
-            userProfile.lastWorkoutDate = LocalDateTime.now()
+            userProfile.lastWorkoutDate = AppTime.utcNow()
             userProfileRepository.save(userProfile)
         }
 
@@ -487,7 +487,7 @@ class WorkoutService(
                     exercise = exercise,
                     weight = setDto.weight,
                     reps = setDto.reps,
-                    date = LocalDateTime.now()
+                    date = AppTime.utcNow()
                 )
                 personalRecordRepository.save(newRecord)
             }
@@ -630,7 +630,7 @@ class WorkoutService(
                     recoveryPercentage = recovery.recoveryPercentage,
                     readyForWork = recovery.recoveryPercentage >= 80,
                     estimatedFullRecovery = if (recovery.recoveryPercentage < 100) {
-                        AppTime.formatUtcRequired(LocalDateTime.now().plusHours((100 - recovery.recoveryPercentage) / 5L))
+                        AppTime.formatUtcRequired(AppTime.utcNow().plusHours((100 - recovery.recoveryPercentage) / 5L))
                     } else null
                 )
             },
@@ -853,7 +853,7 @@ class WorkoutService(
                 .maxOrNull()
 
             val hoursSinceWork = lastWorked?.let {
-                ChronoUnit.HOURS.between(it, LocalDateTime.now())
+                ChronoUnit.HOURS.between(it, AppTime.utcNow())
             } ?: 168L // 1주일 이상
 
             val recoveryPercentage = minOf(100, (hoursSinceWork * 100 / 48).toInt()) // 48시간 = 100% 회복
@@ -1201,7 +1201,7 @@ class WorkoutService(
 
         return if (sessions.hasContent()) {
             val firstSession = sessions.content.first()
-            ChronoUnit.DAYS.between(firstSession.startTime.toLocalDate(), LocalDateTime.now().toLocalDate()).toInt() % 30 + 1
+            ChronoUnit.DAYS.between(firstSession.startTime.toLocalDate(), AppTime.utcNow().toLocalDate()).toInt() % 30 + 1
         } else {
             1
         }

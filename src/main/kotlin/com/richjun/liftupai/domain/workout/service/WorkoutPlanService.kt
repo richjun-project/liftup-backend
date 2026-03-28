@@ -27,6 +27,7 @@ import com.richjun.liftupai.domain.workout.util.WorkoutAliasCatalog
 import com.richjun.liftupai.domain.workout.util.WorkoutFocus
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.DayOfWeek
@@ -63,7 +64,7 @@ class WorkoutPlanService(
         profile.workoutDuration = request.workoutDuration
         profile.availableEquipment.clear()
         profile.availableEquipment.addAll(request.availableEquipment)
-        profile.updatedAt = LocalDateTime.now()
+        profile.updatedAt = AppTime.utcNow()
 
         userProfileRepository.save(profile)
 
@@ -254,7 +255,7 @@ class WorkoutPlanService(
             return listOf("chest", "back", "legs", "shoulders", "arms", "core")
         }
 
-        val now = LocalDateTime.now()
+        val now = AppTime.utcNow()
         val readyMuscles = mutableListOf<String>()
 
         val allMuscles = listOf("chest", "back", "legs", "shoulders", "arms", "core")
@@ -641,7 +642,7 @@ class WorkoutPlanService(
         split: String
     ): String {
         val daysSinceLastWorkout = lastWorkoutDate?.let {
-            java.time.Duration.between(it, LocalDateTime.now()).toDays()
+            java.time.Duration.between(it, AppTime.utcNow()).toDays()
         } ?: 0
 
         return when {

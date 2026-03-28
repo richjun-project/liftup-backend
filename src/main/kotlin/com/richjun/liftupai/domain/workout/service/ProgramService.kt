@@ -9,6 +9,7 @@ import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.domain.workout.util.WorkoutTranslations
 import com.richjun.liftupai.global.exception.BadRequestException
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.i18n.ErrorLocalization
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import com.richjun.liftupai.global.time.AppTime
@@ -133,10 +134,10 @@ class ProgramService(
         val enrollment = enrollmentService.getCurrentEnrollment(user)
             ?: throw ResourceNotFoundException("No active program enrollment")
 
-        val absenceStatus = absenceDetectionService.checkAbsence(enrollment)
+        val absenceStatus = absenceDetectionService.checkAbsence(enrollment, locale)
         if (absenceStatus.shouldPause) {
             enrollmentService.pauseEnrollment(user)
-            throw ResourceNotFoundException("프로그램이 장기 미활동으로 일시정지되었습니다. 재개해주세요.")
+            throw ResourceNotFoundException(ErrorLocalization.message("absence.paused", locale))
         }
 
         var workout = workoutGeneratorService.generateTodayWorkout(user, subjectiveReadiness)

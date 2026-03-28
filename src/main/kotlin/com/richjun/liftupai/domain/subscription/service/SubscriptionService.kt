@@ -5,7 +5,9 @@ import com.richjun.liftupai.domain.subscription.dto.*
 import com.richjun.liftupai.domain.subscription.entity.*
 import com.richjun.liftupai.domain.subscription.repository.PaymentHistoryRepository
 import com.richjun.liftupai.domain.subscription.repository.SubscriptionRepository
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.i18n.ErrorLocalization
 import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -16,7 +18,8 @@ import java.time.LocalDateTime
 class SubscriptionService(
     private val userRepository: UserRepository,
     private val subscriptionRepository: SubscriptionRepository,
-    private val paymentHistoryRepository: PaymentHistoryRepository
+    private val paymentHistoryRepository: PaymentHistoryRepository,
+    private val userSettingsRepository: UserSettingsRepository
 ) {
 
     @Transactional
@@ -36,8 +39,9 @@ class SubscriptionService(
     }
 
     fun subscribe(userId: Long, request: SubscribeRequest): SubscribeResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(ErrorLocalization.message("error.user_not_found", locale)) }
 
         val existingSubscription = subscriptionRepository.findByUser(user)
 
@@ -64,16 +68,17 @@ class SubscriptionService(
         return SubscribeResponse(
             success = true,
             subscription = toSubscriptionInfo(savedSubscription),
-            message = "구독이 성공적으로 완료되었습니다"
+            message = ErrorLocalization.message("subscription.success", locale)
         )
     }
 
     fun cancelSubscription(userId: Long): CancelSubscriptionResponse {
+        val locale = resolveLocale(userId)
         val subscription = subscriptionRepository.findByUser_Id(userId)
-            .orElseThrow { ResourceNotFoundException("구독 정보를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(ErrorLocalization.message("subscription.not_found", locale)) }
 
         if (subscription.status != SubscriptionStatus.ACTIVE) {
-            throw IllegalStateException("활성 구독만 취소할 수 있습니다")
+            throw IllegalStateException(ErrorLocalization.message("subscription.only_active_cancel", locale))
         }
 
         subscription.status = SubscriptionStatus.CANCELLED
@@ -85,7 +90,7 @@ class SubscriptionService(
         return CancelSubscriptionResponse(
             success = true,
             cancelDate = AppTime.formatUtcRequired(subscription.cancelledAt!!),
-            message = "구독이 취소되었습니다. 만료일까지 서비스를 이용하실 수 있습니다."
+            message = ErrorLocalization.message("subscription.cancelled", locale)
         )
     }
 
@@ -98,14 +103,15 @@ class SubscriptionService(
                 productId = null,
                 transactionId = null,
                 expiryDate = null,
-                message = "지원하지 않는 플랫폼입니다"
+                message = ErrorLocalization.message("subscription.unsupported_platform")
             )
         }
     }
 
     private fun createDefaultSubscription(userId: Long): Subscription {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(ErrorLocalization.message("error.user_not_found", locale)) }
 
         return Subscription(
             user = user,
@@ -211,5 +217,9 @@ class SubscriptionService(
         }
 
         return subscription.plan
+    }
+
+    private fun resolveLocale(userId: Long): String {
+        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.language ?: "en"
     }
 }

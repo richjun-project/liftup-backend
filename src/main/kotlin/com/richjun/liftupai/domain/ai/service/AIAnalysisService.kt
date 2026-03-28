@@ -485,7 +485,7 @@ class AIAnalysisService(
         val workoutHistoryInfo = if (recentWorkouts.isNotEmpty()) {
             val muscleFrequency = analyzeMuscleFrequency(recentWorkouts)
             val daysSinceLastWorkout = if (recentWorkouts.isNotEmpty()) {
-                java.time.Duration.between(recentWorkouts.first().startTime, LocalDateTime.now()).toDays()
+                java.time.Duration.between(recentWorkouts.first().startTime, AppTime.utcNow()).toDays()
             } else 7
 
             """
@@ -597,7 +597,7 @@ class AIAnalysisService(
 
         // 주기화 단계 계산 (recentWorkouts 기반 간소화 버전)
         val periodizationPhase = run {
-            val now = java.time.LocalDateTime.now()
+            val now = AppTime.utcNow()
             val lastWorkout = recentWorkouts.firstOrNull()
             val daysSinceLast = if (lastWorkout != null)
                 java.time.temporal.ChronoUnit.DAYS.between(lastWorkout.startTime, now)
@@ -1669,7 +1669,7 @@ class AIAnalysisService(
      * 최근 N시간 이내에 운동한 근육군 조회
      */
     private fun getRecentlyWorkedMuscles(user: com.richjun.liftupai.domain.auth.entity.User, hours: Int): Set<MuscleGroup> {
-        val cutoffTime = LocalDateTime.now().minusHours(hours.toLong())
+        val cutoffTime = AppTime.utcNow().minusHours(hours.toLong())
 
         return workoutSessionRepository
             .findByUserAndStartTimeAfter(user, cutoffTime)
@@ -1700,7 +1700,7 @@ class AIAnalysisService(
      * 특정 근육군의 주간 볼륨 계산 (주간 총 세트 수)
      */
     private fun calculateWeeklyVolume(user: com.richjun.liftupai.domain.auth.entity.User, muscleGroup: MuscleGroup): Int {
-        val oneWeekAgo = LocalDateTime.now().minusDays(7)
+        val oneWeekAgo = AppTime.utcNow().minusDays(7)
 
         return workoutSessionRepository
             .findByUserAndStartTimeAfter(user, oneWeekAgo)
@@ -1771,7 +1771,7 @@ class AIAnalysisService(
      * 특정 운동의 정체기 탐지 (3주 이상 무게 변화 < 2.5kg)
      */
     private fun detectPlateau(user: com.richjun.liftupai.domain.auth.entity.User, exercise: Exercise): PlateauInfo? {
-        val threeWeeksAgo = LocalDateTime.now().minusDays(21)
+        val threeWeeksAgo = AppTime.utcNow().minusDays(21)
 
         val recentSets = workoutSessionRepository
             .findByUserAndStartTimeAfter(user, threeWeeksAgo)
@@ -1787,7 +1787,7 @@ class AIAnalysisService(
         // 주차별 최대 무게 계산
         val weeklyMaxWeights = recentSets
             .groupBy {
-                java.time.Duration.between(threeWeeksAgo, it.completedAt ?: LocalDateTime.now()).toDays() / 7
+                java.time.Duration.between(threeWeeksAgo, it.completedAt ?: AppTime.utcNow()).toDays() / 7
             }
             .mapValues { (_, sets) -> sets.maxOfOrNull { it.weight } ?: 0.0 }
             .values
@@ -1817,7 +1817,7 @@ class AIAnalysisService(
      * 모든 정체기 운동 조회
      */
     private fun getAllPlateaus(user: com.richjun.liftupai.domain.auth.entity.User): List<PlateauInfo> {
-        val oneMonthAgo = LocalDateTime.now().minusDays(30)
+        val oneMonthAgo = AppTime.utcNow().minusDays(30)
 
         // 최근 한 달간 한 운동들
         val recentExercises = workoutSessionRepository
@@ -1841,7 +1841,7 @@ class AIAnalysisService(
         candidates: List<Exercise>,
         weeks: Int = 4
     ): List<Exercise> {
-        val cutoffDate = LocalDateTime.now().minusDays((weeks * 7).toLong())
+        val cutoffDate = AppTime.utcNow().minusDays((weeks * 7).toLong())
 
         // 최근 N주간 한 운동 ID 목록
         val recentExerciseIds = workoutSessionRepository

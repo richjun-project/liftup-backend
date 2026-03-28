@@ -5,8 +5,10 @@ import com.richjun.liftupai.domain.social.dto.*
 import com.richjun.liftupai.domain.social.entity.SharedWorkout
 import com.richjun.liftupai.domain.social.repository.SharedWorkoutRepository
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.i18n.ErrorLocalization
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -18,18 +20,20 @@ class SocialService(
     private val userProfileRepository: UserProfileRepository,
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val sharedWorkoutRepository: SharedWorkoutRepository,
-    private val workoutLogRepository: com.richjun.liftupai.domain.workout.repository.WorkoutLogRepository
+    private val workoutLogRepository: com.richjun.liftupai.domain.workout.repository.WorkoutLogRepository,
+    private val userSettingsRepository: UserSettingsRepository
 ) {
 
     fun shareWorkout(userId: Long, request: ShareWorkoutRequest): ShareWorkoutResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(ErrorLocalization.message("error.user_not_found", locale)) }
 
         val session = workoutSessionRepository.findById(request.sessionId)
-            .orElseThrow { ResourceNotFoundException("운동 세션을 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(ErrorLocalization.message("social.session_not_found", locale)) }
 
         if (session.user.id != userId) {
-            throw IllegalArgumentException("본인의 운동 세션만 공유할 수 있습니다")
+            throw IllegalArgumentException(ErrorLocalization.message("social.own_session_only", locale))
         }
 
         val shareId = UUID.randomUUID().toString()
@@ -45,8 +49,8 @@ class SocialService(
         }
         val totalSets = logs.size
 
-        val title = "${session.name ?: "운동"} 완료! 💪"
-        val stats = "${duration}분 • ${totalVolume/1000.0}톤 • ${totalSets}세트"
+        val title = ErrorLocalization.message("social.workout_complete_title", locale, session.name ?: "Workout")
+        val stats = ErrorLocalization.message("social.workout_stats", locale, duration, totalVolume / 1000.0, totalSets)
 
         val sharedWorkout = SharedWorkout(
             shareId = shareId,
@@ -75,8 +79,9 @@ class SocialService(
 
     @Transactional(readOnly = true)
     fun findPartners(userId: Long, gymLocation: String?, workoutTime: String?, level: String?): FindPartnersResponse {
+        val locale = resolveLocale(userId)
         val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
+            .orElseThrow { ResourceNotFoundException(ErrorLocalization.message("error.user_not_found", locale)) }
 
         val userProfile = userProfileRepository.findByUser_Id(userId).orElse(null)
 
@@ -113,5 +118,9 @@ class SocialService(
             .take(10)
 
         return FindPartnersResponse(partners = partners)
+    }
+
+    private fun resolveLocale(userId: Long): String {
+        return userSettingsRepository.findByUser_Id(userId).orElse(null)?.language ?: "en"
     }
 }

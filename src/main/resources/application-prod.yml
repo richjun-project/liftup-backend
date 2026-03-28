@@ -21,6 +21,10 @@ qdrant:
   host: ${QDRANT_HOST}
   port: ${QDRANT_PORT:6334}
 
+# 파일 업로드 (S3 사용)
+upload:
+  use-s3: true
+
 logging:
   level:
     root: WARN
