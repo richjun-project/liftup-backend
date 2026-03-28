@@ -11,7 +11,7 @@ import com.richjun.liftupai.global.exception.BadRequestException
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.format.DateTimeFormatter
+import com.richjun.liftupai.global.time.AppTime
 
 @Service
 @Transactional(readOnly = true)
@@ -30,8 +30,6 @@ class ProgramService(
     private val absenceDetectionService: AbsenceDetectionService,
     private val userSettingsRepository: UserSettingsRepository
 ) {
-
-    private val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     // ── Catalog ──────────────────────────────────────────────────────────────
 
@@ -360,8 +358,8 @@ class ProgramService(
             totalCompletedWorkouts = totalCompletedWorkouts,
             isDeloadWeek = isDeloadWeek,
             status = status.name,
-            startDate = startDate.format(dateFormatter),
-            lastActiveDate = lastActiveDate?.format(dateFormatter)
+            startDate = AppTime.formatUtcRequired(startDate),
+            lastActiveDate = AppTime.formatUtc(lastActiveDate)
         )
     }
 }

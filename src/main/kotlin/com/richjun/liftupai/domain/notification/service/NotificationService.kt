@@ -273,13 +273,12 @@ class NotificationService(
         imageUrl: String?
     ) {
         if (fcmNotificationService == null) {
-            logger.error("[FCM] FcmNotificationService is NULL — Firebase not configured! Device: ${device.id}")
-            return
+            throw IllegalStateException("[FCM] FcmNotificationService is NULL — Firebase not configured! Device: ${device.id}")
         }
 
         val sent = fcmNotificationService.sendNotification(device, title, body, data, imageUrl)
         if (!sent) {
-            logger.warn("[FCM] sendNotification returned false for device ${device.id} (${device.platform}), token=${device.deviceToken.take(20)}...")
+            throw RuntimeException("[FCM] sendNotification returned false for device ${device.id} (${device.platform}), token=${device.deviceToken.take(20)}...")
         }
     }
 

@@ -667,7 +667,7 @@ class RecoveryService(
             code = canonicalMuscleKey(muscle.muscleGroup),
             name = displayMuscleName(muscle.muscleGroup, locale),
             recoveryPercentage = muscle.recoveryPercentage,
-            lastWorked = muscle.lastWorked.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            lastWorked = AppTime.formatUtcRequired(muscle.lastWorked),
             estimatedRecoveryTime = calculateEstimatedRecoveryTime(muscle),
             status = WorkoutLocalization.message("recovery.status.$statusKey", locale)
         )

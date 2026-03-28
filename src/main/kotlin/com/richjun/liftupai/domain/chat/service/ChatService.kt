@@ -13,12 +13,12 @@ import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.richjun.liftupai.global.time.AppTime
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 @Service
 @Transactional
@@ -64,7 +64,7 @@ class ChatService(
                 messageId = chatMessage.id,
                 userMessage = chatMessage.userMessage,
                 aiResponse = aiResponse,
-                timestamp = chatMessage.timestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                timestamp = AppTime.formatUtcRequired(chatMessage.timestamp)
             )
         } catch (e: Exception) {
             // 에러 발생 시 상태 업데이트
@@ -161,7 +161,7 @@ class ChatService(
                 messageId = chatMessage.id,
                 userMessage = userMessage,
                 workoutRecommendation = workoutRecommendation,
-                timestamp = chatMessage.timestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                timestamp = AppTime.formatUtcRequired(chatMessage.timestamp)
             )
         } catch (e: Exception) {
             // 에러 발생 시 상태 업데이트
@@ -313,7 +313,7 @@ class ChatService(
             aiResponse = message.aiResponse,
             messageType = message.messageType.name,
             attachmentUrl = message.attachmentUrl,
-            timestamp = message.timestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            timestamp = AppTime.formatUtcRequired(message.timestamp),
             status = message.status.name
         )
     }

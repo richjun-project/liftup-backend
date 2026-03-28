@@ -17,7 +17,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -66,7 +65,7 @@ class WorkoutService(
 
         return StartWorkoutResponse(
             sessionId = savedSession.id,
-            startTime = savedSession.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            startTime = AppTime.formatUtcRequired(savedSession.startTime)
         )
     }
 
@@ -202,7 +201,7 @@ class WorkoutService(
         val sessionDtos = paginatedSessions.map { session ->
             WorkoutSessionDto(
                 sessionId = session.id,
-                date = session.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                date = AppTime.formatUtcRequired(session.startTime),
                 duration = session.duration,
                 totalVolume = session.totalVolume,
                 exerciseCount = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).size,
@@ -274,14 +273,13 @@ class WorkoutService(
                     dayNumber = session.programDay ?: 0,
                     workoutType = session.workoutType?.name ?: "UNKNOWN",
                     workoutTypeName = session.workoutType?.let { WorkoutLocalization.workoutTypeName(it, locale) },
-                    date = session.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                    date = AppTime.formatUtcRequired(session.startTime),
                     status = session.status.name,
                     cycleNumber = session.programCycle ?: 1
                 )
             }
 
-        val lastWorkoutDate = recentSessions.firstOrNull()?.startTime
-            ?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        val lastWorkoutDate = AppTime.formatUtc(recentSessions.firstOrNull()?.startTime)
 
         return ProgramStatusResponse(
             currentDay = programPosition.day,
@@ -335,7 +333,7 @@ class WorkoutService(
 
             WorkoutDetailResponse(
                 sessionId = session.id,
-                date = session.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                date = AppTime.formatUtcRequired(session.startTime),
                 duration = session.duration,
                 exercises = exerciseDtos,
                 totalVolume = session.totalVolume,
@@ -372,7 +370,7 @@ class WorkoutService(
 
         return WorkoutDetailResponse(
             sessionId = session.id,
-            date = session.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            date = AppTime.formatUtcRequired(session.startTime),
             duration = session.duration,
             exercises = exerciseDtos,
             totalVolume = session.totalVolume,
@@ -632,8 +630,7 @@ class WorkoutService(
                     recoveryPercentage = recovery.recoveryPercentage,
                     readyForWork = recovery.recoveryPercentage >= 80,
                     estimatedFullRecovery = if (recovery.recoveryPercentage < 100) {
-                        LocalDateTime.now().plusHours((100 - recovery.recoveryPercentage) / 5L)
-                            .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                        AppTime.formatUtcRequired(LocalDateTime.now().plusHours((100 - recovery.recoveryPercentage) / 5L))
                     } else null
                 )
             },
@@ -796,7 +793,7 @@ class WorkoutService(
         val lastPerformed = if (lastSession != null) {
             val exercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(lastSession.id)
             exercises.find { it.exercise.id == exerciseId }?.let {
-                lastSession.startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                AppTime.formatUtcRequired(lastSession.startTime)
             }
         } else null
 
@@ -813,7 +810,7 @@ class WorkoutService(
                 com.richjun.liftupai.domain.workout.dto.PersonalRecord(
                     weight = it.weight,
                     reps = it.reps,
-                    date = it.date.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                    date = AppTime.formatUtcRequired(it.date)
                 )
             },
             lastPerformed = lastPerformed
@@ -864,7 +861,7 @@ class WorkoutService(
             MuscleRecoveryStatus(
                 muscle = getMuscleGroupKoreanName(muscle),
                 recoveryPercentage = recoveryPercentage,
-                lastWorked = lastWorked?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                lastWorked = AppTime.formatUtc(lastWorked)
             )
         }
     }

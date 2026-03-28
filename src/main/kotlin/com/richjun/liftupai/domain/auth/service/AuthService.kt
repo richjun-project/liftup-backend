@@ -23,7 +23,6 @@ import com.richjun.liftupai.global.time.AppTime
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import com.fasterxml.jackson.databind.ObjectMapper
 
 @Service
@@ -155,12 +154,12 @@ class AuthService(
                 email = user.email ?: "",
                 nickname = user.nickname,
                 level = profile.experienceLevel.name,
-                joinDate = user.joinDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                joinDate = AppTime.formatUtcRequired(user.joinDate),
                 goals = profile.goals.map { it.name },
                 ptStyle = profile.ptStyle.name,
                 subscription = SubscriptionDto(),
                 isDeviceAccount = user.isDeviceAccount,
-                deviceRegisteredAt = if (user.isDeviceAccount) user.joinDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) else null
+                deviceRegisteredAt = if (user.isDeviceAccount) AppTime.formatUtcRequired(user.joinDate) else null
             )
         }
 
@@ -383,7 +382,7 @@ class AuthService(
                 deviceId = savedUser.deviceId!!,
                 nickname = savedUser.nickname,
                 isDeviceAccount = true,
-                deviceRegisteredAt = savedUser.joinDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                deviceRegisteredAt = AppTime.formatUtcRequired(savedUser.joinDate)
             ),
             accessToken = accessToken,
             refreshToken = refreshToken
@@ -421,7 +420,7 @@ class AuthService(
                 deviceId = user.deviceId!!,
                 nickname = user.nickname,
                 isDeviceAccount = user.isDeviceAccount,
-                deviceRegisteredAt = user.joinDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                deviceRegisteredAt = AppTime.formatUtcRequired(user.joinDate)
             ),
             accessToken = accessToken,
             refreshToken = refreshToken
@@ -491,7 +490,7 @@ class AuthService(
             email = user.email ?: "",
             nickname = user.nickname,
             level = profile.experienceLevel.name,
-            joinDate = user.joinDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            joinDate = AppTime.formatUtcRequired(user.joinDate),
             bodyInfo = profile.bodyInfo?.let {
                 BodyInfoDto(
                     height = it.height,
@@ -506,7 +505,7 @@ class AuthService(
             ptStyle = profile.ptStyle.name,
             subscription = SubscriptionDto(),  // 프로토타입이므로 기본값 사용
             isDeviceAccount = user.isDeviceAccount,
-            deviceRegisteredAt = if (user.isDeviceAccount) user.joinDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) else null
+            deviceRegisteredAt = if (user.isDeviceAccount) AppTime.formatUtcRequired(user.joinDate) else null
         )
     }
 }

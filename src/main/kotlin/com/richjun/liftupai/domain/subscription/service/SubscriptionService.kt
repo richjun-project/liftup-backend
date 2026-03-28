@@ -10,7 +10,6 @@ import com.richjun.liftupai.global.time.AppTime
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 @Service
 @Transactional
@@ -30,7 +29,7 @@ class SubscriptionService(
         return SubscriptionStatusResponse(
             plan = subscription.plan.displayName,
             status = subscription.status.name,
-            expiryDate = subscription.expiryDate?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            expiryDate = AppTime.formatUtc(subscription.expiryDate),
             features = subscription.plan.features,
             autoRenew = subscription.autoRenew
         )
@@ -85,7 +84,7 @@ class SubscriptionService(
 
         return CancelSubscriptionResponse(
             success = true,
-            cancelDate = subscription.cancelledAt!!.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            cancelDate = AppTime.formatUtcRequired(subscription.cancelledAt!!),
             message = "구독이 취소되었습니다. 만료일까지 서비스를 이용하실 수 있습니다."
         )
     }
@@ -164,8 +163,8 @@ class SubscriptionService(
             id = subscription.id,
             plan = subscription.plan.displayName,
             status = subscription.status.name,
-            startDate = subscription.startDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-            expiryDate = subscription.expiryDate?.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            startDate = AppTime.formatUtcRequired(subscription.startDate),
+            expiryDate = AppTime.formatUtc(subscription.expiryDate),
             features = subscription.plan.features,
             autoRenew = subscription.autoRenew
         )

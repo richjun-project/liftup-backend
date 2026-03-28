@@ -30,8 +30,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import com.richjun.liftupai.global.time.AppTime
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Service
@@ -232,7 +232,7 @@ class AIAnalysisService(
 
         return ChatResponse(
             reply = aiReply,
-            timestamp = savedMessage.timestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            timestamp = AppTime.formatUtcRequired(savedMessage.timestamp),
             messageId = savedMessage.id.toString(),
             suggestions = suggestions
         )

@@ -22,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 @Service
 @Transactional
@@ -67,7 +66,7 @@ class NutritionService(
                     carbs = meal.carbs,
                     fat = meal.fat
                 ),
-                timestamp = meal.timestamp.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                timestamp = AppTime.formatUtcRequired(meal.timestamp)
             )
         }
 
