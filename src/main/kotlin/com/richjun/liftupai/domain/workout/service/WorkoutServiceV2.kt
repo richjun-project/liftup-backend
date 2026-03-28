@@ -731,6 +731,7 @@ class WorkoutServiceV2(
                 equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
                 imageUrl = if (hasGif) generateGifUrl(exercise) else exercise.imageUrl,
                 thumbnailUrl = generateThumbnailUrl(exercise),
+                videoUrl = generateVideoUrl(exercise),
                 difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale),
                 description = localizedInstructions(exercise, locale, translations)
             )
@@ -772,6 +773,7 @@ class WorkoutServiceV2(
                 equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
                 imageUrl = if (hasGif) generateGifUrl(exercise) else exercise.imageUrl,
                 thumbnailUrl = generateThumbnailUrl(exercise),
+                videoUrl = generateVideoUrl(exercise),
                 difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale),
                 description = localizedInstructions(exercise, locale, translations)
             )
