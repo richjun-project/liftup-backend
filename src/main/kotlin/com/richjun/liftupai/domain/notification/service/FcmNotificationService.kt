@@ -28,11 +28,13 @@ class FcmNotificationService(
         imageUrl: String? = null
     ): Boolean {
         if (firebaseMessaging == null) {
-            logger.warn("Firebase Messaging is not configured. Notification not sent.")
+            logger.error("[FCM-SEND] Firebase Messaging is NULL — skipping. title='$title', device=${device.id}")
             return false
         }
 
         return try {
+            logger.info("[FCM-SEND] Building message: title='$title', body='${body.take(50)}', platform=${device.platform}, dataKeys=${data?.keys}, token=${device.deviceToken.take(20)}...")
+
             val messageBuilder = Message.builder()
                 .setToken(device.deviceToken)
                 .setNotification(
@@ -56,17 +58,17 @@ class FcmNotificationService(
             }
 
             val response = firebaseMessaging.send(messageBuilder.build())
-            logger.info("Successfully sent notification to device: ${device.deviceToken}, response: $response")
+            logger.info("[FCM-SEND] ✅ Success: device=${device.id}, response=$response")
 
             device.lastUsedAt = AppTime.utcNow()
             notificationDeviceRepository.save(device)
             true
         } catch (e: FirebaseMessagingException) {
-            logger.error("Failed to send FCM notification: ${e.message}")
+            logger.error("[FCM-SEND] ❌ FirebaseMessagingException: code=${e.messagingErrorCode}, msg=${e.message}, device=${device.id}")
             handleFirebaseError(e, device)
             false
         } catch (e: Exception) {
-            logger.error("Unexpected error sending notification: ${e.message}")
+            logger.error("[FCM-SEND] ❌ Unexpected error: ${e.javaClass.simpleName}: ${e.message}, device=${device.id}", e)
             false
         }
     }

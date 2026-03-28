@@ -136,9 +136,15 @@ class PTScheduledMessageService(
     }
 
     /**
-     * 스케줄된 메시지를 채팅 히스토리에 저장하고 전송
+     * 스케줄 ID로 조회하여 독립 트랜잭션에서 메시지 저장 + FCM 전송
      */
-    fun sendScheduledPTMessage(schedule: NotificationSchedule) {
+    fun sendScheduledPTMessage(scheduleId: Long) {
+        val schedule = notificationScheduleRepository.findById(scheduleId).orElse(null)
+        if (schedule == null) {
+            logger.warn("[PTMessage] Schedule $scheduleId not found, skipping")
+            return
+        }
+
         try {
             // 1. ChatMessage에 저장 (채팅 히스토리에 표시)
             val chatMessage = ChatMessage(
@@ -149,13 +155,14 @@ class PTScheduledMessageService(
                 status = MessageStatus.COMPLETED
             )
             chatMessageRepository.save(chatMessage)
+            logger.info("[PTMessage] ChatMessage saved for user ${schedule.user.id}, schedule $scheduleId")
 
-            // 2. NotificationService를 통해 FCM 전송 및 NotificationHistory 저장
-            notificationService.sendScheduledNotification(schedule)
+            // 2. FCM 전송 및 NotificationHistory 저장 (data를 일반 Map으로 복사)
+            notificationService.sendScheduledNotificationWithFcm(schedule)
 
-            logger.info("PT message sent and saved to chat for user ${schedule.user.id}")
+            logger.info("[PTMessage] PT message sent and saved to chat for user ${schedule.user.id}")
         } catch (e: Exception) {
-            logger.error("Failed to send PT message for schedule ${schedule.id}", e)
+            logger.error("[PTMessage] Failed to send PT message for schedule ${schedule.id}: ${e.message}", e)
         }
     }
 

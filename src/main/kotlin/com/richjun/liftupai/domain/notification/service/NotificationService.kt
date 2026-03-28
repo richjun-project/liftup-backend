@@ -131,6 +131,7 @@ class NotificationService(
         val activeDevices = notificationDeviceRepository.findActiveDevicesByUser(user)
 
         if (activeDevices.isEmpty()) {
+            logger.warn("[FCM] No active devices for user ${request.userId} — notification skipped. title='${request.title}'")
             return PushNotificationResponse(
                 success = false,
                 sentCount = 0,
@@ -138,6 +139,8 @@ class NotificationService(
                 message = NotificationLocalization.message("notification.no_active_devices", locale)
             )
         }
+
+        logger.info("[FCM] Sending to ${activeDevices.size} device(s) for user ${request.userId}: title='${request.title}', data=${request.data}")
 
         var sentCount = 0
         var failedCount = 0
@@ -147,7 +150,7 @@ class NotificationService(
                 sendToDevice(device, request.title, request.body, request.data, request.imageUrl)
                 sentCount++
             } catch (e: Exception) {
-                logger.error("Failed to send notification to device ${device.id}", e)
+                logger.error("[FCM] Failed to send to device ${device.id} (${device.platform}): ${e.message}", e)
                 failedCount++
             }
         }
@@ -270,11 +273,14 @@ class NotificationService(
         imageUrl: String?
     ) {
         if (fcmNotificationService == null) {
-            logger.warn("FcmNotificationService is not available. Notification not sent to device: ${device.deviceToken}")
+            logger.error("[FCM] FcmNotificationService is NULL — Firebase not configured! Device: ${device.id}")
             return
         }
 
-        fcmNotificationService.sendNotification(device, title, body, data, imageUrl)
+        val sent = fcmNotificationService.sendNotification(device, title, body, data, imageUrl)
+        if (!sent) {
+            logger.warn("[FCM] sendNotification returned false for device ${device.id} (${device.platform}), token=${device.deviceToken.take(20)}...")
+        }
     }
 
     // Notification Scheduling Methods
@@ -402,41 +408,55 @@ class NotificationService(
 
     // Enhanced notification sending with history tracking
     fun sendScheduledNotification(schedule: NotificationSchedule) {
+        sendScheduledNotificationWithFcm(schedule)
+    }
+
+    /**
+     * 스케줄 알림 발송 — history 저장 + FCM 전송 + nextTriggerAt 갱신
+     * JPA @ElementCollection 프록시 문제를 피하기 위해 data를 일반 HashMap으로 복사
+     */
+    fun sendScheduledNotificationWithFcm(schedule: NotificationSchedule) {
         val locale = resolveLocale(schedule.user.id)
         val notificationId = UUID.randomUUID().toString()
 
-        // Save to history first
+        // FCM에 보낼 data를 일반 HashMap으로 먼저 구성 (JPA 관리 컬렉션 사용 X)
+        val fcmData = hashMapOf(
+            "scheduleId" to schedule.id.toString(),
+            "scheduleName" to schedule.scheduleName,
+            "type" to schedule.notificationType.name.lowercase()
+        )
+        val fcmTitle = NotificationLocalization.message(NotificationLocalization.titleKey(schedule.notificationType), locale)
+        val fcmBody = schedule.message
+
+        // Save to history
         val history = NotificationHistory(
             user = schedule.user,
             notificationId = notificationId,
             type = schedule.notificationType,
-            title = NotificationLocalization.message(NotificationLocalization.titleKey(schedule.notificationType), locale),
-            body = schedule.message,
-            data = mutableMapOf(
-                "scheduleId" to schedule.id.toString(),
-                "scheduleName" to schedule.scheduleName,
-                "type" to schedule.notificationType.name.lowercase()
-            ),
+            title = fcmTitle,
+            body = fcmBody,
+            data = fcmData.toMutableMap(),
             schedule = schedule
         )
 
         notificationHistoryRepository.save(history)
+        logger.info("[ScheduledNotification] History saved: id=$notificationId, type=${schedule.notificationType}, user=${schedule.user.id}")
 
-        // AI_MESSAGE 채팅 저장은 PTScheduledMessageService에서 처리하므로 여기서는 생략
-
-        // Send the actual notification
+        // Send FCM — 일반 HashMap 사용 (JPA 프록시가 아닌 순수 Map)
         val request = PushNotificationRequest(
             userId = schedule.user.id,
-            title = history.title,
-            body = history.body,
-            data = history.data
+            title = fcmTitle,
+            body = fcmBody,
+            data = fcmData
         )
 
-        sendPushNotification(request)
+        val result = sendPushNotification(request)
+        logger.info("[ScheduledNotification] FCM result: success=${result.success}, sent=${result.sentCount}, failed=${result.failedCount}, msg=${result.message}")
 
         // Update next trigger time
         schedule.nextTriggerAt = recalculateNextTrigger(schedule)
         notificationScheduleRepository.save(schedule)
+        logger.info("[ScheduledNotification] Next trigger updated to ${schedule.nextTriggerAt} for schedule ${schedule.id}")
     }
 
     fun recalculateNextTrigger(schedule: NotificationSchedule): LocalDateTime {
