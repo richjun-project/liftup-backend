@@ -57,6 +57,7 @@ class SecurityConfig(
                         "/api/version/check",
                         "/api/version/history",
                         "/api/exercises/**",
+                        "/api/trainers",
                         "/api/subscription/webhook",
                         "/health",
                         "/swagger-ui/**",
