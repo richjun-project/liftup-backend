@@ -46,6 +46,9 @@ class RevenueCatWebhookService(
             "BILLING_ISSUE" -> handleBillingIssue(event)
             "PRODUCT_CHANGE" -> handleProductChange(event)
             "TRANSFER" -> handleTransfer(event)
+            "TEST" -> {
+                log.info("[RevenueCat] ✅ TEST webhook received successfully — appUserId=${event.appUserId}, product=${event.productId}")
+            }
             else -> log.info("[RevenueCat] Unhandled event type: ${event.type}")
         }
     }
