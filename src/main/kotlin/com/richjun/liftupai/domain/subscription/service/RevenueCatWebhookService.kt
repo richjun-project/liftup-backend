@@ -1,13 +1,16 @@
 package com.richjun.liftupai.domain.subscription.service
 
+import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.subscription.dto.RevenueCatEvent
 import com.richjun.liftupai.domain.subscription.dto.RevenueCatWebhookEvent
 import com.richjun.liftupai.domain.subscription.entity.*
+import com.richjun.liftupai.domain.subscription.repository.PaymentHistoryRepository
 import com.richjun.liftupai.domain.subscription.repository.SubscriptionRepository
 import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -19,13 +22,17 @@ import java.time.ZoneOffset
 class RevenueCatWebhookService(
     private val userRepository: UserRepository,
     private val subscriptionRepository: SubscriptionRepository,
+    private val paymentHistoryRepository: PaymentHistoryRepository,
     @Value("\${revenuecat.webhook-secret:}")
     private val webhookSecret: String
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     fun validateAuthorization(authHeader: String?): Boolean {
-        if (webhookSecret.isBlank()) return true
+        if (webhookSecret.isBlank()) {
+            log.warn("[RevenueCat] Webhook secret not configured — rejecting request for security")
+            return false
+        }
         return authHeader == "Bearer $webhookSecret"
     }
 
@@ -46,23 +53,17 @@ class RevenueCatWebhookService(
             "BILLING_ISSUE" -> handleBillingIssue(event)
             "PRODUCT_CHANGE" -> handleProductChange(event)
             "TRANSFER" -> handleTransfer(event)
-            "TEST" -> {
-                log.info("[RevenueCat] ✅ TEST webhook received successfully — appUserId=${event.appUserId}, product=${event.productId}")
-            }
+            "TEST" -> log.info("[RevenueCat] ✅ TEST webhook received — appUserId=${event.appUserId}, product=${event.productId}")
             else -> log.info("[RevenueCat] Unhandled event type: ${event.type}")
         }
     }
 
+    // === 이벤트 핸들러 ===
+
     private fun handlePurchase(event: RevenueCatEvent) {
         val userId = parseUserId(event.appUserId) ?: return
-
-        val user = userRepository.findById(userId).orElse(null) ?: run {
-            log.warn("[RevenueCat] User not found: $userId")
-            return
-        }
-
-        val subscription = subscriptionRepository.findByUser(user).orElse(null)
-            ?: Subscription(user = user)
+        val user = findUser(userId) ?: return
+        val subscription = findOrCreateSubscription(user)
 
         subscription.plan = SubscriptionPlan.PRO
         subscription.status = SubscriptionStatus.ACTIVE
@@ -72,6 +73,7 @@ class RevenueCatWebhookService(
         subscription.updatedAt = AppTime.utcNow()
 
         subscriptionRepository.save(subscription)
+        savePaymentHistory(user, subscription, event, PaymentStatus.SUCCESS)
         log.info("[RevenueCat] Purchase activated for user $userId, product=${event.productId}")
     }
 
@@ -84,6 +86,10 @@ class RevenueCatWebhookService(
             subscription.autoRenew = true
             subscription.updatedAt = AppTime.utcNow()
             subscriptionRepository.save(subscription)
+
+            findUser(userId)?.let { user ->
+                savePaymentHistory(user, subscription, event, PaymentStatus.SUCCESS)
+            }
             log.info("[RevenueCat] Renewal for user $userId, newExpiry=${subscription.expiryDate}")
         }
     }
@@ -95,7 +101,6 @@ class RevenueCatWebhookService(
             subscription.autoRenew = false
             subscription.cancelledAt = AppTime.utcNow()
             subscription.updatedAt = AppTime.utcNow()
-            // Keep ACTIVE until expiry - user still has access
             subscriptionRepository.save(subscription)
             log.info("[RevenueCat] Cancellation for user $userId, access until ${subscription.expiryDate}")
         }
@@ -129,29 +134,78 @@ class RevenueCatWebhookService(
 
     private fun handleBillingIssue(event: RevenueCatEvent) {
         val userId = parseUserId(event.appUserId) ?: return
-        // Keep access active during grace period - just log
-        log.warn("[RevenueCat] Billing issue for user $userId, product=${event.productId}")
+
+        subscriptionRepository.findByUser_Id(userId).ifPresent { subscription ->
+            subscription.status = SubscriptionStatus.PENDING
+            subscription.updatedAt = AppTime.utcNow()
+            subscriptionRepository.save(subscription)
+            log.warn("[RevenueCat] Billing issue for user $userId — status set to PENDING (grace period)")
+        }
     }
 
     private fun handleProductChange(event: RevenueCatEvent) {
-        // Treat as new purchase with updated product
         handlePurchase(event)
     }
 
     private fun handleTransfer(event: RevenueCatEvent) {
         log.info("[RevenueCat] Transfer event: from=${event.originalAppUserId} to=${event.appUserId}")
-        // Expire old user's subscription
-        val oldUserId = parseUserId(event.originalAppUserId ?: return)
-        if (oldUserId != null) {
-            subscriptionRepository.findByUser_Id(oldUserId).ifPresent { subscription ->
-                subscription.status = SubscriptionStatus.EXPIRED
-                subscription.plan = SubscriptionPlan.FREE
-                subscription.updatedAt = AppTime.utcNow()
-                subscriptionRepository.save(subscription)
+
+        // 이전 사용자 구독 만료 (originalAppUserId가 없어도 새 사용자 활성화는 진행)
+        event.originalAppUserId?.let { originalId ->
+            parseUserId(originalId)?.let { oldUserId ->
+                subscriptionRepository.findByUser_Id(oldUserId).ifPresent { subscription ->
+                    subscription.status = SubscriptionStatus.EXPIRED
+                    subscription.plan = SubscriptionPlan.FREE
+                    subscription.updatedAt = AppTime.utcNow()
+                    subscriptionRepository.save(subscription)
+                }
             }
         }
-        // Activate for new user
+
+        // 새 사용자 활성화
         handlePurchase(event)
+    }
+
+    // === 헬퍼 메서드 ===
+
+    private fun findUser(userId: Long): User? {
+        return userRepository.findById(userId).orElse(null).also {
+            if (it == null) log.warn("[RevenueCat] User not found: $userId")
+        }
+    }
+
+    /**
+     * 동시 webhook에 의한 중복 생성 방지:
+     * findByUser가 null이면 새로 생성 후 save, unique 제약 위반 시 재조회
+     */
+    private fun findOrCreateSubscription(user: User): Subscription {
+        subscriptionRepository.findByUser(user).orElse(null)?.let { return it }
+
+        return try {
+            subscriptionRepository.save(Subscription(user = user))
+        } catch (e: DataIntegrityViolationException) {
+            log.info("[RevenueCat] Concurrent subscription creation detected, re-fetching")
+            subscriptionRepository.findByUser(user)
+                .orElseThrow { IllegalStateException("Subscription not found after concurrent creation") }
+        }
+    }
+
+    private fun savePaymentHistory(user: User, subscription: Subscription, event: RevenueCatEvent, status: PaymentStatus) {
+        try {
+            val history = PaymentHistory(
+                user = user,
+                subscription = subscription,
+                amount = event.price?.toInt() ?: 0,
+                currency = event.currency ?: "USD",
+                paymentMethod = event.store ?: "UNKNOWN",
+                transactionId = event.transactionId,
+                status = status,
+                paymentDate = msToLocalDateTime(event.purchasedAtMs) ?: AppTime.utcNow()
+            )
+            paymentHistoryRepository.save(history)
+        } catch (e: Exception) {
+            log.warn("[RevenueCat] Failed to save payment history: ${e.message}")
+        }
     }
 
     private fun parseUserId(appUserId: String): Long? {

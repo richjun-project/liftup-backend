@@ -1,12 +1,13 @@
 package com.richjun.liftupai.domain.subscription.entity
 
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.global.time.AppTime
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
 @Table(name = "subscriptions")
-data class Subscription(
+class Subscription(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
@@ -24,7 +25,7 @@ data class Subscription(
     var status: SubscriptionStatus = SubscriptionStatus.ACTIVE,
 
     @Column(nullable = false)
-    var startDate: LocalDateTime = LocalDateTime.now(),
+    var startDate: LocalDateTime = AppTime.utcNow(),
 
     @Column
     var expiryDate: LocalDateTime? = null,
@@ -42,8 +43,16 @@ data class Subscription(
     var autoRenew: Boolean = false,
 
     @Column(nullable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    val createdAt: LocalDateTime = AppTime.utcNow(),
 
     @Column(nullable = false)
-    var updatedAt: LocalDateTime = LocalDateTime.now()
-)
+    var updatedAt: LocalDateTime = AppTime.utcNow()
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Subscription) return false
+        return id != 0L && id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}

@@ -1,12 +1,13 @@
 package com.richjun.liftupai.domain.subscription.entity
 
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.global.time.AppTime
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
 @Entity
 @Table(name = "payment_history")
-data class PaymentHistory(
+class PaymentHistory(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
@@ -39,11 +40,19 @@ data class PaymentHistory(
     val status: PaymentStatus = PaymentStatus.PENDING,
 
     @Column(nullable = false)
-    val paymentDate: LocalDateTime = LocalDateTime.now(),
+    val paymentDate: LocalDateTime = AppTime.utcNow(),
 
     @Column
     val failureReason: String? = null
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PaymentHistory) return false
+        return id != 0L && id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}
 
 enum class PaymentStatus {
     PENDING,

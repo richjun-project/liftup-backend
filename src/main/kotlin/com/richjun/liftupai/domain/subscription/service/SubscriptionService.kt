@@ -20,7 +20,7 @@ class SubscriptionService(
     private val paymentHistoryRepository: PaymentHistoryRepository
 ) {
 
-    @Transactional(readOnly = true)
+    @Transactional
     fun getSubscriptionStatus(userId: Long): SubscriptionStatusResponse {
         val subscription = subscriptionRepository.findByUser_Id(userId)
             .orElse(createDefaultSubscription(userId))
@@ -172,26 +172,24 @@ class SubscriptionService(
     }
 
     private fun validateGooglePlayReceipt(request: ValidateReceiptRequest): ValidateReceiptResponse {
-        // 실제 구현에서는 Google Play Developer API를 사용하여 영수증 검증
-        // 여기서는 간단한 모의 구현
+        // RevenueCat이 영수증 검증을 처리하므로 직접 검증하지 않음
+        // 이 엔드포인트는 클라이언트에서 호출하지 않아야 함
         return ValidateReceiptResponse(
-            valid = true,
+            valid = false,
             productId = request.productId,
-            transactionId = "google_${System.currentTimeMillis()}",
-            expiryDate = AppTime.utcNow().plusMonths(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-            message = "Google Play 영수증 검증 성공"
+            transactionId = null,
+            expiryDate = null,
+            message = "Use RevenueCat SDK for receipt validation"
         )
     }
 
     private fun validateAppStoreReceipt(request: ValidateReceiptRequest): ValidateReceiptResponse {
-        // 실제 구현에서는 App Store Receipt Validation API를 사용하여 영수증 검증
-        // 여기서는 간단한 모의 구현
         return ValidateReceiptResponse(
-            valid = true,
+            valid = false,
             productId = request.productId,
-            transactionId = "apple_${System.currentTimeMillis()}",
-            expiryDate = AppTime.utcNow().plusMonths(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-            message = "App Store 영수증 검증 성공"
+            transactionId = null,
+            expiryDate = null,
+            message = "Use RevenueCat SDK for receipt validation"
         )
     }
 
