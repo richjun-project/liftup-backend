@@ -55,11 +55,9 @@ class ChatService(
             val responseTime = System.currentTimeMillis() - startTime
 
             // AI 응답으로 메시지 업데이트
-            chatMessage = chatMessage.copy(
-                aiResponse = aiResponse,
-                responseTime = responseTime,
-                status = MessageStatus.COMPLETED
-            )
+            chatMessage.aiResponse = aiResponse
+            chatMessage.responseTime = responseTime
+            chatMessage.status = MessageStatus.COMPLETED
             chatMessage = chatMessageRepository.save(chatMessage)
 
             ChatMessageResponse(
@@ -70,10 +68,8 @@ class ChatService(
             )
         } catch (e: Exception) {
             // 에러 발생 시 상태 업데이트
-            chatMessage = chatMessage.copy(
-                status = MessageStatus.FAILED,
-                error = e.message
-            )
+            chatMessage.status = MessageStatus.FAILED
+            chatMessage.error = e.message
             chatMessageRepository.save(chatMessage)
             throw e
         }
@@ -157,10 +153,8 @@ class ChatService(
             val aiResponseText = formatWorkoutRecommendationAsText(workoutRecommendation, locale)
 
             // AI 응답으로 메시지 업데이트
-            chatMessage = chatMessage.copy(
-                aiResponse = aiResponseText,
-                status = MessageStatus.COMPLETED
-            )
+            chatMessage.aiResponse = aiResponseText
+            chatMessage.status = MessageStatus.COMPLETED
             chatMessage = chatMessageRepository.save(chatMessage)
 
             ChatWorkoutRecommendationResponse(
@@ -171,10 +165,8 @@ class ChatService(
             )
         } catch (e: Exception) {
             // 에러 발생 시 상태 업데이트
-            chatMessage = chatMessage.copy(
-                status = MessageStatus.FAILED,
-                error = e.message
-            )
+            chatMessage.status = MessageStatus.FAILED
+            chatMessage.error = e.message
             chatMessageRepository.save(chatMessage)
             throw e
         }

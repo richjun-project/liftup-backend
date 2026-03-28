@@ -19,7 +19,7 @@ data class ChatMessage(
     val userMessage: String,
 
     @Column(columnDefinition = "TEXT")
-    val aiResponse: String? = null,
+    var aiResponse: String? = null,
 
     @Enumerated(EnumType.STRING)
     val messageType: MessageType = MessageType.TEXT,
@@ -31,11 +31,11 @@ data class ChatMessage(
     val timestamp: LocalDateTime = LocalDateTime.now(),
 
     @Column
-    val responseTime: Long? = null,  // AI 응답 시간 (밀리초)
+    var responseTime: Long? = null,  // AI 응답 시간 (밀리초)
 
     @Enumerated(EnumType.STRING)
-    val status: MessageStatus = MessageStatus.PROCESSING,
+    var status: MessageStatus = MessageStatus.PROCESSING,
 
     @Column
-    val error: String? = null
+    var error: String? = null
 )
