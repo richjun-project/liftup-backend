@@ -10,4 +10,5 @@ import org.springframework.stereotype.Repository
 interface PersonalRecordRepository : JpaRepository<PersonalRecord, Long> {
     fun findTopByUserAndExerciseOrderByWeightDesc(user: User, exercise: Exercise): PersonalRecord?
     fun findByUserAndExercise(user: User, exercise: Exercise): List<PersonalRecord>
+    fun findTopByUserIdAndExerciseIdOrderByWeightDesc(userId: Long, exerciseId: Long): PersonalRecord?
 }

@@ -115,3 +115,17 @@ enum class RecommendationTier {
      */
     SPECIALIZED
 }
+
+enum class PlanSourceType {
+    PRESET,        // System preset template
+    AI_GENERATED,  // AI-generated plan
+    TEMPLATE,      // Applied from template
+    CUSTOM         // User custom
+}
+
+enum class PlanStatus {
+    ACTIVE,
+    PAUSED,
+    COMPLETED,
+    ABANDONED
+}

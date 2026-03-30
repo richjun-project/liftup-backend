@@ -93,5 +93,11 @@ data class Exercise(
      */
     @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'STANDARD'")
     @Enumerated(EnumType.STRING)
-    val recommendationTier: RecommendationTier = RecommendationTier.STANDARD
+    val recommendationTier: RecommendationTier = RecommendationTier.STANDARD,
+
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
+    val isPlanEligible: Boolean = false,
+
+    @Column(name = "plan_category", length = 50)
+    val planCategory: String? = null
 )

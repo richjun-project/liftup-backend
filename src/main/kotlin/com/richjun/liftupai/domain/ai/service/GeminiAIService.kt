@@ -24,14 +24,23 @@ class GeminiAIService(
     @Value("\${gemini.api-key}")
     private lateinit var apiKey: String
 
-    @Value("\${gemini.model:gemini-pro}")
+    @Value("\${gemini.model:gemini-flash-latest}")
     private lateinit var model: String
+
+    @Value("\${gemini.plan-model:gemini-pro-latest}")
+    private lateinit var planModel: String
 
     @Value("\${gemini.max-tokens:2048}")
     private var maxTokens: Int = 2048
 
-    @Value("\${gemini.temperature:0.4}")
-    private var temperature: Double = 0.4
+    @Value("\${gemini.plan-max-tokens:4096}")
+    private var planMaxTokens: Int = 4096
+
+    @Value("\${gemini.temperature:0.7}")
+    private var temperature: Double = 0.7
+
+    @Value("\${gemini.plan-temperature:0.4}")
+    private var planTemperature: Double = 0.4
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -55,6 +64,14 @@ class GeminiAIService(
     }
 
     fun analyzeContent(prompt: String): String = callGeminiAPI(prompt)
+
+    /** 플랜 생성 전용 — Pro latest 모델 사용 */
+    fun generatePlanContent(prompt: String): String = callGeminiAPI(
+        prompt = prompt,
+        targetModel = planModel,
+        targetMaxTokens = planMaxTokens,
+        targetTemperature = planTemperature,
+    )
 
     fun generateRecommendations(prompt: String): String = callGeminiAPI(prompt)
 
@@ -439,9 +456,16 @@ class GeminiAIService(
         }
     }
 
-    private fun callGeminiAPI(prompt: String, locale: String = "en"): String {
+    private fun callGeminiAPI(
+        prompt: String,
+        locale: String = "en",
+        targetModel: String? = null,
+        targetMaxTokens: Int? = null,
+        targetTemperature: Double? = null,
+    ): String {
         return try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+            val useModel = targetModel ?: model
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/$useModel:generateContent?key=$apiKey"
             val requestBody = GeminiRequest(
                 contents = listOf(
                     GeminiContent(
@@ -451,8 +475,8 @@ class GeminiAIService(
                     )
                 ),
                 generationConfig = GenerationConfig(
-                    temperature = temperature,
-                    maxOutputTokens = maxTokens,
+                    temperature = targetTemperature ?: temperature,
+                    maxOutputTokens = targetMaxTokens ?: maxTokens,
                     topP = 0.95,
                     topK = 40
                 )
@@ -467,7 +491,7 @@ class GeminiAIService(
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     val errorBody = response.body?.string()
-                    println("Gemini API Error: $errorBody")
+                    println("Gemini API Error (${targetModel ?: model}): $errorBody")
                     return AILocalization.message("ai.error.analysis_failed", locale)
                 }
 

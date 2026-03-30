@@ -16,6 +16,15 @@ import org.springframework.stereotype.Repository
 interface ExerciseRepository : JpaRepository<Exercise, Long> {
     fun findBySlug(slug: String): Exercise?
 
+    fun findAllByIsPlanEligibleTrue(): List<Exercise>
+
+    fun findByIsPlanEligibleTrueAndCategory(category: ExerciseCategory): List<Exercise>
+
+    @Query("SELECT e FROM Exercise e WHERE e.isPlanEligible = true AND e.category = :category ORDER BY e.popularity DESC")
+    fun findPlanEligibleByCategoryOrderByPopularity(@Param("category") category: ExerciseCategory): List<Exercise>
+
+    fun findByNameContainingIgnoreCase(name: String): List<Exercise>
+
     fun findFirstByCategoryAndRecommendationTierOrderByPopularityDesc(
         category: ExerciseCategory,
         tier: RecommendationTier
