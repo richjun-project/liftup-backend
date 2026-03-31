@@ -283,7 +283,9 @@ class AIPlanGenerationService(
         repeat(maxRetries) { attempt ->
             try {
                 val response = geminiAIService.generatePlanContent(prompt)
+                log.info("Gemini attempt ${attempt + 1} response length: ${response.length}")
                 if (response.isNotBlank()) return response
+                log.warn("Gemini attempt ${attempt + 1} returned blank response")
             } catch (e: Exception) {
                 log.warn("Gemini API attempt ${attempt + 1} failed: ${e.message}")
                 lastException = e
