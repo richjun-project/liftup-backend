@@ -1,45 +1,60 @@
 package com.richjun.liftupai.domain.workout.service
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.databind.annotation.JsonNaming
+import com.fasterxml.jackson.annotation.JsonAlias
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.RecommendationTier
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class AIPlanExerciseEntry(
+    @JsonProperty("exerciseId") @JsonAlias("exercise_id")
     var exerciseId: Long,
+    @JsonProperty("exerciseName") @JsonAlias("exercise_name")
     var exerciseName: String,
     val sets: Int,
+    @JsonProperty("minReps") @JsonAlias("min_reps")
     val minReps: Int,
+    @JsonProperty("maxReps") @JsonAlias("max_reps")
     val maxReps: Int,
+    @JsonProperty("restSeconds") @JsonAlias("rest_seconds")
     val restSeconds: Int,
     val order: Int,
+    @JsonProperty("isCompound") @JsonAlias("is_compound")
     val isCompound: Boolean,
+    @JsonProperty("targetRPE") @JsonAlias("target_rpe", "target_RPE")
     val targetRPE: Double = 7.0,
     val notes: String? = null
 )
 
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class AIPlanDayEntry(
+    @JsonProperty("dayNumber") @JsonAlias("day_number")
     val dayNumber: Int,
+    @JsonProperty("dayName") @JsonAlias("day_name")
     val dayName: String,
+    @JsonProperty("workoutType") @JsonAlias("workout_type")
     val workoutType: String,
+    @JsonProperty("estimatedDurationMinutes") @JsonAlias("estimated_duration_minutes")
     val estimatedDurationMinutes: Int,
     var exercises: List<AIPlanExerciseEntry>
 )
 
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class AIPlanResponse(
+    @JsonProperty("planName") @JsonAlias("plan_name")
     val planName: String,
+    @JsonProperty("planDescription") @JsonAlias("plan_description")
     val planDescription: String,
+    @JsonProperty("splitType") @JsonAlias("split_type")
     val splitType: String,
+    @JsonProperty("totalDays") @JsonAlias("total_days")
     val totalDays: Int,
+    @JsonProperty("estimatedWeeks") @JsonAlias("estimated_weeks")
     val estimatedWeeks: Int,
     var days: List<AIPlanDayEntry>,
+    @JsonProperty("coachingNotes") @JsonAlias("coaching_notes")
     val coachingNotes: String? = null,
+    @JsonProperty("progressionModel") @JsonAlias("progression_model")
     val progressionModel: String = "LINEAR"
 )
 
