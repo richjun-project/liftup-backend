@@ -35,27 +35,40 @@ class AIPlanGenerationService(
     private val log = LoggerFactory.getLogger(AIPlanGenerationService::class.java)
 
     fun generateAndApplyPlan(user: User, request: GenerateAIPlanRequest): PlanDashboardResponse {
+        return generateAndApplyPlanWithProgress(user, request) { _, _ -> }
+    }
+
+    fun generateAndApplyPlanWithProgress(
+        user: User,
+        request: GenerateAIPlanRequest,
+        onProgress: (step: Int, message: String) -> Unit
+    ): PlanDashboardResponse {
         log.info("Generating AI plan for user {} with goals: {}", user.id, request.goals)
 
         // 1. Build prompt
+        onProgress(1, "운동 데이터베이스 분석 중...")
         val exercisePool = curatedExercisePoolService.getPromptReadyExerciseList()
         val prompt = buildPlanGenerationPrompt(request, exercisePool)
 
-        // 2. Call Gemini AI (with retry) - NOT inside a transaction
+        // 2. Call Gemini AI
+        onProgress(2, "AI가 맞춤 플랜을 설계하고 있어요...")
         val aiResponse = callGeminiWithRetry(prompt, maxRetries = 3)
 
         // 3. Parse JSON response
+        onProgress(3, "AI 응답을 분석하고 있어요...")
         val parsedPlan = parseAIPlanResponse(aiResponse)
 
         // 4. Validate & repair hallucinations
+        onProgress(4, "운동 정확도를 검증하고 있어요...")
         val validatedPlan = hallucinationGuardService.validateAndRepairPlan(parsedPlan)
         log.info("Hallucination guard: ${validatedPlan.repairs.size} repairs made")
 
         // 5. Quality check
+        onProgress(5, "플랜 품질을 최종 검토하고 있어요...")
         val qualityReport = planQualityValidator.validate(validatedPlan.plan)
         if (!qualityReport.isValid) {
             log.warn("Quality validation failed, attempting regeneration...")
-            // On failure, try once more with stricter prompt
+            onProgress(5, "품질 기준 미달, AI가 다시 설계하고 있어요...")
             val retryResponse = callGeminiWithRetry(
                 prompt + "\n\nPREVIOUS ATTEMPT FAILED VALIDATION. Be more careful with exercise selection.",
                 maxRetries = 1
@@ -66,9 +79,12 @@ class AIPlanGenerationService(
             if (!retryQuality.isValid) {
                 log.error("Second attempt also failed quality check. Proceeding anyway with warnings.")
             }
+            onProgress(6, "플랜을 저장하고 있어요...")
             return self.persistAIPlan(user, retryValidated.plan, request)
         }
 
+        // 6. Persist
+        onProgress(6, "플랜을 저장하고 있어요...")
         return self.persistAIPlan(user, validatedPlan.plan, request)
     }
 

@@ -128,7 +128,7 @@ class UserPlanController(
         return ResponseEntity.ok(mapOf("success" to true, "data" to dashboard))
     }
 
-    // --- AI Plan Generation ---
+    // --- AI Plan Generation (기존 동기 방식 유지) ---
     @PostMapping("/plans/generate-ai")
     fun generateAIPlan(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
@@ -136,5 +136,56 @@ class UserPlanController(
     ): ResponseEntity<Map<String, Any>> {
         val dashboard = aiPlanGenerationService.generateAndApplyPlan(userDetails.getUser(), request)
         return ResponseEntity.ok(mapOf("success" to true, "data" to dashboard))
+    }
+
+    // --- AI Plan Generation (SSE 스트리밍) ---
+    @PostMapping("/plans/generate-ai/stream", produces = [org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun generateAIPlanStream(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestBody request: GenerateAIPlanRequest
+    ): org.springframework.web.servlet.mvc.method.annotation.SseEmitter {
+        val emitter = org.springframework.web.servlet.mvc.method.annotation.SseEmitter(180_000L) // 3분 타임아웃
+
+        Thread {
+            try {
+                val dashboard = aiPlanGenerationService.generateAndApplyPlanWithProgress(
+                    userDetails.getUser(),
+                    request
+                ) { step, message ->
+                    try {
+                        emitter.send(
+                            org.springframework.web.servlet.mvc.method.annotation.SseEmitter
+                                .event()
+                                .name("progress")
+                                .data("""{"step":$step,"message":"$message"}""")
+                        )
+                    } catch (_: Exception) {}
+                }
+
+                emitter.send(
+                    org.springframework.web.servlet.mvc.method.annotation.SseEmitter
+                        .event()
+                        .name("complete")
+                        .data(com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(
+                            mapOf("success" to true, "data" to dashboard)
+                        ))
+                )
+                emitter.complete()
+            } catch (e: Exception) {
+                try {
+                    emitter.send(
+                        org.springframework.web.servlet.mvc.method.annotation.SseEmitter
+                            .event()
+                            .name("error")
+                            .data("""{"message":"${e.message?.replace("\"", "'")}"}""")
+                    )
+                    emitter.complete()
+                } catch (_: Exception) {
+                    emitter.completeWithError(e)
+                }
+            }
+        }.start()
+
+        return emitter
     }
 }
