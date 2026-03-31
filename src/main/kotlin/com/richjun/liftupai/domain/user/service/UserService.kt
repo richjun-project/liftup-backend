@@ -456,14 +456,12 @@ class UserService(
      * 회원 탈퇴 (하드 삭제 - 모든 연관 데이터 완전 삭제)
      */
     fun deleteAccount(userId: Long): Map<String, Any> {
-        val user = userRepository.findById(userId)
+        userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
 
-        if (!user.isActive) {
-            throw IllegalStateException("이미 탈퇴 처리된 계정입니다")
-        }
-
         logger.info("회원 탈퇴 시작 - userId: {}", userId)
+        entityManager.flush()
+        entityManager.clear()
         deleteAllUserData(userId)
         logger.info("회원 탈퇴 완료 - userId: {}", userId)
 
