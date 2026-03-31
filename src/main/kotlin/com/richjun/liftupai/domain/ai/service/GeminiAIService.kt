@@ -33,8 +33,8 @@ class GeminiAIService(
     @Value("\${gemini.max-tokens:2048}")
     private var maxTokens: Int = 2048
 
-    @Value("\${gemini.plan-max-tokens:4096}")
-    private var planMaxTokens: Int = 4096
+    @Value("\${gemini.plan-max-tokens:16384}")
+    private var planMaxTokens: Int = 16384
 
     @Value("\${gemini.temperature:0.7}")
     private var temperature: Double = 0.7
