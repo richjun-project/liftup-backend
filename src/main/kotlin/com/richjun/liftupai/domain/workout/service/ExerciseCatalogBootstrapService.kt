@@ -61,6 +61,12 @@ class ExerciseCatalogBootstrapService(
             return
         }
 
+        if (mode == "update_translations") {
+            updateTranslationsOnly(resource)
+            maybeExit()
+            return
+        }
+
         if (mode == "reset") {
             resetExerciseDomain()
         } else if (exerciseCount > 0) {
@@ -122,6 +128,44 @@ class ExerciseCatalogBootstrapService(
 
         exerciseTranslationRepository.saveAllAndFlush(translations)
         logger.info("Exercise catalog imported: {} exercises, {} translations", savedExercises.size, translations.size)
+    }
+
+    @Transactional
+    fun updateTranslationsOnly(resource: ClassPathResource) {
+        logger.info("Updating exercise translations only...")
+        val catalogType = objectMapper.typeFactory.constructCollectionType(List::class.java, ExerciseCatalogRecord::class.java)
+        val catalog: List<ExerciseCatalogRecord> = resource.inputStream.use { objectMapper.readValue(it, catalogType) }
+
+        val allExercises = exerciseRepository.findAll().associateBy { it.slug }
+        var updated = 0
+        var created = 0
+
+        for (record in catalog) {
+            val exercise = allExercises[record.slug] ?: continue
+            for (translation in record.translations) {
+                val existing = exerciseTranslationRepository.findByExerciseIdAndLocale(exercise.id, translation.locale)
+                if (existing != null) {
+                    if (existing.displayName != translation.name) {
+                        exerciseTranslationRepository.save(existing.copy(
+                            displayName = translation.name,
+                            instructions = translation.instructions ?: existing.instructions,
+                            tips = translation.tips ?: existing.tips
+                        ))
+                        updated++
+                    }
+                } else {
+                    exerciseTranslationRepository.save(ExerciseTranslation(
+                        exercise = exercise,
+                        locale = translation.locale,
+                        displayName = translation.name,
+                        instructions = translation.instructions,
+                        tips = translation.tips
+                    ))
+                    created++
+                }
+            }
+        }
+        logger.info("Translation update complete: {} updated, {} created", updated, created)
     }
 
     @Transactional
