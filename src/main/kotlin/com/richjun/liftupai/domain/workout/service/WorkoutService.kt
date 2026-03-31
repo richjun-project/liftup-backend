@@ -34,7 +34,8 @@ class WorkoutService(
     private val personalRecordRepository: PersonalRecordRepository,
     private val workoutProgressTracker: WorkoutProgressTracker,
     private val autoProgramSelector: AutoProgramSelector,
-    private val exercisePatternClassifier: ExercisePatternClassifier
+    private val exercisePatternClassifier: ExercisePatternClassifier,
+    private val exerciseTranslationRepository: ExerciseTranslationRepository
 ) {
 
     @Deprecated("Use WorkoutServiceV2.startNewWorkout() instead")
@@ -298,38 +299,42 @@ class WorkoutService(
         )
     }
 
+    private fun resolveExerciseNames(exerciseIds: List<Long>, locale: String): Map<Long, String> {
+        if (locale == "en" || exerciseIds.isEmpty()) return emptyMap()
+        return exerciseTranslationRepository.findByExerciseIdInAndLocale(exerciseIds, locale)
+            .associate { it.exercise.id to it.displayName }
+    }
+
+    private fun buildExerciseDtos(
+        workoutExercises: List<com.richjun.liftupai.domain.workout.entity.WorkoutExercise>,
+        locale: String
+    ): List<WorkoutExerciseDto> {
+        val names = resolveExerciseNames(workoutExercises.map { it.exercise.id }, locale)
+        return workoutExercises.map { we ->
+            WorkoutExerciseDto(
+                exerciseId = we.exercise.id,
+                exerciseName = names[we.exercise.id] ?: we.exercise.name,
+                sets = we.sets.map { s ->
+                    ExerciseSetDto(weight = s.weight, reps = s.reps, rpe = s.rpe, restTime = s.restTime)
+                },
+                totalVolume = we.totalVolume ?: 0.0
+            )
+        }
+    }
+
     @Transactional
-    fun getCurrentSession(userId: Long): WorkoutDetailResponse? {
+    fun getCurrentSession(userId: Long, locale: String = "ko"): WorkoutDetailResponse? {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
 
-        // Clean up any duplicate IN_PROGRESS sessions
         cleanupDuplicateInProgressSessions(user)
 
         val activeSession = workoutSessionRepository.findFirstByUserAndStatusOrderByStartTimeDesc(user, SessionStatus.IN_PROGRESS)
 
         return if (activeSession.isPresent) {
             val session = activeSession.get()
-            // WorkoutExercise를 직접 조회
             val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-            println("DEBUG: Session ID: ${session.id}, WorkoutExercises found: ${workoutExercises.size}")
-            val exerciseDtos = workoutExercises.map { workoutExercise ->
-                val setDtos = workoutExercise.sets.map { set ->
-                    ExerciseSetDto(
-                        weight = set.weight,
-                        reps = set.reps,
-                        rpe = set.rpe,
-                        restTime = set.restTime
-                    )
-                }
-
-                WorkoutExerciseDto(
-                    exerciseId = workoutExercise.exercise.id,
-                    exerciseName = workoutExercise.exercise.name,
-                    sets = setDtos,
-                    totalVolume = workoutExercise.totalVolume ?: 0.0
-                )
-            }
+            val exerciseDtos = buildExerciseDtos(workoutExercises, locale)
 
             WorkoutDetailResponse(
                 sessionId = session.id,
@@ -345,28 +350,11 @@ class WorkoutService(
     }
 
     @Transactional(readOnly = true)
-    fun getWorkoutSession(userId: Long, sessionId: Long): WorkoutDetailResponse {
+    fun getWorkoutSession(userId: Long, sessionId: Long, locale: String = "ko"): WorkoutDetailResponse {
         val session = findUserSession(userId, sessionId)
 
-        // WorkoutExercise를 직접 조회
         val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-        val exerciseDtos = workoutExercises.map { workoutExercise ->
-            val setDtos = workoutExercise.sets.map { set ->
-                ExerciseSetDto(
-                    weight = set.weight,
-                    reps = set.reps,
-                    rpe = set.rpe,
-                    restTime = set.restTime
-                )
-            }
-
-            WorkoutExerciseDto(
-                exerciseId = workoutExercise.exercise.id,
-                exerciseName = workoutExercise.exercise.name,
-                sets = setDtos,
-                totalVolume = workoutExercise.totalVolume ?: 0.0
-            )
-        }
+        val exerciseDtos = buildExerciseDtos(workoutExercises, locale)
 
         return WorkoutDetailResponse(
             sessionId = session.id,

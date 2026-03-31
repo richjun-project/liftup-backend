@@ -29,9 +29,10 @@ class UserPlanController(
 
     @GetMapping("/templates/{code}")
     fun getTemplateDetail(
-        @PathVariable code: String
+        @PathVariable code: String,
+        @RequestParam(required = false, defaultValue = "ko") locale: String
     ): ResponseEntity<Map<String, Any>> {
-        val detail = templateService.getTemplateDetail(code)
+        val detail = templateService.getTemplateDetail(code, locale)
         return ResponseEntity.ok(mapOf("success" to true, "data" to detail))
     }
 
@@ -58,9 +59,10 @@ class UserPlanController(
     fun getDayWorkout(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @PathVariable dayNumber: Int,
-        @RequestParam(required = false) readiness: Int? = null
+        @RequestParam(required = false) readiness: Int? = null,
+        @RequestParam(required = false, defaultValue = "ko") locale: String
     ): ResponseEntity<Map<String, Any>> {
-        val workout = userPlanService.getDayWorkout(userDetails.getId(), dayNumber, readiness)
+        val workout = userPlanService.getDayWorkout(userDetails.getId(), dayNumber, readiness, locale)
         return ResponseEntity.ok(mapOf("success" to true, "data" to workout))
     }
 

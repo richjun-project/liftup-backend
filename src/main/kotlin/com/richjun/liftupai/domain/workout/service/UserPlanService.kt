@@ -26,7 +26,8 @@ class UserPlanService(
     private val exerciseRepository: ExerciseRepository,
     private val weightRecommendationService: WeightRecommendationService,
     private val planWorkoutEnricher: PlanWorkoutEnricher,
-    private val userProfileRepository: com.richjun.liftupai.domain.user.repository.UserProfileRepository
+    private val userProfileRepository: com.richjun.liftupai.domain.user.repository.UserProfileRepository,
+    private val exerciseTranslationRepository: ExerciseTranslationRepository
 ) {
     private val log = LoggerFactory.getLogger(UserPlanService::class.java)
 
@@ -71,7 +72,7 @@ class UserPlanService(
         )
     }
 
-    fun getDayWorkout(userId: Long, dayNumber: Int, subjectiveReadiness: Int? = null): DayWorkoutResponse {
+    fun getDayWorkout(userId: Long, dayNumber: Int, subjectiveReadiness: Int? = null, locale: String = "ko"): DayWorkoutResponse {
         val plan = getActivePlan(userId)
             ?: throw ResourceNotFoundException("No active plan found")
 
@@ -79,6 +80,13 @@ class UserPlanService(
             ?: throw ResourceNotFoundException("Day $dayNumber not found in plan")
 
         val exercises = userPlanDayExerciseRepository.findByPlanDayIdWithExerciseOrderByOrderInDay(day.id)
+
+        // 한글 이름 일괄 조회
+        val exerciseIds = exercises.map { it.exercise.id }
+        val translatedNames = if (locale != "en") {
+            exerciseTranslationRepository.findByExerciseIdInAndLocale(exerciseIds, locale)
+                .associateBy { it.exercise.id }
+        } else emptyMap()
 
         val baseResponse = DayWorkoutResponse(
             dayNumber = day.dayNumber,
@@ -98,7 +106,7 @@ class UserPlanService(
                 }
                 DayExerciseDetail(
                     exerciseId = ex.exercise.id,
-                    exerciseName = ex.exercise.name,
+                    exerciseName = translatedNames[ex.exercise.id]?.displayName ?: ex.exercise.name,
                     imageUrl = ex.exercise.imageUrl,
                     sets = ex.sets,
                     minReps = ex.minReps,
@@ -202,9 +210,8 @@ class UserPlanService(
         val plan = getActivePlan(userId)
             ?: throw ResourceNotFoundException("No active plan found")
 
-        if (request.dayNumber < 1 || request.dayNumber > plan.totalDays) {
-            throw BadRequestException("Day number must be between 1 and ${plan.totalDays}")
-        }
+        val day = userPlanDayRepository.findByPlanIdAndDayNumber(plan.id, request.dayNumber)
+            ?: throw BadRequestException("Day ${request.dayNumber} not found in current plan")
 
         plan.currentDay = request.dayNumber
         plan.updatedAt = LocalDateTime.now()

@@ -12,7 +12,8 @@ import org.springframework.transaction.annotation.Transactional
 class TemplateService(
     private val templateRepository: WorkoutPlanTemplateRepository,
     private val templateDayRepository: TemplateDayRepository,
-    private val templateDayExerciseRepository: TemplateDayExerciseRepository
+    private val templateDayExerciseRepository: TemplateDayExerciseRepository,
+    private val exerciseTranslationRepository: ExerciseTranslationRepository
 ) {
     fun getAllTemplates(userId: Long?): List<TemplateSummaryResponse> {
         val systemTemplates = templateRepository.findByIsActiveTrueAndSourceTypeOrderBySortOrder(PlanSourceType.PRESET)
@@ -33,11 +34,22 @@ class TemplateService(
             .map { it.toSummaryResponse() }
     }
 
-    fun getTemplateDetail(code: String): TemplateDetailResponse {
+    fun getTemplateDetail(code: String, locale: String = "ko"): TemplateDetailResponse {
         val template = templateRepository.findByCode(code)
             ?: throw ResourceNotFoundException("Template not found: $code")
 
         val days = templateDayRepository.findByTemplateIdOrderByDayNumber(template.id)
+
+        // 모든 Day의 운동 ID 수집 → 번역 일괄 조회
+        val allExercises = days.flatMap { day ->
+            templateDayExerciseRepository.findByTemplateDayIdOrderByOrderInDay(day.id)
+        }
+        val exerciseIds = allExercises.map { it.exercise.id }.distinct()
+        val translatedNames = if (locale != "en") {
+            exerciseTranslationRepository.findByExerciseIdInAndLocale(exerciseIds, locale)
+                .associateBy { it.exercise.id }
+        } else emptyMap()
+
         val dayResponses = days.map { day ->
             val exercises = templateDayExerciseRepository.findByTemplateDayIdOrderByOrderInDay(day.id)
             TemplateDayResponse(
@@ -48,7 +60,7 @@ class TemplateService(
                 exercises = exercises.map { ex ->
                     TemplateDayExerciseResponse(
                         exerciseId = ex.exercise.id,
-                        exerciseName = ex.exercise.name,
+                        exerciseName = translatedNames[ex.exercise.id]?.displayName ?: ex.exercise.name,
                         imageUrl = ex.exercise.imageUrl,
                         orderInDay = ex.orderInDay,
                         sets = ex.sets,
