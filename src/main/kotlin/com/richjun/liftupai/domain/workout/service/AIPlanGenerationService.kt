@@ -317,30 +317,56 @@ class AIPlanGenerationService(
     }
 
     private fun parseAIPlanResponse(response: String): AIPlanResponse {
+        log.info("AI raw response length: ${response.length}, first 200 chars: ${response.take(200)}")
+
+        if (response.isBlank()) {
+            throw RuntimeException("AI 응답이 비어있습니다. Gemini API가 빈 결과를 반환했습니다.")
+        }
+
         val jsonStr = extractJsonObject(response)
+        log.info("Extracted JSON length: ${jsonStr.length}")
 
         return try {
             objectMapper.readValue<AIPlanResponse>(jsonStr)
         } catch (e: Exception) {
             log.error("Failed to parse AI response as JSON: ${e.message}")
-            log.debug("Raw response: $jsonStr")
+            log.error("Raw JSON (first 500): ${jsonStr.take(500)}")
             throw RuntimeException("AI 응답을 파싱할 수 없습니다. 다시 시도해주세요.", e)
         }
     }
 
     private fun extractJsonObject(text: String): String {
-        val start = text.indexOf('{')
-        if (start == -1) throw RuntimeException("AI 응답에서 JSON을 찾을 수 없습니다.")
+        // 마크다운 코드블록 제거
+        var cleaned = text
+            .replace("```json", "")
+            .replace("```", "")
+            .trim()
+
+        val start = cleaned.indexOf('{')
+        if (start == -1) {
+            log.error("No '{' found in AI response. Full text: ${text.take(500)}")
+            throw RuntimeException("AI 응답에서 JSON을 찾을 수 없습니다.")
+        }
+
+        // 문자열 리터럴 안의 중괄호를 무시하면서 깊이 추적
         var depth = 0
-        for (i in start until text.length) {
-            when (text[i]) {
+        var inString = false
+        var escape = false
+        for (i in start until cleaned.length) {
+            val c = cleaned[i]
+            if (escape) { escape = false; continue }
+            if (c == '\\' && inString) { escape = true; continue }
+            if (c == '"' && !escape) { inString = !inString; continue }
+            if (inString) continue
+            when (c) {
                 '{' -> depth++
                 '}' -> {
                     depth--
-                    if (depth == 0) return text.substring(start, i + 1)
+                    if (depth == 0) return cleaned.substring(start, i + 1)
                 }
             }
         }
+        log.error("Incomplete JSON. depth=$depth, text length=${cleaned.length}, first 500: ${cleaned.take(500)}")
         throw RuntimeException("AI 응답에서 완전한 JSON 객체를 찾을 수 없습니다.")
     }
 
