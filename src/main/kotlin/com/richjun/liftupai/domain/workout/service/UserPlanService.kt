@@ -107,7 +107,7 @@ class UserPlanService(
                 val suggestedWeight = weightRecommendationService.calculateSuggestedWeight(
                     userId, ex.exercise.id, targetReps
                 )
-                val warmupSets = if (ex.isCompound && suggestedWeight != null && suggestedWeight > 20.0) {
+                val warmupSets = if (ex.isCompound && suggestedWeight > 20.0) {
                     generateWarmupSets(suggestedWeight)
                 } else {
                     emptyList()
