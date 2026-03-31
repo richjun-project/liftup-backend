@@ -59,20 +59,19 @@ class AIPlanGenerationService(
             if (accumulated.length - lastNotifyLen < 100) return@callGeminiStreamingWithRetry
             lastNotifyLen = accumulated.length
 
-            // dayName 등장 횟수로 Day 진행 추적
-            val dayCount = "\"dayName\"".toRegex().findAll(accumulated).count()
+            // dayName/day_name 등장 횟수로 Day 진행 추적
+            val dayCount = "\"(?:dayName|day_name)\"".toRegex().findAll(accumulated).count()
             if (dayCount > detectedDays) {
                 detectedDays = dayCount
-                // 마지막 dayName 값 추출
-                val dayNameMatch = "\"dayName\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+                val dayNameMatch = "\"(?:dayName|day_name)\"\\s*:\\s*\"([^\"]+)\"".toRegex()
                     .findAll(accumulated).lastOrNull()
                 val dayName = dayNameMatch?.groupValues?.get(1) ?: "Day $dayCount"
                 onProgress(2, "Day $dayCount 설계 중: $dayName")
                 return@callGeminiStreamingWithRetry
             }
 
-            // 마지막 exerciseName 추출
-            val exMatch = "\"exerciseName\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+            // 마지막 exerciseName/exercise_name 추출
+            val exMatch = "\"(?:exerciseName|exercise_name)\"\\s*:\\s*\"([^\"]+)\"".toRegex()
                 .findAll(accumulated).lastOrNull()
             val exName = exMatch?.groupValues?.get(1) ?: ""
             if (exName.isNotEmpty() && exName != lastExerciseName) {

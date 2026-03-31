@@ -1,11 +1,14 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.databind.annotation.JsonNaming
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.RecommendationTier
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class AIPlanExerciseEntry(
     var exerciseId: Long,
     var exerciseName: String,
@@ -19,6 +22,7 @@ data class AIPlanExerciseEntry(
     val notes: String? = null
 )
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class AIPlanDayEntry(
     val dayNumber: Int,
     val dayName: String,
@@ -27,6 +31,7 @@ data class AIPlanDayEntry(
     var exercises: List<AIPlanExerciseEntry>
 )
 
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class AIPlanResponse(
     val planName: String,
     val planDescription: String,
