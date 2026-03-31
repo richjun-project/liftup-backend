@@ -50,35 +50,9 @@ class AIPlanGenerationService(
         val exercisePool = curatedExercisePoolService.getPromptReadyExerciseList()
         val prompt = buildPlanGenerationPrompt(request, exercisePool)
 
-        // 2. Call Gemini AI (스트리밍 — 실시간 내용 추출)
+        // 2. Call Gemini AI (동기 호출)
         onProgress(2, "AI가 맞춤 플랜을 설계하고 있어요...")
-        var lastNotifyLen = 0
-        var detectedDays = 0
-        var lastExerciseName = ""
-        val aiResponse = callGeminiStreamingWithRetry(prompt, maxRetries = 3) { accumulated, _ ->
-            if (accumulated.length - lastNotifyLen < 100) return@callGeminiStreamingWithRetry
-            lastNotifyLen = accumulated.length
-
-            // dayName/day_name 등장 횟수로 Day 진행 추적
-            val dayCount = "\"(?:dayName|day_name)\"".toRegex().findAll(accumulated).count()
-            if (dayCount > detectedDays) {
-                detectedDays = dayCount
-                val dayNameMatch = "\"(?:dayName|day_name)\"\\s*:\\s*\"([^\"]+)\"".toRegex()
-                    .findAll(accumulated).lastOrNull()
-                val dayName = dayNameMatch?.groupValues?.get(1) ?: "Day $dayCount"
-                onProgress(2, "Day $dayCount 설계 중: $dayName")
-                return@callGeminiStreamingWithRetry
-            }
-
-            // 마지막 exerciseName/exercise_name 추출
-            val exMatch = "\"(?:exerciseName|exercise_name)\"\\s*:\\s*\"([^\"]+)\"".toRegex()
-                .findAll(accumulated).lastOrNull()
-            val exName = exMatch?.groupValues?.get(1) ?: ""
-            if (exName.isNotEmpty() && exName != lastExerciseName) {
-                lastExerciseName = exName
-                onProgress(2, "운동 배치 중: $exName")
-            }
-        }
+        val aiResponse = callGeminiWithRetry(prompt, maxRetries = 3)
 
         // 3. Parse JSON response
         onProgress(3, "AI 응답을 분석하고 있어요...")
