@@ -68,7 +68,7 @@ class TemplateBootstrapService(
             sortOrder = 1
         )
 
-        seedDay(template, 1, "전신 A", WorkoutType.FULL_BODY, 50, listOf(
+        seedDay(template, 1, "전신 기초 (스쿼트·벤치)", WorkoutType.FULL_BODY, 50, listOf(
             Ex("barbell-full-squat", 4, 8, 12, 90, true, 7.0),
             Ex("barbell-bench-press", 4, 8, 12, 90, true, 7.0),
             Ex("cable-bar-lateral-pulldown", 3, 10, 12, 60, true, 7.0),
@@ -76,7 +76,7 @@ class TemplateBootstrapService(
             Ex("high-plank", 3, 30, 60, 60, false, 6.0, "초 단위")
         ))
 
-        seedDay(template, 2, "전신 B", WorkoutType.FULL_BODY, 50, listOf(
+        seedDay(template, 2, "전신 기초 (데드리프트·인클라인)", WorkoutType.FULL_BODY, 50, listOf(
             Ex("barbell-deadlift", 4, 6, 10, 120, true, 7.0),
             Ex("barbell-incline-bench-press", 3, 8, 12, 90, true, 7.0),
             Ex("cable-pulldown", 3, 10, 12, 60, true, 7.0),
@@ -84,7 +84,7 @@ class TemplateBootstrapService(
             Ex("lying-leg-raise", 3, 12, 15, 45, false, 6.0)
         ))
 
-        seedDay(template, 3, "전신 C", WorkoutType.FULL_BODY, 50, listOf(
+        seedDay(template, 3, "전신 기초 (레그프레스·로우)", WorkoutType.FULL_BODY, 50, listOf(
             Ex("leg-press-machine-normal-stance", 4, 10, 12, 90, true, 7.0),
             Ex("dumbbell-bench-press", 3, 10, 12, 60, true, 7.0),
             Ex("barbell-bent-over-row-pronated-grip", 3, 8, 12, 90, true, 7.0),
@@ -109,7 +109,7 @@ class TemplateBootstrapService(
             sortOrder = 2
         )
 
-        seedDay(template, 1, "상체 A", WorkoutType.UPPER, 55, listOf(
+        seedDay(template, 1, "상체 가슴·어깨·삼두", WorkoutType.UPPER, 55, listOf(
             Ex("barbell-bench-press", 4, 8, 12, 90, true, 7.0),
             Ex("barbell-bent-over-row-pronated-grip", 4, 8, 12, 90, true, 7.0),
             Ex("dumbbell-seated-shoulder-press", 3, 10, 12, 60, true, 7.0),
@@ -117,7 +117,7 @@ class TemplateBootstrapService(
             Ex("dumbbell-standing-triceps-extension", 3, 10, 12, 60, false, 7.0)
         ))
 
-        seedDay(template, 2, "하체 A", WorkoutType.LOWER, 50, listOf(
+        seedDay(template, 2, "하체 스쿼트·레그프레스", WorkoutType.LOWER, 50, listOf(
             Ex("barbell-full-squat", 4, 8, 12, 120, true, 7.0),
             Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
             Ex("lying-leg-curl-machine", 3, 10, 12, 60, false, 7.0),
@@ -125,7 +125,7 @@ class TemplateBootstrapService(
             Ex("high-plank", 3, 30, 60, 60, false, 6.0, "초 단위")
         ))
 
-        seedDay(template, 3, "상체 B", WorkoutType.UPPER, 55, listOf(
+        seedDay(template, 3, "상체 등·이두·측면", WorkoutType.UPPER, 55, listOf(
             Ex("barbell-incline-bench-press", 4, 8, 12, 90, true, 7.0),
             Ex("cable-bar-lateral-pulldown", 4, 10, 12, 60, true, 7.0),
             Ex("lateral-raises-dumbbell", 3, 12, 15, 45, false, 6.0),
@@ -133,7 +133,7 @@ class TemplateBootstrapService(
             Ex("cable-pushdown", 3, 10, 12, 60, false, 7.0)
         ))
 
-        seedDay(template, 4, "하체 B", WorkoutType.LOWER, 50, listOf(
+        seedDay(template, 4, "하체 데드리프트·런지", WorkoutType.LOWER, 50, listOf(
             Ex("barbell-deadlift", 4, 6, 10, 120, true, 7.0),
             Ex("barbell-lunge", 3, 10, 12, 60, true, 7.0),
             Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
@@ -158,7 +158,7 @@ class TemplateBootstrapService(
             sortOrder = 3
         )
 
-        seedDay(template, 1, "서킷 A", WorkoutType.FULL_BODY, 45, listOf(
+        seedDay(template, 1, "전신 연소 (스쿼트·벤치·로우)", WorkoutType.FULL_BODY, 45, listOf(
             Ex("barbell-full-squat", 4, 10, 15, 60, true, 7.0),
             Ex("barbell-bench-press", 4, 10, 15, 60, true, 7.0),
             Ex("barbell-bent-over-row-pronated-grip", 3, 10, 15, 60, true, 7.0),
@@ -166,7 +166,7 @@ class TemplateBootstrapService(
             Ex("high-plank", 3, 30, 60, 45, false, 7.0, "초 단위")
         ))
 
-        seedDay(template, 2, "서킷 B", WorkoutType.FULL_BODY, 45, listOf(
+        seedDay(template, 2, "전신 연소 (데드·푸시업·풀다운)", WorkoutType.FULL_BODY, 45, listOf(
             Ex("barbell-deadlift", 4, 8, 12, 60, true, 7.0),
             Ex("deep-push-up", 3, 12, 20, 45, true, 7.0),
             Ex("cable-bar-lateral-pulldown", 3, 12, 15, 45, true, 7.0),
@@ -174,7 +174,7 @@ class TemplateBootstrapService(
             Ex("russian-twist", 3, 15, 20, 45, false, 7.0)
         ))
 
-        seedDay(template, 3, "서킷 C", WorkoutType.FULL_BODY, 45, listOf(
+        seedDay(template, 3, "전신 연소 (레그프레스·인클라인)", WorkoutType.FULL_BODY, 45, listOf(
             Ex("leg-press-machine-normal-stance", 4, 12, 15, 60, true, 7.0),
             Ex("barbell-incline-bench-press", 3, 10, 15, 60, true, 7.0),
             Ex("cable-pulldown", 3, 12, 15, 45, true, 7.0),
@@ -199,7 +199,7 @@ class TemplateBootstrapService(
             sortOrder = 4
         )
 
-        seedDay(template, 1, "Push A", WorkoutType.PUSH, 60, listOf(
+        seedDay(template, 1, "밀기 가슴·어깨·삼두", WorkoutType.PUSH, 60, listOf(
             Ex("barbell-bench-press", 4, 6, 10, 120, true, 8.0),
             Ex("barbell-incline-bench-press", 3, 8, 12, 90, true, 7.0),
             Ex("dumbbell-seated-shoulder-press", 3, 8, 12, 90, true, 7.0),
@@ -208,7 +208,7 @@ class TemplateBootstrapService(
             Ex("cable-pushdown", 3, 10, 12, 60, false, 7.0)
         ))
 
-        seedDay(template, 2, "Pull A", WorkoutType.PULL, 60, listOf(
+        seedDay(template, 2, "당기기 등·이두·후면", WorkoutType.PULL, 60, listOf(
             Ex("barbell-deadlift", 4, 5, 8, 150, true, 8.0),
             Ex("barbell-bent-over-row-pronated-grip", 4, 8, 12, 90, true, 7.0),
             Ex("cable-bar-lateral-pulldown", 3, 10, 12, 60, true, 7.0),
@@ -217,7 +217,7 @@ class TemplateBootstrapService(
             Ex("bent-over-rear-delt-fly-dumbbell", 3, 12, 15, 45, false, 7.0)
         ))
 
-        seedDay(template, 3, "Legs A", WorkoutType.LEGS, 60, listOf(
+        seedDay(template, 3, "하체 스쿼트·런지·종아리", WorkoutType.LEGS, 60, listOf(
             Ex("barbell-full-squat", 4, 6, 10, 120, true, 8.0),
             Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
             Ex("barbell-lunge", 3, 10, 12, 60, true, 7.0),
@@ -226,7 +226,7 @@ class TemplateBootstrapService(
             Ex("abdominal-crunches", 3, 15, 20, 45, false, 6.0)
         ))
 
-        seedDay(template, 4, "Push B", WorkoutType.PUSH, 60, listOf(
+        seedDay(template, 4, "밀기 인클라인·어깨·코어", WorkoutType.PUSH, 60, listOf(
             Ex("dumbbell-bench-press", 4, 8, 12, 90, true, 7.0),
             Ex("barbell-incline-bench-press", 3, 8, 12, 90, true, 7.0),
             Ex("dumbbell-seated-shoulder-press", 3, 10, 12, 60, true, 7.0),
@@ -235,7 +235,7 @@ class TemplateBootstrapService(
             Ex("high-plank", 3, 30, 60, 60, false, 6.0, "초 단위")
         ))
 
-        seedDay(template, 5, "Pull B", WorkoutType.PULL, 60, listOf(
+        seedDay(template, 5, "당기기 풀다운·로우·이두", WorkoutType.PULL, 60, listOf(
             Ex("cable-bar-lateral-pulldown", 4, 8, 12, 90, true, 7.0),
             Ex("barbell-bent-over-row-pronated-grip", 3, 8, 12, 90, true, 7.0),
             Ex("cable-rear-pulldown", 3, 10, 12, 60, true, 7.0),
@@ -244,7 +244,7 @@ class TemplateBootstrapService(
             Ex("bent-over-rear-delt-fly-dumbbell", 3, 12, 15, 45, false, 7.0)
         ))
 
-        seedDay(template, 6, "Legs B", WorkoutType.LEGS, 60, listOf(
+        seedDay(template, 6, "하체 스쿼트·루마니안·햄스트링", WorkoutType.LEGS, 60, listOf(
             Ex("barbell-full-squat", 4, 8, 12, 120, true, 7.0),
             Ex("barbell-romanian-deadlift", 3, 8, 12, 90, true, 7.0),
             Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
@@ -270,7 +270,7 @@ class TemplateBootstrapService(
             sortOrder = 5
         )
 
-        seedDay(template, 1, "상체 A", WorkoutType.UPPER, 60, listOf(
+        seedDay(template, 1, "상체 벤치·로우·어깨", WorkoutType.UPPER, 60, listOf(
             Ex("barbell-bench-press", 4, 6, 10, 120, true, 8.0),
             Ex("barbell-bent-over-row-pronated-grip", 4, 8, 12, 90, true, 7.0),
             Ex("dumbbell-seated-shoulder-press", 3, 8, 12, 60, true, 7.0),
@@ -279,7 +279,7 @@ class TemplateBootstrapService(
             Ex("lateral-raises-dumbbell", 3, 12, 15, 45, false, 6.0)
         ))
 
-        seedDay(template, 2, "하체 A", WorkoutType.LOWER, 55, listOf(
+        seedDay(template, 2, "하체 스쿼트·레그프레스·코어", WorkoutType.LOWER, 55, listOf(
             Ex("barbell-full-squat", 4, 6, 10, 120, true, 8.0),
             Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
             Ex("lying-leg-curl-machine", 3, 10, 12, 60, false, 7.0),
@@ -288,7 +288,7 @@ class TemplateBootstrapService(
             Ex("high-plank", 3, 30, 60, 60, false, 6.0, "초 단위")
         ))
 
-        seedDay(template, 3, "상체 B", WorkoutType.UPPER, 60, listOf(
+        seedDay(template, 3, "상체 인클라인·풀다운·후면", WorkoutType.UPPER, 60, listOf(
             Ex("barbell-incline-bench-press", 4, 8, 12, 90, true, 7.0),
             Ex("cable-bar-lateral-pulldown", 4, 10, 12, 60, true, 7.0),
             Ex("cable-pulldown", 3, 10, 12, 60, true, 7.0),
@@ -297,7 +297,7 @@ class TemplateBootstrapService(
             Ex("bent-over-rear-delt-fly-dumbbell", 3, 12, 15, 45, false, 7.0)
         ))
 
-        seedDay(template, 4, "하체 B", WorkoutType.LOWER, 55, listOf(
+        seedDay(template, 4, "하체 데드리프트·런지·종아리", WorkoutType.LOWER, 55, listOf(
             Ex("barbell-deadlift", 4, 5, 8, 150, true, 8.0),
             Ex("barbell-lunge", 3, 10, 12, 60, true, 7.0),
             Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),

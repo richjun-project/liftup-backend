@@ -364,7 +364,7 @@ $exercisePool
   "days": [
     {
       "dayNumber": 1,
-      "dayName": "string (Korean, e.g. 'Push Day')",
+      "dayName": "string (Korean, descriptive with target muscles, e.g. '밀기 가슴·어깨·삼두', '하체 스쿼트·런지', '당기기 등·이두')",
       "workoutType": "PUSH|PULL|LEGS|UPPER|LOWER|FULL_BODY",
       "estimatedDurationMinutes": number,
       "exercises": [
