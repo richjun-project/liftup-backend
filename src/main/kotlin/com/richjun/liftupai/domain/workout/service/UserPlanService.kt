@@ -2,6 +2,7 @@ package com.richjun.liftupai.domain.workout.service
 
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.workout.dto.request.ApplyTemplateRequest
+import com.richjun.liftupai.domain.workout.dto.request.CreateCustomPlanRequest
 import com.richjun.liftupai.domain.workout.dto.request.SetCurrentDayRequest
 import com.richjun.liftupai.domain.workout.dto.response.*
 import com.richjun.liftupai.domain.workout.entity.*
@@ -187,6 +188,67 @@ class UserPlanService(
         }
 
         log.info("User {} applied template {} as new plan {}", user.id, templateCode, savedPlan.id)
+        return getPlanDashboard(user.id)
+    }
+
+    @Transactional
+    fun createCustomPlan(user: User, request: CreateCustomPlanRequest): PlanDashboardResponse {
+        if (request.days.isEmpty()) throw BadRequestException("At least one day is required")
+        if (request.planName.isBlank()) throw BadRequestException("Plan name is required")
+
+        // Abandon existing active plan
+        abandonActivePlan(user.id)
+
+        // Determine split type from workout types
+        val workoutTypes = request.days.map { it.workoutType.uppercase() }.toSet()
+        val splitType = when {
+            workoutTypes.all { it == "FULL_BODY" } -> SplitType.FULL_BODY
+            workoutTypes.containsAll(setOf("PUSH", "PULL", "LEGS")) -> SplitType.PPL
+            workoutTypes.containsAll(setOf("UPPER", "LOWER")) -> SplitType.UPPER_LOWER
+            else -> SplitType.FULL_BODY
+        }
+
+        val plan = UserWorkoutPlan(
+            user = user,
+            sourceType = PlanSourceType.CUSTOM,
+            sourceId = null,
+            planName = request.planName,
+            planDescription = null,
+            splitType = splitType,
+            totalDays = request.days.size,
+            currentDay = 1,
+            status = PlanStatus.ACTIVE
+        )
+        val savedPlan = userWorkoutPlanRepository.save(plan)
+
+        for ((dayIndex, dayReq) in request.days.withIndex()) {
+            val workoutType = try { WorkoutType.valueOf(dayReq.workoutType.uppercase()) } catch (_: Exception) { WorkoutType.FULL_BODY }
+            val planDay = UserPlanDay(
+                plan = savedPlan,
+                dayNumber = dayIndex + 1,
+                dayName = dayReq.dayName,
+                workoutType = workoutType,
+                estimatedDurationMinutes = dayReq.exercises.size * 8 // rough estimate
+            )
+            val savedDay = userPlanDayRepository.save(planDay)
+
+            for ((exIndex, exReq) in dayReq.exercises.withIndex()) {
+                val exercise = exerciseRepository.findById(exReq.exerciseId).orElse(null) ?: continue
+                val planExercise = UserPlanDayExercise(
+                    planDay = savedDay,
+                    exercise = exercise,
+                    orderInDay = exIndex + 1,
+                    sets = exReq.sets,
+                    minReps = exReq.minReps,
+                    maxReps = exReq.maxReps,
+                    restSeconds = exReq.restSeconds,
+                    isCompound = exercise.movementPattern?.lowercase()?.contains("compound") == true
+                )
+                userPlanDayExerciseRepository.save(planExercise)
+            }
+        }
+
+        log.info("User {} created custom plan {} with {} days", user.id, savedPlan.id, request.days.size)
         return getPlanDashboard(user.id)
     }
 

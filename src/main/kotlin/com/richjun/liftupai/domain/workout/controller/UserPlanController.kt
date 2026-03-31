@@ -1,6 +1,7 @@
 package com.richjun.liftupai.domain.workout.controller
 
 import com.richjun.liftupai.domain.workout.dto.request.ApplyTemplateRequest
+import com.richjun.liftupai.domain.workout.dto.request.CreateCustomPlanRequest
 import com.richjun.liftupai.domain.workout.dto.request.GenerateAIPlanRequest
 import com.richjun.liftupai.domain.workout.dto.request.SetCurrentDayRequest
 import com.richjun.liftupai.domain.workout.service.AIPlanGenerationService
@@ -115,6 +116,16 @@ class UserPlanController(
     ): ResponseEntity<Map<String, Any>> {
         val options = userPlanService.getPlanOptions(userDetails.getId())
         return ResponseEntity.ok(mapOf("success" to true, "data" to options))
+    }
+
+    // --- Custom Plan ---
+    @PostMapping("/plans/custom")
+    fun createCustomPlan(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestBody request: CreateCustomPlanRequest
+    ): ResponseEntity<Map<String, Any>> {
+        val dashboard = userPlanService.createCustomPlan(userDetails.getUser(), request)
+        return ResponseEntity.ok(mapOf("success" to true, "data" to dashboard))
     }
 
     // --- AI Plan Generation ---
