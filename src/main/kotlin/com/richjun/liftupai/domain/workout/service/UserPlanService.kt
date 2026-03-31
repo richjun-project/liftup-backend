@@ -31,6 +31,13 @@ class UserPlanService(
 ) {
     private val log = LoggerFactory.getLogger(UserPlanService::class.java)
 
+    @org.springframework.beans.factory.annotation.Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
+    private var exerciseMediaBaseUrl: String = "https://liftup-cdn.com"
+
+    private fun thumbnailUrl(exercise: Exercise): String {
+        return "${exerciseMediaBaseUrl.trimEnd('/')}/exercises/${exercise.slug}/thumb.jpg"
+    }
+
     fun getActivePlan(userId: Long): UserWorkoutPlan? {
         return userWorkoutPlanRepository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, PlanStatus.ACTIVE)
     }
@@ -107,7 +114,7 @@ class UserPlanService(
                 DayExerciseDetail(
                     exerciseId = ex.exercise.id,
                     exerciseName = translatedNames[ex.exercise.id]?.displayName ?: ex.exercise.name,
-                    imageUrl = ex.exercise.imageUrl,
+                    imageUrl = thumbnailUrl(ex.exercise),
                     sets = ex.sets,
                     minReps = ex.minReps,
                     maxReps = ex.maxReps,

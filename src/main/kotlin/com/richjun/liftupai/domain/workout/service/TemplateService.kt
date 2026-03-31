@@ -15,6 +15,12 @@ class TemplateService(
     private val templateDayExerciseRepository: TemplateDayExerciseRepository,
     private val exerciseTranslationRepository: ExerciseTranslationRepository
 ) {
+    @org.springframework.beans.factory.annotation.Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
+    private var exerciseMediaBaseUrl: String = "https://liftup-cdn.com"
+
+    private fun thumbnailUrl(exercise: Exercise): String {
+        return "${exerciseMediaBaseUrl.trimEnd('/')}/exercises/${exercise.slug}/thumb.jpg"
+    }
     fun getAllTemplates(userId: Long?): List<TemplateSummaryResponse> {
         val systemTemplates = templateRepository.findByIsActiveTrueAndSourceTypeOrderBySortOrder(PlanSourceType.PRESET)
         val userAIPlans = if (userId != null) {
@@ -61,7 +67,7 @@ class TemplateService(
                     TemplateDayExerciseResponse(
                         exerciseId = ex.exercise.id,
                         exerciseName = translatedNames[ex.exercise.id]?.displayName ?: ex.exercise.name,
-                        imageUrl = ex.exercise.imageUrl,
+                        imageUrl = thumbnailUrl(ex.exercise),
                         orderInDay = ex.orderInDay,
                         sets = ex.sets,
                         minReps = ex.minReps,
