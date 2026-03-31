@@ -50,15 +50,34 @@ class AIPlanGenerationService(
         val exercisePool = curatedExercisePoolService.getPromptReadyExerciseList()
         val prompt = buildPlanGenerationPrompt(request, exercisePool)
 
-        // 2. Call Gemini AI (스트리밍)
+        // 2. Call Gemini AI (스트리밍 — 실시간 내용 추출)
         onProgress(2, "AI가 맞춤 플랜을 설계하고 있어요...")
         var lastNotifyLen = 0
+        var detectedDays = 0
+        var lastExerciseName = ""
         val aiResponse = callGeminiStreamingWithRetry(prompt, maxRetries = 3) { accumulated, _ ->
-            // 500자마다 진행 상태 업데이트
-            if (accumulated.length - lastNotifyLen > 500) {
-                lastNotifyLen = accumulated.length
-                val chars = accumulated.length
-                onProgress(2, "AI가 플랜을 작성하고 있어요... (${chars}자 생성)")
+            if (accumulated.length - lastNotifyLen < 100) return@callGeminiStreamingWithRetry
+            lastNotifyLen = accumulated.length
+
+            // dayName 등장 횟수로 Day 진행 추적
+            val dayCount = "\"dayName\"".toRegex().findAll(accumulated).count()
+            if (dayCount > detectedDays) {
+                detectedDays = dayCount
+                // 마지막 dayName 값 추출
+                val dayNameMatch = "\"dayName\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+                    .findAll(accumulated).lastOrNull()
+                val dayName = dayNameMatch?.groupValues?.get(1) ?: "Day $dayCount"
+                onProgress(2, "Day $dayCount 설계 중: $dayName")
+                return@callGeminiStreamingWithRetry
+            }
+
+            // 마지막 exerciseName 추출
+            val exMatch = "\"exerciseName\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+                .findAll(accumulated).lastOrNull()
+            val exName = exMatch?.groupValues?.get(1) ?: ""
+            if (exName.isNotEmpty() && exName != lastExerciseName) {
+                lastExerciseName = exName
+                onProgress(2, "운동 배치 중: $exName")
             }
         }
 
