@@ -56,13 +56,8 @@ class ExerciseCatalogBootstrapService(
 
         val exerciseCount = exerciseRepository.count()
         if (mode == "if_empty" && exerciseCount > 0) {
-            logger.info("Exercise catalog bootstrap skipped ({} exercises already exist)", exerciseCount)
-            maybeExit()
-            return
-        }
-
-        if (mode == "update_translations") {
-            updateTranslationsOnly(resource)
+            // 운동 데이터는 있지만 번역이 카탈로그와 다를 수 있으므로 항상 싱크
+            syncTranslations(resource)
             maybeExit()
             return
         }
@@ -131,8 +126,7 @@ class ExerciseCatalogBootstrapService(
     }
 
     @Transactional
-    fun updateTranslationsOnly(resource: ClassPathResource) {
-        logger.info("Updating exercise translations only...")
+    fun syncTranslations(resource: ClassPathResource) {
         val catalogType = objectMapper.typeFactory.constructCollectionType(List::class.java, ExerciseCatalogRecord::class.java)
         val catalog: List<ExerciseCatalogRecord> = resource.inputStream.use { objectMapper.readValue(it, catalogType) }
 
@@ -165,7 +159,9 @@ class ExerciseCatalogBootstrapService(
                 }
             }
         }
-        logger.info("Translation update complete: {} updated, {} created", updated, created)
+        if (updated > 0 || created > 0) {
+            logger.info("Translation sync: {} updated, {} created", updated, created)
+        }
     }
 
     @Transactional
