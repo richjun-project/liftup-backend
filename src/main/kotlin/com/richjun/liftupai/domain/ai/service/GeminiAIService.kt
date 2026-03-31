@@ -73,6 +73,77 @@ class GeminiAIService(
         targetTemperature = planTemperature,
     )
 
+    /** 플랜 생성 스트리밍 — 토큰 생성 진행률 콜백 */
+    fun generatePlanContentStreaming(
+        prompt: String,
+        onChunk: (accumulated: String, chunkSize: Int) -> Unit
+    ): String {
+        val useModel = planModel
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/$useModel:streamGenerateContent?alt=sse&key=$apiKey"
+        val requestBody = GeminiRequest(
+            contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
+            generationConfig = GenerationConfig(
+                temperature = planTemperature,
+                maxOutputTokens = planMaxTokens,
+                topP = 0.95,
+                topK = 40
+            )
+        )
+
+        val jsonBody = objectMapper.writeValueAsString(requestBody)
+        val request = Request.Builder()
+            .url(url)
+            .post(jsonBody.toRequestBody("application/json".toMediaType()))
+            .build()
+
+        // 스트리밍용 클라이언트 (타임아웃 늘림)
+        val streamClient = client.newBuilder()
+            .readTimeout(120, TimeUnit.SECONDS)
+            .build()
+
+        val accumulated = StringBuilder()
+
+        streamClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                val errorBody = response.body?.string()
+                println("Gemini Streaming API Error: $errorBody")
+                throw RuntimeException("Gemini API error: ${response.code}")
+            }
+
+            val reader = response.body?.source() ?: throw RuntimeException("Empty response body")
+            val buffer = StringBuilder()
+
+            while (!reader.exhausted()) {
+                val line = reader.readUtf8Line() ?: continue
+
+                if (line.startsWith("data: ")) {
+                    val data = line.removePrefix("data: ").trim()
+                    if (data.isEmpty()) continue
+
+                    try {
+                        val chunk = objectMapper.readTree(data)
+                        val text = chunk.path("candidates")
+                            .firstOrNull()
+                            ?.path("content")
+                            ?.path("parts")
+                            ?.firstOrNull()
+                            ?.path("text")
+                            ?.asText() ?: ""
+
+                        if (text.isNotEmpty()) {
+                            accumulated.append(text)
+                            onChunk(accumulated.toString(), text.length)
+                        }
+                    } catch (_: Exception) {
+                        // 파싱 실패한 청크 무시
+                    }
+                }
+            }
+        }
+
+        return accumulated.toString()
+    }
+
     fun generateRecommendations(prompt: String): String = callGeminiAPI(prompt)
 
     fun analyzeMeal(prompt: String): String = callGeminiAPI(prompt)

@@ -50,9 +50,17 @@ class AIPlanGenerationService(
         val exercisePool = curatedExercisePoolService.getPromptReadyExerciseList()
         val prompt = buildPlanGenerationPrompt(request, exercisePool)
 
-        // 2. Call Gemini AI
+        // 2. Call Gemini AI (스트리밍)
         onProgress(2, "AI가 맞춤 플랜을 설계하고 있어요...")
-        val aiResponse = callGeminiWithRetry(prompt, maxRetries = 3)
+        var lastNotifyLen = 0
+        val aiResponse = callGeminiStreamingWithRetry(prompt, maxRetries = 3) { accumulated, _ ->
+            // 500자마다 진행 상태 업데이트
+            if (accumulated.length - lastNotifyLen > 500) {
+                lastNotifyLen = accumulated.length
+                val chars = accumulated.length
+                onProgress(2, "AI가 플랜을 작성하고 있어요... (${chars}자 생성)")
+            }
+        }
 
         // 3. Parse JSON response
         onProgress(3, "AI 응답을 분석하고 있어요...")
@@ -288,7 +296,28 @@ class AIPlanGenerationService(
                 log.warn("Gemini API attempt ${attempt + 1} failed: ${e.message}")
                 lastException = e
                 if (attempt < maxRetries - 1) {
-                    Thread.sleep(1000L * (attempt + 1)) // Simple backoff
+                    Thread.sleep(1000L * (attempt + 1))
+                }
+            }
+        }
+        throw lastException ?: RuntimeException("Failed to generate AI plan after $maxRetries attempts")
+    }
+
+    private fun callGeminiStreamingWithRetry(
+        prompt: String,
+        maxRetries: Int,
+        onChunk: (accumulated: String, chunkSize: Int) -> Unit
+    ): String {
+        var lastException: Exception? = null
+        repeat(maxRetries) { attempt ->
+            try {
+                val response = geminiAIService.generatePlanContentStreaming(prompt, onChunk)
+                if (response.isNotBlank()) return response
+            } catch (e: Exception) {
+                log.warn("Gemini Streaming API attempt ${attempt + 1} failed: ${e.message}")
+                lastException = e
+                if (attempt < maxRetries - 1) {
+                    Thread.sleep(1000L * (attempt + 1))
                 }
             }
         }
