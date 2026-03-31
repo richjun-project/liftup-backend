@@ -101,7 +101,9 @@ class ExerciseCatalogBootstrapService(
                 popularity = record.popularity,
                 difficulty = record.difficulty,
                 isBasicExercise = record.basicExercise,
-                recommendationTier = record.recommendationTier
+                recommendationTier = record.recommendationTier,
+                isPlanEligible = record.isPlanEligible,
+                planCategory = record.planCategory
             )
         }
 
@@ -134,8 +136,19 @@ class ExerciseCatalogBootstrapService(
         var updated = 0
         var created = 0
 
+        var planEligibleUpdated = 0
         for (record in catalog) {
             val exercise = allExercises[record.slug] ?: continue
+
+            // isPlanEligible / planCategory 동기화
+            if (exercise.isPlanEligible != record.isPlanEligible || exercise.planCategory != record.planCategory) {
+                exerciseRepository.save(exercise.copy(
+                    isPlanEligible = record.isPlanEligible,
+                    planCategory = record.planCategory
+                ))
+                planEligibleUpdated++
+            }
+
             for (translation in record.translations) {
                 val existing = exerciseTranslationRepository.findByExerciseIdAndLocale(exercise.id, translation.locale)
                 if (existing != null) {
@@ -159,8 +172,8 @@ class ExerciseCatalogBootstrapService(
                 }
             }
         }
-        if (updated > 0 || created > 0) {
-            logger.info("Translation sync: {} updated, {} created", updated, created)
+        if (updated > 0 || created > 0 || planEligibleUpdated > 0) {
+            logger.info("Catalog sync: translations {}/{} updated/created, planEligible {} updated", updated, created, planEligibleUpdated)
         }
     }
 
@@ -222,6 +235,10 @@ data class ExerciseCatalogRecord(
     val difficulty: Int = 50,
     @param:JsonProperty("basicExercise")
     val basicExercise: Boolean = false,
+    @param:JsonProperty("isPlanEligible")
+    val isPlanEligible: Boolean = false,
+    @param:JsonProperty("planCategory")
+    val planCategory: String? = null,
     val translations: List<ExerciseCatalogTranslation> = emptyList()
 ) {
     fun primaryTranslation(): ExerciseCatalogTranslation {
