@@ -139,45 +139,50 @@ class UserPlanController(
     }
 
     // --- AI Plan Generation (SSE 스트리밍) ---
-    @PostMapping("/plans/generate-ai/stream", produces = [org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE])
+    @PostMapping("/plans/generate-ai/stream")
     fun generateAIPlanStream(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @RequestBody request: GenerateAIPlanRequest
     ): org.springframework.web.servlet.mvc.method.annotation.SseEmitter {
-        val emitter = org.springframework.web.servlet.mvc.method.annotation.SseEmitter(180_000L) // 3분 타임아웃
+        val emitter = org.springframework.web.servlet.mvc.method.annotation.SseEmitter(180_000L)
+        val mapper = com.fasterxml.jackson.databind.ObjectMapper()
+
+        // Security context를 Thread 밖에서 미리 가져옴
+        val user = userDetails.getUser()
 
         Thread {
             try {
                 val dashboard = aiPlanGenerationService.generateAndApplyPlanWithProgress(
-                    userDetails.getUser(),
+                    user,
                     request
                 ) { step, message ->
                     try {
+                        val progressJson = mapper.writeValueAsString(mapOf("step" to step, "message" to message))
                         emitter.send(
                             org.springframework.web.servlet.mvc.method.annotation.SseEmitter
                                 .event()
                                 .name("progress")
-                                .data("""{"step":$step,"message":"$message"}""")
+                                .data(progressJson, org.springframework.http.MediaType.APPLICATION_JSON)
                         )
                     } catch (_: Exception) {}
                 }
 
+                val completeJson = mapper.writeValueAsString(mapOf("success" to true, "data" to dashboard))
                 emitter.send(
                     org.springframework.web.servlet.mvc.method.annotation.SseEmitter
                         .event()
                         .name("complete")
-                        .data(com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(
-                            mapOf("success" to true, "data" to dashboard)
-                        ))
+                        .data(completeJson, org.springframework.http.MediaType.APPLICATION_JSON)
                 )
                 emitter.complete()
             } catch (e: Exception) {
                 try {
+                    val errorJson = mapper.writeValueAsString(mapOf("message" to (e.message ?: "Unknown error")))
                     emitter.send(
                         org.springframework.web.servlet.mvc.method.annotation.SseEmitter
                             .event()
                             .name("error")
-                            .data("""{"message":"${e.message?.replace("\"", "'")}"}""")
+                            .data(errorJson, org.springframework.http.MediaType.APPLICATION_JSON)
                     )
                     emitter.complete()
                 } catch (_: Exception) {
