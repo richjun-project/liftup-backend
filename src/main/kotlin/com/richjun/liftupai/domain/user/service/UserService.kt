@@ -453,29 +453,99 @@ class UserService(
     }
 
     /**
-     * 회원 탈퇴 (소프트 삭제)
+     * 회원 탈퇴 (하드 삭제 - 모든 연관 데이터 완전 삭제)
      */
-    fun deactivateAccount(userId: Long): Map<String, Any> {
+    fun deleteAccount(userId: Long): Map<String, Any> {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
 
-        // 이미 탈퇴한 사용자인지 확인
         if (!user.isActive) {
             throw IllegalStateException("이미 탈퇴 처리된 계정입니다")
         }
 
-        // 사용자 비활성화
-        user.isActive = false
-        user.deletedAt = AppTime.utcNow()
-        user.refreshToken = null  // 리프레시 토큰 제거
-
-        userRepository.save(user)
+        logger.info("회원 탈퇴 시작 - userId: {}", userId)
+        deleteAllUserData(userId)
+        logger.info("회원 탈퇴 완료 - userId: {}", userId)
 
         return mapOf(
             "success" to true,
-            "message" to "Account deactivated successfully",
-            "deactivatedAt" to AppTime.formatUtc(user.deletedAt).orEmpty()
+            "message" to "Account deleted successfully"
         )
+    }
+
+    private fun deleteAllUserData(userId: Long) {
+        // ElementCollection 테이블 (최하위 leaf 노드)
+        executeDelete("DELETE FROM notification_data WHERE notification_history_id IN (SELECT id FROM notification_history WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM notification_schedule_days WHERE schedule_id IN (SELECT id FROM notification_schedules WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM user_goals WHERE profile_id IN (SELECT id FROM user_profiles WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM user_equipment WHERE profile_id IN (SELECT id FROM user_profiles WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM user_profile_injuries WHERE profile_id IN (SELECT id FROM user_profiles WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM user_available_equipment WHERE settings_id IN (SELECT id FROM user_settings WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM user_settings_injuries WHERE settings_id IN (SELECT id FROM user_settings WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM recovery_activity_body_parts WHERE activity_id IN (SELECT id FROM recovery_activities WHERE user_id = :userId)", userId)
+
+        // 알림 관련
+        executeDelete("DELETE FROM notification_history WHERE user_id = :userId", userId)
+        executeDelete("DELETE FROM notification_schedules WHERE user_id = :userId", userId)
+        executeDelete("DELETE FROM notification_devices WHERE user_id = :userId", userId)
+        executeDelete("DELETE FROM notification_settings WHERE user_id = :userId", userId)
+
+        // 프로필/설정
+        executeDelete("DELETE FROM user_profiles WHERE user_id = :userId", userId)
+        executeDelete("DELETE FROM user_settings WHERE user_id = :userId", userId)
+
+        // 채팅
+        executeDelete("DELETE FROM chat_messages WHERE user_id = :userId", userId)
+
+        // 회복
+        executeDelete("DELETE FROM recovery_activities WHERE user_id = :userId", userId)
+        executeDelete("DELETE FROM muscle_recovery WHERE user_id = :userId", userId)
+
+        // 영양
+        executeDelete("DELETE FROM meal_logs WHERE user_id = :userId", userId)
+
+        // 기록/업적/스트릭
+        executeDelete("DELETE FROM personal_records WHERE user_id = :userId", userId)
+        executeDelete("DELETE FROM achievements WHERE user_id = :userId", userId)
+        executeDelete("DELETE FROM workout_streaks WHERE user_id = :userId", userId)
+
+        // 공유 운동 (workout_sessions 참조)
+        executeDelete("DELETE FROM shared_workouts WHERE user_id = :userId", userId)
+
+        // 운동 세션 체인 (exercise_sets → workout_exercises → workout_logs → workout_sessions)
+        executeDelete("DELETE FROM exercise_sets WHERE workout_exercise_id IN (SELECT we.id FROM workout_exercises we JOIN workout_sessions ws ON we.session_id = ws.id WHERE ws.user_id = :userId)", userId)
+        executeDelete("DELETE FROM workout_exercises WHERE session_id IN (SELECT id FROM workout_sessions WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM workout_logs WHERE session_id IN (SELECT id FROM workout_sessions WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM workout_sessions WHERE user_id = :userId", userId)
+
+        // 운동 플랜 체인 (user_plan_day_exercises → user_plan_days → user_workout_plans)
+        executeDelete("DELETE FROM user_plan_day_exercises WHERE plan_day_id IN (SELECT upd.id FROM user_plan_days upd JOIN user_workout_plans uwp ON upd.plan_id = uwp.id WHERE uwp.user_id = :userId)", userId)
+        executeDelete("DELETE FROM user_plan_days WHERE plan_id IN (SELECT id FROM user_workout_plans WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM user_workout_plans WHERE user_id = :userId", userId)
+
+        // 프로그램 등록
+        executeDelete("DELETE FROM user_program_enrollments WHERE user_id = :userId", userId)
+
+        // 구독/결제 (payment_history → subscriptions)
+        executeDelete("DELETE FROM payment_history WHERE user_id = :userId", userId)
+        executeDelete("DELETE FROM subscriptions WHERE user_id = :userId", userId)
+
+        // 디바이스 세션
+        executeDelete("DELETE FROM device_sessions WHERE user_id = :userId", userId)
+
+        // 운동 플랜 템플릿 (owner_user_id는 nullable FK → NULL 처리)
+        entityManager.createNativeQuery("UPDATE workout_plan_templates SET owner_user_id = NULL WHERE owner_user_id = :userId")
+            .setParameter("userId", userId)
+            .executeUpdate()
+
+        // 최종: 사용자 삭제
+        executeDelete("DELETE FROM users WHERE id = :userId", userId)
+    }
+
+    private fun executeDelete(sql: String, userId: Long) {
+        entityManager.createNativeQuery(sql)
+            .setParameter("userId", userId)
+            .executeUpdate()
     }
 
 

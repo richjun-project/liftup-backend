@@ -74,10 +74,10 @@ class UserController(
     }
 
     @DeleteMapping("/account")
-    fun deactivateAccount(
+    fun deleteAccount(
         @AuthenticationPrincipal userDetails: CustomUserDetails
     ): ResponseEntity<ApiResponse<Map<String, Any>>> {
-        val result = userService.deactivateAccount(userDetails.getId())
+        val result = userService.deleteAccount(userDetails.getId())
         return ResponseEntity.ok(ApiResponse.success(result))
     }
 }

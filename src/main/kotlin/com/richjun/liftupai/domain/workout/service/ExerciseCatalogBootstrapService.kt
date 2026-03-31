@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
+import org.springframework.core.annotation.Order
 import org.springframework.core.io.ClassPathResource
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional
 import kotlin.system.exitProcess
 
 @Service
+@Order(100)
 class ExerciseCatalogBootstrapService(
     private val objectMapper: ObjectMapper,
     private val exerciseRepository: ExerciseRepository,
