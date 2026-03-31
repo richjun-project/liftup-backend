@@ -57,6 +57,7 @@ services:
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6334
+      REVENUECAT_WEBHOOK_SECRET: ${REVENUECAT_WEBHOOK_SECRET}
     depends_on:
       mysql:
         condition: service_healthy
