@@ -791,7 +791,7 @@
       },
       {
         "locale": "ko",
-        "name": "AB 휠 왼쪽 아웃",
+        "name": "AB 휠 레프트 아웃",
         "instructions": null,
         "tips": null
       }
@@ -893,7 +893,7 @@
       },
       {
         "locale": "ko",
-        "name": "AB 휠 오른쪽 아웃",
+        "name": "AB 휠 라이트 아웃",
         "instructions": null,
         "tips": null
       }
@@ -1197,7 +1197,7 @@
       },
       {
         "locale": "ko",
-        "name": "어덕터 동적 스트레칭",
+        "name": "어덕터 다이나믹 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -4397,7 +4397,7 @@
       },
       {
         "locale": "ko",
-        "name": "백 스트레칭 동적",
+        "name": "백 스트레칭 다이나믹",
         "instructions": null,
         "tips": null
       }
@@ -5740,7 +5740,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 불가리안 스플릿 스쿼트 왼쪽 프론트-백 뷰",
+        "name": "바벨 불가리안 스플릿 스쿼트 레프트 프론트-백 뷰",
         "instructions": null,
         "tips": null
       }
@@ -5775,7 +5775,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 불가리안 스플릿 스쿼트 왼쪽 사이드 뷰",
+        "name": "바벨 불가리안 스플릿 스쿼트 레프트 사이드 뷰",
         "instructions": null,
         "tips": null
       }
@@ -10436,7 +10436,7 @@
       },
       {
         "locale": "ko",
-        "name": "벤치 불가리안 스플릿 스쿼트 왼쪽",
+        "name": "벤치 불가리안 스플릿 스쿼트 레프트",
         "instructions": null,
         "tips": null
       }
@@ -10471,7 +10471,7 @@
       },
       {
         "locale": "ko",
-        "name": "벤치 불가리안 스플릿 스쿼트 오른쪽",
+        "name": "벤치 불가리안 스플릿 스쿼트 라이트",
         "instructions": null,
         "tips": null
       }
@@ -13541,7 +13541,7 @@
       },
       {
         "locale": "ko",
-        "name": "복싱 왼쪽 훅",
+        "name": "복싱 레프트 훅",
         "instructions": null,
         "tips": null
       }
@@ -13578,7 +13578,7 @@
       },
       {
         "locale": "ko",
-        "name": "복싱 왼쪽 어퍼컷",
+        "name": "복싱 레프트 어퍼컷",
         "instructions": null,
         "tips": null
       }
@@ -13614,7 +13614,7 @@
       },
       {
         "locale": "ko",
-        "name": "복싱 오른쪽 크로스",
+        "name": "복싱 라이트 크로스",
         "instructions": null,
         "tips": null
       }
@@ -13651,7 +13651,7 @@
       },
       {
         "locale": "ko",
-        "name": "복싱 오른쪽 훅",
+        "name": "복싱 라이트 훅",
         "instructions": null,
         "tips": null
       }
@@ -13688,7 +13688,7 @@
       },
       {
         "locale": "ko",
-        "name": "복싱 오른쪽 어퍼컷",
+        "name": "복싱 라이트 어퍼컷",
         "instructions": null,
         "tips": null
       }
@@ -14036,7 +14036,7 @@
       },
       {
         "locale": "ko",
-        "name": "불가리안 스플릿 스쿼트 맨몸 왼쪽",
+        "name": "불가리안 스플릿 스쿼트 맨몸 레프트",
         "instructions": null,
         "tips": null
       }
@@ -14071,7 +14071,7 @@
       },
       {
         "locale": "ko",
-        "name": "불가리안 스플릿 스쿼트 맨몸 오른쪽",
+        "name": "불가리안 스플릿 스쿼트 맨몸 라이트",
         "instructions": null,
         "tips": null
       }
@@ -14143,7 +14143,7 @@
       },
       {
         "locale": "ko",
-        "name": "불가리안 스플릿 스쿼트 왼쪽 맨몸 사이드 뷰",
+        "name": "불가리안 스플릿 스쿼트 레프트 맨몸 사이드 뷰",
         "instructions": null,
         "tips": null
       }
@@ -14178,7 +14178,7 @@
       },
       {
         "locale": "ko",
-        "name": "불가리안 스플릿 스쿼트 오른쪽 맨몸 사이드 뷰",
+        "name": "불가리안 스플릿 스쿼트 라이트 맨몸 사이드 뷰",
         "instructions": null,
         "tips": null
       }
@@ -17597,7 +17597,7 @@
       },
       {
         "locale": "ko",
-        "name": "체어 백 런지 왼쪽 저항 밴드",
+        "name": "체어 백 런지 레프트 저항 밴드",
         "instructions": null,
         "tips": null
       }
@@ -17667,7 +17667,7 @@
       },
       {
         "locale": "ko",
-        "name": "체어 불가리안 스플릿 스쿼트 맨몸 왼쪽",
+        "name": "체어 불가리안 스플릿 스쿼트 맨몸 레프트",
         "instructions": null,
         "tips": null
       }
@@ -17702,7 +17702,7 @@
       },
       {
         "locale": "ko",
-        "name": "체어 불가리안 스플릿 스쿼트 맨몸 오른쪽",
+        "name": "체어 불가리안 스플릿 스쿼트 맨몸 라이트",
         "instructions": null,
         "tips": null
       }
@@ -21198,7 +21198,7 @@
       },
       {
         "locale": "ko",
-        "name": "다이아고날 찹 왼쪽",
+        "name": "다이아고날 찹 레프트",
         "instructions": null,
         "tips": null
       }
@@ -21232,7 +21232,7 @@
       },
       {
         "locale": "ko",
-        "name": "다이아고날 찹 오른쪽",
+        "name": "다이아고날 찹 라이트",
         "instructions": null,
         "tips": null
       }
@@ -28643,7 +28643,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 사이드 런지 왼쪽 n 오른쪽",
+        "name": "덤벨 사이드 런지 레프트 n 라이트",
         "instructions": null,
         "tips": null
       }
@@ -30340,7 +30340,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 정적 런지",
+        "name": "덤벨 스태틱 런지",
         "instructions": null,
         "tips": null
       }
@@ -31373,7 +31373,7 @@
       },
       {
         "locale": "ko",
-        "name": "짐볼 로우어 백 동적 스트레칭",
+        "name": "짐볼 로우어 백 다이나믹 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -33006,7 +33006,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 아이소래터럴 레그 컬 양다리",
+        "name": "해머 스트렝스 아이소래터럴 레그 컬 보스 레그",
         "instructions": null,
         "tips": null
       }
@@ -34781,7 +34781,7 @@
       },
       {
         "locale": "ko",
-        "name": "케틀벨 불가리안 스플릿 스쿼트 오른쪽",
+        "name": "케틀벨 불가리안 스플릿 스쿼트 라이트",
         "instructions": null,
         "tips": null
       }
@@ -34816,7 +34816,7 @@
       },
       {
         "locale": "ko",
-        "name": "케틀벨 불가리안 스플릿 스쿼트 오른쪽 사이드 뷰",
+        "name": "케틀벨 불가리안 스플릿 스쿼트 라이트 사이드 뷰",
         "instructions": null,
         "tips": null
       }
@@ -36637,7 +36637,7 @@
       },
       {
         "locale": "ko",
-        "name": "런지 로테이션 왼쪽 오른쪽 맨몸",
+        "name": "런지 로테이션 레프트 라이트 맨몸",
         "instructions": null,
         "tips": null
       }
@@ -36672,7 +36672,7 @@
       },
       {
         "locale": "ko",
-        "name": "런지 니 드라이브 왼쪽 맨몸",
+        "name": "런지 니 드라이브 레프트 맨몸",
         "instructions": null,
         "tips": null
       }
@@ -36707,7 +36707,7 @@
       },
       {
         "locale": "ko",
-        "name": "런지 니 드라이브 오른쪽 맨몸",
+        "name": "런지 니 드라이브 라이트 맨몸",
         "instructions": null,
         "tips": null
       }
@@ -40936,7 +40936,7 @@
       },
       {
         "locale": "ko",
-        "name": "리버스 런지 왼쪽 저항 밴드",
+        "name": "리버스 런지 레프트 저항 밴드",
         "instructions": null,
         "tips": null
       }
@@ -42056,7 +42056,7 @@
       },
       {
         "locale": "ko",
-        "name": "사이드 라잉 레그 리프트 왼쪽",
+        "name": "사이드 라잉 레그 리프트 레프트",
         "instructions": null,
         "tips": null
       }
@@ -42088,7 +42088,7 @@
       },
       {
         "locale": "ko",
-        "name": "사이드 라잉 레그 리프트 오른쪽",
+        "name": "사이드 라잉 레그 리프트 라이트",
         "instructions": null,
         "tips": null
       }
@@ -42332,7 +42332,7 @@
       },
       {
         "locale": "ko",
-        "name": "싱글 암 케이블 로우 왼쪽",
+        "name": "싱글 암 케이블 로우 레프트",
         "instructions": null,
         "tips": null
       }
@@ -42370,7 +42370,7 @@
       },
       {
         "locale": "ko",
-        "name": "싱글 암 케이블 로우 오른쪽",
+        "name": "싱글 암 케이블 로우 라이트",
         "instructions": null,
         "tips": null
       }
@@ -42623,7 +42623,7 @@
       },
       {
         "locale": "ko",
-        "name": "싱글 레그 루마니안 데드리프트 오른쪽 케이블 저항 밴드",
+        "name": "싱글 레그 루마니안 데드리프트 라이트 케이블 저항 밴드",
         "instructions": null,
         "tips": null
       }
