@@ -380,7 +380,7 @@
       },
       {
         "locale": "ko",
-        "name": "45 도 백 익스텐션 (암 인 전면 체스트)",
+        "name": "45 도 백 익스텐션 (암 인 프론트 오브 체스트)",
         "instructions": null,
         "tips": null
       }
@@ -1197,7 +1197,7 @@
       },
       {
         "locale": "ko",
-        "name": "내전근 동적 스트레칭",
+        "name": "어덕터 동적 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -1230,7 +1230,7 @@
       },
       {
         "locale": "ko",
-        "name": "내전근 스트레칭",
+        "name": "어덕터 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -1264,7 +1264,7 @@
       },
       {
         "locale": "ko",
-        "name": "내전근 스트레칭 사이드 스탠딩",
+        "name": "어덕터 스트레칭 사이드 스탠딩",
         "instructions": null,
         "tips": null
       }
@@ -1689,7 +1689,7 @@
       },
       {
         "locale": "ko",
-        "name": "교차 전면 킥 인 플레이스",
+        "name": "교차 프론트 킥 인 플레이스",
         "instructions": null,
         "tips": null
       }
@@ -3403,7 +3403,7 @@
       },
       {
         "locale": "ko",
-        "name": "암 비하인드 백 숄더 굴근 스트레칭",
+        "name": "암 비하인드 백 숄더 플렉서 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -4954,7 +4954,7 @@
       },
       {
         "locale": "ko",
-        "name": "밴드 크로스 외전",
+        "name": "밴드 크로스 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -5740,7 +5740,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 불가리안 스플릿 스쿼트 왼쪽 전면-백 뷰",
+        "name": "바벨 불가리안 스플릿 스쿼트 왼쪽 프론트-백 뷰",
         "instructions": null,
         "tips": null
       }
@@ -5921,7 +5921,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 클린 그립 전면 스쿼트",
+        "name": "바벨 클린 그립 프론트 스쿼트",
         "instructions": null,
         "tips": null
       }
@@ -6306,7 +6306,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 전면 체스트 벤치 스쿼트",
+        "name": "바벨 프론트 체스트 벤치 스쿼트",
         "instructions": null,
         "tips": null
       }
@@ -6341,7 +6341,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 전면 체스트 런지",
+        "name": "바벨 프론트 체스트 런지",
         "instructions": null,
         "tips": null
       }
@@ -6376,7 +6376,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 전면 체스트 스쿼트",
+        "name": "바벨 프론트 체스트 스쿼트",
         "instructions": null,
         "tips": null
       }
@@ -6445,7 +6445,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 전면 레이즈",
+        "name": "바벨 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -6480,7 +6480,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 전면 스쿼트",
+        "name": "바벨 프론트 스쿼트",
         "instructions": null,
         "tips": null
       }
@@ -8069,7 +8069,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 후면 델트 레이즈",
+        "name": "바벨 리어 델트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -8104,7 +8104,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 후면 런지 박스",
+        "name": "바벨 리어 런지 박스",
         "instructions": null,
         "tips": null
       }
@@ -8139,7 +8139,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 후면 런지",
+        "name": "바벨 리어 런지",
         "instructions": null,
         "tips": null
       }
@@ -10987,7 +10987,7 @@
       },
       {
         "locale": "ko",
-        "name": "벤트 오버 후면 델트 플라이 덤벨",
+        "name": "벤트 오버 리어 델트 플라이 덤벨",
         "instructions": null,
         "tips": null
       }
@@ -11021,7 +11021,7 @@
       },
       {
         "locale": "ko",
-        "name": "벤트 오버 후면 델트 플라이 저항 밴드",
+        "name": "벤트 오버 리어 델트 플라이 저항 밴드",
         "instructions": null,
         "tips": null
       }
@@ -11860,7 +11860,7 @@
       },
       {
         "locale": "ko",
-        "name": "맨몸 벤트 오버 후면 델트 플라이",
+        "name": "맨몸 벤트 오버 리어 델트 플라이",
         "instructions": null,
         "tips": null
       }
@@ -11999,7 +11999,7 @@
       },
       {
         "locale": "ko",
-        "name": "맨몸 풀 스쿼트 오버헤드 전면 레이즈",
+        "name": "맨몸 풀 스쿼트 오버헤드 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -12035,7 +12035,7 @@
       },
       {
         "locale": "ko",
-        "name": "맨몸 풀 스쿼트 오버헤드 전면 레이즈",
+        "name": "맨몸 풀 스쿼트 오버헤드 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -12562,7 +12562,7 @@
       },
       {
         "locale": "ko",
-        "name": "맨몸 후면 런지",
+        "name": "맨몸 리어 런지",
         "instructions": null,
         "tips": null
       }
@@ -12598,7 +12598,7 @@
       },
       {
         "locale": "ko",
-        "name": "맨몸 후면 런지 전면 레이즈",
+        "name": "맨몸 리어 런지 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -13755,7 +13755,7 @@
       },
       {
         "locale": "ko",
-        "name": "브릿지 힙 외전",
+        "name": "브릿지 힙 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -14835,7 +14835,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 전면 레이즈 스트레이트 바",
+        "name": "케이블 프론트 레이즈 스트레이트 바",
         "instructions": null,
         "tips": null
       }
@@ -15381,7 +15381,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 원 암 전면 레이즈",
+        "name": "케이블 원 암 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -15802,7 +15802,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 후면 델트 플라이",
+        "name": "케이블 리어 델트 플라이",
         "instructions": null,
         "tips": null
       }
@@ -16254,7 +16254,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 시티드 후면 레터럴 레이즈",
+        "name": "케이블 시티드 리어 레터럴 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -17737,7 +17737,7 @@
       },
       {
         "locale": "ko",
-        "name": "체어 높인 싱글 레그 글루트 브리지",
+        "name": "체어 엘리베이티드 싱글 레그 글루트 브리지",
         "instructions": null,
         "tips": null
       }
@@ -17772,7 +17772,7 @@
       },
       {
         "locale": "ko",
-        "name": "체어 피트 높인 글루트 브리지",
+        "name": "체어 피트 엘리베이티드 글루트 브리지",
         "instructions": null,
         "tips": null
       }
@@ -17807,7 +17807,7 @@
       },
       {
         "locale": "ko",
-        "name": "체어 프로그 피트 높인 글루트 브리지 맨몸",
+        "name": "체어 프로그 피트 엘리베이티드 글루트 브리지 맨몸",
         "instructions": null,
         "tips": null
       }
@@ -19965,7 +19965,7 @@
       },
       {
         "locale": "ko",
-        "name": "크로스오버 니링 힙 굴근 스트레칭",
+        "name": "크로스오버 니링 힙 플렉서 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -23553,7 +23553,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 외부 로테이션",
+        "name": "덤벨 익스터널 로테이션",
         "instructions": null,
         "tips": null
       }
@@ -23827,7 +23827,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 전면 레이즈",
+        "name": "덤벨 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -23861,7 +23861,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 전면 레이즈 (버전 2)",
+        "name": "덤벨 프론트 레이즈 (버전 2)",
         "instructions": null,
         "tips": null
       }
@@ -23896,7 +23896,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 전면 스쿼트",
+        "name": "덤벨 프론트 스쿼트",
         "instructions": null,
         "tips": null
       }
@@ -24236,7 +24236,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 해머 컬 동시 암",
+        "name": "덤벨 해머 컬 양팔",
         "instructions": null,
         "tips": null
       }
@@ -24305,7 +24305,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 해머 프리처 컬 동시 암",
+        "name": "덤벨 해머 프리처 컬 양팔",
         "instructions": null,
         "tips": null
       }
@@ -24808,7 +24808,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 인클라인 전면 레이즈",
+        "name": "덤벨 인클라인 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -24908,7 +24908,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 인클라인 라잉 전면 레이즈",
+        "name": "덤벨 인클라인 라잉 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -25044,7 +25044,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 인클라인 후면 레터럴 레이즈",
+        "name": "덤벨 인클라인 리어 레터럴 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -25554,7 +25554,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 사이드 전면 레이즈",
+        "name": "덤벨 사이드 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -25833,7 +25833,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 라잉 원 암 후면 레터럴 레이즈",
+        "name": "덤벨 라잉 원 암 리어 레터럴 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -25866,7 +25866,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 라잉 pronation 로테이션 플로어",
+        "name": "덤벨 라잉 프로네이션 로테이션 플로어",
         "instructions": null,
         "tips": null
       }
@@ -25901,7 +25901,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 라잉 후면 델트 로우",
+        "name": "덤벨 라잉 리어 델트 로우",
         "instructions": null,
         "tips": null
       }
@@ -25935,7 +25935,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 라잉 후면 레터럴 레이즈",
+        "name": "덤벨 라잉 리어 레터럴 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -26169,7 +26169,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 원 암 전면 레이즈",
+        "name": "덤벨 원 암 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -27362,7 +27362,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 후면 델트 로우",
+        "name": "덤벨 리어 델트 로우",
         "instructions": null,
         "tips": null
       }
@@ -27430,7 +27430,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 후면 레터럴 레이즈",
+        "name": "덤벨 리어 레터럴 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -27465,7 +27465,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 후면 런지",
+        "name": "덤벨 리어 런지",
         "instructions": null,
         "tips": null
       }
@@ -27500,7 +27500,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 후면 런지 스텝",
+        "name": "덤벨 리어 런지 스텝",
         "instructions": null,
         "tips": null
       }
@@ -27909,7 +27909,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 시티드 교차 전면 레이즈",
+        "name": "덤벨 시티드 교차 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -28143,7 +28143,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 시티드 전면 레이즈",
+        "name": "덤벨 시티드 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -29132,7 +29132,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 싱글 암 언더핸드 전면 레이즈",
+        "name": "덤벨 싱글 암 언더핸드 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -29578,7 +29578,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 스탠딩 교차 vertical 전면 레이즈",
+        "name": "덤벨 스탠딩 교차 버티컬 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -29811,7 +29811,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 스탠딩 전면 레이즈 어보브 헤드",
+        "name": "덤벨 스탠딩 프론트 레이즈 어보브 헤드",
         "instructions": null,
         "tips": null
       }
@@ -30821,7 +30821,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 업라이트 숄더 외부 로테이션",
+        "name": "덤벨 업라이트 숄더 익스터널 로테이션",
         "instructions": null,
         "tips": null
       }
@@ -31304,7 +31304,7 @@
       },
       {
         "locale": "ko",
-        "name": "짐볼 힙 굴근 스트레칭",
+        "name": "짐볼 힙 플렉서 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -31813,7 +31813,7 @@
       },
       {
         "locale": "ko",
-        "name": "EZ 바 오버헤드 extensions 스탠딩",
+        "name": "EZ 바 오버헤드 익스텐션 스탠딩",
         "instructions": null,
         "tips": null
       }
@@ -31913,7 +31913,7 @@
       },
       {
         "locale": "ko",
-        "name": "EZ 바 스탠딩 전면 레이즈",
+        "name": "EZ 바 스탠딩 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -32320,7 +32320,7 @@
       },
       {
         "locale": "ko",
-        "name": "전면 레이즈 저항 밴드",
+        "name": "프론트 레이즈 저항 밴드",
         "instructions": null,
         "tips": null
       }
@@ -32355,7 +32355,7 @@
       },
       {
         "locale": "ko",
-        "name": "전면 레이즈 바벨",
+        "name": "프론트 레이즈 바벨",
         "instructions": null,
         "tips": null
       }
@@ -32390,7 +32390,7 @@
       },
       {
         "locale": "ko",
-        "name": "전면 레이즈 덤벨 시티드",
+        "name": "프론트 레이즈 덤벨 시티드",
         "instructions": null,
         "tips": null
       }
@@ -32456,7 +32456,7 @@
       },
       {
         "locale": "ko",
-        "name": "전면 스쿼트 덤벨 로우",
+        "name": "프론트 스쿼트 덤벨 로우",
         "instructions": null,
         "tips": null
       }
@@ -32490,7 +32490,7 @@
       },
       {
         "locale": "ko",
-        "name": "전면 스쿼트 덤벨 오버 숄더",
+        "name": "프론트 스쿼트 덤벨 오버 숄더",
         "instructions": null,
         "tips": null
       }
@@ -32524,7 +32524,7 @@
       },
       {
         "locale": "ko",
-        "name": "전면 스쿼트 kettlelbell 오버 숄더",
+        "name": "프론트 스쿼트 kettlelbell 오버 숄더",
         "instructions": null,
         "tips": null
       }
@@ -32593,7 +32593,7 @@
       },
       {
         "locale": "ko",
-        "name": "글루트 브리지 외전 맨몸",
+        "name": "글루트 브리지 앱덕션 맨몸",
         "instructions": null,
         "tips": null
       }
@@ -34267,7 +34267,7 @@
       },
       {
         "locale": "ko",
-        "name": "intermediate 힙 굴근 쿼드 스트레칭",
+        "name": "인터미디에이트 힙 플렉서 쿼드 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -35597,7 +35597,7 @@
       },
       {
         "locale": "ko",
-        "name": "니링 힙 굴근 스트레칭",
+        "name": "니링 힙 플렉서 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -35731,7 +35731,7 @@
       },
       {
         "locale": "ko",
-        "name": "니링 리스트 굴근 스트레칭",
+        "name": "니링 리스트 플렉서 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -36496,7 +36496,7 @@
       },
       {
         "locale": "ko",
-        "name": "로우 저항 밴드 라잉 이두 컬 하프 repetition",
+        "name": "로우 저항 밴드 라잉 이두 컬 하프 레피티션",
         "instructions": null,
         "tips": null
       }
@@ -36531,7 +36531,7 @@
       },
       {
         "locale": "ko",
-        "name": "런지 전면 킥",
+        "name": "런지 프론트 킥",
         "instructions": null,
         "tips": null
       }
@@ -36942,7 +36942,7 @@
       },
       {
         "locale": "ko",
-        "name": "라잉 벤치 내부 로테이션 스트레칭",
+        "name": "라잉 벤치 인터널 로테이션 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -37043,7 +37043,7 @@
       },
       {
         "locale": "ko",
-        "name": "라잉 힙 굴근 스트레칭",
+        "name": "라잉 힙 플렉서 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -37250,7 +37250,7 @@
       },
       {
         "locale": "ko",
-        "name": "라잉 허벅지 앞쪽 스트레칭",
+        "name": "라잉 쿼드 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -37283,7 +37283,7 @@
       },
       {
         "locale": "ko",
-        "name": "라잉 사이드 허벅지 앞쪽 스트레칭",
+        "name": "라잉 사이드 쿼드 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -38327,7 +38327,7 @@
       },
       {
         "locale": "ko",
-        "name": "플레이트 전면 레이즈",
+        "name": "플레이트 프론트 레이즈",
         "instructions": null,
         "tips": null
       }
@@ -38815,7 +38815,7 @@
       },
       {
         "locale": "ko",
-        "name": "프론 전면 레이즈 바벨 벤치",
+        "name": "프론 프론트 레이즈 바벨 벤치",
         "instructions": null,
         "tips": null
       }
@@ -38849,7 +38849,7 @@
       },
       {
         "locale": "ko",
-        "name": "프론 전면 레이즈 덤벨 벤치",
+        "name": "프론 프론트 레이즈 덤벨 벤치",
         "instructions": null,
         "tips": null
       }
@@ -39204,7 +39204,7 @@
       },
       {
         "locale": "ko",
-        "name": "후면 델트 플라이 케이블 저항 밴드",
+        "name": "리어 델트 플라이 케이블 저항 밴드",
         "instructions": null,
         "tips": null
       }
@@ -39238,7 +39238,7 @@
       },
       {
         "locale": "ko",
-        "name": "후면 델트 스트레칭",
+        "name": "리어 델트 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -39587,7 +39587,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 글루트 브리지 외전",
+        "name": "저항 밴드 글루트 브리지 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -39901,7 +39901,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 라잉 외전",
+        "name": "저항 밴드 라잉 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -39934,7 +39934,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 라잉 벤트 니 힙 외전",
+        "name": "저항 밴드 라잉 벤트 니 힙 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -40004,7 +40004,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 라잉 백 익스텐션 외전",
+        "name": "저항 밴드 라잉 백 익스텐션 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -40211,7 +40211,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 시티드 벤트 니 외전",
+        "name": "저항 밴드 시티드 벤트 니 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -40243,7 +40243,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 시티드 힙 외전",
+        "name": "저항 밴드 시티드 힙 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -40278,7 +40278,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 숄더 내전",
+        "name": "저항 밴드 숄더 어덕션",
         "instructions": null,
         "tips": null
       }
@@ -40487,7 +40487,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 스탠딩 밸런스 힙 외전",
+        "name": "저항 밴드 스탠딩 밸런스 힙 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -40521,7 +40521,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 스탠딩 외부 로테이션",
+        "name": "저항 밴드 스탠딩 익스터널 로테이션",
         "instructions": null,
         "tips": null
       }
@@ -40554,7 +40554,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 스탠딩 힙 외전",
+        "name": "저항 밴드 스탠딩 힙 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -41410,7 +41410,7 @@
       },
       {
         "locale": "ko",
-        "name": "시티드 덤벨 후면 델트 플라이",
+        "name": "시티드 덤벨 리어 델트 플라이",
         "instructions": null,
         "tips": null
       }
@@ -41510,7 +41510,7 @@
       },
       {
         "locale": "ko",
-        "name": "시티드 힙 abductor 머신",
+        "name": "시티드 힙 앱덕터 머신",
         "instructions": null,
         "tips": null
       }
@@ -41614,7 +41614,7 @@
       },
       {
         "locale": "ko",
-        "name": "시티드 숄더 굴근 de프레스 retractor 스트레칭",
+        "name": "시티드 숄더 플렉서 디프레서 리트랙터 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -41853,7 +41853,7 @@
       },
       {
         "locale": "ko",
-        "name": "숄더 외전",
+        "name": "숄더 앱덕션",
         "instructions": null,
         "tips": null
       }
@@ -43077,7 +43077,7 @@
       },
       {
         "locale": "ko",
-        "name": "스탠딩 내전근 스트레칭",
+        "name": "스탠딩 어덕터 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -43318,7 +43318,7 @@
       },
       {
         "locale": "ko",
-        "name": "스탠딩 전면 레이즈 덤벨",
+        "name": "스탠딩 프론트 레이즈 덤벨",
         "instructions": null,
         "tips": null
       }
@@ -43351,7 +43351,7 @@
       },
       {
         "locale": "ko",
-        "name": "스탠딩 gastrocnemius 스트레칭",
+        "name": "스탠딩 비복근 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -43490,7 +43490,7 @@
       },
       {
         "locale": "ko",
-        "name": "스탠딩 레그 높인 햄스트링 스트레칭",
+        "name": "스탠딩 레그 엘리베이티드 햄스트링 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -43627,7 +43627,7 @@
       },
       {
         "locale": "ko",
-        "name": "스탠딩 허벅지 앞쪽 스트레칭",
+        "name": "스탠딩 쿼드 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -43660,7 +43660,7 @@
       },
       {
         "locale": "ko",
-        "name": "스탠딩 허벅지 앞쪽 스트레칭 사이드 앵글",
+        "name": "스탠딩 쿼드 스트레칭 사이드 앵글",
         "instructions": null,
         "tips": null
       }
