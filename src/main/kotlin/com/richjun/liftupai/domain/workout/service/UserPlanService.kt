@@ -39,6 +39,10 @@ class UserPlanService(
         return "${exerciseMediaBaseUrl.trimEnd('/')}/exercises/${exercise.slug}/thumb.jpg"
     }
 
+    private fun videoUrl(exercise: Exercise): String {
+        return "${exerciseMediaBaseUrl.trimEnd('/')}/exercises/${exercise.slug}/video.mp4"
+    }
+
     fun getActivePlan(userId: Long): UserWorkoutPlan? {
         return userWorkoutPlanRepository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, PlanStatus.ACTIVE)
     }
@@ -116,6 +120,7 @@ class UserPlanService(
                     exerciseId = ex.exercise.id,
                     exerciseName = translatedNames[ex.exercise.id]?.displayName ?: ex.exercise.name,
                     imageUrl = thumbnailUrl(ex.exercise),
+                    videoUrl = videoUrl(ex.exercise),
                     sets = ex.sets,
                     minReps = ex.minReps,
                     maxReps = ex.maxReps,

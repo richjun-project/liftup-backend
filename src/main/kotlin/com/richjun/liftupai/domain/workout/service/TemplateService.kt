@@ -21,6 +21,10 @@ class TemplateService(
     private fun thumbnailUrl(exercise: Exercise): String {
         return "${exerciseMediaBaseUrl.trimEnd('/')}/exercises/${exercise.slug}/thumb.jpg"
     }
+
+    private fun videoUrl(exercise: Exercise): String {
+        return "${exerciseMediaBaseUrl.trimEnd('/')}/exercises/${exercise.slug}/video.mp4"
+    }
     fun getAllTemplates(userId: Long?): List<TemplateSummaryResponse> {
         val systemTemplates = templateRepository.findByIsActiveTrueAndSourceTypeOrderBySortOrder(PlanSourceType.PRESET)
         val userAIPlans = if (userId != null) {
@@ -68,6 +72,7 @@ class TemplateService(
                         exerciseId = ex.exercise.id,
                         exerciseName = translatedNames[ex.exercise.id]?.displayName ?: ex.exercise.name,
                         imageUrl = thumbnailUrl(ex.exercise),
+                        videoUrl = videoUrl(ex.exercise),
                         orderInDay = ex.orderInDay,
                         sets = ex.sets,
                         minReps = ex.minReps,
