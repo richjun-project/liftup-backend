@@ -1512,7 +1512,7 @@
       },
       {
         "locale": "ko",
-        "name": "교차 암 레그 플랭크",
+        "name": "얼터네이팅 암 레그 플랭크",
         "instructions": null,
         "tips": null
       }
@@ -1550,7 +1550,7 @@
       },
       {
         "locale": "ko",
-        "name": "교차 암 레그 플랭크 홀드",
+        "name": "얼터네이팅 암 레그 플랭크 홀드",
         "instructions": null,
         "tips": null
       }
@@ -1588,7 +1588,7 @@
       },
       {
         "locale": "ko",
-        "name": "교차 암 레그 플랭크 레스트 포즈",
+        "name": "얼터네이팅 암 레그 플랭크 레스트 포즈",
         "instructions": null,
         "tips": null
       }
@@ -6411,7 +6411,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 전면 런지 스몰 포즈",
+        "name": "바벨 프론트 런지 스몰 포즈",
         "instructions": null,
         "tips": null
       }
@@ -11294,7 +11294,7 @@
       },
       {
         "locale": "ko",
-        "name": "이두 컬 전면 스텝",
+        "name": "이두 컬 프론트 스텝",
         "instructions": null,
         "tips": null
       }
@@ -11963,7 +11963,7 @@
       },
       {
         "locale": "ko",
-        "name": "맨몸 전면 슬램",
+        "name": "맨몸 프론트 슬램",
         "instructions": null,
         "tips": null
       }
@@ -12704,7 +12704,7 @@
       },
       {
         "locale": "ko",
-        "name": "맨몸 스쿼트 전면 레그",
+        "name": "맨몸 스쿼트 프론트 레그",
         "instructions": null,
         "tips": null
       }
@@ -12775,7 +12775,7 @@
       },
       {
         "locale": "ko",
-        "name": "맨몸 스쿼트 사이드 전면 레그",
+        "name": "맨몸 스쿼트 사이드 프론트 레그",
         "instructions": null,
         "tips": null
       }
@@ -14800,7 +14800,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 클로즈 그립 전면 랫풀다운",
+        "name": "케이블 클로즈 그립 프론트 랫풀다운",
         "instructions": null,
         "tips": null
       }
@@ -15837,7 +15837,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 후면 드라이브",
+        "name": "케이블 리어 드라이브",
         "instructions": null,
         "tips": null
       }
@@ -15872,7 +15872,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 후면 드라이브 벤트 암",
+        "name": "케이블 리어 드라이브 벤트 암",
         "instructions": null,
         "tips": null
       }
@@ -15907,7 +15907,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 후면 풀다운",
+        "name": "케이블 리어 풀다운",
         "instructions": null,
         "tips": null
       }
@@ -18286,7 +18286,7 @@
       },
       {
         "locale": "ko",
-        "name": "체스트 프레스 전면 저항 밴드",
+        "name": "체스트 프레스 프론트 저항 밴드",
         "instructions": null,
         "tips": null
       }
@@ -18638,7 +18638,7 @@
       },
       {
         "locale": "ko",
-        "name": "친업 (등척성 네거티브)",
+        "name": "친업 (아이소메트릭 네거티브)",
         "instructions": null,
         "tips": null
       }
@@ -19930,7 +19930,7 @@
       },
       {
         "locale": "ko",
-        "name": "크로스드 암 전면 레그 킥",
+        "name": "크로스드 암 프론트 레그 킥",
         "instructions": null,
         "tips": null
       }
@@ -21164,7 +21164,7 @@
       },
       {
         "locale": "ko",
-        "name": "대각선 찹 케이블",
+        "name": "다이아고날 찹 케이블",
         "instructions": null,
         "tips": null
       }
@@ -21198,7 +21198,7 @@
       },
       {
         "locale": "ko",
-        "name": "대각선 찹 왼쪽",
+        "name": "다이아고날 찹 왼쪽",
         "instructions": null,
         "tips": null
       }
@@ -21232,7 +21232,7 @@
       },
       {
         "locale": "ko",
-        "name": "대각선 찹 오른쪽",
+        "name": "다이아고날 찹 오른쪽",
         "instructions": null,
         "tips": null
       }
@@ -21268,7 +21268,7 @@
       },
       {
         "locale": "ko",
-        "name": "대각선 런지",
+        "name": "다이아고날 런지",
         "instructions": null,
         "tips": null
       }
@@ -21340,7 +21340,7 @@
       },
       {
         "locale": "ko",
-        "name": "대각선 펀치",
+        "name": "다이아고날 펀치",
         "instructions": null,
         "tips": null
       }
@@ -21715,7 +21715,7 @@
       },
       {
         "locale": "ko",
-        "name": "더블 펀치 전면 레그 리프트",
+        "name": "더블 펀치 프론트 레그 리프트",
         "instructions": null,
         "tips": null
       }
@@ -23488,7 +23488,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 대각선 찹",
+        "name": "덤벨 다이아고날 찹",
         "instructions": null,
         "tips": null
       }
@@ -23793,7 +23793,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 전면 랙 런지",
+        "name": "덤벨 프론트 랙 런지",
         "instructions": null,
         "tips": null
       }
@@ -24069,7 +24069,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 고블릿 스플릿 스쿼트 전면 풋 엘리베이티드",
+        "name": "덤벨 고블릿 스플릿 스쿼트 프론트 풋 엘리베이티드",
         "instructions": null,
         "tips": null
       }
@@ -27327,7 +27327,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 RDL 스트레칭 등척성",
+        "name": "덤벨 RDL 스트레칭 아이소메트릭",
         "instructions": null,
         "tips": null
       }
@@ -27396,7 +27396,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 후면 풀 슈러그",
+        "name": "덤벨 리어 풀 슈러그",
         "instructions": null,
         "tips": null
       }
@@ -28748,7 +28748,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 사이드 플랭크 후면 플라이",
+        "name": "덤벨 사이드 플랭크 리어 플라이",
         "instructions": null,
         "tips": null
       }
@@ -32422,7 +32422,7 @@
       },
       {
         "locale": "ko",
-        "name": "전면 숄더 스트레칭 바",
+        "name": "프론트 숄더 스트레칭 바",
         "instructions": null,
         "tips": null
       }
@@ -32940,7 +32940,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 등척-사이드 레그 컬 교차 레그",
+        "name": "해머 스트렝스 아이소래터럴 레그 컬 교차 레그",
         "instructions": null,
         "tips": null
       }
@@ -32973,7 +32973,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 등척-사이드 레그 컬 얼터네이팅 레그",
+        "name": "해머 스트렝스 아이소래터럴 레그 컬 얼터네이팅 레그",
         "instructions": null,
         "tips": null
       }
@@ -33006,7 +33006,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 등척-사이드 레그 컬 양다리",
+        "name": "해머 스트렝스 아이소래터럴 레그 컬 양다리",
         "instructions": null,
         "tips": null
       }
@@ -33039,7 +33039,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 등척-사이드 레그 컬 싱글 레그",
+        "name": "해머 스트렝스 아이소래터럴 레그 컬 싱글 레그",
         "instructions": null,
         "tips": null
       }
@@ -33072,7 +33072,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 MTS 등척-사이드 이두 컬 교차 암",
+        "name": "해머 스트렝스 MTS 아이소래터럴 이두 컬 얼터네이팅 암",
         "instructions": null,
         "tips": null
       }
@@ -33105,7 +33105,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 MTS 등척-사이드 이두 컬 암 얼터네이팅",
+        "name": "해머 스트렝스 MTS 아이소래터럴 이두 컬 암 얼터네이팅",
         "instructions": null,
         "tips": null
       }
@@ -33138,7 +33138,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 MTS 등척-사이드 이두 컬 양쪽 암",
+        "name": "해머 스트렝스 MTS 아이소래터럴 이두 컬 보스 암",
         "instructions": null,
         "tips": null
       }
@@ -33171,7 +33171,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 MTS 등척-사이드 이두 컬 싱글 암",
+        "name": "해머 스트렝스 MTS 아이소래터럴 이두 컬 싱글 암",
         "instructions": null,
         "tips": null
       }
@@ -33205,7 +33205,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 MTS 등척-사이드 디클라인 프레스 교차 암",
+        "name": "해머 스트렝스 MTS 아이소래터럴 디클라인 프레스 얼터네이팅 암",
         "instructions": null,
         "tips": null
       }
@@ -33239,7 +33239,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 MTS 등척-사이드 디클라인 프레스 얼터네이팅 암",
+        "name": "해머 스트렝스 MTS 아이소래터럴 디클라인 프레스 얼터네이팅 암",
         "instructions": null,
         "tips": null
       }
@@ -33273,7 +33273,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 MTS 등척-사이드 디클라인 프레스 양쪽 암",
+        "name": "해머 스트렝스 MTS 아이소래터럴 디클라인 프레스 보스 암",
         "instructions": null,
         "tips": null
       }
@@ -33307,7 +33307,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 MTS 등척-사이드 디클라인 프레스 양팔",
+        "name": "해머 스트렝스 MTS 아이소래터럴 디클라인 프레스 양팔",
         "instructions": null,
         "tips": null
       }
@@ -33341,7 +33341,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 MTS 등척-사이드 디클라인 프레스 싱글 암",
+        "name": "해머 스트렝스 MTS 아이소래터럴 디클라인 프레스 싱글 암",
         "instructions": null,
         "tips": null
       }
@@ -33375,7 +33375,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 플레이트-로디드 콤비네이션 등척-사이드 체스트 - 체스트 프레스",
+        "name": "해머 스트렝스 플레이트-로디드 콤비네이션 아이소래터럴 체스트 - 체스트 프레스",
         "instructions": null,
         "tips": null
       }
@@ -33409,7 +33409,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 플레이트-로디드 콤비네이션 등척-사이드 체스트 - 체스트 프레스 교차 암",
+        "name": "해머 스트렝스 플레이트-로디드 콤비네이션 아이소래터럴 체스트 - 체스트 프레스 얼터네이팅 암",
         "instructions": null,
         "tips": null
       }
@@ -33443,7 +33443,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 플레이트-로디드 콤비네이션 등척-사이드 체스트 - 체스트 프레스 얼터네이팅 암",
+        "name": "해머 스트렝스 플레이트-로디드 콤비네이션 아이소래터럴 체스트 - 체스트 프레스 얼터네이팅 암",
         "instructions": null,
         "tips": null
       }
@@ -33477,7 +33477,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 플레이트-로디드 콤비네이션 등척-사이드 체스트 - 체스트 프레스 싱글 암",
+        "name": "해머 스트렝스 플레이트-로디드 콤비네이션 아이소래터럴 체스트 - 체스트 프레스 싱글 암",
         "instructions": null,
         "tips": null
       }
@@ -33512,7 +33512,7 @@
       },
       {
         "locale": "ko",
-        "name": "해머 스트렝스 플레이트 로디드 하이 로우 교차 암",
+        "name": "해머 스트렝스 플레이트 로디드 하이 로우 얼터네이팅 암",
         "instructions": null,
         "tips": null
       }
@@ -34370,7 +34370,7 @@
       },
       {
         "locale": "ko",
-        "name": "등척 사이드 숄더프레스 교차 암",
+        "name": "아이소래터럴 숄더프레스 얼터네이팅 암",
         "instructions": null,
         "tips": null
       }
@@ -34403,7 +34403,7 @@
       },
       {
         "locale": "ko",
-        "name": "등척 사이드 숄더프레스 양쪽 암",
+        "name": "아이소래터럴 숄더프레스 보스 암",
         "instructions": null,
         "tips": null
       }
@@ -34436,7 +34436,7 @@
       },
       {
         "locale": "ko",
-        "name": "등척 사이드 숄더프레스 양팔",
+        "name": "아이소래터럴 숄더프레스 양팔",
         "instructions": null,
         "tips": null
       }
@@ -34469,7 +34469,7 @@
       },
       {
         "locale": "ko",
-        "name": "등척 사이드 숄더프레스 싱글 암",
+        "name": "아이소래터럴 숄더프레스 싱글 암",
         "instructions": null,
         "tips": null
       }
@@ -37628,7 +37628,7 @@
       },
       {
         "locale": "ko",
-        "name": "MTS 등척-사이드 니링 레그 컬",
+        "name": "MTS 아이소래터럴 니링 레그 컬",
         "instructions": null,
         "tips": null
       }
@@ -38992,7 +38992,7 @@
       },
       {
         "locale": "ko",
-        "name": "풀업 와이드 그립 전면 뷰",
+        "name": "풀업 와이드 그립 프론트 뷰",
         "instructions": null,
         "tips": null
       }
@@ -39273,7 +39273,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 어시스트 전면 랙 스트레칭",
+        "name": "저항 밴드 어시스트 프론트 랙 스트레칭",
         "instructions": null,
         "tips": null
       }
