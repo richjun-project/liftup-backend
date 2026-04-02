@@ -6588,7 +6588,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 풀 스쿼트 백 POV",
+        "name": "바벨 풀 스쿼트 백 시점",
         "instructions": null,
         "tips": null
       }
@@ -6623,7 +6623,7 @@
       },
       {
         "locale": "ko",
-        "name": "바벨 풀 스쿼트 사이드 POV",
+        "name": "바벨 풀 스쿼트 사이드 시점",
         "instructions": null,
         "tips": null
       }
@@ -16113,7 +16113,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 리버스 그립 삼두 푸시다운 백 사이드 POV",
+        "name": "케이블 리버스 그립 삼두 푸시다운 백 사이드 시점",
         "instructions": null,
         "tips": null
       }
@@ -16703,7 +16703,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 twin 핸들 패러렐 그립 랫풀다운",
+        "name": "케이블 트윈 핸들 패러렐 그립 랫풀다운",
         "instructions": null,
         "tips": null
       }
@@ -16882,7 +16882,7 @@
       },
       {
         "locale": "ko",
-        "name": "케이블 언더핸드 풀다운 와이드 grips",
+        "name": "케이블 언더핸드 풀다운 와이드 그립",
         "instructions": null,
         "tips": null
       }
@@ -17351,7 +17351,7 @@
       },
       {
         "locale": "ko",
-        "name": "카프 스트레칭 stairs",
+        "name": "카프 스트레칭 스텝",
         "instructions": null,
         "tips": null
       }
@@ -17456,7 +17456,7 @@
       },
       {
         "locale": "ko",
-        "name": "cardio 런지",
+        "name": "카디오 런지",
         "instructions": null,
         "tips": null
       }
@@ -17527,7 +17527,7 @@
       },
       {
         "locale": "ko",
-        "name": "ceiling look 스트레칭",
+        "name": "실링 룩 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -17562,7 +17562,7 @@
       },
       {
         "locale": "ko",
-        "name": "celebratory 힙 쓰러스트",
+        "name": "셀레브레이토리 힙 쓰러스트",
         "instructions": null,
         "tips": null
       }
@@ -17977,7 +17977,7 @@
       },
       {
         "locale": "ko",
-        "name": "체스트 딥 (딥 station)",
+        "name": "체스트 딥 (딥 스테이션)",
         "instructions": null,
         "tips": null
       }
@@ -18426,7 +18426,7 @@
       },
       {
         "locale": "ko",
-        "name": "체스트 레이즈 rotate",
+        "name": "체스트 레이즈 로테이트",
         "instructions": null,
         "tips": null
       }
@@ -18999,7 +18999,7 @@
       },
       {
         "locale": "ko",
-        "name": "클라이머 padded stool 서포티드",
+        "name": "클라이머 패디드 스툴 서포티드",
         "instructions": null,
         "tips": null
       }
@@ -19037,7 +19037,7 @@
       },
       {
         "locale": "ko",
-        "name": "clock 푸시업",
+        "name": "클락 푸시업",
         "instructions": null,
         "tips": null
       }
@@ -19179,7 +19179,7 @@
       },
       {
         "locale": "ko",
-        "name": "cluster",
+        "name": "클러스터",
         "instructions": null,
         "tips": null
       }
@@ -19391,7 +19391,7 @@
       },
       {
         "locale": "ko",
-        "name": "commando 풀-업",
+        "name": "코만도 풀-업",
         "instructions": null,
         "tips": null
       }
@@ -19460,7 +19460,7 @@
       },
       {
         "locale": "ko",
-        "name": "control 밸런스",
+        "name": "컨트롤 밸런스",
         "instructions": null,
         "tips": null
       }
@@ -19604,7 +19604,7 @@
       },
       {
         "locale": "ko",
-        "name": "counterbalanced skater 스쿼트",
+        "name": "카운터밸런스 스케이터 스쿼트",
         "instructions": null,
         "tips": null
       }
@@ -19930,7 +19930,7 @@
       },
       {
         "locale": "ko",
-        "name": "crossed 암 전면 레그 킥",
+        "name": "크로스드 암 전면 레그 킥",
         "instructions": null,
         "tips": null
       }
@@ -20000,7 +20000,7 @@
       },
       {
         "locale": "ko",
-        "name": "crouching 힐 백 카프 스트레칭",
+        "name": "크라우칭 힐 백 카프 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -20237,7 +20237,7 @@
       },
       {
         "locale": "ko",
-        "name": "크런치 (bosu 볼)",
+        "name": "크런치 (보수 볼)",
         "instructions": null,
         "tips": null
       }
@@ -20409,7 +20409,7 @@
       },
       {
         "locale": "ko",
-        "name": "커시 런지 슬라이드 towel",
+        "name": "커시 런지 슬라이드 타월",
         "instructions": null,
         "tips": null
       }
@@ -20922,7 +20922,7 @@
       },
       {
         "locale": "ko",
-        "name": "디클라인 levitating 싯업 맨몸",
+        "name": "디클라인 레비테이팅 싯업 맨몸",
         "instructions": null,
         "tips": null
       }
@@ -21305,7 +21305,7 @@
       },
       {
         "locale": "ko",
-        "name": "대각선 opens",
+        "name": "다이아고날 오프닝",
         "instructions": null,
         "tips": null
       }
@@ -21442,7 +21442,7 @@
       },
       {
         "locale": "ko",
-        "name": "딥 레그 레이즈 couch",
+        "name": "딥 레그 레이즈 카우치",
         "instructions": null,
         "tips": null
       }
@@ -21509,7 +21509,7 @@
       },
       {
         "locale": "ko",
-        "name": "딥 비트윈 chairs",
+        "name": "딥 비트윈 체어",
         "instructions": null,
         "tips": null
       }
@@ -21608,7 +21608,7 @@
       },
       {
         "locale": "ko",
-        "name": "doorway 이두 컬",
+        "name": "도어웨이 이두 컬",
         "instructions": null,
         "tips": null
       }
@@ -24069,7 +24069,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 고블릿 스플릿 스쿼트 전면 풋 elevanted",
+        "name": "덤벨 고블릿 스플릿 스쿼트 전면 풋 엘리베이티드",
         "instructions": null,
         "tips": null
       }
@@ -24137,7 +24137,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 하프 이두 컬 for 21",
+        "name": "덤벨 하프 이두 컬 21",
         "instructions": null,
         "tips": null
       }
@@ -24709,7 +24709,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 인클라인 breeding",
+        "name": "덤벨 인클라인 브리딩",
         "instructions": null,
         "tips": null
       }
@@ -26974,7 +26974,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 프리처 컬 (turned 토르소)",
+        "name": "덤벨 프리처 컬 (턴드 토르소)",
         "instructions": null,
         "tips": null
       }
@@ -27327,7 +27327,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 rdl 스트레칭 등척성",
+        "name": "덤벨 RDL 스트레칭 등척성",
         "instructions": null,
         "tips": null
       }
@@ -30654,7 +30654,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 스모 스쿼트 오프 benches",
+        "name": "덤벨 스모 스쿼트 오프 벤치",
         "instructions": null,
         "tips": null
       }
@@ -30756,7 +30756,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 tate 프레스",
+        "name": "덤벨 테이트 프레스",
         "instructions": null,
         "tips": null
       }
@@ -30923,7 +30923,7 @@
       },
       {
         "locale": "ko",
-        "name": "덤벨 waiter 이두 컬",
+        "name": "덤벨 웨이터 이두 컬",
         "instructions": null,
         "tips": null
       }
@@ -31169,7 +31169,7 @@
       },
       {
         "locale": "ko",
-        "name": "dumbell 버피",
+        "name": "덤벨 버피",
         "instructions": null,
         "tips": null
       }
@@ -31947,7 +31947,7 @@
       },
       {
         "locale": "ko",
-        "name": "EZ 바벨 anti gravity 프레스",
+        "name": "EZ 바벨 안티 그래비티 프레스",
         "instructions": null,
         "tips": null
       }
@@ -32084,7 +32084,7 @@
       },
       {
         "locale": "ko",
-        "name": "피트 together 바벨 스쿼트",
+        "name": "피트 투게더 바벨 스쿼트",
         "instructions": null,
         "tips": null
       }
@@ -32185,7 +32185,7 @@
       },
       {
         "locale": "ko",
-        "name": "fixed 바 스트레칭",
+        "name": "픽스드 바 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -32524,7 +32524,7 @@
       },
       {
         "locale": "ko",
-        "name": "프론트 스쿼트 kettlelbell 오버 숄더",
+        "name": "프론트 스쿼트 케틀벨 오버 숄더",
         "instructions": null,
         "tips": null
       }
@@ -32560,7 +32560,7 @@
       },
       {
         "locale": "ko",
-        "name": "풀 planche 푸시업",
+        "name": "풀 플란체 푸시업",
         "instructions": null,
         "tips": null
       }
@@ -32805,7 +32805,7 @@
       },
       {
         "locale": "ko",
-        "name": "gym 로우 머신 노멀 스피드",
+        "name": "짐 로우 머신 노멀 스피드",
         "instructions": null,
         "tips": null
       }
@@ -33719,7 +33719,7 @@
       },
       {
         "locale": "ko",
-        "name": "handstand 푸시 체어",
+        "name": "핸드스탠드 푸시 체어",
         "instructions": null,
         "tips": null
       }
@@ -34028,7 +34028,7 @@
       },
       {
         "locale": "ko",
-        "name": "hollow 홀드",
+        "name": "할로우 홀드",
         "instructions": null,
         "tips": null
       }
@@ -34503,7 +34503,7 @@
       },
       {
         "locale": "ko",
-        "name": "잭 knives",
+        "name": "잭나이프",
         "instructions": null,
         "tips": null
       }
@@ -34605,7 +34605,7 @@
       },
       {
         "locale": "ko",
-        "name": "줄넘기 더블 bounce",
+        "name": "줄넘기 더블 바운스",
         "instructions": null,
         "tips": null
       }
@@ -34917,7 +34917,7 @@
       },
       {
         "locale": "ko",
-        "name": "케틀벨 seesaw 프레스",
+        "name": "케틀벨 시소 프레스",
         "instructions": null,
         "tips": null
       }
@@ -35345,7 +35345,7 @@
       },
       {
         "locale": "ko",
-        "name": "케틀벨 스모 스쿼트 오프 stepbox",
+        "name": "케틀벨 스모 스쿼트 오프 스텝박스",
         "instructions": null,
         "tips": null
       }
@@ -36361,7 +36361,7 @@
       },
       {
         "locale": "ko",
-        "name": "레그 핸드 리치 spine 스트레칭",
+        "name": "레그 핸드 리치 스파인 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -36394,7 +36394,7 @@
       },
       {
         "locale": "ko",
-        "name": "long 암 크런치",
+        "name": "롱 암 크런치",
         "instructions": null,
         "tips": null
       }
@@ -36777,7 +36777,7 @@
       },
       {
         "locale": "ko",
-        "name": "런지 same 레그 사이드 뷰 맨몸",
+        "name": "런지 세임 레그 사이드 뷰 맨몸",
         "instructions": null,
         "tips": null
       }
@@ -36810,7 +36810,7 @@
       },
       {
         "locale": "ko",
-        "name": "lunging 스트레이트 레그 카프 스트레칭",
+        "name": "런지 스트레이트 레그 카프 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -37972,7 +37972,7 @@
       },
       {
         "locale": "ko",
-        "name": "펙 deck 플라이 머신",
+        "name": "펙 덱 플라이 머신",
         "instructions": null,
         "tips": null
       }
@@ -38257,7 +38257,7 @@
       },
       {
         "locale": "ko",
-        "name": "플랭크 리버스 플라이 bottle",
+        "name": "플랭크 리버스 플라이 보틀",
         "instructions": null,
         "tips": null
       }
@@ -38600,7 +38600,7 @@
       },
       {
         "locale": "ko",
-        "name": "pretzel 스트레칭",
+        "name": "프레첼 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -39135,7 +39135,7 @@
       },
       {
         "locale": "ko",
-        "name": "raised 레그 크런치",
+        "name": "레이즈드 레그 크런치",
         "instructions": null,
         "tips": null
       }
@@ -39169,7 +39169,7 @@
       },
       {
         "locale": "ko",
-        "name": "reaching 업 숄더 스트레칭",
+        "name": "리칭 업 숄더 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -39378,7 +39378,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 카프 프레스 sitting 체어",
+        "name": "저항 밴드 카프 프레스 시티드 체어",
         "instructions": null,
         "tips": null
       }
@@ -39411,7 +39411,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 clam",
+        "name": "저항 밴드 클램",
         "instructions": null,
         "tips": null
       }
@@ -40695,7 +40695,7 @@
       },
       {
         "locale": "ko",
-        "name": "저항 밴드 facepull",
+        "name": "저항 밴드 페이스풀",
         "instructions": null,
         "tips": null
       }
@@ -41035,7 +41035,7 @@
       },
       {
         "locale": "ko",
-        "name": "runner 스트레칭",
+        "name": "러너 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -41140,7 +41140,7 @@
       },
       {
         "locale": "ko",
-        "name": "scapula 푸시업",
+        "name": "스캐풀라 푸시업",
         "instructions": null,
         "tips": null
       }
@@ -41819,7 +41819,7 @@
       },
       {
         "locale": "ko",
-        "name": "shadow 복싱",
+        "name": "섀도 복싱",
         "instructions": null,
         "tips": null
       }
@@ -42661,7 +42661,7 @@
       },
       {
         "locale": "ko",
-        "name": "skipping",
+        "name": "스키핑",
         "instructions": null,
         "tips": null
       }
@@ -43146,7 +43146,7 @@
       },
       {
         "locale": "ko",
-        "name": "스탠딩 bow 햄스트링 스트레칭",
+        "name": "스탠딩 보우 햄스트링 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -43795,7 +43795,7 @@
       },
       {
         "locale": "ko",
-        "name": "스탠딩 사이드 slope 스트레칭",
+        "name": "스탠딩 사이드 슬로프 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -44012,7 +44012,7 @@
       },
       {
         "locale": "ko",
-        "name": "stationary exercise 바이크",
+        "name": "스테이셔너리 바이크",
         "instructions": null,
         "tips": null
       }
@@ -44310,7 +44310,7 @@
       },
       {
         "locale": "ko",
-        "name": "슈퍼맨 holds",
+        "name": "슈퍼맨 홀드",
         "instructions": null,
         "tips": null
       }
@@ -44730,7 +44730,7 @@
       },
       {
         "locale": "ko",
-        "name": "삼두 light 스트레칭",
+        "name": "삼두 라이트 스트레칭",
         "instructions": null,
         "tips": null
       }
@@ -45082,7 +45082,7 @@
       },
       {
         "locale": "ko",
-        "name": "walkout",
+        "name": "워크아웃",
         "instructions": null,
         "tips": null
       }
@@ -45261,7 +45261,7 @@
       },
       {
         "locale": "ko",
-        "name": "휠 heaven",
+        "name": "휠 헤븐",
         "instructions": null,
         "tips": null
       }
@@ -45365,7 +45365,7 @@
       },
       {
         "locale": "ko",
-        "name": "wind wipers",
+        "name": "윈드 와이퍼",
         "instructions": null,
         "tips": null
       }
