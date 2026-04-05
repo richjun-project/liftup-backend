@@ -82,6 +82,23 @@ class NotificationService(
         )
     }
 
+    fun unregisterDevice(userId: Long, request: UnregisterDeviceRequest): UnregisterDeviceResponse {
+        val locale = resolveLocale(userId)
+        val existingDevice = notificationDeviceRepository.findByDeviceToken(request.deviceToken)
+
+        if (existingDevice.isPresent) {
+            val device = existingDevice.get()
+            device.isActive = false
+            notificationDeviceRepository.save(device)
+            logger.info("[FCM] Device unregistered for user $userId: token=${request.deviceToken.take(20)}...")
+        }
+
+        return UnregisterDeviceResponse(
+            success = true,
+            message = NotificationLocalization.message("notification.device_unregistered", locale)
+        )
+    }
+
     @Transactional(readOnly = true)
     fun getNotificationSettings(userId: Long): NotificationSettingsResponse {
         val user = userRepository.findById(userId)

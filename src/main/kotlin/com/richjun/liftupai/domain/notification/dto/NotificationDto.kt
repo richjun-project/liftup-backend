@@ -19,6 +19,16 @@ data class RegisterDeviceResponse(
     val message: String? = null
 )
 
+data class UnregisterDeviceRequest(
+    @field:NotBlank
+    val deviceToken: String
+)
+
+data class UnregisterDeviceResponse(
+    val success: Boolean,
+    val message: String? = null
+)
+
 data class NotificationSettingsResponse(
     val workoutReminder: Boolean,
     val workoutReminderTime: String?,

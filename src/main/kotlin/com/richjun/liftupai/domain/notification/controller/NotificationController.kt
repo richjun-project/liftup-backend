@@ -26,6 +26,15 @@ class NotificationController(
             .body(ApiResponse.success(response))
     }
 
+    @PostMapping("/unregister")
+    fun unregisterDevice(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @Valid @RequestBody request: UnregisterDeviceRequest
+    ): ResponseEntity<ApiResponse<UnregisterDeviceResponse>> {
+        val response = notificationService.unregisterDevice(userDetails.getId(), request)
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
     @GetMapping("/settings")
     fun getNotificationSettings(
         @AuthenticationPrincipal userDetails: CustomUserDetails
