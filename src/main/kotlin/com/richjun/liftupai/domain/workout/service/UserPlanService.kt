@@ -26,6 +26,7 @@ class UserPlanService(
     private val templateDayExerciseRepository: TemplateDayExerciseRepository,
     private val exerciseRepository: ExerciseRepository,
     private val weightRecommendationService: WeightRecommendationService,
+    private val progressiveOverloadService: ProgramProgressiveOverloadService,
     private val planWorkoutEnricher: PlanWorkoutEnricher,
     private val userProfileRepository: com.richjun.liftupai.domain.user.repository.UserProfileRepository,
     private val exerciseTranslationRepository: ExerciseTranslationRepository
@@ -100,6 +101,14 @@ class UserPlanService(
                 .associateBy { it.exercise.id }
         } else emptyMap()
 
+        // Calculate week number and deload status for progressive overload
+        val allDays = userPlanDayRepository.findByPlanIdOrderByDayNumber(plan.id)
+        val totalCompletions = allDays.sumOf { it.totalCompletions }
+        val weekNumber = (totalCompletions / plan.totalDays) + 1
+        val isDeloadWeek = plan.deloadEveryNWeeks > 0 &&
+            weekNumber > 1 &&
+            (weekNumber % plan.deloadEveryNWeeks == 0)
+
         val baseResponse = DayWorkoutResponse(
             dayNumber = day.dayNumber,
             dayName = day.dayName,
@@ -108,7 +117,17 @@ class UserPlanService(
             completionCount = day.totalCompletions,
             exercises = exercises.map { ex ->
                 val targetReps = (ex.minReps + ex.maxReps) / 2
-                val suggestedWeight = weightRecommendationService.calculateSuggestedWeight(
+                // Progressive overload: use history-based calculation, fall back to static recommendation
+                val suggestedWeight = progressiveOverloadService.calculateWeightForPlan(
+                    user = plan.user,
+                    exercise = ex.exercise,
+                    progressionModel = plan.progressionModel,
+                    week = weekNumber,
+                    dayInCycle = dayNumber,
+                    isDeloadWeek = isDeloadWeek,
+                    minReps = ex.minReps,
+                    maxReps = ex.maxReps
+                ) ?: weightRecommendationService.calculateSuggestedWeight(
                     userId, ex.exercise.id, targetReps
                 )
                 val warmupSets = if (ex.isCompound && suggestedWeight > 20.0) {

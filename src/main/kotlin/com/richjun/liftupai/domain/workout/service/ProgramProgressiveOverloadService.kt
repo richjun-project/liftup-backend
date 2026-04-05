@@ -48,6 +48,55 @@ class ProgramProgressiveOverloadService(
         position: ProgramPosition,
         dayExercise: ProgramDayExercise
     ): Double? {
+        val progressionModel = enrollment.program.progressionModel
+        val isDeload = when (progressionModel) {
+            ProgressionModel.BLOCK -> isBlockDeloadWeek(progressionModel, position)
+            else -> position.isDeloadWeek
+        }
+        return calculateProgressiveWeight(
+            user, exercise, progressionModel, position, isDeload,
+            dayExercise.minReps, dayExercise.maxReps
+        )
+    }
+
+    /**
+     * Plan-compatible progressive overload calculation for custom/AI plans.
+     * Returns null if no workout history exists (caller should fall back to WeightRecommendationService).
+     */
+    fun calculateWeightForPlan(
+        user: User,
+        exercise: Exercise,
+        progressionModel: ProgressionModel,
+        week: Int,
+        dayInCycle: Int,
+        isDeloadWeek: Boolean,
+        minReps: Int,
+        maxReps: Int
+    ): Double? {
+        val position = ProgramPosition(
+            week = week,
+            dayInCycle = dayInCycle,
+            isDeloadWeek = isDeloadWeek,
+            isNewCycle = false
+        )
+        val isDeload = when (progressionModel) {
+            ProgressionModel.BLOCK -> isBlockDeloadWeek(progressionModel, position)
+            else -> isDeloadWeek
+        }
+        return calculateProgressiveWeight(
+            user, exercise, progressionModel, position, isDeload, minReps, maxReps
+        )
+    }
+
+    private fun calculateProgressiveWeight(
+        user: User,
+        exercise: Exercise,
+        progressionModel: ProgressionModel,
+        position: ProgramPosition,
+        isDeload: Boolean,
+        minReps: Int,
+        maxReps: Int
+    ): Double? {
         val lastSets = getLastWorkoutSets(user, exercise)
         if (lastSets.isEmpty()) {
             // Try to use estimatedMaxes from profile
@@ -78,20 +127,14 @@ class ProgramProgressiveOverloadService(
         val genderProfile = userProfileRepository.findByUser_Id(user.id).orElse(null)
         val isFemale = genderProfile?.gender?.lowercase() == "female"
 
-        val progressionModel = enrollment.program.progressionModel
-
-        // Deload week: BLOCK uses its own 7-week block deload only; other models use the generic flag
-        val isDeload = when (progressionModel) {
-            ProgressionModel.BLOCK -> isBlockDeloadWeek(progressionModel, position)
-            else -> position.isDeloadWeek
-        }
+        // Deload week
         if (isDeload) {
             return roundWeight(exercise, calculateDeloadWeight(lastWeight, progressionModel))
         }
 
         var targetWeight: Double = when (progressionModel) {
             ProgressionModel.LINEAR -> calculateLinear(
-                exercise, dayExercise, lastWeight, lastRepsAchieved, lastRPE, isFemale
+                exercise, minReps, maxReps, lastWeight, lastRepsAchieved, lastRPE, isFemale
             )
             ProgressionModel.UNDULATING -> calculateUndulating(
                 user, exercise, position, lastWeight, lastRPE
@@ -108,7 +151,7 @@ class ProgramProgressiveOverloadService(
             else -> targetWeight
         }
 
-        // Plateau detection: volume (weight × avg reps) 기반
+        // Plateau detection: volume (weight x avg reps) 기반
         // 무게만 비교하면 100kg×6→100kg×8→100kg×10 (진행 중)을 정체로 오판함
         val sessionVolumes = lastSets
             .groupBy { it.workoutExercise.session.id }
@@ -136,7 +179,7 @@ class ProgramProgressiveOverloadService(
                 .values
                 .map { sets -> sets.map { it.reps }.average().toInt() }
 
-            if (recentMaxReps.size >= 2 && recentMaxReps.all { it < dayExercise.minReps }) {
+            if (recentMaxReps.size >= 2 && recentMaxReps.all { it < minReps }) {
                 targetWeight = lastWeight * 0.85
                 logger.info("LINEAR reload: ${exercise.name} failed minReps for 2 sessions, reducing to 85%")
             }
@@ -170,15 +213,13 @@ class ProgramProgressiveOverloadService(
 
     private fun calculateLinear(
         exercise: Exercise,
-        dayExercise: ProgramDayExercise,
+        minReps: Int,
+        maxReps: Int,
         lastWeight: Double,
         lastRepsAchieved: Int,
         lastRPE: Double,
         isFemale: Boolean = false
     ): Double {
-        val minReps = dayExercise.minReps
-        val maxReps = dayExercise.maxReps
-
         return when {
             // Hit top of rep range with good RPE → add weight (double progression)
             lastRepsAchieved >= maxReps && lastRPE <= 8.0 -> {

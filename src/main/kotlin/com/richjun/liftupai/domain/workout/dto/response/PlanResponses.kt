@@ -113,7 +113,9 @@ data class WarmupSetDto(
 
 data class PlanOptionsResponse(
     val systemTemplates: List<TemplateSummaryResponse>,
+    @com.fasterxml.jackson.annotation.JsonProperty("my_ai_plans")
     val myAIPlans: List<TemplateSummaryResponse>,
+    @com.fasterxml.jackson.annotation.JsonProperty("can_use_ai_plan")
     val canUseAIPlan: Boolean,
     val currentPlan: PlanDashboardResponse?
 )
