@@ -103,7 +103,9 @@ data class DayExerciseDetail(
     val suggestedWeight: Double?,
     val warmupSets: List<WarmupSetDto> = emptyList(),
     val notes: String?,
-    val substitutes: List<SubstituteExerciseDto> = emptyList()
+    val substitutes: List<SubstituteExerciseDto> = emptyList(),
+    @com.fasterxml.jackson.annotation.JsonProperty("target_muscles")
+    val targetMuscles: List<String> = emptyList()
 )
 
 data class WarmupSetDto(

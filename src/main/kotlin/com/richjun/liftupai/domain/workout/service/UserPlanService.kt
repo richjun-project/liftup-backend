@@ -9,6 +9,7 @@ import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.repository.*
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.exception.BadRequestException
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -104,7 +105,7 @@ class UserPlanService(
         // Calculate week number and deload status for progressive overload
         val allDays = userPlanDayRepository.findByPlanIdOrderByDayNumber(plan.id)
         val totalCompletions = allDays.sumOf { it.totalCompletions }
-        val weekNumber = (totalCompletions / plan.totalDays) + 1
+        val weekNumber = (totalCompletions / plan.totalDays.coerceAtLeast(1)) + 1
         val isDeloadWeek = plan.deloadEveryNWeeks > 0 &&
             weekNumber > 1 &&
             (weekNumber % plan.deloadEveryNWeeks == 0)
@@ -148,7 +149,8 @@ class UserPlanService(
                     targetRPE = ex.targetRPE,
                     suggestedWeight = suggestedWeight,
                     warmupSets = warmupSets,
-                    notes = ex.notes
+                    notes = ex.notes,
+                    targetMuscles = ex.exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) }
                 )
             }
         )
