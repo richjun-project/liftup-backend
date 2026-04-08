@@ -2,6 +2,7 @@ package com.richjun.liftupai.domain.user.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.richjun.liftupai.domain.notification.service.NotificationService
+import com.richjun.liftupai.domain.notification.service.PTScheduledMessageService
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.user.dto.*
 import com.richjun.liftupai.domain.user.entity.*
@@ -37,7 +38,8 @@ class UserService(
     private val userProfileRepository: UserProfileRepository,
     private val userSettingsRepository: UserSettingsRepository,
     private val objectMapper: ObjectMapper,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val ptScheduledMessageService: PTScheduledMessageService
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -214,6 +216,7 @@ class UserService(
             UserSettings(user = user)
         )
         val previousTimeZone = settings.timeZone
+        val previousLanguage = settings.language
 
         request.notifications?.let {
             settings.workoutReminder = it.workoutReminder
@@ -239,6 +242,16 @@ class UserService(
 
         if (previousTimeZone != settings.timeZone) {
             notificationService.refreshScheduleTimesForUser(userId)
+        }
+
+        // 언어 변경 시 PT 스케줄 메시지 재생성 (새 언어로 템플릿 반영)
+        if (previousLanguage != settings.language) {
+            try {
+                ptScheduledMessageService.createPTSchedulesForUser(userId)
+                logger.info("PT schedules regenerated for user $userId due to language change: $previousLanguage -> ${settings.language}")
+            } catch (e: Exception) {
+                logger.warn("Failed to regenerate PT schedules on language change for user $userId: ${e.message}")
+            }
         }
 
         return getSettings(userId)
