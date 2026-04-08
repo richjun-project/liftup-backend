@@ -54,6 +54,12 @@ object NotificationLocalization {
             PTStyle.BURNOUT -> "burnout"
             PTStyle.GAME_MASTER -> "game_master"
             PTStyle.INFLUENCER -> "influencer"
+            PTStyle.HIP_HOP -> "hip_hop"
+            PTStyle.RETIRED_TEACHER -> "retired_teacher"
+            PTStyle.OFFICE_MASTER -> "office_master"
+            PTStyle.LA_KOREAN -> "la_korean"
+            PTStyle.BUSAN_VETERAN -> "busan_veteran"
+            PTStyle.SOLDIER -> "soldier"
             else -> "default"
         }
 
