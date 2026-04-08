@@ -373,6 +373,9 @@ class AIPlanGenerationService(
     }
 
     private fun buildPlanGenerationPrompt(request: GenerateAIPlanRequest, exercisePool: String): String {
+        val trainingStyle = request.trainingStyle ?: "balanced"
+        val focusAreas = request.focusAreas?.joinToString(", ") ?: "none"
+
         return """
 You are an expert strength & conditioning coach creating a workout plan.
 You MUST respond with ONLY a valid JSON object. No explanations, no markdown, just JSON.
@@ -380,13 +383,14 @@ You MUST respond with ONLY a valid JSON object. No explanations, no markdown, ju
 ## User Profile
 - Experience: ${request.experienceLevel}
 - Goals: ${request.goals.joinToString(", ")}
+- Training style: $trainingStyle
 - Gender: ${request.gender ?: "not specified"}
 - Age: ${request.age ?: "not specified"}
 - Weekly days: ${request.weeklyDays}
 - Session duration: ${request.sessionDuration} minutes
 - Equipment: ${request.equipment.joinToString(", ")}
 - Injuries: ${request.injuries?.joinToString(", ") ?: "none"}
-- Focus areas: ${request.focusAreas?.joinToString(", ") ?: "none"}
+- Focus areas: $focusAreas
 
 ## Available Exercises (USE ONLY THESE — do NOT invent exercises)
 $exercisePool
@@ -395,28 +399,32 @@ $exercisePool
 1. ONLY use exercise IDs from the list above. Do NOT invent exercise IDs.
 2. Each day: 5-8 exercises.
 3. First 1-2 exercises per day must be compound (isCompound: true).
-4. Rep ranges by exercise type:
-   - Main compound (squat/bench/deadlift): 5-8 reps for muscle_gain, 3-5 for strength
-   - Accessory compound: 8-10 reps for muscle_gain, 5-8 for strength
-   - Isolation: 10-15 reps for muscle_gain, 8-12 for strength
-   - Weight loss: compound 10-12, isolation 12-15
-5. Rest: main compound 150-180s, accessory 90-120s, isolation 60-90s
-6. Split logic:
-   - 2 days -> Full Body A/B
-   - 3 days -> Full Body A/B/C
-   - 4 days -> Upper/Lower x2
-   - 5 days -> Upper/Lower/Push/Pull/Legs
-   - 6 days -> PPL x2
-7. Plan name in Korean, descriptive and motivating.
-8. RPE targets per exercise type:
-   - Main compound: RPE 7.0-8.0
-   - Accessory compound: RPE 7.0-7.5
-   - Isolation: RPE 7.0-8.5 (higher RPE ok for isolation)
-   - Beginners: all exercises RPE 6.0-7.0
-9. Progression model:
+4. Exercise order: main compound → accessory compound → isolation (heaviest to lightest).
+
+5. Training style determines rep/set/rest scheme:
+${buildTrainingStyleRules(trainingStyle)}
+
+6. Weekly volume per muscle group (total working sets across all days):
+${buildVolumeGuidelines(trainingStyle)}
+
+7. Exercise selection ratio by training style:
+${buildExerciseSelectionRules(trainingStyle)}
+
+8. Focus area programming:
+${buildFocusAreaRules(focusAreas)}
+
+9. Split logic (choose the BEST split considering BOTH weekly days AND training style):
+${buildSplitLogic(request.weeklyDays, trainingStyle)}
+
+10. RPE targets:
+${buildRPETargets(request.experienceLevel, trainingStyle)}
+
+11. Progression model:
    - Beginners: LINEAR (add weight each session)
    - Intermediate: UNDULATING (heavy/medium/light rotation)
    - Advanced: BLOCK (accumulation→intensification→realization)
+
+12. Plan name in Korean, descriptive and motivating.
 
 ## JSON Schema (respond EXACTLY in this format)
 {
@@ -451,5 +459,163 @@ $exercisePool
   "coachingNotes": "string (Korean, overall advice)"
 }
 """.trimIndent()
+    }
+
+    private fun buildTrainingStyleRules(style: String): String = when (style) {
+        "hypertrophy" -> """
+   - Main compound: 3-4 sets x 8-12 reps, rest 90-120s
+   - Accessory compound: 3 sets x 10-12 reps, rest 60-90s
+   - Isolation: 3 sets x 12-15 reps, rest 45-60s
+   - Prioritize time under tension and muscle contraction"""
+        "strength" -> """
+   - Main compound: 4-5 sets x 3-6 reps, rest 180-300s
+   - Accessory compound: 3-4 sets x 5-8 reps, rest 120-180s
+   - Isolation: 2-3 sets x 8-12 reps, rest 60-90s
+   - Prioritize progressive overload on big lifts"""
+        "fat_loss" -> """
+   - Main compound: 3 sets x 10-15 reps, rest 45-60s
+   - Accessory compound: 3 sets x 12-15 reps, rest 30-45s
+   - Isolation: 2-3 sets x 15-20 reps, rest 30s
+   - Use supersets where possible, keep heart rate elevated"""
+        "functional" -> """
+   - Main compound: 3-4 sets x 6-10 reps, rest 90-120s
+   - Accessory compound: 3 sets x 8-12 reps, rest 60-90s
+   - Isolation: 2-3 sets x 10-15 reps, rest 45-60s
+   - Include unilateral exercises for balance and stability"""
+        else -> """
+   - Main compound: 4 sets x 5-8 reps, rest 120-180s
+   - Accessory compound: 3 sets x 8-12 reps, rest 90-120s
+   - Isolation: 3 sets x 10-15 reps, rest 60-90s
+   - Mix strength and hypertrophy rep ranges"""
+    }
+
+    private fun buildVolumeGuidelines(style: String): String = when (style) {
+        "hypertrophy" -> """
+   - Large muscles (chest, back, quads): 14-20 sets/week
+   - Medium muscles (shoulders, hamstrings, glutes): 12-16 sets/week
+   - Small muscles (biceps, triceps, calves): 10-14 sets/week
+   - Distribute volume evenly across training days"""
+        "strength" -> """
+   - Primary lifts (squat, bench, deadlift): 10-15 sets/week on main movement patterns
+   - Accessory muscles: 6-10 sets/week (minimum effective volume)
+   - Small muscles: 4-8 sets/week
+   - Concentrate volume on compound movements"""
+        "fat_loss" -> """
+   - All muscle groups: 8-12 sets/week (maintenance volume to preserve muscle)
+   - Prioritize compound movements for caloric expenditure
+   - Keep total session volume high but per-muscle volume moderate"""
+        "functional" -> """
+   - Large muscles: 10-14 sets/week
+   - Medium muscles: 8-12 sets/week
+   - Small muscles: 6-10 sets/week
+   - Emphasize movement patterns over isolated muscles"""
+        else -> """
+   - Large muscles: 12-16 sets/week
+   - Medium muscles: 10-14 sets/week
+   - Small muscles: 8-12 sets/week"""
+    }
+
+    private fun buildExerciseSelectionRules(style: String): String = when (style) {
+        "hypertrophy" -> """
+   - Compound exercises: ~50%, Isolation exercises: ~50%
+   - Include exercises from multiple angles for each muscle group
+   - Prefer exercises with long range of motion"""
+        "strength" -> """
+   - Compound exercises: >=70%, Isolation exercises: <=30%
+   - Must include squat/bench/deadlift or close variants as first exercise
+   - Accessory work should directly support main lifts"""
+        "fat_loss" -> """
+   - Compound exercises: >=60%, Isolation exercises: <=40%
+   - Prefer multi-joint movements that recruit large muscle groups
+   - Consider pairing exercises as supersets (add note in exercise notes)"""
+        "functional" -> """
+   - Compound exercises: >=60%, Isolation exercises: <=40%
+   - Include at least one unilateral exercise per day
+   - Mix pushing, pulling, hinging, squatting, and carrying patterns"""
+        else -> """
+   - Compound exercises: ~55%, Isolation exercises: ~45%
+   - Balance between strength-building compounds and hypertrophy isolation"""
+    }
+
+    private fun buildSplitLogic(weeklyDays: Int, style: String): String {
+        return when (weeklyDays) {
+            2 -> """
+   - 2 days: Full Body A/B (only option for 2 days)"""
+            3 -> when (style) {
+                "strength" -> """
+   - 3 days: Full Body A/B/C — each day centered around one main lift (squat/bench/deadlift)"""
+                "fat_loss" -> """
+   - 3 days: Full Body A/B/C — high caloric burn with compound-heavy full body sessions"""
+                else -> """
+   - 3 days: Full Body A/B/C or Push/Pull/Legs (choose based on user's goals)"""
+            }
+            4 -> when (style) {
+                "hypertrophy" -> """
+   - 4 days: Upper/Lower x2 OR Push/Pull split — choose the split that best distributes volume for muscle growth
+   - Upper/Lower is good for balanced development, Push/Pull allows more exercise variety per session"""
+                "strength" -> """
+   - 4 days: Upper/Lower x2 — pair main lifts (squat+deadlift on lower days, bench+OHP on upper days)"""
+                "fat_loss" -> """
+   - 4 days: Full Body x4 OR Upper/Lower x2 — full body preferred for higher caloric expenditure per session"""
+                "functional" -> """
+   - 4 days: Full Body x4 with different movement focus each day (push/pull/hinge/squat emphasis)"""
+                else -> """
+   - 4 days: Upper/Lower x2 — balanced split for general fitness"""
+            }
+            5 -> when (style) {
+                "hypertrophy" -> """
+   - 5 days: PPL + Upper/Lower OR Bro Split — higher frequency per muscle possible with PPL hybrid"""
+                "strength" -> """
+   - 5 days: Upper/Lower/Push/Pull/Legs — 3 heavy compound days + 2 accessory days"""
+                else -> """
+   - 5 days: Upper/Lower/Push/Pull/Legs — versatile 5-day split"""
+            }
+            else -> when (style) {
+                "hypertrophy" -> """
+   - 6 days: PPL x2 — each muscle hit twice per week for optimal hypertrophy frequency"""
+                "strength" -> """
+   - 6 days: PPL x2 with heavy/light alternation — heavy compounds on first rotation, volume on second"""
+                else -> """
+   - 6 days: PPL x2 — push/pull/legs twice per week"""
+            }
+        }
+    }
+
+    private fun buildFocusAreaRules(focusAreas: String): String {
+        if (focusAreas == "none") return """
+   - No specific focus areas. Distribute volume evenly across all muscle groups."""
+        return """
+   - Focus muscles: $focusAreas
+   - Add +4-6 extra weekly sets for focus area muscles compared to standard volume
+   - Include 1-2 additional isolation exercises targeting focus areas on relevant days
+   - Reduce non-focus muscle volume by 2-3 sets/week to stay within session duration
+   - Place focus area exercises earlier in the workout when possible"""
+    }
+
+    private fun buildRPETargets(experience: String, style: String): String {
+        return when (style) {
+            "strength" -> """
+   - Main compound: RPE 8.0-9.0 (experienced) / 7.0-8.0 (beginners)
+   - Accessory compound: RPE 7.0-8.0
+   - Isolation: RPE 7.0-8.0"""
+            "hypertrophy" -> """
+   - Main compound: RPE 7.0-8.0
+   - Accessory compound: RPE 7.5-8.5
+   - Isolation: RPE 8.0-9.0 (push closer to failure on isolation)"""
+            "fat_loss" -> """
+   - All exercises: RPE 6.5-7.5 (sustainable intensity for higher volume)"""
+            else -> when (experience.lowercase()) {
+                "beginner", "novice" -> """
+   - All exercises: RPE 6.0-7.0 (focus on form and learning movements)"""
+                "advanced", "expert" -> """
+   - Main compound: RPE 7.5-9.0
+   - Accessory compound: RPE 7.0-8.0
+   - Isolation: RPE 8.0-9.0"""
+                else -> """
+   - Main compound: RPE 7.0-8.0
+   - Accessory compound: RPE 7.0-7.5
+   - Isolation: RPE 7.0-8.5"""
+            }
+        }
     }
 }

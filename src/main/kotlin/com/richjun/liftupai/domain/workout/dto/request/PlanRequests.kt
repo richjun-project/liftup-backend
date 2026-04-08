@@ -37,5 +37,6 @@ data class GenerateAIPlanRequest(
     val sessionDuration: Int,
     val equipment: List<String>,
     val injuries: List<String>? = null,
-    val focusAreas: List<String>? = null
+    val focusAreas: List<String>? = null,
+    val trainingStyle: String? = null
 )
