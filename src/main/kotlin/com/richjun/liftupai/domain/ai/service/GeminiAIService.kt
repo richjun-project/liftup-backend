@@ -169,19 +169,24 @@ class GeminiAIService(
     private fun buildChatPrompt(message: String, nickname: String, ptStyle: PTStyle, locale: String): String {
         val responseLanguage = AILocalization.responseLanguage(locale)
         return """
-            You are LiftUp AI, a personal fitness and wellness coach.
-            User nickname: $nickname
-            Respond in $responseLanguage.
+            You are a personal fitness coach chatbot in the LIFTUP AI app.
+            The user's name is $nickname.
+            Respond ONLY in $responseLanguage.
 
-            Core responsibilities:
-            - Give clear, practical guidance on training, nutrition, recovery, and healthy habits.
-            - Adapt the tone to the selected PT style while keeping advice safe and actionable.
-            - Keep answers concise unless the user explicitly asks for depth.
+            ## CRITICAL: Character & Speaking Style
+            You MUST fully embody the following persona in EVERY response.
+            This is not a suggestion — it is the defining trait of your character.
+            Your word choice, sentence endings, tone, and attitude must all reflect this persona consistently.
 
-            PT style:
             ${styleInstruction(ptStyle)}
 
-            User message:
+            ## Guidelines
+            - Give clear, practical guidance on training, nutrition, recovery, and healthy habits.
+            - Keep answers concise (2-4 sentences) unless the user explicitly asks for more detail.
+            - Stay in character at all times — never break persona or speak in a generic AI tone.
+            - Address the user as "$nickname" naturally (not every sentence).
+
+            ## User message
             $message
         """.trimIndent()
     }
@@ -240,9 +245,17 @@ class GeminiAIService(
         val carbTarget = calculateCarbTarget(userProfile, calorieTarget)
         val fatTarget = calculateFatTarget(calorieTarget)
 
+        val weight = userProfile?.bodyInfo?.weight
+        val height = userProfile?.bodyInfo?.height
+        val bodyDesc = if (weight != null && height != null) {
+            "${weight.toInt()}kg / ${height.toInt()}cm 기준"
+        } else {
+            ""
+        }
+
         return """
             You are an expert nutrition coach.
-            Create a 3-meal daily meal plan for $nickname.
+            Create a personalized 3-meal daily meal plan for $nickname.
             Output JSON only.
             Natural-language fields inside the JSON must be written in $responseLanguage.
 
@@ -252,26 +265,31 @@ class GeminiAIService(
             PT style:
             ${styleInstruction(ptStyle)}
 
-            Calorie distribution:
-            - Breakfast: 25-30%
-            - Lunch: 35-40%
-            - Dinner: 30-35%
-
-            Daily macro targets:
+            Daily macro targets (calculated from user's body):
             - Calories: ${calorieTarget}kcal
             - Protein: ${proteinTarget.toInt()}g
             - Carbs: ${carbTarget.toInt()}g
             - Fat: ${fatTarget.toInt()}g
 
-            Recommend meals that are realistic and easy to source.
+            Calorie distribution:
+            - Breakfast: 25-30%
+            - Lunch: 35-40%
+            - Dinner: 30-35%
+
+            Important rules:
+            - The greeting MUST mention the user's body stats ($bodyDesc) and their goal, so they feel the plan is personalized.
+            - Portion sizes must match the calorie/macro targets exactly.
+            - Recommend realistic, easy-to-source meals appropriate for the user's locale.
+            - Each meal's protein + carbs + fat calories must approximately equal the meal's calorie value.
+            - Tips must be specific to the user's goal and body stats.
 
             Required JSON schema:
             {
-              "greeting": "Short PT-style intro that references the user's profile",
+              "greeting": "PT-style personalized intro mentioning user's weight/height and goal",
               "date": "${java.time.LocalDate.now()}",
               "breakfast": {
                 "meal_name": "Meal name",
-                "description": "Short description",
+                "description": "Ingredients and portions",
                 "calories": 0,
                 "protein": 0,
                 "carbs": 0,
@@ -279,7 +297,7 @@ class GeminiAIService(
               },
               "lunch": {
                 "meal_name": "Meal name",
-                "description": "Short description",
+                "description": "Ingredients and portions",
                 "calories": 0,
                 "protein": 0,
                 "carbs": 0,
@@ -287,7 +305,7 @@ class GeminiAIService(
               },
               "dinner": {
                 "meal_name": "Meal name",
-                "description": "Short description",
+                "description": "Ingredients and portions",
                 "calories": 0,
                 "protein": 0,
                 "carbs": 0,
@@ -298,9 +316,9 @@ class GeminiAIService(
               "total_carbs": 0,
               "total_fat": 0,
               "tips": [
-                "Actionable nutrition tip 1",
-                "Goal-aligned nutrition tip 2",
-                "Recovery or adherence tip 3"
+                "Body-specific nutrition tip",
+                "Goal-aligned tip",
+                "Recovery or adherence tip"
               ]
             }
         """.trimIndent()
