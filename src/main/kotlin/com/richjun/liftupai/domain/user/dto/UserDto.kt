@@ -160,11 +160,11 @@ data class PrivacySettings(
 )
 
 data class AppSettings(
-    val theme: String = "LIGHT",
-    val language: String = "ko",
+    val theme: String? = null,
+    val language: String? = null,
     @JsonProperty("time_zone")
-    val timeZone: String = AppTime.DEFAULT_TIME_ZONE,
-    val units: String = "METRIC"
+    val timeZone: String? = null,
+    val units: String? = null
 )
 
 data class UpdateSettingsRequest(

@@ -231,10 +231,10 @@ class UserService(
         }
 
         request.app?.let {
-            settings.theme = it.theme
-            settings.language = it.language
-            settings.timeZone = validateTimeZone(it.timeZone)
-            settings.units = it.units
+            it.theme?.let { v -> settings.theme = v }
+            it.language?.let { v -> settings.language = v }
+            it.timeZone?.let { v -> settings.timeZone = validateTimeZone(v) }
+            it.units?.let { v -> settings.units = v }
         }
 
         settings.updatedAt = AppTime.utcNow()
