@@ -114,7 +114,7 @@ class ProgramController(
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
-    @GetMapping("/exercises")
+    @GetMapping("/programs/exercises")
     fun listExercises(
         @RequestParam(required = false) category: String?,
         @RequestParam(defaultValue = "0") page: Int,
