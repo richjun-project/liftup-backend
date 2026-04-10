@@ -30,8 +30,16 @@ class ProgramService(
     private val enrollmentService: ProgramEnrollmentService,
     private val workoutGeneratorService: ProgramWorkoutGeneratorService,
     private val absenceDetectionService: AbsenceDetectionService,
-    private val userSettingsRepository: UserSettingsRepository
+    private val userSettingsRepository: UserSettingsRepository,
+    private val localizationService: ExerciseCatalogLocalizationService
 ) {
+
+    @org.springframework.beans.factory.annotation.Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
+    private var exerciseMediaBaseUrl: String = "https://liftup-cdn.com"
+
+    private fun thumbnailUrl(exercise: Exercise): String {
+        return "${exerciseMediaBaseUrl.trimEnd('/')}/exercises/${exercise.slug}/thumb.jpg"
+    }
 
     // ── Catalog ──────────────────────────────────────────────────────────────
 
@@ -248,50 +256,59 @@ class ProgramService(
 
     // ── Substitutes ──────────────────────────────────────────────────────────
 
-    fun getExerciseSubstitutes(exerciseId: Long): SubstituteListResponse {
+    fun getExerciseSubstitutes(exerciseId: Long, locale: String? = null): SubstituteListResponse {
         val exercise = exerciseRepository.findById(exerciseId)
             .orElseThrow { ResourceNotFoundException("Exercise not found: $exerciseId") }
 
+        val normalizedLocale = localizationService.normalizeLocale(locale)
+
         // First try the static substitution table
-        val staticSubstitutes = exerciseSubstitutionRepository
+        val staticRaw = exerciseSubstitutionRepository
             .findByOriginalExerciseIdOrderByPriority(exerciseId)
-            .map {
-                SubstituteResponse(
-                    exerciseId = it.substituteExercise.id,
-                    name = it.substituteExercise.name,
-                    reason = it.reason.name,
-                    category = it.substituteExercise.category.name,
-                    equipment = it.substituteExercise.equipment?.name,
-                    muscleGroups = it.substituteExercise.muscleGroups.map { mg -> mg.name },
-                    imageUrl = it.substituteExercise.imageUrl
-                )
-            }
+
+        // Collect all exercises (original + substitutes) for batch translation
+        val allExercises = staticRaw.map { it.substituteExercise } + listOf(exercise)
+
+        val dynamicRaw = if (staticRaw.isEmpty() && exercise.muscleGroups.isNotEmpty()) {
+            exerciseRepository.findAlternativeExercises(
+                exerciseId, exercise.category, exercise.muscleGroups.toList()
+            ).sortedByDescending { it.popularity }.take(10)
+        } else emptyList()
+
+        val allForTranslation = allExercises + dynamicRaw
+        val translations = localizationService.translationMap(allForTranslation, normalizedLocale)
+
+        val staticSubstitutes = staticRaw.map {
+            SubstituteResponse(
+                exerciseId = it.substituteExercise.id,
+                name = localizationService.displayName(it.substituteExercise, normalizedLocale, translations),
+                reason = it.reason.name,
+                category = it.substituteExercise.category.name,
+                equipment = it.substituteExercise.equipment?.name,
+                muscleGroups = it.substituteExercise.muscleGroups.map { mg -> mg.name },
+                imageUrl = thumbnailUrl(it.substituteExercise)
+            )
+        }
 
         val substitutes = if (staticSubstitutes.isNotEmpty()) {
             staticSubstitutes
-        } else if (exercise.muscleGroups.isNotEmpty()) {
-            // Fall back to dynamic alternatives (same category + overlapping muscle groups)
-            // Sort by popularity descending so the most commonly used exercises appear first
-            exerciseRepository.findAlternativeExercises(
-                exerciseId, exercise.category, exercise.muscleGroups.toList()
-            ).sortedByDescending { it.popularity }.take(10).map { alt ->
+        } else {
+            dynamicRaw.map { alt ->
                 SubstituteResponse(
                     exerciseId = alt.id,
-                    name = alt.name,
+                    name = localizationService.displayName(alt, normalizedLocale, translations),
                     reason = if (alt.equipment != exercise.equipment) "EQUIPMENT" else "EQUIVALENT",
                     category = alt.category.name,
                     equipment = alt.equipment?.name,
                     muscleGroups = alt.muscleGroups.map { mg -> mg.name },
-                    imageUrl = alt.imageUrl
+                    imageUrl = thumbnailUrl(alt)
                 )
             }
-        } else {
-            emptyList()
         }
 
         return SubstituteListResponse(
             exerciseId = exerciseId,
-            exerciseName = exercise.name,
+            exerciseName = localizationService.displayName(exercise, normalizedLocale, translations),
             category = exercise.category.name,
             muscleGroups = exercise.muscleGroups.map { it.name },
             substitutes = substitutes
@@ -300,10 +317,10 @@ class ProgramService(
 
     // ── Exercise Search & List ───────────────────────────────────────────────
 
-    fun searchExercises(query: String, category: String?, page: Int, size: Int): ExerciseSearchResponse {
+    fun searchExercises(query: String, category: String?, page: Int, size: Int, locale: String? = null): ExerciseSearchResponse {
         val trimmed = query.trim()
         if (trimmed.isBlank()) {
-            return listExercises(category, page, size)
+            return listExercises(category, page, size, locale)
         }
         val safePage = page.coerceAtLeast(0)
         val safeSize = size.coerceIn(1, 50)
@@ -314,15 +331,17 @@ class ProgramService(
         } else {
             exerciseRepository.searchPaged(trimmed, pageable)
         }
+        val normalizedLocale = localizationService.normalizeLocale(locale)
+        val translations = localizationService.translationMap(result.content, normalizedLocale)
         return ExerciseSearchResponse(
-            exercises = result.content.map { it.toSearchItem() },
+            exercises = result.content.map { it.toSearchItem(normalizedLocale, translations) },
             totalElements = result.totalElements,
             totalPages = result.totalPages,
             currentPage = safePage
         )
     }
 
-    fun listExercises(category: String?, page: Int, size: Int): ExerciseSearchResponse {
+    fun listExercises(category: String?, page: Int, size: Int, locale: String? = null): ExerciseSearchResponse {
         val safePage = page.coerceAtLeast(0)
         val safeSize = size.coerceIn(1, 50)
         val pageable = PageRequest.of(safePage, safeSize)
@@ -332,8 +351,10 @@ class ProgramService(
         } else {
             exerciseRepository.findAll(pageable)
         }
+        val normalizedLocale = localizationService.normalizeLocale(locale)
+        val translations = localizationService.translationMap(result.content, normalizedLocale)
         return ExerciseSearchResponse(
-            exercises = result.content.map { it.toSearchItem() },
+            exercises = result.content.map { it.toSearchItem(normalizedLocale, translations) },
             totalElements = result.totalElements,
             totalPages = result.totalPages,
             currentPage = safePage
@@ -446,13 +467,16 @@ class ProgramService(
         notes = notes
     )
 
-    private fun Exercise.toSearchItem() = ExerciseSearchItem(
+    private fun Exercise.toSearchItem(
+        locale: String = "en",
+        translations: Map<Long, com.richjun.liftupai.domain.workout.entity.ExerciseTranslation> = emptyMap()
+    ) = ExerciseSearchItem(
         exerciseId = id,
-        name = name,
+        name = localizationService.displayName(this, locale, translations),
         category = category.name,
         equipment = equipment?.name,
         muscleGroups = muscleGroups.map { it.name },
-        imageUrl = imageUrl,
+        imageUrl = thumbnailUrl(this),
         difficulty = difficulty,
         popularity = popularity
     )

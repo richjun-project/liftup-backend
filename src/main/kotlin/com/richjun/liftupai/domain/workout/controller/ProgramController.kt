@@ -108,9 +108,10 @@ class ProgramController(
         @RequestParam q: String,
         @RequestParam(required = false) category: String?,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int
+        @RequestParam(defaultValue = "20") size: Int,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ExerciseSearchResponse>> {
-        val response = programService.searchExercises(q, category, page, size)
+        val response = programService.searchExercises(q, category, page, size, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -118,9 +119,10 @@ class ProgramController(
     fun listExercises(
         @RequestParam(required = false) category: String?,
         @RequestParam(defaultValue = "0") page: Int,
-        @RequestParam(defaultValue = "20") size: Int
+        @RequestParam(defaultValue = "20") size: Int,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ExerciseSearchResponse>> {
-        val response = programService.listExercises(category, page, size)
+        val response = programService.listExercises(category, page, size, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -128,9 +130,10 @@ class ProgramController(
 
     @GetMapping("/exercises/{id}/substitutes")
     fun getExerciseSubstitutes(
-        @PathVariable id: Long
+        @PathVariable id: Long,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<SubstituteListResponse>> {
-        val response = programService.getExerciseSubstitutes(id)
+        val response = programService.getExerciseSubstitutes(id, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
