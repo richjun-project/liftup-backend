@@ -59,11 +59,25 @@ class NotificationService(
 
         val device = if (existingDevice.isPresent) {
             val dev = existingDevice.get()
-            dev.isActive = true
-            dev.lastUsedAt = AppTime.utcNow()
-            dev.deviceName = request.deviceName ?: dev.deviceName
-            dev.appVersion = request.appVersion ?: dev.appVersion
-            dev
+            // 다른 유저의 토큰이면 기존 레코드 삭제 후 새로 생성 (unique 제약)
+            if (dev.user.id != user.id) {
+                logger.info("[FCM] Device token transferred from user ${dev.user.id} to user ${user.id}")
+                notificationDeviceRepository.delete(dev)
+                notificationDeviceRepository.flush()
+                NotificationDevice(
+                    user = user,
+                    deviceToken = request.deviceToken,
+                    platform = platform,
+                    deviceName = request.deviceName,
+                    appVersion = request.appVersion
+                )
+            } else {
+                dev.isActive = true
+                dev.lastUsedAt = AppTime.utcNow()
+                dev.deviceName = request.deviceName ?: dev.deviceName
+                dev.appVersion = request.appVersion ?: dev.appVersion
+                dev
+            }
         } else {
             NotificationDevice(
                 user = user,
@@ -428,14 +442,21 @@ class NotificationService(
     }
 
     /**
-     * 스케줄 알림 발송 — history 저장 + FCM 전송 + nextTriggerAt 갱신
-     * JPA @ElementCollection 프록시 문제를 피하기 위해 data를 일반 HashMap으로 복사
+     * 스케줄 알림 발송 — nextTriggerAt 선갱신 + history 저장 + FCM 전송
+     * nextTriggerAt을 먼저 갱신하여 중복 발송 방지 (다음 스케줄러 주기에서 재조회 차단)
+     * FCM은 외부 호출이므로 실패해도 nextTriggerAt 롤백하지 않음 (중복보다 누락이 안전)
      */
     fun sendScheduledNotificationWithFcm(schedule: NotificationSchedule) {
         val locale = resolveLocale(schedule.user.id)
         val notificationId = UUID.randomUUID().toString()
 
-        // FCM에 보낼 data를 일반 HashMap으로 먼저 구성 (JPA 관리 컬렉션 사용 X)
+        // 1. nextTriggerAt을 먼저 갱신하여 중복 발송 방지
+        val nextTrigger = recalculateNextTrigger(schedule)
+        schedule.nextTriggerAt = nextTrigger
+        notificationScheduleRepository.save(schedule)
+        logger.info("[ScheduledNotification] Next trigger pre-updated to $nextTrigger for schedule ${schedule.id}")
+
+        // 2. FCM에 보낼 data를 일반 HashMap으로 구성 (JPA 관리 컬렉션 사용 X)
         val fcmData = hashMapOf(
             "scheduleId" to schedule.id.toString(),
             "scheduleName" to schedule.scheduleName,
@@ -444,7 +465,7 @@ class NotificationService(
         val fcmTitle = NotificationLocalization.message(NotificationLocalization.titleKey(schedule.notificationType), locale)
         val fcmBody = schedule.message
 
-        // Save to history
+        // 3. Save to history
         val history = NotificationHistory(
             user = schedule.user,
             notificationId = notificationId,
@@ -458,21 +479,19 @@ class NotificationService(
         notificationHistoryRepository.save(history)
         logger.info("[ScheduledNotification] History saved: id=$notificationId, type=${schedule.notificationType}, user=${schedule.user.id}")
 
-        // Send FCM — 일반 HashMap 사용 (JPA 프록시가 아닌 순수 Map)
-        val request = PushNotificationRequest(
-            userId = schedule.user.id,
-            title = fcmTitle,
-            body = fcmBody,
-            data = fcmData
-        )
-
-        val result = sendPushNotification(request)
-        logger.info("[ScheduledNotification] FCM result: success=${result.success}, sent=${result.sentCount}, failed=${result.failedCount}, msg=${result.message}")
-
-        // Update next trigger time
-        schedule.nextTriggerAt = recalculateNextTrigger(schedule)
-        notificationScheduleRepository.save(schedule)
-        logger.info("[ScheduledNotification] Next trigger updated to ${schedule.nextTriggerAt} for schedule ${schedule.id}")
+        // 4. Send FCM — 실패해도 nextTriggerAt은 이미 갱신됨 (중복 발송보다 누락이 안전)
+        try {
+            val request = PushNotificationRequest(
+                userId = schedule.user.id,
+                title = fcmTitle,
+                body = fcmBody,
+                data = fcmData
+            )
+            val result = sendPushNotification(request)
+            logger.info("[ScheduledNotification] FCM result: success=${result.success}, sent=${result.sentCount}, failed=${result.failedCount}")
+        } catch (e: Exception) {
+            logger.error("[ScheduledNotification] FCM send failed for schedule ${schedule.id}, but nextTriggerAt already updated: ${e.message}", e)
+        }
     }
 
     fun recalculateNextTrigger(schedule: NotificationSchedule): LocalDateTime {

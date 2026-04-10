@@ -7,12 +7,16 @@ data class ProgramWarmupSet(val weight: Double, val reps: Int)
 data class ProgramSubstituteExercise(
     val exerciseId: Long,
     val name: String,
-    val reason: String
+    val reason: String,
+    val category: String? = null,
+    val equipment: String? = null
 )
 
 data class ProgramGeneratedExercise(
     val exerciseId: Long,
     val name: String,
+    val category: String? = null,
+    val equipment: String? = null,
     val sets: Int,
     val minReps: Int,
     val maxReps: Int,

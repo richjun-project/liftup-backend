@@ -36,6 +36,8 @@ data class QuickExerciseDetail(
     val exerciseId: String,
 
     val name: String,
+    val category: String? = null,
+    val equipment: String? = null,
     val sets: Int,
     val reps: String,
     val rest: Int,

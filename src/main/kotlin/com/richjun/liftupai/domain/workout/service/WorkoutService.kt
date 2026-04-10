@@ -314,6 +314,8 @@ class WorkoutService(
             WorkoutExerciseDto(
                 exerciseId = we.exercise.id,
                 exerciseName = names[we.exercise.id] ?: we.exercise.name,
+                category = we.exercise.category.name,
+                equipment = we.exercise.equipment?.name,
                 sets = we.sets.map { s ->
                     ExerciseSetDto(weight = s.weight, reps = s.reps, rpe = s.rpe, restTime = s.restTime)
                 },

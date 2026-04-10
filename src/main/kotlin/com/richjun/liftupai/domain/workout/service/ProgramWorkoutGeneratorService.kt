@@ -211,13 +211,17 @@ class ProgramWorkoutGeneratorService(
                 ProgramSubstituteExercise(
                     exerciseId = sub.substituteExercise.id,
                     name = sub.substituteExercise.name,
-                    reason = sub.reason.name
+                    reason = sub.reason.name,
+                    category = sub.substituteExercise.category.name,
+                    equipment = sub.substituteExercise.equipment?.name
                 )
             }
 
             ProgramGeneratedExercise(
                 exerciseId = actualExercise.id,
                 name = actualExercise.name,
+                category = actualExercise.category.name,
+                equipment = actualExercise.equipment?.name,
                 sets = adjustedSets,
                 minReps = adjustedMinReps,
                 maxReps = adjustedMaxReps,

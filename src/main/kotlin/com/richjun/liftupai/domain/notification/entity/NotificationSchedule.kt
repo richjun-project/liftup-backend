@@ -1,6 +1,7 @@
 package com.richjun.liftupai.domain.notification.entity
 
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.global.time.AppTime
 import jakarta.persistence.*
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -42,10 +43,10 @@ data class NotificationSchedule(
     var notificationType: NotificationType = NotificationType.WORKOUT_REMINDER,
 
     @Column(nullable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    val createdAt: LocalDateTime = AppTime.utcNow(),
 
     @Column(nullable = false)
-    var updatedAt: LocalDateTime = LocalDateTime.now(),
+    var updatedAt: LocalDateTime = AppTime.utcNow(),
 
     @Column
     var nextTriggerAt: LocalDateTime? = null

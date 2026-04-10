@@ -37,6 +37,8 @@ data class TemplateDayResponse(
 data class TemplateDayExerciseResponse(
     val exerciseId: Long,
     val exerciseName: String,
+    val category: String? = null,
+    val equipment: String? = null,
     val imageUrl: String?,
     val videoUrl: String? = null,
     val orderInDay: Int,
@@ -92,6 +94,8 @@ data class DayWorkoutResponse(
 data class DayExerciseDetail(
     val exerciseId: Long,
     val exerciseName: String,
+    val category: String? = null,
+    val equipment: String? = null,
     val imageUrl: String?,
     val videoUrl: String? = null,
     val sets: Int,

@@ -269,6 +269,10 @@ data class WorkoutExerciseDto(
     @JsonProperty("exercise_name")
     val exerciseName: String,
 
+    val category: String? = null,
+
+    val equipment: String? = null,
+
     val sets: List<ExerciseSetDto>,
 
     @JsonProperty("total_volume")

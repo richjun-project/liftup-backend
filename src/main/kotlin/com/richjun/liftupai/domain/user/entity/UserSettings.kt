@@ -1,6 +1,7 @@
 package com.richjun.liftupai.domain.user.entity
 
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.global.time.AppTime
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -78,8 +79,8 @@ data class UserSettings(
     var injuries: MutableSet<String> = mutableSetOf(),
 
     @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    val createdAt: LocalDateTime = AppTime.utcNow(),
 
     @Column(name = "updated_at")
-    var updatedAt: LocalDateTime = LocalDateTime.now()
+    var updatedAt: LocalDateTime = AppTime.utcNow()
 )

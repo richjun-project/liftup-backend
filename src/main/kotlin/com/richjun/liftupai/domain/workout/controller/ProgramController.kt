@@ -101,6 +101,29 @@ class ProgramController(
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
+    // ── Exercise Search & List ────────────────────────────────────────────────
+
+    @GetMapping("/exercises/search")
+    fun searchExercises(
+        @RequestParam q: String,
+        @RequestParam(required = false) category: String?,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): ResponseEntity<ApiResponse<ExerciseSearchResponse>> {
+        val response = programService.searchExercises(q, category, page, size)
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
+    @GetMapping("/exercises")
+    fun listExercises(
+        @RequestParam(required = false) category: String?,
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int
+    ): ResponseEntity<ApiResponse<ExerciseSearchResponse>> {
+        val response = programService.listExercises(category, page, size)
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
     // ── Exercise Substitution ─────────────────────────────────────────────────
 
     @GetMapping("/exercises/{id}/substitutes")

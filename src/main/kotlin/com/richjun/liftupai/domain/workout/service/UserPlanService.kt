@@ -139,6 +139,8 @@ class UserPlanService(
                 DayExerciseDetail(
                     exerciseId = ex.exercise.id,
                     exerciseName = translatedNames[ex.exercise.id]?.displayName ?: ex.exercise.name,
+                    category = ex.exercise.category.name,
+                    equipment = ex.exercise.equipment?.name,
                     imageUrl = thumbnailUrl(ex.exercise),
                     videoUrl = videoUrl(ex.exercise),
                     sets = ex.sets,

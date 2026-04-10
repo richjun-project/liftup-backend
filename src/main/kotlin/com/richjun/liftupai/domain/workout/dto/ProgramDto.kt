@@ -47,6 +47,8 @@ data class ProgramDayDetail(
 data class ProgramExerciseDetail(
     val exerciseId: Long,
     val name: String,
+    val category: String? = null,
+    val equipment: String? = null,
     val order: Int,
     @com.fasterxml.jackson.annotation.JsonProperty("is_compound") val isCompound: Boolean,
     val sets: Int,
@@ -98,6 +100,8 @@ data class TodayWorkoutResponse(
 data class TodayExerciseResponse(
     val exerciseId: Long,
     val name: String,
+    val category: String? = null,
+    val equipment: String? = null,
     val sets: Int,
     val minReps: Int,
     val maxReps: Int,
@@ -110,7 +114,15 @@ data class TodayExerciseResponse(
 )
 
 data class WarmupSetResponse(val weight: Double, val reps: Int)
-data class SubstituteResponse(val exerciseId: Long, val name: String, val reason: String)
+data class SubstituteResponse(
+    val exerciseId: Long,
+    val name: String,
+    val reason: String,
+    val category: String? = null,
+    val equipment: String? = null,
+    val muscleGroups: List<String>? = null,
+    val imageUrl: String? = null
+)
 data class WeeklyVolumeStatusDto(
     val muscleGroup: String,
     val currentSets: Int,
@@ -149,5 +161,25 @@ data class ExerciseOverrideRequest(
 data class SubstituteListResponse(
     val exerciseId: Long,
     val exerciseName: String,
+    val category: String,
+    val muscleGroups: List<String>,
     val substitutes: List<SubstituteResponse>
+)
+
+data class ExerciseSearchResponse(
+    val exercises: List<ExerciseSearchItem>,
+    val totalElements: Long,
+    val totalPages: Int,
+    val currentPage: Int
+)
+
+data class ExerciseSearchItem(
+    val exerciseId: Long,
+    val name: String,
+    val category: String,
+    val equipment: String?,
+    val muscleGroups: List<String>,
+    val imageUrl: String?,
+    val difficulty: Int,
+    val popularity: Int
 )

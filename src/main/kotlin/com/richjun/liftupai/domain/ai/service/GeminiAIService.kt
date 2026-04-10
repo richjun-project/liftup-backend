@@ -53,7 +53,7 @@ class GeminiAIService(
             val locale = resolveLocale(user)
             val userProfile = userProfileRepository.findByUser(user).orElse(null)
             val ptStyle = userProfile?.ptStyle ?: PTStyle.GAME_MASTER
-            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale)
+            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile)
 
             callGeminiAPI(prompt).ifBlank { getFallbackResponse(message, user, locale) }
         } catch (e: Exception) {
@@ -166,8 +166,25 @@ class GeminiAIService(
         return callGeminiAPI(prompt, locale)
     }
 
-    private fun buildChatPrompt(message: String, nickname: String, ptStyle: PTStyle, locale: String): String {
+    private fun buildChatPrompt(
+        message: String,
+        nickname: String,
+        ptStyle: PTStyle,
+        locale: String,
+        userProfile: com.richjun.liftupai.domain.user.entity.UserProfile? = null
+    ): String {
         val responseLanguage = AILocalization.responseLanguage(locale)
+        val profileSection = userProfile?.let {
+            val profileInfo = buildUserProfileInfo(it)
+            """
+            ## User Profile
+            $profileInfo
+
+            Use this information to personalize your advice when the conversation is about training, nutrition, recovery, or body composition.
+            For casual conversation, you don't need to reference this data.
+            """.trimIndent()
+        } ?: ""
+
         return """
             You are a personal fitness coach chatbot in the LIFTUP AI app.
             The user's name is $nickname.
@@ -180,11 +197,14 @@ class GeminiAIService(
 
             ${styleInstruction(ptStyle)}
 
+            $profileSection
+
             ## Guidelines
             - Give clear, practical guidance on training, nutrition, recovery, and healthy habits.
             - Keep answers concise (2-4 sentences) unless the user explicitly asks for more detail.
             - Stay in character at all times — never break persona or speak in a generic AI tone.
             - Address the user as "$nickname" naturally (not every sentence).
+            - When giving nutrition or workout advice, factor in the user's profile (goals, body stats, experience) for personalized recommendations.
 
             ## User message
             $message

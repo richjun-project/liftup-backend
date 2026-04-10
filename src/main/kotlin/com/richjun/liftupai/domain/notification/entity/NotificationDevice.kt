@@ -1,6 +1,7 @@
 package com.richjun.liftupai.domain.notification.entity
 
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.global.time.AppTime
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -32,10 +33,10 @@ data class NotificationDevice(
     var isActive: Boolean = true,
 
     @Column(nullable = false)
-    val registeredAt: LocalDateTime = LocalDateTime.now(),
+    val registeredAt: LocalDateTime = AppTime.utcNow(),
 
     @Column(nullable = false)
-    var lastUsedAt: LocalDateTime = LocalDateTime.now()
+    var lastUsedAt: LocalDateTime = AppTime.utcNow()
 )
 
 enum class DevicePlatform {

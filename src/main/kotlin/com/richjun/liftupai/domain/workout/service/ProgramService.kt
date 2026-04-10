@@ -10,6 +10,7 @@ import com.richjun.liftupai.domain.workout.util.WorkoutTranslations
 import com.richjun.liftupai.global.exception.BadRequestException
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.i18n.ErrorLocalization
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import com.richjun.liftupai.global.time.AppTime
@@ -153,6 +154,8 @@ class ProgramService(
             TodayExerciseResponse(
                 exerciseId = ex.exerciseId,
                 name = ex.name,
+                category = ex.category,
+                equipment = ex.equipment,
                 sets = ex.sets,
                 minReps = ex.minReps,
                 maxReps = ex.maxReps,
@@ -161,7 +164,13 @@ class ProgramService(
                 targetRPE = ex.targetRPE,
                 isCompound = ex.isCompound,
                 warmupSets = ex.warmupSets.map { WarmupSetResponse(it.weight, it.reps) },
-                substitutes = ex.substitutes.map { SubstituteResponse(it.exerciseId, it.name, it.reason) }
+                substitutes = ex.substitutes.map { SubstituteResponse(
+                    exerciseId = it.exerciseId,
+                    name = it.name,
+                    reason = it.reason,
+                    category = it.category,
+                    equipment = it.equipment
+                ) }
             )
         }
 
@@ -242,14 +251,101 @@ class ProgramService(
     fun getExerciseSubstitutes(exerciseId: Long): SubstituteListResponse {
         val exercise = exerciseRepository.findById(exerciseId)
             .orElseThrow { ResourceNotFoundException("Exercise not found: $exerciseId") }
-        val substitutes = exerciseSubstitutionRepository
+
+        // First try the static substitution table
+        val staticSubstitutes = exerciseSubstitutionRepository
             .findByOriginalExerciseIdOrderByPriority(exerciseId)
-            .map { SubstituteResponse(it.substituteExercise.id, it.substituteExercise.name, it.reason.name) }
+            .map {
+                SubstituteResponse(
+                    exerciseId = it.substituteExercise.id,
+                    name = it.substituteExercise.name,
+                    reason = it.reason.name,
+                    category = it.substituteExercise.category.name,
+                    equipment = it.substituteExercise.equipment?.name,
+                    muscleGroups = it.substituteExercise.muscleGroups.map { mg -> mg.name },
+                    imageUrl = it.substituteExercise.imageUrl
+                )
+            }
+
+        val substitutes = if (staticSubstitutes.isNotEmpty()) {
+            staticSubstitutes
+        } else if (exercise.muscleGroups.isNotEmpty()) {
+            // Fall back to dynamic alternatives (same category + overlapping muscle groups)
+            // Sort by popularity descending so the most commonly used exercises appear first
+            exerciseRepository.findAlternativeExercises(
+                exerciseId, exercise.category, exercise.muscleGroups.toList()
+            ).sortedByDescending { it.popularity }.take(10).map { alt ->
+                SubstituteResponse(
+                    exerciseId = alt.id,
+                    name = alt.name,
+                    reason = if (alt.equipment != exercise.equipment) "EQUIPMENT" else "EQUIVALENT",
+                    category = alt.category.name,
+                    equipment = alt.equipment?.name,
+                    muscleGroups = alt.muscleGroups.map { mg -> mg.name },
+                    imageUrl = alt.imageUrl
+                )
+            }
+        } else {
+            emptyList()
+        }
+
         return SubstituteListResponse(
             exerciseId = exerciseId,
             exerciseName = exercise.name,
+            category = exercise.category.name,
+            muscleGroups = exercise.muscleGroups.map { it.name },
             substitutes = substitutes
         )
+    }
+
+    // ── Exercise Search & List ───────────────────────────────────────────────
+
+    fun searchExercises(query: String, category: String?, page: Int, size: Int): ExerciseSearchResponse {
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) {
+            return listExercises(category, page, size)
+        }
+        val safePage = page.coerceAtLeast(0)
+        val safeSize = size.coerceIn(1, 50)
+        val pageable = PageRequest.of(safePage, safeSize)
+        val cat = category?.let { parseCategory(it) }
+        val result = if (cat != null) {
+            exerciseRepository.searchByCategory(cat, trimmed, pageable)
+        } else {
+            exerciseRepository.searchPaged(trimmed, pageable)
+        }
+        return ExerciseSearchResponse(
+            exercises = result.content.map { it.toSearchItem() },
+            totalElements = result.totalElements,
+            totalPages = result.totalPages,
+            currentPage = safePage
+        )
+    }
+
+    fun listExercises(category: String?, page: Int, size: Int): ExerciseSearchResponse {
+        val safePage = page.coerceAtLeast(0)
+        val safeSize = size.coerceIn(1, 50)
+        val pageable = PageRequest.of(safePage, safeSize)
+        val cat = category?.let { parseCategory(it) }
+        val result = if (cat != null) {
+            exerciseRepository.findByCategory(cat, pageable)
+        } else {
+            exerciseRepository.findAll(pageable)
+        }
+        return ExerciseSearchResponse(
+            exercises = result.content.map { it.toSearchItem() },
+            totalElements = result.totalElements,
+            totalPages = result.totalPages,
+            currentPage = safePage
+        )
+    }
+
+    private fun parseCategory(raw: String): ExerciseCategory {
+        return try {
+            ExerciseCategory.valueOf(raw.uppercase())
+        } catch (e: IllegalArgumentException) {
+            throw BadRequestException("Invalid category: $raw")
+        }
     }
 
     @Transactional
@@ -259,6 +355,10 @@ class ProgramService(
         val enrollment = userProgramEnrollmentRepository.findFirstByUserAndStatusOrderByStartDateDesc(
             user, EnrollmentStatus.ACTIVE
         ) ?: throw ResourceNotFoundException("No active program enrollment found")
+
+        if (request.originalExerciseId == request.substituteExerciseId) {
+            throw BadRequestException("Cannot substitute an exercise with itself")
+        }
 
         val originalExercise = exerciseRepository.findById(request.originalExerciseId)
             .orElseThrow { BadRequestException("Original exercise not found: ${request.originalExerciseId}") }
@@ -333,6 +433,8 @@ class ProgramService(
     private fun ProgramDayExercise.toDetail() = ProgramExerciseDetail(
         exerciseId = exercise.id,
         name = exercise.name,
+        category = exercise.category.name,
+        equipment = exercise.equipment?.name,
         order = orderInDay,
         isCompound = isCompound,
         sets = sets,
@@ -342,6 +444,17 @@ class ProgramService(
         targetRPE = targetRPE,
         isOptional = isOptional,
         notes = notes
+    )
+
+    private fun Exercise.toSearchItem() = ExerciseSearchItem(
+        exerciseId = id,
+        name = name,
+        category = category.name,
+        equipment = equipment?.name,
+        muscleGroups = muscleGroups.map { it.name },
+        imageUrl = imageUrl,
+        difficulty = difficulty,
+        popularity = popularity
     )
 
     private fun UserProgramEnrollment.toStatusResponse(locale: String = "en"): EnrollmentStatusResponse {

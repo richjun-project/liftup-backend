@@ -8,6 +8,7 @@ import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
+import com.richjun.liftupai.domain.workout.service.ExerciseCatalogLocalizationService
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
@@ -25,7 +26,8 @@ class StatsService(
     private val userSettingsRepository: UserSettingsRepository,
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val workoutExerciseRepository: WorkoutExerciseRepository,
-    private val exerciseSetRepository: ExerciseSetRepository
+    private val exerciseSetRepository: ExerciseSetRepository,
+    private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService
 ) {
 
     fun getOverview(userId: Long, period: String): StatsOverviewResponse {
@@ -147,10 +149,12 @@ class StatsService(
         ).filter { it.status == SessionStatus.COMPLETED }
 
         val recordsByExercise = mutableMapOf<Long, PersonalRecord>()
+        val exerciseEntities = mutableMapOf<Long, com.richjun.liftupai.domain.workout.entity.Exercise>()
 
         allSessions.forEach { session ->
             workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).forEach { workoutExercise ->
                 val exerciseId = workoutExercise.exercise.id
+                exerciseEntities.putIfAbsent(exerciseId, workoutExercise.exercise)
 
                 workoutExercise.sets.filter { it.completed }.forEach { set ->
                     val current = recordsByExercise[exerciseId]
@@ -167,7 +171,18 @@ class StatsService(
             }
         }
 
-        return PersonalRecordsResponse(records = recordsByExercise.values.toList())
+        // 운동 이름을 사용자 locale에 맞게 번역
+        val translations = exerciseCatalogLocalizationService.translationMap(exerciseEntities.values, locale)
+        val localizedRecords = recordsByExercise.values.map { record ->
+            val exercise = exerciseEntities[record.exerciseId]
+            if (exercise != null) {
+                record.copy(exerciseName = exerciseCatalogLocalizationService.displayName(exercise, locale, translations))
+            } else {
+                record
+            }
+        }
+
+        return PersonalRecordsResponse(records = localizedRecords)
     }
 
     fun getProgress(userId: Long, metric: String, period: String): ProgressResponse {

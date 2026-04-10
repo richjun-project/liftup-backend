@@ -1213,6 +1213,8 @@ class WorkoutServiceV2(
             QuickExerciseDetail(
                 exerciseId = exercise.id.toString(),
                 name = localizedName(exercise, locale, translations),
+                category = exercise.category.name,
+                equipment = exercise.equipment?.name,
                 sets = ptRec?.sets ?: 3,
                 reps = ptRec?.reps ?: "10-12",
                 rest = ptRec?.restSeconds ?: 60,

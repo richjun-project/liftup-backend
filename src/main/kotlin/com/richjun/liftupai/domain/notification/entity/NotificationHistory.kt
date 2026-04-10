@@ -1,6 +1,7 @@
 package com.richjun.liftupai.domain.notification.entity
 
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.global.time.AppTime
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
@@ -41,7 +42,7 @@ data class NotificationHistory(
     var isRead: Boolean = false,
 
     @Column(nullable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    val createdAt: LocalDateTime = AppTime.utcNow(),
 
     @Column
     var readAt: LocalDateTime? = null,

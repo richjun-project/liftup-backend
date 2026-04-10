@@ -136,12 +136,21 @@ class PTScheduledMessageService(
     }
 
     /**
-     * 스케줄 ID로 조회하여 독립 트랜잭션에서 메시지 저장 + FCM 전송
+     * 스케줄 ID로 조회하여 메시지 저장 + FCM 전송
+     * 비관적 잠금으로 중복 발송 방지
      */
     fun sendScheduledPTMessage(scheduleId: Long) {
-        val schedule = notificationScheduleRepository.findById(scheduleId).orElse(null)
+        // 비관적 잠금으로 조회 — 다른 스케줄러 스레드와 동시 처리 방지
+        val schedule = notificationScheduleRepository.findByIdForUpdate(scheduleId)
         if (schedule == null) {
             logger.warn("[PTMessage] Schedule $scheduleId not found, skipping")
+            return
+        }
+
+        // 이미 처리된 스케줄인지 확인 (nextTriggerAt이 미래이면 이미 처리됨)
+        val now = AppTime.utcNow()
+        if (schedule.nextTriggerAt != null && schedule.nextTriggerAt!!.isAfter(now)) {
+            logger.info("[PTMessage] Schedule $scheduleId already processed (nextTriggerAt=${schedule.nextTriggerAt}), skipping")
             return
         }
 
@@ -149,7 +158,7 @@ class PTScheduledMessageService(
             // 1. ChatMessage에 저장 (채팅 히스토리에 표시)
             val chatMessage = ChatMessage(
                 user = schedule.user,
-                userMessage = "", // 시스템 메시지는 userMessage 비움
+                userMessage = "",
                 aiResponse = schedule.message,
                 messageType = MessageType.SYSTEM,
                 status = MessageStatus.COMPLETED
@@ -157,7 +166,7 @@ class PTScheduledMessageService(
             chatMessageRepository.save(chatMessage)
             logger.info("[PTMessage] ChatMessage saved for user ${schedule.user.id}, schedule $scheduleId")
 
-            // 2. FCM 전송 및 NotificationHistory 저장 (data를 일반 Map으로 복사)
+            // 2. FCM 전송 및 NotificationHistory 저장 (nextTriggerAt 선갱신 포함)
             notificationService.sendScheduledNotificationWithFcm(schedule)
 
             logger.info("[PTMessage] PT message sent and saved to chat for user ${schedule.user.id}")
