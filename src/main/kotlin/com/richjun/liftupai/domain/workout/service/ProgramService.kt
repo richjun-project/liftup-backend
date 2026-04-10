@@ -290,8 +290,11 @@ class ProgramService(
             )
         }
 
+        // EQUIVALENT(유사 효과)를 EQUIPMENT(다른 장비)보다 우선 정렬
+        val reasonOrder = mapOf("EQUIVALENT" to 0, "INJURY" to 1, "PREFERENCE" to 2, "EQUIPMENT" to 3)
+
         val substitutes = if (staticSubstitutes.isNotEmpty()) {
-            staticSubstitutes
+            staticSubstitutes.sortedBy { reasonOrder[it.reason] ?: 99 }
         } else {
             dynamicRaw.map { alt ->
                 SubstituteResponse(
@@ -303,7 +306,7 @@ class ProgramService(
                     muscleGroups = alt.muscleGroups.map { mg -> mg.name },
                     imageUrl = thumbnailUrl(alt)
                 )
-            }
+            }.sortedBy { reasonOrder[it.reason] ?: 99 }
         }
 
         return SubstituteListResponse(
