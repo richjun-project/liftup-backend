@@ -269,15 +269,32 @@ class ProgramService(
         // Collect all exercises (original + substitutes) for batch translation
         val allExercises = staticRaw.map { it.substituteExercise } + listOf(exercise)
 
-        val dynamicRaw = if (staticRaw.isEmpty() && exercise.muscleGroups.isNotEmpty()) {
+        val originalMuscles = exercise.muscleGroups.toSet()
+        val originalEquipment = exercise.equipment
+
+        val dynamicRaw = if (staticRaw.isEmpty() && originalMuscles.isNotEmpty()) {
             exerciseRepository.findAlternativeExercises(
-                exerciseId, exercise.category, exercise.muscleGroups.toList()
-            ).sortedByDescending { it.popularity }.take(10)
+                exerciseId, exercise.category, originalMuscles.toList()
+            ).take(30) // 넉넉히 가져와서 스코어링 후 상위 10개 선택
         } else emptyList()
 
-        val allForTranslation = allExercises + dynamicRaw
+        // 스코어링: 근육 겹침도(0~1) * 60 + 장비 일치(0|1) * 30 + 인기도(0~1) * 10
+        val scoredDynamic = dynamicRaw.map { alt ->
+            val altMuscles = alt.muscleGroups.toSet()
+            val overlap = (originalMuscles intersect altMuscles).size
+            val union = (originalMuscles union altMuscles).size
+            val muscleScore = if (union > 0) overlap.toDouble() / union else 0.0
+            val equipMatch = if (alt.equipment == originalEquipment) 1.0 else 0.0
+            val popScore = alt.popularity.coerceIn(0, 100) / 100.0
+            val score = muscleScore * 60 + equipMatch * 30 + popScore * 10
+            alt to score
+        }.sortedByDescending { it.second }.take(10)
+
+        val allForTranslation = staticRaw.map { it.substituteExercise } + listOf(exercise) + scoredDynamic.map { it.first }
         val translations = localizationService.translationMap(allForTranslation, normalizedLocale)
 
+        // static substitutes: EQUIVALENT 우선 정렬
+        val reasonOrder = mapOf("EQUIVALENT" to 0, "INJURY" to 1, "PREFERENCE" to 2, "EQUIPMENT" to 3)
         val staticSubstitutes = staticRaw.map {
             SubstituteResponse(
                 exerciseId = it.substituteExercise.id,
@@ -288,25 +305,32 @@ class ProgramService(
                 muscleGroups = it.substituteExercise.muscleGroups.map { mg -> mg.name },
                 imageUrl = thumbnailUrl(it.substituteExercise)
             )
-        }
-
-        // EQUIVALENT(유사 효과)를 EQUIPMENT(다른 장비)보다 우선 정렬
-        val reasonOrder = mapOf("EQUIVALENT" to 0, "INJURY" to 1, "PREFERENCE" to 2, "EQUIPMENT" to 3)
+        }.sortedBy { reasonOrder[it.reason] ?: 99 }
 
         val substitutes = if (staticSubstitutes.isNotEmpty()) {
-            staticSubstitutes.sortedBy { reasonOrder[it.reason] ?: 99 }
+            staticSubstitutes
         } else {
-            dynamicRaw.map { alt ->
+            scoredDynamic.map { (alt, _) ->
+                val altMuscles = alt.muscleGroups.toSet()
+                val overlap = (originalMuscles intersect altMuscles).size
+                val union = (originalMuscles union altMuscles).size
+                val similarity = if (union > 0) overlap.toDouble() / union else 0.0
+                val reason = when {
+                    similarity >= 0.5 && alt.equipment == originalEquipment -> "EQUIVALENT"
+                    similarity >= 0.5 -> "EQUIPMENT"
+                    alt.equipment == originalEquipment -> "PREFERENCE"
+                    else -> "EQUIPMENT"
+                }
                 SubstituteResponse(
                     exerciseId = alt.id,
                     name = localizationService.displayName(alt, normalizedLocale, translations),
-                    reason = if (alt.equipment != exercise.equipment) "EQUIPMENT" else "EQUIVALENT",
+                    reason = reason,
                     category = alt.category.name,
                     equipment = alt.equipment?.name,
                     muscleGroups = alt.muscleGroups.map { mg -> mg.name },
                     imageUrl = thumbnailUrl(alt)
                 )
-            }.sortedBy { reasonOrder[it.reason] ?: 99 }
+            }
         }
 
         return SubstituteListResponse(
