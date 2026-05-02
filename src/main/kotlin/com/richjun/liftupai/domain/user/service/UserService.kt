@@ -169,11 +169,26 @@ class UserService(
         request.availableEquipment?.let {
             settings.availableEquipment.clear()
             settings.availableEquipment.addAll(it)
+            profile.availableEquipment.clear()
+            profile.availableEquipment.addAll(it)
         }
 
         request.injuries?.let {
             settings.injuries.clear()
             settings.injuries.addAll(it)
+            profile.injuries.clear()
+            profile.injuries.addAll(it)
+        }
+
+        request.strengthAssessment?.takeIf { it.isNotEmpty() }?.let { assessment ->
+            profile.strengthTestCompleted = true
+            val estimatedMaxes = StrengthAssessmentEstimator.estimateMaxes(
+                assessment = assessment,
+                bodyWeightKg = request.bodyInfo?.weight
+            )
+            if (estimatedMaxes.isNotEmpty()) {
+                profile.estimatedMaxes = objectMapper.writeValueAsString(estimatedMaxes)
+            }
         }
 
         settings.updatedAt = AppTime.utcNow()

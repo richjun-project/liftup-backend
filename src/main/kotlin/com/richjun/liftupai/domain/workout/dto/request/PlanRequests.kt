@@ -33,10 +33,18 @@ data class GenerateAIPlanRequest(
     val goals: List<String>,
     val gender: String?,
     val age: Int?,
+    val height: Double? = null,
+    val weight: Double? = null,
     val weeklyDays: Int,
     val sessionDuration: Int,
     val equipment: List<String>,
     val injuries: List<String>? = null,
     val focusAreas: List<String>? = null,
-    val trainingStyle: String? = null
+    val trainingStyle: String? = null,
+    val ptStyle: String? = null,
+    val workoutSplit: String? = null,
+    val strengthAssessment: Map<String, Any>? = null,
+    val estimatedMaxes: Map<String, Double>? = null,
+    val workingWeights: Map<String, Double>? = null,
+    val strengthLevel: String? = null
 )

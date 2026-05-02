@@ -96,12 +96,13 @@ class VectorWorkoutRecommendationService(
         duration: Int? = null,
         targetMuscle: String? = null,
         equipment: String? = null,
+        availableEquipment: Set<String> = emptySet(),
         difficulty: String? = null,
         workoutType: WorkoutType? = null,
         limit: Int = 10
     ): List<Exercise> {
         return try {
-            vectorBasedRecommendation(user, profile, duration, targetMuscle, equipment, difficulty, workoutType, limit)
+            vectorBasedRecommendation(user, profile, duration, targetMuscle, equipment, availableEquipment, difficulty, workoutType, limit)
         } catch (e: Exception) {
             logger.warn("Vector search failed: ${e.message}, using fallback")
             fallbackRecommendation(user, targetMuscle, equipment, limit)
@@ -114,18 +115,22 @@ class VectorWorkoutRecommendationService(
         duration: Int?,
         targetMuscle: String?,
         equipment: String?,
+        availableEquipment: Set<String>,
         difficulty: String?,
         workoutType: WorkoutType?,
         limit: Int
     ): List<Exercise> {
         // 사용자 컨텍스트 생성
         val context = buildUserContext(user, profile, targetMuscle, workoutType)
+        val equipmentContext = equipment ?: availableEquipment
+            .takeIf { it.isNotEmpty() }
+            ?.joinToString(", ")
 
         // 벡터 검색용 텍스트 생성
         val requestText = exerciseVectorService.userRequestToText(
             userGoals = context.goals,
             targetMuscles = context.targetMuscles,
-            equipment = equipment,
+            equipment = equipmentContext,
             difficulty = difficulty,
             duration = duration,
             userLevel = context.level,
@@ -159,7 +164,7 @@ class VectorWorkoutRecommendationService(
             .let { filterByRecovery(it, context.recoveringMuscles) }
             .let { filterByTier(it) }
             .let { filterByTargetMuscle(it, targetMuscle) }
-            .let { filterByEquipment(it, equipment) }
+            .let { filterByEquipment(it, equipment, availableEquipment) }
             .let { filterByGoal(it, profile?.goals) }
             .let { filterByDifficulty(it, profile?.experienceLevel) }
             .let { sortByRelevance(it) }
@@ -420,15 +425,45 @@ class VectorWorkoutRecommendationService(
         return if (filtered.size >= SAFETY_MIN) filtered else exercises
     }
 
-    private fun filterByEquipment(exercises: List<Exercise>, equipment: String?): List<Exercise> {
-        if (equipment == null) return exercises
-        val equipmentEnum = try {
-            Equipment.valueOf(equipment.uppercase().replace(" ", "_"))
-        } catch (e: IllegalArgumentException) {
-            return exercises
+    private fun filterByEquipment(
+        exercises: List<Exercise>,
+        equipment: String?,
+        availableEquipment: Set<String>
+    ): List<Exercise> {
+        val explicitEquipment = parseEquipment(equipment)
+        if (explicitEquipment != null) {
+            val filtered = exercises.filter { it.equipment == explicitEquipment }
+            return if (filtered.size >= SAFETY_MIN) filtered else exercises
         }
-        val filtered = exercises.filter { it.equipment == equipmentEnum }
+
+        if (availableEquipment.isEmpty()) return exercises
+
+        val allowedEquipment = availableEquipment.mapNotNull { parseEquipment(it) }.toSet()
+        if (allowedEquipment.isEmpty()) return exercises
+
+        val filtered = exercises.filter { exercise ->
+            val exerciseEquipment = exercise.equipment
+            exerciseEquipment == null ||
+                exerciseEquipment == Equipment.BODYWEIGHT ||
+                exerciseEquipment in allowedEquipment
+        }
         return if (filtered.size >= SAFETY_MIN) filtered else exercises
+    }
+
+    private fun parseEquipment(value: String?): Equipment? {
+        val normalized = value
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+            ?.uppercase()
+            ?.replace(" ", "_")
+            ?.replace("-", "_")
+            ?: return null
+
+        return try {
+            Equipment.valueOf(normalized)
+        } catch (e: IllegalArgumentException) {
+            null
+        }
     }
 
     private fun removeDuplicatePatterns(exercises: List<Exercise>): List<Exercise> {

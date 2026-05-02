@@ -510,8 +510,8 @@ class WorkoutServiceV2(
                 val exerciseSet = ExerciseSet(
                     workoutExercise = workoutExercise,
                     setNumber = workoutExercise.sets.size + 1,
-                    weight = setDto.weight,
-                    reps = setDto.reps,
+                    weight = safeWeight,
+                    reps = safeReps,
                     restTime = setDto.restTaken,
                     rpe = setDto.rpe,  // RPE 추가
                     completed = true,  // 이미 filter로 completed=true인 것만 처리
@@ -526,20 +526,20 @@ class WorkoutServiceV2(
                     exercise = exercise
                 )
 
-                if (previousRecord == null || setDto.weight > previousRecord.weight) {
+                if (previousRecord == null || safeWeight > previousRecord.weight) {
                     val newRecord = com.richjun.liftupai.domain.workout.entity.PersonalRecord(
                         user = session.user,
                         exercise = exercise,
-                        weight = setDto.weight,
-                        reps = setDto.reps,
+                        weight = safeWeight,
+                        reps = safeReps,
                         date = completedAt
                     )
                     personalRecordRepository.save(newRecord)
 
                     personalRecords.add(PersonalRecordInfo(
                         exerciseName = localizedName(exercise, locale, translations),
-                        weight = setDto.weight,
-                        reps = setDto.reps,
+                        weight = safeWeight,
+                        reps = safeReps,
                         previousBest = previousRecord?.weight ?: 0.0
                     ))
                 }
@@ -650,7 +650,11 @@ class WorkoutServiceV2(
             setNumber = request.setNumber,
             weight = request.weight,
             reps = request.reps,
-            rpe = request.rpe  // RPE 추가
+            rpe = request.rpe,  // RPE 추가
+            completed = request.completed,
+            completedAt = if (request.completed) {
+                AppTime.parseClientDateTime(request.completedAt, resolveTimeZone(userId))
+            } else null
         )
 
         workoutExercise.sets.add(exerciseSet)
@@ -662,7 +666,7 @@ class WorkoutServiceV2(
             exercise
         )
 
-        val isPersonalRecord = previousRecord == null || request.weight > previousRecord.weight
+        val isPersonalRecord = request.completed && (previousRecord == null || request.weight > previousRecord.weight)
 
         if (isPersonalRecord) {
             val newRecord = com.richjun.liftupai.domain.workout.entity.PersonalRecord(
@@ -1552,8 +1556,9 @@ class WorkoutServiceV2(
         }
 
         // RPE 트렌드 분석 (개선: 강도 기반 RPE 추정)
-        val avgRPE = recentHistory.takeLast(3).mapNotNull { it.rpe }.average().takeIf { !it.isNaN() }
-            ?: estimateRPEFromIntensity(recentHistory)
+        val recentEntries = recentHistory.take(3)
+        val avgRPE = recentEntries.mapNotNull { it.rpe }.average().takeIf { !it.isNaN() }
+            ?: estimateRPEFromIntensity(recentEntries)
 
         // 일관성 분석 (무게 변동성)
         val weights = recentHistory.map { it.weight }
@@ -1566,7 +1571,10 @@ class WorkoutServiceV2(
         // 볼륨 트렌드 (증가/감소/유지)
         val volumes = recentHistory.map { it.weight * it.reps * it.sets }
         val volumeTrend = if (volumes.size > 2) {
-            (volumes.takeLast(2).average() - volumes.take(2).average()) / volumes.average()
+            val windowSize = (volumes.size / 2).coerceIn(1, 2)
+            val recentVolume = volumes.take(windowSize).average()
+            val olderVolume = volumes.takeLast(windowSize).average()
+            (recentVolume - olderVolume) / volumes.average()
         } else 0.0
 
         // 수행 트렌드 결정
@@ -2043,8 +2051,8 @@ class WorkoutServiceV2(
     private fun estimateRPEFromIntensity(history: List<WorkoutData>): Double {
         if (history.isEmpty()) return 7.0
 
-        // 최근 3회 평균 반복수
-        val avgReps = history.takeLast(3).map { it.reps }.average()
+        // recentHistory는 최신순으로 정렬되어 들어온다.
+        val avgReps = history.take(3).map { it.reps }.average()
 
         // 반복수 기반 RPE 추정 (RIR 표 기반)
         val estimatedRPE = when {
@@ -2788,6 +2796,10 @@ class WorkoutServiceV2(
         var updatedExercises = 0
 
         // 각 운동별로 업데이트
+        val fallbackCompletedAt = request.lastUpdated?.let {
+            AppTime.parseClientDateTime(it, resolveTimeZone(userId))
+        } ?: AppTime.utcNow()
+
         request.exercises.forEach { exerciseData ->
             // 운동 존재 확인
             val exercise = exerciseRepository.findById(exerciseData.exerciseId)
@@ -2823,6 +2835,11 @@ class WorkoutServiceV2(
                     reps = setData.reps,
                     rpe = setData.rpe,
                     restTime = setData.restTime,
+                    completed = setData.completed,
+                    completedAt = if (setData.completed) {
+                        setData.completedAt?.let { AppTime.parseClientDateTime(it, resolveTimeZone(userId)) }
+                            ?: fallbackCompletedAt
+                    } else null,
                     notes = if (setData.completed) "completed" else "incomplete"
                 )
                 exerciseSetRepository.save(exerciseSet)

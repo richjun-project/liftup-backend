@@ -69,4 +69,34 @@ class NutritionController(
         val response = nutritionService.getDailyMealPlan(userDetails.getId())
         return ResponseEntity.ok(ApiResponse.success(response))
     }
+
+    // 오늘 영양 진행률 단일 조회 (목표/섭취/잔여 + 매크로 + 끼니별 + 운동 소모 칼로리)
+    @GetMapping("/today-summary")
+    fun getTodaySummary(
+        @AuthenticationPrincipal userDetails: CustomUserDetails
+    ): ResponseEntity<ApiResponse<TodayNutritionSummaryResponse>> {
+        val response = nutritionService.getTodaySummary(userDetails.getId())
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
+    // 식단 기록 수정 (끼니 타입/칼로리/매크로)
+    @PutMapping("/log/{id}")
+    fun updateMealLog(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @PathVariable id: Long,
+        @RequestBody request: UpdateMealLogRequest
+    ): ResponseEntity<ApiResponse<NutritionLogResponse>> {
+        val response = nutritionService.updateMealLog(userDetails.getId(), id, request)
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
+
+    // 식단 기록 삭제
+    @DeleteMapping("/log/{id}")
+    fun deleteMealLog(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @PathVariable id: Long
+    ): ResponseEntity<ApiResponse<NutritionLogResponse>> {
+        val response = nutritionService.deleteMealLog(userDetails.getId(), id)
+        return ResponseEntity.ok(ApiResponse.success(response))
+    }
 }

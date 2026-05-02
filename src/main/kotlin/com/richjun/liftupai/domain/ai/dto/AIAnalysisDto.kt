@@ -71,7 +71,15 @@ data class MealAnalysisResponse(
 
     val calories: Int,
     val macros: Macros,
-    val suggestions: List<String>
+    val suggestions: List<String>,
+
+    /** 자동 저장된 MealLog의 ID (프론트가 즉시 통계 갱신/수정/삭제할 때 사용) */
+    @JsonProperty("meal_log_id")
+    val mealLogId: Long? = null,
+
+    /** 자동 추정된 끼니 타입 (BREAKFAST/LUNCH/DINNER/SNACK). 사용자가 변경 가능 */
+    @JsonProperty("meal_type_enum")
+    val mealTypeEnum: String? = null
 )
 
 data class MealInfo(
@@ -177,4 +185,48 @@ data class MealRecommendation(
     val description: String,
     val calories: Int,
     val macros: Macros
+)
+
+// ─── Today Summary (식단 통계 단일 응답) ───────────────────────────────
+
+data class TodayNutritionSummaryResponse(
+    val date: String, // ISO local date (user TZ)
+
+    @JsonProperty("target_kcal")
+    val targetKcal: Int,
+
+    @JsonProperty("consumed_kcal")
+    val consumedKcal: Int,
+
+    @JsonProperty("remaining_kcal")
+    val remainingKcal: Int,
+
+    @JsonProperty("progress_percent")
+    val progressPercent: Int,
+
+    @JsonProperty("workout_burned_kcal")
+    val workoutBurnedKcal: Int,
+
+    @JsonProperty("hours_since_last_workout")
+    val hoursSinceLastWorkout: Long?,
+
+    @JsonProperty("target_macros")
+    val targetMacros: Macros,
+
+    @JsonProperty("consumed_macros")
+    val consumedMacros: Macros,
+
+    @JsonProperty("meals_by_type")
+    val mealsByType: Map<String, List<MealEntry>>
+)
+
+// ─── Meal Log update/delete ─────────────────────────────────────────
+
+data class UpdateMealLogRequest(
+    @JsonProperty("meal_type")
+    val mealType: String? = null, // BREAKFAST/LUNCH/DINNER/SNACK
+
+    val calories: Int? = null,
+    val macros: Macros? = null,
+    val foods: List<FoodItem>? = null
 )

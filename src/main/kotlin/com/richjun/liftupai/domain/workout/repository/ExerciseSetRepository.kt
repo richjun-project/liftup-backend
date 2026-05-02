@@ -37,8 +37,9 @@ interface ExerciseSetRepository : JpaRepository<ExerciseSet, Long> {
         WHERE ws.user.id = :userId
         AND we.exercise.id = :exerciseId
         AND ws.startTime >= :since
+        AND es.completed = true
         AND ws.status = :status
-        ORDER BY ws.startTime DESC
+        ORDER BY ws.startTime DESC, es.setNumber ASC
     """)
     fun findCompletedSetsByUserAndExercise(
         @Param("userId") userId: Long,

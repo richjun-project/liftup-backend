@@ -21,8 +21,19 @@ class CuratedExercisePoolService(
      * Generate a formatted exercise list for AI prompt injection.
      * Groups by planCategory, includes id + name + equipment + difficulty.
      */
-    fun getPromptReadyExerciseList(): String {
+    fun getPromptReadyExerciseList(availableEquipment: Set<String> = emptySet()): String {
+        val allowedEquipment = availableEquipment
+            .map { it.trim().uppercase().replace(" ", "_").replace("-", "_") }
+            .filter { it.isNotBlank() }
+            .toSet()
         val exercises = exerciseRepository.findAllByIsPlanEligibleTrue()
+            .filter { exercise ->
+                val equipmentName = exercise.equipment?.name
+                allowedEquipment.isEmpty() ||
+                    equipmentName == null ||
+                    equipmentName == "BODYWEIGHT" ||
+                    equipmentName in allowedEquipment
+            }
         if (exercises.isEmpty()) return "No exercises available."
 
         return exercises.groupBy { it.planCategory ?: it.category.name.lowercase() }

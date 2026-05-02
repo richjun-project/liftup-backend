@@ -48,7 +48,8 @@ class ProgramWorkoutGeneratorService(
     private val progressionService: ProgramProgressionService,
     private val injuryExerciseRestrictionRepository: InjuryExerciseRestrictionRepository,
     private val exerciseRepository: ExerciseRepository,
-    private val exerciseSetRepository: ExerciseSetRepository
+    private val exerciseSetRepository: ExerciseSetRepository,
+    private val weightRecommendationService: WeightRecommendationService
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -149,16 +150,21 @@ class ProgramWorkoutGeneratorService(
             exerciseMuscleGroupsMap[pde.exercise.id] = actualExercise.muscleGroups.map { it.name.lowercase() }.toSet()
 
             // Calculate suggested weight
+            val targetReps = (pde.minReps + pde.maxReps) / 2
             val rawWeight = progressiveOverloadService.calculateWeight(
                 user = user,
                 exercise = actualExercise,
                 enrollment = enrollment,
                 position = position,
                 dayExercise = pde
+            ) ?: weightRecommendationService.calculateSuggestedWeight(
+                user.id,
+                actualExercise.id,
+                targetReps
             )
 
             // FIX 3 + FIX 5: Apply readiness and age multipliers to suggested weight
-            val suggestedWeight = rawWeight?.let { it * readiness.intensityMultiplier * ageMultiplier }
+            val suggestedWeight = rawWeight * readiness.intensityMultiplier * ageMultiplier
 
             // FIX 1: Apply BLOCK phase sets/reps
             // GAP 2.3: Volume deload for LINEAR/UNDULATING
@@ -175,17 +181,16 @@ class ProgramWorkoutGeneratorService(
             val adjustedMaxReps = blockPhaseAdj?.repRangeHigh ?: pde.maxReps
 
             // Generate warmup sets for compound exercises and heavy isolation exercises
-            val shouldWarmup = suggestedWeight != null &&
-                (pde.isCompound && suggestedWeight > 20.0 || suggestedWeight > 30.0)
+            val shouldWarmup = pde.isCompound && suggestedWeight > 20.0 || suggestedWeight > 30.0
             var warmupSets = if (shouldWarmup) {
-                generateWarmupSets(suggestedWeight!!)
+                generateWarmupSets(suggestedWeight)
             } else {
                 emptyList()
             }
 
             // FIX 5: Add extra warmup set for users 50+
             if (userAge != null && userAge >= 50 && warmupSets.isNotEmpty()) {
-                val extraWarmupWeight = (suggestedWeight?.times(0.20) ?: 10.0).coerceAtLeast(5.0)
+                val extraWarmupWeight = (suggestedWeight * 0.20).coerceAtLeast(5.0)
                 warmupSets = listOf(ProgramWarmupSet(weight = roundToNearest(extraWarmupWeight, 2.5), reps = 15)) + warmupSets
             }
 

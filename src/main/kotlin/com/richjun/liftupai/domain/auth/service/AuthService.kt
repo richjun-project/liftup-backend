@@ -12,6 +12,7 @@ import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.auth.repository.DeviceSessionRepository
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
+import com.richjun.liftupai.domain.user.service.StrengthAssessmentEstimator
 import com.richjun.liftupai.global.i18n.ErrorLocalization
 import com.richjun.liftupai.global.security.JwtTokenProvider
 import com.richjun.liftupai.global.util.ValidationUtil
@@ -308,46 +309,12 @@ class AuthService(
         }
 
         // Compute initial 1RM estimates from bodyweight strength assessment
-        request.strengthAssessment?.let { assessment ->
-            val bodyWeight = request.bodyInfo?.weight ?: 65.0
-            val pushups = (assessment["pushup_reps"] as? Number)?.toInt() ?: 0
-            val pullups = (assessment["pullup_reps"] as? Number)?.toInt() ?: 0
-            val squats = (assessment["squat_reps"] as? Number)?.toInt() ?: 0
-
-            val estimatedMaxes = mutableMapOf<String, Double>()
-
-            if (pushups > 0) {
-                val cappedReps = minOf(pushups, 15)
-                val pushLoad = bodyWeight * 0.63
-                val est1RM = pushLoad * (1 + cappedReps / 30.0)
-                val benchWeight = (est1RM * 0.65).coerceAtMost(bodyWeight * 0.5)
-                estimatedMaxes["bench-press"] = benchWeight
-                estimatedMaxes["barbell-bench-press"] = benchWeight
-                estimatedMaxes["dumbbell-bench-press"] = benchWeight
-                estimatedMaxes["machine-chest-press"] = benchWeight * 1.1
-                estimatedMaxes["incline-dumbbell-press"] = benchWeight * 0.85
-                val ohpWeight = (est1RM * 0.45).coerceAtMost(bodyWeight * 0.35)
-                estimatedMaxes["overhead-press"] = ohpWeight
-                estimatedMaxes["dumbbell-shoulder-press"] = ohpWeight
-                estimatedMaxes["machine-shoulder-press"] = ohpWeight * 1.1
-            }
-            if (pullups > 0) {
-                val cappedReps = minOf(pullups, 15)
-                val est1RM = bodyWeight * (1 + cappedReps / 30.0)
-                estimatedMaxes["barbell-row"] = est1RM * 0.55
-                estimatedMaxes["dumbbell-row"] = est1RM * 0.5
-                estimatedMaxes["seated-cable-row"] = est1RM * 0.55
-                estimatedMaxes["lat-pulldown"] = est1RM * 0.65
-            }
-            if (squats > 0) {
-                val cappedReps = minOf(squats, 15)
-                val est1RM = bodyWeight * (1 + cappedReps / 30.0)
-                estimatedMaxes["leg-press"] = est1RM * 0.80
-                estimatedMaxes["goblet-squat"] = (est1RM * 0.35).coerceAtMost(bodyWeight * 0.4)
-                estimatedMaxes["dumbbell-lunge"] = (est1RM * 0.3).coerceAtMost(bodyWeight * 0.35)
-                estimatedMaxes["barbell-back-squat"] = (est1RM * 0.45).coerceAtMost(bodyWeight * 0.5)
-            }
-
+        request.strengthAssessment?.takeIf { it.isNotEmpty() }?.let { assessment ->
+            profile.strengthTestCompleted = true
+            val estimatedMaxes = StrengthAssessmentEstimator.estimateMaxes(
+                assessment = assessment,
+                bodyWeightKg = request.bodyInfo?.weight
+            )
             if (estimatedMaxes.isNotEmpty()) {
                 profile.estimatedMaxes = objectMapper.writeValueAsString(estimatedMaxes)
             }

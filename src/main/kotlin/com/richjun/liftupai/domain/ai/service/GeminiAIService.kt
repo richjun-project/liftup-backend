@@ -3,6 +3,10 @@ package com.richjun.liftupai.domain.ai.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.richjun.liftupai.domain.ai.util.AILocalization
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.domain.nutrition.entity.MealLog
+import com.richjun.liftupai.domain.nutrition.entity.MealType
+import com.richjun.liftupai.domain.nutrition.service.DailyNutritionContext
+import com.richjun.liftupai.domain.nutrition.service.NutritionContextService
 import com.richjun.liftupai.domain.user.entity.FitnessGoal
 import com.richjun.liftupai.domain.user.entity.PTStyle
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
@@ -19,7 +23,8 @@ import java.util.concurrent.TimeUnit
 class GeminiAIService(
     private val objectMapper: ObjectMapper,
     private val userProfileRepository: UserProfileRepository,
-    private val userSettingsRepository: UserSettingsRepository
+    private val userSettingsRepository: UserSettingsRepository,
+    private val nutritionContextService: NutritionContextService
 ) {
     @Value("\${gemini.api-key}")
     private lateinit var apiKey: String
@@ -53,7 +58,15 @@ class GeminiAIService(
             val locale = resolveLocale(user)
             val userProfile = userProfileRepository.findByUser(user).orElse(null)
             val ptStyle = userProfile?.ptStyle ?: PTStyle.GAME_MASTER
-            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile)
+            // 채팅 AI가 "오늘 식단 잘 하고 있어?" 같은 질문에 실데이터로 답할 수 있도록 컨텍스트 주입.
+            // 실패해도 채팅은 계속 동작해야 하므로 try/catch.
+            val nutritionContext = try {
+                nutritionContextService.buildTodayContext(user)
+            } catch (e: Exception) {
+                println("[GeminiAIService] failed to build nutrition context for user ${user.id}: ${e.message}")
+                null
+            }
+            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext)
 
             callGeminiAPI(prompt).ifBlank { getFallbackResponse(message, user, locale) }
         } catch (e: Exception) {
@@ -64,6 +77,40 @@ class GeminiAIService(
     }
 
     fun analyzeContent(prompt: String): String = callGeminiAPI(prompt)
+
+    /**
+     * 동적 PT 식단 알림용 — Pro 유저에게만 호출됨.
+     * 사용자의 오늘 식단/운동 기록을 보고 맞춤 코칭 메시지 1~2문장 생성.
+     */
+    fun generateMealCoachingMessage(
+        user: User,
+        ptStyle: PTStyle,
+        mealType: MealType,
+        ctx: DailyNutritionContext,
+        locale: String
+    ): String {
+        val responseLanguage = AILocalization.responseLanguage(locale)
+        val nutritionSection = buildNutritionContextSection(ctx)
+        val mealLabel = mealType.name.lowercase().replaceFirstChar { it.uppercase() }
+        val prompt = """
+            You are a PT coach pinging the user about their upcoming $mealLabel.
+            Respond ONLY in $responseLanguage. 1~2 sentences. No greetings, no markdown, just the coaching message.
+
+            ## CRITICAL: Persona
+            ${styleInstruction(ptStyle)}
+
+            $nutritionSection
+
+            ## Task
+            Based on the data above, write a short, specific nudge for the upcoming $mealLabel.
+            - If protein is well below target, suggest a high-protein option for this meal.
+            - If calories are way ahead of pace, suggest a lighter option.
+            - If the user worked out today, factor that in.
+            - Stay in persona. No generic advice — be concrete (e.g., "닭가슴살 한 조각 더").
+            - Do NOT include numbers/percentages — keep it natural and conversational.
+        """.trimIndent()
+        return callGeminiAPI(prompt, locale).trim().lines().joinToString(" ").take(300)
+    }
 
     /** 플랜 생성 전용 — Pro latest 모델 사용 */
     fun generatePlanContent(prompt: String): String = callGeminiAPI(
@@ -171,7 +218,8 @@ class GeminiAIService(
         nickname: String,
         ptStyle: PTStyle,
         locale: String,
-        userProfile: com.richjun.liftupai.domain.user.entity.UserProfile? = null
+        userProfile: com.richjun.liftupai.domain.user.entity.UserProfile? = null,
+        nutritionContext: DailyNutritionContext? = null
     ): String {
         val responseLanguage = AILocalization.responseLanguage(locale)
         val profileSection = userProfile?.let {
@@ -184,6 +232,8 @@ class GeminiAIService(
             For casual conversation, you don't need to reference this data.
             """.trimIndent()
         } ?: ""
+
+        val nutritionSection = nutritionContext?.let { buildNutritionContextSection(it) } ?: ""
 
         return """
             You are a personal fitness coach chatbot in the LIFTUP AI app.
@@ -199,16 +249,69 @@ class GeminiAIService(
 
             $profileSection
 
+            $nutritionSection
+
             ## Guidelines
             - Give clear, practical guidance on training, nutrition, recovery, and healthy habits.
             - Keep answers concise (2-4 sentences) unless the user explicitly asks for more detail.
             - Stay in character at all times — never break persona or speak in a generic AI tone.
             - Address the user as "$nickname" naturally (not every sentence).
             - When giving nutrition or workout advice, factor in the user's profile (goals, body stats, experience) for personalized recommendations.
+            - When the user asks about today's diet, calories, or progress, refer to the "Today's Nutrition" section above with concrete numbers (consumed/remaining kcal, macros, meals logged).
 
             ## User message
             $message
         """.trimIndent()
+    }
+
+    private fun buildNutritionContextSection(ctx: DailyNutritionContext): String {
+        val workoutAdjustment = if (ctx.workoutBurnedKcal > 0) " (adjusted +${ctx.workoutBurnedKcal} for today's workout)" else ""
+        val pct = ctx.progressPercent
+        val mealsByTypeSummary = MealType.values().joinToString("\n") { type ->
+            val meals = ctx.mealsByType[type].orEmpty()
+            val label = type.name.lowercase().replaceFirstChar { it.uppercase() }
+            if (meals.isEmpty()) {
+                "- $label: not logged"
+            } else {
+                val foods = meals.joinToString(", ") { summarizeFoods(it) }.take(200)
+                val kcal = meals.sumOf { it.calories }
+                "- $label: $foods (~${kcal} kcal)"
+            }
+        }
+        val workoutLine = ctx.hoursSinceLastWorkout?.let {
+            "- Last workout: ${it}h ago (${ctx.workoutBurnedKcal} kcal burned today)"
+        } ?: "- No workout logged today"
+
+        return """
+            ## Today's Nutrition (User's local time, ${ctx.date})
+            - Target: ${ctx.targetKcal} kcal$workoutAdjustment
+            - Consumed: ${ctx.consumedKcal} kcal ($pct%) — Remaining ${ctx.remainingKcal} kcal
+            - Macros consumed/target: P ${ctx.consumedMacros.protein}/${ctx.targetMacros.protein}g, C ${ctx.consumedMacros.carbs}/${ctx.targetMacros.carbs}g, F ${ctx.consumedMacros.fat}/${ctx.targetMacros.fat}g
+            $mealsByTypeSummary
+            $workoutLine
+        """.trimIndent()
+    }
+
+    /** MealLog.foods가 JSON 배열/객체이거나 단순 문자열일 수 있어 안전하게 요약. */
+    private fun summarizeFoods(meal: MealLog): String {
+        val raw = meal.foods.trim()
+        if (raw.isEmpty()) return "(unknown)"
+        return try {
+            when {
+                raw.startsWith("[") -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val list = objectMapper.readValue(raw, List::class.java) as List<Any?>
+                    list.mapNotNull { it?.toString() }.joinToString(", ").ifEmpty { raw.take(80) }
+                }
+                raw.startsWith("{") -> {
+                    val map = objectMapper.readValue(raw, Map::class.java)
+                    (map["name"] ?: map["meal_name"] ?: raw.take(80)).toString()
+                }
+                else -> raw.take(80)
+            }
+        } catch (e: Exception) {
+            raw.take(80)
+        }
     }
 
     private fun buildMealImagePrompt(
@@ -528,61 +631,24 @@ class GeminiAIService(
         }
     }
 
-    private fun calculateTDEE(profile: com.richjun.liftupai.domain.user.entity.UserProfile?): Int? {
-        profile ?: return null
-        val bodyInfo = profile.bodyInfo ?: return null
-        val weight = bodyInfo.weight ?: return null
-        val height = bodyInfo.height ?: return null
-        val age = profile.age ?: 30
+    // 칼로리/매크로 계산은 NutritionTargetCalculator로 위임 (단일 책임 분리).
+    private fun calculateTDEE(profile: com.richjun.liftupai.domain.user.entity.UserProfile?): Int? =
+        com.richjun.liftupai.domain.nutrition.util.NutritionTargetCalculator.calculateTDEE(profile)
 
-        val bmr = if (profile.gender == "male" || profile.gender == null) {
-            88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
-        } else {
-            447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age)
-        }
+    private fun calculateBmi(weight: Double?, height: Double?): Double? =
+        com.richjun.liftupai.domain.nutrition.util.NutritionTargetCalculator.calculateBmi(weight, height)
 
-        return (bmr * 1.55).toInt()
-    }
+    private fun calculateTargetCalories(profile: com.richjun.liftupai.domain.user.entity.UserProfile?): Int =
+        com.richjun.liftupai.domain.nutrition.util.NutritionTargetCalculator.calculateTargetCalories(profile)
 
-    private fun calculateBmi(weight: Double?, height: Double?): Double? {
-        if (weight == null || height == null || height == 0.0) return null
-        val heightMeters = height / 100.0
-        return weight / (heightMeters * heightMeters)
-    }
+    private fun calculateProteinTarget(profile: com.richjun.liftupai.domain.user.entity.UserProfile?): Double =
+        com.richjun.liftupai.domain.nutrition.util.NutritionTargetCalculator.calculateProteinTarget(profile)
 
-    private fun calculateTargetCalories(profile: com.richjun.liftupai.domain.user.entity.UserProfile?): Int {
-        val tdee = calculateTDEE(profile) ?: 2000
-        val goals = profile?.goals ?: emptySet()
-        return when {
-            FitnessGoal.WEIGHT_LOSS in goals -> (tdee - 500).coerceAtLeast(1200)
-            FitnessGoal.MUSCLE_GAIN in goals -> tdee + 300
-            else -> tdee
-        }
-    }
+    private fun calculateCarbTarget(profile: com.richjun.liftupai.domain.user.entity.UserProfile?, calories: Int): Double =
+        com.richjun.liftupai.domain.nutrition.util.NutritionTargetCalculator.calculateCarbTarget(profile, calories)
 
-    private fun calculateProteinTarget(profile: com.richjun.liftupai.domain.user.entity.UserProfile?): Double {
-        val goals = profile?.goals ?: emptySet()
-        val weight = profile?.bodyInfo?.weight
-        return when {
-            FitnessGoal.MUSCLE_GAIN in goals -> weight?.times(2.2) ?: 80.0
-            FitnessGoal.WEIGHT_LOSS in goals -> weight?.times(2.0) ?: 70.0
-            else -> weight?.times(1.5) ?: 60.0
-        }
-    }
-
-    private fun calculateCarbTarget(profile: com.richjun.liftupai.domain.user.entity.UserProfile?, calories: Int): Double {
-        val goals = profile?.goals ?: emptySet()
-        val carbRatio = when {
-            FitnessGoal.ENDURANCE in goals -> 0.5
-            FitnessGoal.WEIGHT_LOSS in goals -> 0.35
-            else -> 0.4
-        }
-        return calories * carbRatio / 4.0
-    }
-
-    private fun calculateFatTarget(calories: Int): Double {
-        return calories * 0.25 / 9.0
-    }
+    private fun calculateFatTarget(calories: Int): Double =
+        com.richjun.liftupai.domain.nutrition.util.NutritionTargetCalculator.calculateFatTarget(calories)
 
     private fun resolveLocale(user: User): String {
         val language = userSettingsRepository.findByUser(user).orElse(null)?.language

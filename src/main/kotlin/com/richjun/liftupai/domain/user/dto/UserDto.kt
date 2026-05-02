@@ -130,7 +130,10 @@ data class OnboardingRequest(
     @JsonProperty("time_zone")
     val timeZone: String? = null,
 
-    val injuries: List<String>?
+    val injuries: List<String>?,
+
+    @JsonProperty("strength_assessment")
+    val strengthAssessment: Map<String, Any>? = null
 )
 
 // Settings DTOs

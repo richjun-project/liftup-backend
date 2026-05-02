@@ -32,7 +32,8 @@ class NutritionService(
     private val geminiAIService: GeminiAIService,
     private val fileUploadService: FileUploadService,
     private val userProfileRepository: com.richjun.liftupai.domain.user.repository.UserProfileRepository,
-    private val userSettingsRepository: UserSettingsRepository
+    private val userSettingsRepository: UserSettingsRepository,
+    private val nutritionContextService: NutritionContextService
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -120,21 +121,28 @@ class NutritionService(
         val aiResponse = geminiAIService.analyzeMealImage(request.imageUrl, user)
 
         // AI 응답 파싱
-        val response = parseMealAnalysisResponse(aiResponse, locale, userId)
+        val parsedResponse = parseMealAnalysisResponse(aiResponse, locale, userId)
 
         // 분석 결과를 DB에 저장
+        val mealType = determineMealType(userId)
         val mealLog = MealLog(
             user = user,
-            mealType = determineMealType(userId),
-            foods = response.mealInfo.ingredients.joinToString(", "),
-            calories = response.calories,
-            protein = response.macros.protein,
-            carbs = response.macros.carbs,
-            fat = response.macros.fat,
+            mealType = mealType,
+            foods = parsedResponse.mealInfo.ingredients.joinToString(", "),
+            calories = parsedResponse.calories,
+            protein = parsedResponse.macros.protein,
+            carbs = parsedResponse.macros.carbs,
+            fat = parsedResponse.macros.fat,
             imageUrl = request.imageUrl,
             timestamp = AppTime.utcNow()
         )
-        mealLogRepository.save(mealLog)
+        val savedMeal = mealLogRepository.save(mealLog)
+
+        // 응답에 자동 저장된 mealLogId + mealType 포함 (프론트가 통계 즉시 반영하기 위해)
+        val response = parsedResponse.copy(
+            mealLogId = savedMeal.id,
+            mealTypeEnum = mealType.name
+        )
 
         // 채팅 메시지로도 저장
         val userMessage = AILocalization.message("nutrition.chat.request.analysis", locale)
@@ -152,6 +160,96 @@ class NutritionService(
         chatMessageRepository.save(chatMessage)
 
         return response
+    }
+
+    @Transactional(readOnly = true)
+    fun getTodaySummary(userId: Long): TodayNutritionSummaryResponse {
+        val user = userRepository.findById(userId)
+            .orElseThrow { ResourceNotFoundException("User not found") }
+
+        val ctx = nutritionContextService.buildTodayContext(user)
+
+        val mealsByTypeMap: Map<String, List<MealEntry>> = ctx.mealsByType.mapKeys { (k, _) -> k.name }
+            .mapValues { (_, meals) ->
+                meals.map { meal ->
+                    MealEntry(
+                        mealId = meal.id,
+                        mealType = meal.mealType.name,
+                        foods = parseFoodItems(meal.foods),
+                        calories = meal.calories,
+                        macros = Macros(
+                            protein = meal.protein,
+                            carbs = meal.carbs,
+                            fat = meal.fat
+                        ),
+                        timestamp = AppTime.formatUtcRequired(meal.timestamp)
+                    )
+                }
+            }
+
+        return TodayNutritionSummaryResponse(
+            date = ctx.date.toString(),
+            targetKcal = ctx.targetKcal,
+            consumedKcal = ctx.consumedKcal,
+            remainingKcal = ctx.remainingKcal,
+            progressPercent = ctx.progressPercent,
+            workoutBurnedKcal = ctx.workoutBurnedKcal,
+            hoursSinceLastWorkout = ctx.hoursSinceLastWorkout,
+            targetMacros = Macros(
+                protein = ctx.targetMacros.protein.toDouble(),
+                carbs = ctx.targetMacros.carbs.toDouble(),
+                fat = ctx.targetMacros.fat.toDouble()
+            ),
+            consumedMacros = Macros(
+                protein = ctx.consumedMacros.protein.toDouble(),
+                carbs = ctx.consumedMacros.carbs.toDouble(),
+                fat = ctx.consumedMacros.fat.toDouble()
+            ),
+            mealsByType = mealsByTypeMap
+        )
+    }
+
+    fun updateMealLog(userId: Long, mealLogId: Long, request: UpdateMealLogRequest): NutritionLogResponse {
+        val meal = mealLogRepository.findById(mealLogId)
+            .orElseThrow { ResourceNotFoundException("Meal log not found") }
+
+        // 권한 체크 — 본인 기록만 수정
+        if (meal.user.id != userId) {
+            throw ResourceNotFoundException("Meal log not found")
+        }
+
+        val newType = request.mealType?.let {
+            try { MealType.valueOf(it.uppercase()) } catch (e: Exception) { meal.mealType }
+        } ?: meal.mealType
+
+        val newFoods = request.foods?.joinToString(", ") { "${it.name} ${it.quantity}${it.unit}" } ?: meal.foods
+        val newCalories = request.calories ?: meal.calories
+        val newMacros = request.macros ?: Macros(meal.protein, meal.carbs, meal.fat)
+
+        // MealLog는 data class with val fields → copy 사용
+        val updated = meal.copy(
+            mealType = newType,
+            foods = newFoods,
+            calories = newCalories,
+            protein = newMacros.protein,
+            carbs = newMacros.carbs,
+            fat = newMacros.fat
+        )
+        mealLogRepository.save(updated)
+
+        return NutritionLogResponse(success = true, mealId = mealLogId)
+    }
+
+    fun deleteMealLog(userId: Long, mealLogId: Long): NutritionLogResponse {
+        val meal = mealLogRepository.findById(mealLogId)
+            .orElseThrow { ResourceNotFoundException("Meal log not found") }
+
+        if (meal.user.id != userId) {
+            throw ResourceNotFoundException("Meal log not found")
+        }
+
+        mealLogRepository.delete(meal)
+        return NutritionLogResponse(success = true, mealId = mealLogId)
     }
 
     private fun formatMealAnalysisForChat(response: MealAnalysisResponse, locale: String): String {

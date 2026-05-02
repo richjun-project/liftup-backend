@@ -35,6 +35,9 @@ data class UpdateSetData(
     @JsonProperty("completed")
     val completed: Boolean,
 
+    @JsonProperty("completed_at")
+    val completedAt: String? = null,
+
     @JsonProperty("rpe")
     val rpe: Int? = null,
 

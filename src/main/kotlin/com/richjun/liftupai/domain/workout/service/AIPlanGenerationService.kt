@@ -8,6 +8,7 @@ import com.richjun.liftupai.domain.workout.dto.request.GenerateAIPlanRequest
 import com.richjun.liftupai.domain.workout.dto.response.PlanDashboardResponse
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.repository.*
+import com.richjun.liftupai.domain.user.service.StrengthAssessmentEstimator
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
@@ -47,7 +48,9 @@ class AIPlanGenerationService(
 
         // 1. Build prompt
         onProgress(1, "운동 데이터베이스 분석 중...")
-        val exercisePool = curatedExercisePoolService.getPromptReadyExerciseList()
+        val exercisePool = curatedExercisePoolService.getPromptReadyExerciseList(
+            availableEquipment = request.equipment.toSet()
+        )
         val prompt = buildPlanGenerationPrompt(request, exercisePool)
 
         // 2. Call Gemini AI (동기 호출)
@@ -375,6 +378,7 @@ class AIPlanGenerationService(
     private fun buildPlanGenerationPrompt(request: GenerateAIPlanRequest, exercisePool: String): String {
         val trainingStyle = request.trainingStyle ?: "balanced"
         val focusAreas = request.focusAreas?.joinToString(", ") ?: "none"
+        val strengthData = buildStrengthDataSummary(request)
 
         return """
 You are an expert strength & conditioning coach creating a workout plan.
@@ -384,47 +388,56 @@ You MUST respond with ONLY a valid JSON object. No explanations, no markdown, ju
 - Experience: ${request.experienceLevel}
 - Goals: ${request.goals.joinToString(", ")}
 - Training style: $trainingStyle
+- PT style: ${request.ptStyle ?: "not specified"}
 - Gender: ${request.gender ?: "not specified"}
 - Age: ${request.age ?: "not specified"}
+- Height: ${request.height?.let { "$it cm" } ?: "not specified"}
+- Weight: ${request.weight?.let { "$it kg" } ?: "not specified"}
+- Strength level: ${request.strengthLevel ?: "not specified"}
 - Weekly days: ${request.weeklyDays}
 - Session duration: ${request.sessionDuration} minutes
 - Equipment: ${request.equipment.joinToString(", ")}
 - Injuries: ${request.injuries?.joinToString(", ") ?: "none"}
 - Focus areas: $focusAreas
+- Existing split preference: ${request.workoutSplit ?: "auto"}
+
+$strengthData
 
 ## Available Exercises (USE ONLY THESE — do NOT invent exercises)
 $exercisePool
 
 ## Rules
 1. ONLY use exercise IDs from the list above. Do NOT invent exercise IDs.
-2. Each day: 5-8 exercises.
-3. First 1-2 exercises per day must be compound (isCompound: true).
-4. Exercise order: main compound → accessory compound → isolation (heaviest to lightest).
+2. The exercise list is already filtered for the user's available equipment. Do not prescribe equipment outside it.
+3. Each day: 5-8 exercises.
+4. First 1-2 exercises per day must be compound (isCompound: true).
+5. Exercise order: main compound → accessory compound → isolation (heaviest to lightest).
 
-5. Training style determines rep/set/rest scheme:
+6. Training style determines rep/set/rest scheme:
 ${buildTrainingStyleRules(trainingStyle)}
 
-6. Weekly volume per muscle group (total working sets across all days):
+7. Weekly volume per muscle group (total working sets across all days):
 ${buildVolumeGuidelines(trainingStyle)}
 
-7. Exercise selection ratio by training style:
+8. Exercise selection ratio by training style:
 ${buildExerciseSelectionRules(trainingStyle)}
 
-8. Focus area programming:
+9. Focus area programming:
 ${buildFocusAreaRules(focusAreas)}
 
-9. Split logic (choose the BEST split considering BOTH weekly days AND training style):
+10. Split logic (choose the BEST split considering BOTH weekly days AND training style):
 ${buildSplitLogic(request.weeklyDays, trainingStyle)}
 
-10. RPE targets:
+11. RPE targets:
 ${buildRPETargets(request.experienceLevel, trainingStyle)}
 
-11. Progression model:
+12. Progression model:
    - Beginners: LINEAR (add weight each session)
    - Intermediate: UNDULATING (heavy/medium/light rotation)
    - Advanced: BLOCK (accumulation→intensification→realization)
 
-12. Plan name in Korean, descriptive and motivating.
+13. Use the strength data to decide exercise complexity, progression model, and starting volume conservatively.
+14. Plan name in Korean, descriptive and motivating.
 
 ## JSON Schema (respond EXACTLY in this format)
 {
@@ -459,6 +472,43 @@ ${buildRPETargets(request.experienceLevel, trainingStyle)}
   "coachingNotes": "string (Korean, overall advice)"
 }
 """.trimIndent()
+    }
+
+    private fun buildStrengthDataSummary(request: GenerateAIPlanRequest): String {
+        val estimatedMaxes = request.estimatedMaxes
+            ?: StrengthAssessmentEstimator.estimateMaxes(
+                assessment = request.strengthAssessment,
+                bodyWeightKg = request.weight
+            )
+                .takeIf { it.isNotEmpty() }
+
+        val estimated = estimatedMaxes
+            ?.takeIf { it.isNotEmpty() }
+            ?.entries
+            ?.sortedByDescending { it.value }
+            ?.take(8)
+            ?.joinToString(", ") { "${it.key}: ${"%.1f".format(it.value)}kg est max" }
+
+        val working = request.workingWeights
+            ?.takeIf { it.isNotEmpty() }
+            ?.entries
+            ?.sortedByDescending { it.value }
+            ?.take(8)
+            ?.joinToString(", ") { "${it.key}: ${"%.1f".format(it.value)}kg working" }
+
+        if (estimated == null && working == null) {
+            return """
+## Strength Data
+- No tracked maxes or working weights yet. Start conservatively and prioritize technique.
+            """.trimIndent()
+        }
+
+        return """
+## Strength Data
+- Estimated maxes: ${estimated ?: "not available"}
+- Current working weights: ${working ?: "not available"}
+- Use this to avoid under-prescribing for experienced users and over-prescribing for beginners.
+        """.trimIndent()
     }
 
     private fun buildTrainingStyleRules(style: String): String = when (style) {

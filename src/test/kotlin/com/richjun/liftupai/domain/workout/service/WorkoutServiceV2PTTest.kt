@@ -10,10 +10,14 @@ import com.richjun.liftupai.domain.user.entity.ExperienceLevel
 import com.richjun.liftupai.domain.user.entity.UserProfile
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
+import com.richjun.liftupai.domain.workout.dto.UpdateExerciseData
+import com.richjun.liftupai.domain.workout.dto.UpdateSessionRequest
+import com.richjun.liftupai.domain.workout.dto.UpdateSetData
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.repository.*
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -687,6 +691,74 @@ class WorkoutServiceV2PTTest {
             // 60분 = 6개 운동이 목표
             assertEquals(6, result.recommendation.exercises.size,
                 "60-min workout should have 6 exercises, got ${result.recommendation.exercises.size}")
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. Session sync preserves completed set state
+    // -------------------------------------------------------------------------
+
+    @Nested
+    inner class UpdateSessionSync {
+
+        @Test
+        fun `updateSession saves completed state and timestamp from client payload`() {
+            val session = WorkoutSession(
+                id = 99L,
+                user = testUser,
+                startTime = LocalDateTime.of(2026, 1, 1, 10, 0),
+                status = SessionStatus.IN_PROGRESS
+            )
+            val workoutExercise = WorkoutExercise(
+                id = 77L,
+                session = session,
+                exercise = testExercise,
+                orderInSession = 0
+            )
+            val savedSet = slot<ExerciseSet>()
+
+            every { userRepository.findById(1L) } returns Optional.of(testUser)
+            every { workoutSessionRepository.findById(99L) } returns Optional.of(session)
+            every { exerciseRepository.findById(1L) } returns Optional.of(testExercise)
+            every { workoutExerciseRepository.findBySessionIdAndExerciseId(99L, 1L) } returns workoutExercise
+            every { exerciseSetRepository.findByWorkoutExerciseId(77L) } returns emptyList()
+            every { exerciseSetRepository.deleteAll(any<Iterable<ExerciseSet>>()) } returns Unit
+            every { exerciseSetRepository.save(capture(savedSet)) } answers {
+                val set = savedSet.captured
+                workoutExercise.sets.add(set)
+                set
+            }
+            every { workoutExerciseRepository.save(workoutExercise) } returns workoutExercise
+            every { workoutExerciseRepository.findBySessionIdOrderByOrderInSession(99L) } returns listOf(workoutExercise)
+            every { workoutSessionRepository.save(session) } returns session
+
+            workoutServiceV2.updateSession(
+                userId = 1L,
+                sessionId = 99L,
+                request = UpdateSessionRequest(
+                    exercises = listOf(
+                        UpdateExerciseData(
+                            exerciseId = 1L,
+                            orderIndex = 0,
+                            sets = listOf(
+                                UpdateSetData(
+                                    setNumber = 1,
+                                    weight = 80.0,
+                                    reps = 8,
+                                    completed = true,
+                                    completedAt = "2026-01-01T10:15:00Z"
+                                )
+                            )
+                        )
+                    ),
+                    lastUpdated = "2026-01-01T10:16:00Z"
+                )
+            )
+
+            assertTrue(savedSet.captured.completed)
+            assertEquals(LocalDateTime.of(2026, 1, 1, 10, 15), savedSet.captured.completedAt)
+            assertEquals(640.0, workoutExercise.totalVolume)
+            assertEquals(640.0, session.totalVolume)
         }
     }
 }

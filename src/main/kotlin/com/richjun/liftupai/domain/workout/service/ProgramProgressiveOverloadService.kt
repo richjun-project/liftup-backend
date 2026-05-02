@@ -109,7 +109,16 @@ class ProgramProgressiveOverloadService(
                     val est1RM = maxesMap[exerciseKey]
                         ?: maxesMap.entries.firstOrNull { exerciseKey.contains(it.key) || it.key.contains(exerciseKey) }?.value
                     if (est1RM != null && est1RM > 0) {
-                        return roundWeight(exercise, est1RM)
+                        return roundWeight(
+                            exercise,
+                            calculateInitialWorkingWeightFromEstimatedMax(
+                                estimated1RM = est1RM,
+                                progressionModel = progressionModel,
+                                position = position,
+                                isDeload = isDeload,
+                                maxReps = maxReps
+                            )
+                        )
                     }
                 } catch (e: Exception) {
                     logger.warn("Failed to parse estimatedMaxes: ${e.message}")
@@ -118,9 +127,14 @@ class ProgramProgressiveOverloadService(
             return null
         }
 
-        val lastWeight = lastSets.maxOf { it.weight }
-        val lastRepsAchieved = lastSets.map { it.reps }.average().toInt()
-        val lastRPE = lastSets.mapNotNull { it.rpe?.toDouble() }.average().let {
+        val lastSessionSets = lastSets
+            .groupBy { it.workoutExercise.session.id }
+            .values
+            .first()
+
+        val lastWeight = lastSessionSets.maxOf { it.weight }
+        val lastRepsAchieved = lastSessionSets.map { it.reps }.average().roundToInt()
+        val lastRPE = lastSessionSets.mapNotNull { it.rpe?.toDouble() }.average().let {
             if (it.isNaN()) 7.0 else it
         }
 
@@ -255,13 +269,7 @@ class ProgramProgressiveOverloadService(
     ): Double {
         val estimated1RM = getEstimated1RM(user, exercise) ?: return lastWeight
 
-        val dayIntensity = when (position.dayInCycle % 3) {
-            1 -> 0.85   // HEAVY
-            2 -> 0.725  // MEDIUM
-            else -> 0.625 // LIGHT (0)
-        }
-
-        var targetWeight = estimated1RM * dayIntensity
+        var targetWeight = estimated1RM * dayIntensity(position)
 
         // Weekly progression: if avg RPE < 7.5, increase by 1.5%
         if (lastRPE < 7.5) {
@@ -299,6 +307,41 @@ class ProgramProgressiveOverloadService(
     }
 
     // ---- Helpers ----
+
+    private fun calculateInitialWorkingWeightFromEstimatedMax(
+        estimated1RM: Double,
+        progressionModel: ProgressionModel,
+        position: ProgramPosition,
+        isDeload: Boolean,
+        maxReps: Int
+    ): Double {
+        if (isDeload) {
+            return when (progressionModel) {
+                ProgressionModel.LINEAR -> estimated1RM * 0.55
+                ProgressionModel.UNDULATING -> estimated1RM * 0.75
+                ProgressionModel.BLOCK -> estimated1RM * 0.55
+            }
+        }
+
+        return when (progressionModel) {
+            ProgressionModel.LINEAR -> estimated1RM * intensityForTargetReps(maxReps)
+            ProgressionModel.UNDULATING -> estimated1RM * dayIntensity(position)
+            ProgressionModel.BLOCK -> estimated1RM * getBlockPhaseAdjustment(position).intensityPercent
+        }
+    }
+
+    private fun intensityForTargetReps(targetReps: Int): Double {
+        val reps = targetReps.coerceIn(1, 36)
+        return (37.0 - reps) / 36.0
+    }
+
+    private fun dayIntensity(position: ProgramPosition): Double {
+        return when (position.dayInCycle % 3) {
+            1 -> 0.85   // HEAVY
+            2 -> 0.725  // MEDIUM
+            else -> 0.625 // LIGHT
+        }
+    }
 
     private fun getLastWorkoutSets(user: User, exercise: Exercise): List<ExerciseSet> {
         val since = AppTime.utcNow().minusWeeks(8)

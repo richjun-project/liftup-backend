@@ -12,6 +12,8 @@ import com.richjun.liftupai.domain.user.entity.UserSettings
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
+import com.richjun.liftupai.domain.workout.repository.UserExerciseOverrideRepository
+import com.richjun.liftupai.domain.workout.repository.UserProgramEnrollmentRepository
 import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.util.ExerciseNameNormalizer
@@ -54,7 +56,9 @@ class AIAnalysisService(
     private val muscleRecoveryRepository: com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository,
     private val autoProgramSelector: AutoProgramSelector,
     private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService,
-    private val injuryFilterService: com.richjun.liftupai.domain.workout.service.InjuryFilterService
+    private val injuryFilterService: com.richjun.liftupai.domain.workout.service.InjuryFilterService,
+    private val userProgramEnrollmentRepository: UserProgramEnrollmentRepository,
+    private val userExerciseOverrideRepository: UserExerciseOverrideRepository
 ) {
 
     private data class RecommendationProgramContext(
@@ -310,6 +314,7 @@ class AIAnalysisService(
         val programContext = resolveRecommendationProgramContext(user, profile, settings)
         val programPosition = workoutProgressTracker.getNextWorkoutInProgram(user, programContext.programDays)
         val normalizedTargetMuscle = WorkoutTargetResolver.recommendationKey(targetMuscle)
+        val availableEquipment = collectAvailableEquipment(settings, profile)
 
         // Determine target muscle based on program position if not specified
         val adjustedTargetMuscle = if (!hasStartedToday && normalizedTargetMuscle == null) {
@@ -336,6 +341,7 @@ class AIAnalysisService(
             duration = duration,
             targetMuscle = adjustedTargetMuscle,
             equipment = equipment,
+            availableEquipment = availableEquipment,
             difficulty = difficulty,
             workoutType = null,
             limit = 20 // 충분한 후보 확보
@@ -343,13 +349,14 @@ class AIAnalysisService(
 
         // 부상 기반 운동 제외
         val userInjuries = settings?.injuries ?: profile?.injuries ?: emptySet()
-        val candidateExercises = if (userInjuries.isNotEmpty()) {
+        val injuryFilteredCandidates = if (userInjuries.isNotEmpty()) {
             injuryFilterService.filterExercises(rawCandidates, userInjuries)
         } else {
             rawCandidates
         }
+        val candidateExercises = applyExerciseOverrides(user, injuryFilteredCandidates, userInjuries)
 
-        println("Loaded ${rawCandidates.size} candidates, ${rawCandidates.size - candidateExercises.size} filtered by injuries, ${candidateExercises.size} remaining")
+        println("Loaded ${rawCandidates.size} candidates, ${rawCandidates.size - injuryFilteredCandidates.size} filtered by injuries, ${candidateExercises.size} remaining after overrides")
 
         // 2단계: 구조화된 프롬프트 생성 with 후보 운동 목록
         val prompt = buildStructuredWorkoutPrompt(
@@ -358,6 +365,7 @@ class AIAnalysisService(
             settings,
             duration,
             equipment,
+            availableEquipment,
             adjustedTargetMuscle,
             difficulty,
             programPosition,
@@ -411,12 +419,45 @@ class AIAnalysisService(
         )
     }
 
+    private fun collectAvailableEquipment(settings: UserSettings?, profile: UserProfile?): Set<String> {
+        return settings?.availableEquipment
+            ?.takeIf { it.isNotEmpty() }
+            ?: profile?.availableEquipment
+                ?.takeIf { it.isNotEmpty() }
+            ?: emptySet()
+    }
+
+    private fun applyExerciseOverrides(
+        user: com.richjun.liftupai.domain.auth.entity.User,
+        candidates: List<Exercise>,
+        injuries: Set<String>
+    ): List<Exercise> {
+        val enrollment = userProgramEnrollmentRepository.findFirstByUserAndStatusOrderByStartDateDesc(
+            user,
+            EnrollmentStatus.ACTIVE
+        ) ?: return candidates
+
+        val overrides = userExerciseOverrideRepository.findByEnrollmentId(enrollment.id)
+        if (overrides.isEmpty()) return candidates
+
+        val originalIds = overrides.map { it.originalExercise.id }.toSet()
+        val substitutes = overrides
+            .map { it.substituteExercise }
+            .let { replacements ->
+                if (injuries.isNotEmpty()) injuryFilterService.filterExercises(replacements, injuries) else replacements
+            }
+
+        return (candidates.filterNot { it.id in originalIds } + substitutes)
+            .distinctBy { it.id }
+    }
+
     private fun buildStructuredWorkoutPrompt(
         user: com.richjun.liftupai.domain.auth.entity.User,
         profile: UserProfile?,
         settings: UserSettings?,
         duration: Int?,
         equipment: String?,
+        availableEquipment: Set<String>,
         targetMuscle: String?,
         difficulty: String?,
         programPosition: WorkoutProgramPosition? = null,
@@ -502,7 +543,10 @@ class AIAnalysisService(
             """.trimIndent()
         }
 
-        val equipmentText = equipment?.let { WorkoutLocalization.equipmentName(it, "en") } ?: "Any equipment"
+        val equipmentText = equipment?.let { WorkoutLocalization.equipmentName(it, "en") }
+            ?: availableEquipment.takeIf { it.isNotEmpty() }
+                ?.joinToString(", ") { WorkoutLocalization.equipmentName(it, "en") }
+            ?: "Any equipment"
         val muscleText = targetMuscle?.let { WorkoutLocalization.targetDisplayName(it, "en") } ?: "Full Body"
 
         // 후보 운동 목록 생성

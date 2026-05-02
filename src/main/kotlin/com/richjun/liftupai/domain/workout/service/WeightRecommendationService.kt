@@ -62,6 +62,8 @@ class WeightRecommendationService(
         val ratio = getDefaultWeightRatio(exercise)
         val raw = bodyWeight * ratio
 
+        if (raw <= 0.0) return 0.0
+
         return roundTo2_5(raw).coerceAtLeast(2.5) // 최소 2.5kg
     }
 
