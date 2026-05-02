@@ -112,13 +112,22 @@ WHERE ier.suggested_substitute_id IS NOT NULL;
 
 -- 사용자 운동 오버라이드 (UNIQUE: enrollment_id + original_exercise_id):
 -- 같은 enrollment 안에서 표준형 row가 이미 있으면 변형 row를 먼저 삭제해 충돌 방지.
-DELETE ueo FROM user_exercise_overrides ueo
+-- MySQL은 DELETE 대상 테이블을 서브쿼리에서 참조할 수 없어 (error 1093)
+-- 삭제 대상 ID를 별도 temp 테이블에 모은 뒤 IN 절로 삭제한다.
+CREATE TEMPORARY TABLE _ueo_delete_ids (id BIGINT NOT NULL PRIMARY KEY);
+
+INSERT INTO _ueo_delete_ids (id)
+SELECT ueo.id
+FROM user_exercise_overrides ueo
 JOIN _dup_exercise_map m ON m.duplicate_id = ueo.original_exercise_id
-WHERE EXISTS (
-    SELECT 1 FROM user_exercise_overrides ueo2
-    WHERE ueo2.enrollment_id = ueo.enrollment_id
-      AND ueo2.original_exercise_id = m.canonical_id
-);
+JOIN user_exercise_overrides ueo2
+    ON ueo2.enrollment_id = ueo.enrollment_id
+    AND ueo2.original_exercise_id = m.canonical_id;
+
+DELETE FROM user_exercise_overrides
+WHERE id IN (SELECT id FROM _ueo_delete_ids);
+
+DROP TEMPORARY TABLE _ueo_delete_ids;
 
 UPDATE user_exercise_overrides ueo
 JOIN _dup_exercise_map m ON m.duplicate_id = ueo.original_exercise_id
@@ -131,14 +140,24 @@ SET ueo.substitute_exercise_id = m.canonical_id;
 -- ── self-reference / 중복 row 정리 ─────────────────────────────────────────
 -- FK 마이그레이션 결과로 (original == substitute)이 된 row는 의미가 없으므로 제거.
 -- 또한 (original, substitute) 쌍이 동일한 row가 여러 개 생겼을 수 있어 1개만 남긴다.
+-- self-join DELETE도 안전성을 위해 staging temp 테이블 사용.
 
 DELETE FROM exercise_substitutions WHERE original_exercise_id = substitute_exercise_id;
 
-DELETE es FROM exercise_substitutions es
+CREATE TEMPORARY TABLE _es_delete_ids (id BIGINT NOT NULL PRIMARY KEY);
+
+INSERT INTO _es_delete_ids (id)
+SELECT es.id
+FROM exercise_substitutions es
 JOIN exercise_substitutions es2
     ON es2.original_exercise_id = es.original_exercise_id
     AND es2.substitute_exercise_id = es.substitute_exercise_id
     AND es2.id < es.id;
+
+DELETE FROM exercise_substitutions
+WHERE id IN (SELECT id FROM _es_delete_ids);
+
+DROP TEMPORARY TABLE _es_delete_ids;
 
 DELETE FROM user_exercise_overrides
 WHERE original_exercise_id = substitute_exercise_id;
