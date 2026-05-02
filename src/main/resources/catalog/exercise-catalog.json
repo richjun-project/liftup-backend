@@ -560,40 +560,6 @@
     "planCategory": "core"
   },
   {
-    "slug": "90-degree-heels-touch",
-    "defaultLocale": "en",
-    "category": "CORE",
-    "equipment": "BODYWEIGHT",
-    "equipmentDetail": "None",
-    "sourceCategory": "Bodyweight",
-    "movementPattern": "OTHER",
-    "muscleGroups": [
-      "ABS",
-      "CORE",
-      "LEGS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 35,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "90 Degree Heels Touch",
-        "instructions": "1. Lie down on your back with your hips and knees bent to 90 degrees and your arms extended overhead.\n2. Raise your upper back and bring your arms forward to touch your heels.\n3. Hold for a while, return to the initial position, and repeat.",
-        "tips": "1. Keep your neck relaxed and avoid straining it by using your core muscles to lift your shoulders.\n2. Ensure your lower back stays pressed into the mat to engage your core effectively and protect your spine.\n3. Perform the exercise with controlled movements to maximize muscle engagement and reduce the risk of injury."
-      },
-      {
-        "locale": "ko",
-        "name": "90 도 힐 터치",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "core"
-  },
-  {
     "slug": "90-to-90-stretch",
     "defaultLocale": "en",
     "category": "FULL_BODY",
@@ -2106,42 +2072,6 @@
       {
         "locale": "en",
         "name": "Alternate Single Leg Raise Plank",
-        "instructions": "1. Start in a plank position with your hands directly under your shoulders and your body forming a straight line from head to heels.\n2. Lift your right leg off the floor, extending it straight back while maintaining the plank position. Hold briefly.\n3. Lower your right leg back to the starting position.\n4. Lift your left leg off the floor, extending it straight back. Hold briefly before lowering it back to the starting position. Continue alternating sides.",
-        "tips": "1. Keep your core engaged throughout the exercise to maintain stability and prevent your hips from sagging.\n2. Perform the movement slowly and with control to maximize muscle activation and prevent injury.\n3. Maintain a straight line from head to heels, avoiding any arching or rounding of your back."
-      },
-      {
-        "locale": "ko",
-        "name": "교차 싱글 레그 레이즈 플랭크",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "core"
-  },
-  {
-    "slug": "alternate-single-leg-raises-plank",
-    "defaultLocale": "en",
-    "category": "CORE",
-    "equipment": "BODYWEIGHT",
-    "equipmentDetail": "None",
-    "sourceCategory": "Bodyweight",
-    "movementPattern": "PLANK",
-    "muscleGroups": [
-      "ABS",
-      "CORE",
-      "GLUTES",
-      "LEGS",
-      "SHOULDERS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 35,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Alternate single leg raises plank",
         "instructions": "1. Start in a plank position with your hands directly under your shoulders and your body forming a straight line from head to heels.\n2. Lift your right leg off the floor, extending it straight back while maintaining the plank position. Hold briefly.\n3. Lower your right leg back to the starting position.\n4. Lift your left leg off the floor, extending it straight back. Hold briefly before lowering it back to the starting position. Continue alternating sides.",
         "tips": "1. Keep your core engaged throughout the exercise to maintain stability and prevent your hips from sagging.\n2. Perform the movement slowly and with control to maximize muscle activation and prevent injury.\n3. Maintain a straight line from head to heels, avoiding any arching or rounding of your back."
       },
@@ -4051,42 +3981,6 @@
     "planCategory": null
   },
   {
-    "slug": "back-and-shoulders-stretch",
-    "defaultLocale": "en",
-    "category": "FULL_BODY",
-    "equipment": "BODYWEIGHT",
-    "equipmentDetail": "None",
-    "sourceCategory": "Bodyweight",
-    "movementPattern": "STRETCHING",
-    "muscleGroups": [
-      "BACK",
-      "LATS",
-      "SHOULDERS",
-      "TRAPS",
-      "TRICEPS"
-    ],
-    "recommendationTier": "SPECIALIZED",
-    "popularity": 20,
-    "difficulty": 15,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Back and Shoulders Stretch",
-        "instructions": "1. Sit on a block with your back straight, feet shoulder-width apart and raise your right arm overhead.\n2. Bend your right elbow and reach down your back. Use your left hand to gently pull on your right elbow, enhancing the stretch.\n3. Hold the stretch for 15-30 seconds.\n4. Switch arms and repeat the stretch on the left side.",
-        "tips": "1. Keep your core engaged to maintain balance and proper posture throughout the stretch.\n2. Avoid pulling too hard on your elbow; the stretch should be gentle and not cause pain.\n3. Breathe deeply and steadily to help relax your muscles and enhance the stretch."
-      },
-      {
-        "locale": "ko",
-        "name": "백 숄더 스트레칭",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": null
-  },
-  {
     "slug": "back-extension-machine",
     "defaultLocale": "en",
     "category": "BACK",
@@ -4153,41 +4047,6 @@
     ],
     "isPlanEligible": false,
     "planCategory": null
-  },
-  {
-    "slug": "back-forward-leg-swings",
-    "defaultLocale": "en",
-    "category": "LEGS",
-    "equipment": "BODYWEIGHT",
-    "equipmentDetail": "None",
-    "sourceCategory": "Bodyweight",
-    "movementPattern": "OTHER",
-    "muscleGroups": [
-      "GLUTES",
-      "HAMSTRINGS",
-      "LEGS",
-      "QUADRICEPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 35,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Back Forward Leg Swings",
-        "instructions": "1. Stand with your feet shoulder-width apart and use a nearby support (such as a squat cage, wall or a chair) for balance.\n2. Swing your right leg forward and backward in a controlled, rhythmic manner.\n3. After completing the desired number of swings with your right leg, switch to your left leg and repeat the movement.\n4. Focus on smooth and controlled swings, avoiding excessive momentum.",
-        "tips": "1. Focus on maintaining a steady rhythm to ensure controlled movements.\n2. Ensure your upper body remains upright and avoid leaning forward or backward.\n3. Keep your supporting leg slightly bent to enhance balance and reduce strain on your joints."
-      },
-      {
-        "locale": "ko",
-        "name": "백 포워드 레그 스윙",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "legs"
   },
   {
     "slug": "back-lever",
@@ -4287,42 +4146,6 @@
       {
         "locale": "en",
         "name": "Back slaps wrap around stretch",
-        "instructions": "1. Stand with your feet shoulder-width apart.\n2. Swing your arms out to the sides, keeping them lightly bent.\n3. Cross your arms in front of your body, wrapping them around yourself as if giving yourself a hug.\n4. Continue the swinging motion, alternating which arm crosses on top with each repetition.",
-        "tips": "1. Keep your movements fluid to promote relaxation and prevent stiffness.\n2. Focus on extending your arms fully to each side to maximize the stretch in your chest and shoulders.\n3. Maintain a steady pace to ensure you are not rushing through the movement and to allow a thorough stretch."
-      },
-      {
-        "locale": "ko",
-        "name": "백 슬랩 랩 어라운드 스트레칭",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": null
-  },
-  {
-    "slug": "back-slaps-wrap-arround-stretch",
-    "defaultLocale": "en",
-    "category": "FULL_BODY",
-    "equipment": "BODYWEIGHT",
-    "equipmentDetail": "None",
-    "sourceCategory": "Bodyweight",
-    "movementPattern": "STRETCHING",
-    "muscleGroups": [
-      "BACK",
-      "BICEPS",
-      "SHOULDERS",
-      "TRAPS",
-      "TRICEPS"
-    ],
-    "recommendationTier": "SPECIALIZED",
-    "popularity": 20,
-    "difficulty": 15,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Back Slaps Wrap Arround Stretch",
         "instructions": "1. Stand with your feet shoulder-width apart.\n2. Swing your arms out to the sides, keeping them lightly bent.\n3. Cross your arms in front of your body, wrapping them around yourself as if giving yourself a hug.\n4. Continue the swinging motion, alternating which arm crosses on top with each repetition.",
         "tips": "1. Keep your movements fluid to promote relaxation and prevent stiffness.\n2. Focus on extending your arms fully to each side to maximize the stretch in your chest and shoulders.\n3. Maintain a steady pace to ensure you are not rushing through the movement and to allow a thorough stretch."
       },
@@ -5129,40 +4952,6 @@
     "planCategory": "back"
   },
   {
-    "slug": "barbell-back-wide-shrugs",
-    "defaultLocale": "en",
-    "category": "BACK",
-    "equipment": "BARBELL",
-    "equipmentDetail": "Barbell",
-    "sourceCategory": "Free Weights",
-    "movementPattern": "SHRUG",
-    "muscleGroups": [
-      "BACK",
-      "SHOULDERS",
-      "TRAPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 55,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Barbell back wide shrugs",
-        "instructions": "1. Stand upright with your feet shoulder-width apart, holding a barbell with both hands behind your back. Your palms should face away from your body with a wide grip.\n2. Keep your shoulders back and chest up. Slowly lift your shoulders towards your ears in a shrugging motion.\n3. Squeeze your shoulder blades together at the top of the movement, holding the contraction for a moment.\n4. Slowly lower your shoulders back to the starting position with control. Repeat for the desired number of repetitions.",
-        "tips": "1. Avoid rotating your shoulders; lift them straight up and down to prevent strain.\n2. Breathe steadily, exhaling as you lift your shoulders and inhaling as you lower them.\n3. Keep your arms straight throughout the exercise to focus the movement on your shoulders."
-      },
-      {
-        "locale": "ko",
-        "name": "바벨 백 와이드 슈러그",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "back"
-  },
-  {
     "slug": "barbell-behind-neck-push-press",
     "defaultLocale": "en",
     "category": "BACK",
@@ -5391,41 +5180,6 @@
       {
         "locale": "en",
         "name": "Barbell Bench Squat",
-        "instructions": "1. Stand with your feet shoulder-width apart, back facing a bench, holding a barbell across your upper back. Your hands should grip the bar slightly wider than shoulder-width apart.\n2. Keep your chest up. Begin the squat by pushing your hips back and bending your knees, lowering your body until you sit down on the bench.\n3. Push through your heels to stand back up to the starting position, extending your hips and knees fully. Repeat for the desired number of repetitions.",
-        "tips": "1. Ensure your knees track over your toes to prevent knee injuries and ensure proper form.\n2. Keep your chest up and back straight throughout the movement to maintain proper alignment.\n3. Breathe steadily, exhaling as you push up and inhaling as you lower down."
-      },
-      {
-        "locale": "ko",
-        "name": "바벨 벤치 스쿼트",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": true,
-    "planCategory": "legs"
-  },
-  {
-    "slug": "barbell-bench-squats",
-    "defaultLocale": "en",
-    "category": "LEGS",
-    "equipment": "BARBELL",
-    "equipmentDetail": "Barbell",
-    "sourceCategory": "Free Weights",
-    "movementPattern": "SQUAT",
-    "muscleGroups": [
-      "BACK",
-      "GLUTES",
-      "HAMSTRINGS",
-      "QUADRICEPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 95,
-    "difficulty": 55,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Barbell bench squats",
         "instructions": "1. Stand with your feet shoulder-width apart, back facing a bench, holding a barbell across your upper back. Your hands should grip the bar slightly wider than shoulder-width apart.\n2. Keep your chest up. Begin the squat by pushing your hips back and bending your knees, lowering your body until you sit down on the bench.\n3. Push through your heels to stand back up to the starting position, extending your hips and knees fully. Repeat for the desired number of repetitions.",
         "tips": "1. Ensure your knees track over your toes to prevent knee injuries and ensure proper form.\n2. Keep your chest up and back straight throughout the movement to maintain proper alignment.\n3. Breathe steadily, exhaling as you push up and inhaling as you lower down."
       },
@@ -7081,42 +6835,6 @@
     "planCategory": "legs"
   },
   {
-    "slug": "barbell-lateral-lunges",
-    "defaultLocale": "en",
-    "category": "LEGS",
-    "equipment": "BARBELL",
-    "equipmentDetail": "Barbell",
-    "sourceCategory": "Free Weights",
-    "movementPattern": "LUNGE",
-    "muscleGroups": [
-      "CALVES",
-      "GLUTES",
-      "HAMSTRINGS",
-      "LEGS",
-      "QUADRICEPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 85,
-    "difficulty": 55,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Barbell lateral lunges",
-        "instructions": "1. Stand with your feet shoulder-width apart, holding a barbell across your upper back. Grip the bar with your hands slightly wider than shoulder-width apart.\n2. Step out to the right with your right foot, lowering your body into a lunge position by bending your right knee and pushing your hips back.\n3. Push through your right heel to return to the starting position. Repeat the movement on the left side, continuing to alternate legs for the desired number of repetitions.",
-        "tips": "1. Focus on a controlled descent to maximize muscle engagement and prevent injury.\n2. Keep your chest up and back straight throughout the movement to maintain proper posture.\n3. Ensure your knee does not extend beyond your toes to avoid placing undue stress on the joint."
-      },
-      {
-        "locale": "ko",
-        "name": "바벨 사이드 런지",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": true,
-    "planCategory": "legs"
-  },
-  {
     "slug": "barbell-low-bar-squat",
     "defaultLocale": "en",
     "category": "LEGS",
@@ -7173,41 +6891,6 @@
       {
         "locale": "en",
         "name": "Barbell Lunge",
-        "instructions": "1. Stand with your feet shoulder-width apart, holding a barbell across your upper back. Grip the bar with your hands shoulder-width apart, and keep your elbows pointing forward.\n2. Step forward with your right leg, lowering your body until your right thigh is parallel to the floor and your left knee nearly touches the floor.\n3. Push through your front heel to return to the starting position. Repeat the movement with the same leg.",
-        "tips": "1. Use a weight that allows for proper form and technique throughout the exercise.\n2. Drive through the heel of your front foot to engage your glutes and quadriceps more effectively.\n3. Keep your head up and eyes forward to maintain balance and proper form."
-      },
-      {
-        "locale": "ko",
-        "name": "바벨 런지",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": true,
-    "planCategory": "legs"
-  },
-  {
-    "slug": "barbell-lunges",
-    "defaultLocale": "en",
-    "category": "LEGS",
-    "equipment": "BARBELL",
-    "equipmentDetail": "Barbell",
-    "sourceCategory": "Free Weights",
-    "movementPattern": "LUNGE",
-    "muscleGroups": [
-      "CALVES",
-      "GLUTES",
-      "HAMSTRINGS",
-      "QUADRICEPS"
-    ],
-    "recommendationTier": "ESSENTIAL",
-    "popularity": 85,
-    "difficulty": 55,
-    "basicExercise": true,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Barbell lunges",
         "instructions": "1. Stand with your feet shoulder-width apart, holding a barbell across your upper back. Grip the bar with your hands shoulder-width apart, and keep your elbows pointing forward.\n2. Step forward with your right leg, lowering your body until your right thigh is parallel to the floor and your left knee nearly touches the floor.\n3. Push through your front heel to return to the starting position. Repeat the movement with the same leg.",
         "tips": "1. Use a weight that allows for proper form and technique throughout the exercise.\n2. Drive through the heel of your front foot to engage your glutes and quadriceps more effectively.\n3. Keep your head up and eyes forward to maintain balance and proper form."
       },
@@ -7345,39 +7028,6 @@
       {
         "locale": "en",
         "name": "barbell lying triceps skull crusher",
-        "instructions": "1. Lie on a flat bench with your feet flat on the floor, holding a barbell with an overhand grip, hands shoulder-width apart. Your arms should be fully extended above your chest.\n2. Slowly lower the barbell by bending your elbows, bringing the barbell towards your forehead.\n3. When the barbell is just above your forehead, reverse the movement by extending your elbows to return the barbell to the starting position.\n4. Repeat for the desired number of repetitions, then carefully rack the barbell back onto the bench press rack.",
-        "tips": "1. Keep your upper arms stationary and only move your forearms to isolate the triceps.\n2. Lower the barbell slowly and with control to maximize muscle engagement and prevent injury.\n3. Ensure a firm grip on the barbell to maintain control and proper alignment throughout the movement."
-      },
-      {
-        "locale": "ko",
-        "name": "바벨 라잉 삼두 스컬 크러셔",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "arms"
-  },
-  {
-    "slug": "barbell-lying-triceps-skull-crushers",
-    "defaultLocale": "en",
-    "category": "ARMS",
-    "equipment": "BARBELL",
-    "equipmentDetail": "Barbell",
-    "sourceCategory": "Free Weights",
-    "movementPattern": "TRICEP_LYING",
-    "muscleGroups": [
-      "FOREARMS",
-      "TRICEPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 55,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Barbell lying triceps skull crushers",
         "instructions": "1. Lie on a flat bench with your feet flat on the floor, holding a barbell with an overhand grip, hands shoulder-width apart. Your arms should be fully extended above your chest.\n2. Slowly lower the barbell by bending your elbows, bringing the barbell towards your forehead.\n3. When the barbell is just above your forehead, reverse the movement by extending your elbows to return the barbell to the starting position.\n4. Repeat for the desired number of repetitions, then carefully rack the barbell back onto the bench press rack.",
         "tips": "1. Keep your upper arms stationary and only move your forearms to isolate the triceps.\n2. Lower the barbell slowly and with control to maximize muscle engagement and prevent injury.\n3. Ensure a firm grip on the barbell to maintain control and proper alignment throughout the movement."
       },
@@ -11996,42 +11646,6 @@
         "name": "bodyweight full squat with overhead front raise",
         "instructions": "1. Start in a squat position with your feet shoulder-width apart, your torso leaning slightly forward, and both arms extended between your thighs.\n2. Begin to straighten your legs to rise into a standing position while simultaneously raising both arms straight overhead.\n3. Fully extend your legs and arms, standing tall with your arms overhead.\n4. Lower your body back into the squat position, bringing your arms back down between your thighs. Repeat the movement for the desired number of repetitions.",
         "tips": "1. Maintain a neutral spine throughout the movement to protect your back and improve stability.\n2. Keep your knees aligned with your toes during the squat to avoid putting strain on your knees.\n3. Focus on a controlled descent back into the squat to ensure smooth and effective movement."
-      },
-      {
-        "locale": "ko",
-        "name": "맨몸 풀 스쿼트 오버헤드 프론트 레이즈",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "legs"
-  },
-  {
-    "slug": "bodyweight-full-squat-with-overhead-front-raises",
-    "defaultLocale": "en",
-    "category": "LEGS",
-    "equipment": "BODYWEIGHT",
-    "equipmentDetail": "None (Bodyweight)",
-    "sourceCategory": "Bodyweight",
-    "movementPattern": "SQUAT",
-    "muscleGroups": [
-      "CALVES",
-      "GLUTES",
-      "HAMSTRINGS",
-      "QUADRICEPS",
-      "SHOULDERS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 95,
-    "difficulty": 35,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Bodyweight full squat with overhead front raises",
-        "instructions": "1. Stand with your feet shoulder-width apart and your arms extended in close to your knees.\n2. Lower your body into a squat position until your thighs are parallel to the floor, while simultaneously raising your arms overhead.\n3. Stand back up to the starting position, lowering your arms back close to your knees.\n4. Repeat the movement for the desired number of repetitions.",
-        "tips": "1. Maintain a neutral spine and avoid rounding your back during the exercise to ensure proper form.\n2. Ensure your knees are aligned with your toes during the squat to prevent strain on your knees.\n3. Move at a controlled pace, especially when lifting and lowering your arms, to avoid unnecessary strain and enhance muscle engagement."
       },
       {
         "locale": "ko",
@@ -31212,40 +30826,6 @@
     "planCategory": null
   },
   {
-    "slug": "elbows-back-stretch",
-    "defaultLocale": "en",
-    "category": "FULL_BODY",
-    "equipment": "BODYWEIGHT",
-    "equipmentDetail": "None",
-    "sourceCategory": "Bodyweight",
-    "movementPattern": "STRETCHING",
-    "muscleGroups": [
-      "BACK",
-      "SHOULDERS",
-      "TRAPS"
-    ],
-    "recommendationTier": "SPECIALIZED",
-    "popularity": 20,
-    "difficulty": 15,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Elbows Back Stretch",
-        "instructions": "1. Stand with your feet shoulder-width apart and your arms at your sides.\n2. Bring both hands behind you and place them on your lower back, fingers pointing downward.\n3. Gently push your hips forward and lean your upper body backward, feeling a stretch in your chest and shoulders.\n4. Hold the stretch for a few seconds, then return to the starting position. Repeat the movement for the desired number of repetitions.",
-        "tips": "1. Engage your core muscles to support your lower back as you lean backward.\n2. Avoid overextending your lower back; only lean back as far as comfortable without causing pain.\n3. Breathe deeply throughout the exercise, inhaling as you prepare to stretch and exhaling as you lean back."
-      },
-      {
-        "locale": "ko",
-        "name": "엘보 백 스트레칭",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": null
-  },
-  {
     "slug": "exercise-ball-back-stretch",
     "defaultLocale": "en",
     "category": "FULL_BODY",
@@ -33214,40 +32794,6 @@
     "planCategory": "chest"
   },
   {
-    "slug": "hammer-strength-mts-iso-lateral-decline-press-alternating-arms",
-    "defaultLocale": "en",
-    "category": "CHEST",
-    "equipment": "MACHINE",
-    "equipmentDetail": "Hammer Strength MTS Iso-Lateral Decline Press Machine",
-    "sourceCategory": "Resistance",
-    "movementPattern": "OTHER",
-    "muscleGroups": [
-      "CHEST",
-      "SHOULDERS",
-      "TRICEPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 25,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "HAMMER STRENGTH MTS ISO-LATERAL DECLINE PRESS Alternating Arms",
-        "instructions": "1. Sit on the Hammer Strength MTS Iso-Lateral Decline Press, back pressed against the backrest and feet flat on the floor. Grasp the handles with both hands, palms facing down.\n2. Press one handle forward by extending your arm, keeping the other arm stationary. \n3. Squeeze your chest muscles at the bottom of the movement and slowly return the handle to the starting position with control.\n4. Repeat with the other arm, alternating arms for the desired number of repetitions.",
-        "tips": "1. Exhale as you press the handle and inhale as you return it to the starting position.\n2. Keep your back pressed against the backrest throughout the exercise.\n3. Focus on engaging your chest muscles throughout the movement."
-      },
-      {
-        "locale": "ko",
-        "name": "해머 스트렝스 MTS 아이소래터럴 디클라인 프레스 얼터네이팅 암",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "chest"
-  },
-  {
     "slug": "hammer-strength-mts-iso-lateral-decline-press-both-arm",
     "defaultLocale": "en",
     "category": "CHEST",
@@ -33418,40 +32964,6 @@
     "planCategory": "chest"
   },
   {
-    "slug": "hammer-strength-plate-loaded-combination-iso-lateral-chest-chest-press-alternating-arms",
-    "defaultLocale": "en",
-    "category": "CHEST",
-    "equipment": "MACHINE",
-    "equipmentDetail": "Hammer Strength Plate-Loaded Iso-Lateral Chest Press machine",
-    "sourceCategory": "Resistance",
-    "movementPattern": "OTHER",
-    "muscleGroups": [
-      "CHEST",
-      "SHOULDERS",
-      "TRICEPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 25,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "HAMMER STRENGTH Plate-Loaded Combination Iso-Lateral Chest - Chest Press Alternating arms",
-        "instructions": "1. Sit on the Hammer Strength Plate-Loaded Iso-Lateral Chest Press machine, back pressed against the backrest and feet flat on the floor. Grasp the handles with both hands, palms facing down.\n2. Press one handle forward by extending your arm, keeping your elbow slightly bent at the end of the movement.\n3. Squeeze your chest muscles at the top of the movement and slowly return the handle to the starting position with control.\n4. Repeat with the other arm, alternating arms for the desired number of repetitions.",
-        "tips": "1. Keep your back pressed against the backrest throughout the exercise.\n2. Focus on engaging your chest muscles throughout the movement.\n3. Exhale as you press the handles forward and inhale as you return them to the starting position."
-      },
-      {
-        "locale": "ko",
-        "name": "해머 스트렝스 플레이트-로디드 콤비네이션 아이소래터럴 체스트 - 체스트 프레스 얼터네이팅 암",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "chest"
-  },
-  {
     "slug": "hammer-strength-plate-loaded-combination-iso-lateral-chest-chest-press-single-arm",
     "defaultLocale": "en",
     "category": "CHEST",
@@ -33577,41 +33089,6 @@
       {
         "locale": "en",
         "name": "Hammer Strength Plate Loaded High Row Single Arm",
-        "instructions": "1. Sit on the Hammer Strength Plate Loaded High Row machine with your feet flat on the floor and your chest pressed against the chest pad. Grasp the handles with both hands, palms facing forward.\n2. Pull the right handle towards your torso by bending your elbow and squeezing your shoulder blade back, while keeping the other arm extended.\n3. Squeeze your back muscles at the end of the movement and slowly return the handle to the starting position with control.\n4. Repeat with the same arm for the desired number of repetitions and then switch to your left arm and repeat.",
-        "tips": "1. Keep your chest pressed against the pad and your back straight throughout the exercise.\n2. Focus on engaging your back muscles throughout the movement.\n3. Exhale as you pull the handle towards your torso and inhale as you return it to the starting position."
-      },
-      {
-        "locale": "ko",
-        "name": "해머 스트렝스 플레이트 로디드 하이 로우 싱글 암",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "back"
-  },
-  {
-    "slug": "hammer-strength-plate-loaded-high-row-single-arms",
-    "defaultLocale": "en",
-    "category": "BACK",
-    "equipment": "MACHINE",
-    "equipmentDetail": "Hammer Strength Plate Loaded High Row Machine",
-    "sourceCategory": "Resistance",
-    "movementPattern": "CABLE_ROW",
-    "muscleGroups": [
-      "BACK",
-      "BICEPS",
-      "LATS",
-      "TRAPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 25,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Hammer Strength Plate Loaded High Row Single Arms",
         "instructions": "1. Sit on the Hammer Strength Plate Loaded High Row machine with your feet flat on the floor and your chest pressed against the chest pad. Grasp the handles with both hands, palms facing forward.\n2. Pull the right handle towards your torso by bending your elbow and squeezing your shoulder blade back, while keeping the other arm extended.\n3. Squeeze your back muscles at the end of the movement and slowly return the handle to the starting position with control.\n4. Repeat with the same arm for the desired number of repetitions and then switch to your left arm and repeat.",
         "tips": "1. Keep your chest pressed against the pad and your back straight throughout the exercise.\n2. Focus on engaging your back muscles throughout the movement.\n3. Exhale as you pull the handle towards your torso and inhale as you return it to the starting position."
       },
@@ -35493,44 +34970,6 @@
       {
         "locale": "ko",
         "name": "케틀벨 스러스터",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": null
-  },
-  {
-    "slug": "kettlebells-sumo-deadlift-with-high-pull",
-    "defaultLocale": "en",
-    "category": "BACK",
-    "equipment": "KETTLEBELL",
-    "equipmentDetail": "Kettlebells",
-    "sourceCategory": "Free Weights",
-    "movementPattern": "DEADLIFT",
-    "muscleGroups": [
-      "BACK",
-      "GLUTES",
-      "HAMSTRINGS",
-      "LEGS",
-      "QUADRICEPS",
-      "SHOULDERS",
-      "TRAPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 95,
-    "difficulty": 45,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Kettlebells sumo deadlift with high pull",
-        "instructions": "1. Place two kettlebells on the floor between your feet. Stand with your feet wider than shoulder-width apart and your toes pointed slightly outward. \n2. Hinge at your hips and bend your knees to lower your body, reaching down to grasp the kettlebell handles, one in each hand, keeping your back straight and chest up.\n3. Push through your heels to lift the kettlebells off the floor, extending your hips and knees simultaneously. As you reach the standing position, pull the kettlebells upward towards your chin by bending your elbows and keeping them pointed outward.\n4. Lower the kettlebells back to the starting position. Repeat for the desired number of repetitions.",
-        "tips": "1. Keep your back straight and avoid rounding your shoulders.\n2. Exhale as you lift the kettlebell and perform the high pull, inhale as you lower it.\n3. Push through your heels to maximize power and stability."
-      },
-      {
-        "locale": "ko",
-        "name": "케틀벨 스모 데드리프트 하이 풀",
         "instructions": null,
         "tips": null
       }
@@ -40661,41 +40100,6 @@
       {
         "locale": "ko",
         "name": "저항 밴드 어퍼 보디 데드 버그",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": null
-  },
-  {
-    "slug": "resistance-bands-facepull",
-    "defaultLocale": "en",
-    "category": "BACK",
-    "equipment": "RESISTANCE_BAND",
-    "equipmentDetail": "Resistance Band",
-    "sourceCategory": "Resistance",
-    "movementPattern": "OTHER",
-    "muscleGroups": [
-      "BACK",
-      "BICEPS",
-      "SHOULDERS",
-      "TRAPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 35,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Resistance bands facepull",
-        "instructions": "1. Secure the middle of the resistance band to a sturdy anchor point at head height. Stand facing the anchor point with your feet shoulder-width apart, holding one handle of the band in each hand with your arms extended straight in front of you, palms facing down.\n2. Pull the handles towards your face, bending your elbows and flaring them out to the sides until your hands are at your face sides.\n3. Squeeze your shoulder blades together at the end of the movement, keeping your upper arms parallel to the floor.\n4. Slowly extend your arms back to the starting position with control, maintaining tension in the band. Repeat for the desired number of repetitions.",
-        "tips": "1. Ensure the resistance band is securely anchored to avoid slipping.\n2. Exhale as you pull the band towards your face and inhale as you return to the starting position.\n3. Maintain a slight bend in your knees for better balance and support."
-      },
-      {
-        "locale": "ko",
-        "name": "저항 밴드 페이스풀",
         "instructions": null,
         "tips": null
       }

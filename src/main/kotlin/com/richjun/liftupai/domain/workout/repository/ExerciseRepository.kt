@@ -40,6 +40,61 @@ interface ExerciseRepository : JpaRepository<Exercise, Long> {
 
     fun findByCategoryAndEquipment(category: ExerciseCategory, equipment: Equipment, pageable: Pageable): Page<Exercise>
 
+    /**
+     * 사용자에게 노출할 수 있는 운동만 페이징 (ESSENTIAL + STANDARD).
+     * ADVANCED/SPECIALIZED는 자동 추천/리스트에서 제외 — 검색 시에만 노출.
+     * 인기도 내림차순 정렬.
+     */
+    @Query("""
+        SELECT e FROM Exercise e
+        WHERE e.recommendationTier IN (
+            com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL,
+            com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
+        )
+        ORDER BY e.popularity DESC, e.id ASC
+    """)
+    fun findListable(pageable: Pageable): Page<Exercise>
+
+    @Query("""
+        SELECT e FROM Exercise e
+        WHERE e.category = :category
+        AND e.recommendationTier IN (
+            com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL,
+            com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
+        )
+        ORDER BY e.popularity DESC, e.id ASC
+    """)
+    fun findListableByCategory(@Param("category") category: ExerciseCategory, pageable: Pageable): Page<Exercise>
+
+    /**
+     * 유사도 기반 정렬을 위해 카테고리 내 노출 가능한 모든 운동을 페이징 없이 조회.
+     * EAGER인 muscleGroups를 JOIN FETCH로 함께 로드해 N+1 쿼리를 회피한다.
+     */
+    @Query("""
+        SELECT DISTINCT e FROM Exercise e
+        LEFT JOIN FETCH e.muscleGroups
+        WHERE e.category = :category
+        AND e.recommendationTier IN (
+            com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL,
+            com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
+        )
+    """)
+    fun findAllListableByCategory(@Param("category") category: ExerciseCategory): List<Exercise>
+
+    /**
+     * 유사도 기반 정렬을 위해 노출 가능한 모든 운동을 페이징 없이 조회.
+     * EAGER인 muscleGroups를 JOIN FETCH로 함께 로드해 N+1 쿼리를 회피한다.
+     */
+    @Query("""
+        SELECT DISTINCT e FROM Exercise e
+        LEFT JOIN FETCH e.muscleGroups
+        WHERE e.recommendationTier IN (
+            com.richjun.liftupai.domain.workout.entity.RecommendationTier.ESSENTIAL,
+            com.richjun.liftupai.domain.workout.entity.RecommendationTier.STANDARD
+        )
+    """)
+    fun findAllListable(): List<Exercise>
+
     @Query("""
         SELECT DISTINCT e
         FROM Exercise e

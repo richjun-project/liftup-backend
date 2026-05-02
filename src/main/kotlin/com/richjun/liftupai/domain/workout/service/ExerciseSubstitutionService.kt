@@ -77,7 +77,7 @@ class ExerciseSubstitutionService(
      *
      * DB 조회 없이 메모리에서만 계산 (성능 보장)
      */
-    private fun calculateTransferScore(original: Exercise, substitute: Exercise): Double {
+    fun calculateTransferScore(original: Exercise, substitute: Exercise): Double {
         var score = 0.0
 
         // 1. 근육군 겹침 (0-0.4)

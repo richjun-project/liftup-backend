@@ -120,9 +120,10 @@ class ProgramController(
         @RequestParam(required = false) category: String?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
-        @RequestParam(required = false) locale: String?
+        @RequestParam(required = false) locale: String?,
+        @RequestParam(name = "referenceExerciseId", required = false) referenceExerciseId: Long?
     ): ResponseEntity<ApiResponse<ExerciseSearchResponse>> {
-        val response = programService.listExercises(category, page, size, locale)
+        val response = programService.listExercises(category, page, size, locale, referenceExerciseId)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

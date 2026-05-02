@@ -31,7 +31,8 @@ class ProgramService(
     private val workoutGeneratorService: ProgramWorkoutGeneratorService,
     private val absenceDetectionService: AbsenceDetectionService,
     private val userSettingsRepository: UserSettingsRepository,
-    private val localizationService: ExerciseCatalogLocalizationService
+    private val localizationService: ExerciseCatalogLocalizationService,
+    private val exerciseSubstitutionService: ExerciseSubstitutionService
 ) {
 
     @org.springframework.beans.factory.annotation.Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
@@ -368,15 +369,50 @@ class ProgramService(
         )
     }
 
-    fun listExercises(category: String?, page: Int, size: Int, locale: String? = null): ExerciseSearchResponse {
+    fun listExercises(
+        category: String?,
+        page: Int,
+        size: Int,
+        locale: String? = null,
+        referenceExerciseId: Long? = null
+    ): ExerciseSearchResponse {
         val safePage = page.coerceAtLeast(0)
         val safeSize = size.coerceIn(1, 50)
-        val pageable = PageRequest.of(safePage, safeSize)
         val cat = category?.let { parseCategory(it) }
+        val reference = referenceExerciseId?.let { exerciseRepository.findById(it).orElse(null) }
+
+        // 기준 운동이 있으면: 유사도(transfer score) 내림차순으로 정렬하고 메모리에서 페이지네이션한다.
+        // 카테고리 필터는 명시적으로 전달된 경우에만 적용한다 (자동 narrowing 없음).
+        // ESSENTIAL/STANDARD만 노출 (ADVANCED/SPECIALIZED는 검색 시에만).
+        if (reference != null) {
+            val all = (if (cat != null)
+                exerciseRepository.findAllListableByCategory(cat)
+            else
+                exerciseRepository.findAllListable())
+                .filter { it.id != reference.id }
+            val sorted = all.sortedByDescending {
+                exerciseSubstitutionService.calculateTransferScore(reference, it)
+            }
+            val totalElements = sorted.size.toLong()
+            val totalPages = if (sorted.isEmpty()) 0 else ((sorted.size + safeSize - 1) / safeSize)
+            val from = (safePage * safeSize).coerceAtMost(sorted.size)
+            val to = (from + safeSize).coerceAtMost(sorted.size)
+            val pageContent = sorted.subList(from, to)
+            val normalizedLocale = localizationService.normalizeLocale(locale)
+            val translations = localizationService.translationMap(pageContent, normalizedLocale)
+            return ExerciseSearchResponse(
+                exercises = pageContent.map { it.toSearchItem(normalizedLocale, translations) },
+                totalElements = totalElements,
+                totalPages = totalPages,
+                currentPage = safePage
+            )
+        }
+
+        val pageable = PageRequest.of(safePage, safeSize)
         val result = if (cat != null) {
-            exerciseRepository.findByCategory(cat, pageable)
+            exerciseRepository.findListableByCategory(cat, pageable)
         } else {
-            exerciseRepository.findAll(pageable)
+            exerciseRepository.findListable(pageable)
         }
         val normalizedLocale = localizationService.normalizeLocale(locale)
         val translations = localizationService.translationMap(result.content, normalizedLocale)
