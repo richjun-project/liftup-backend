@@ -235,12 +235,24 @@ class PTScheduledMessageService(
     }
 
     private fun parseWorkoutTime(preferredTime: String): LocalTime {
+        // "HH:mm" 형식 (예: "19:30") 우선 시도
+        if (HH_MM_REGEX.matches(preferredTime)) {
+            try {
+                return LocalTime.parse(preferredTime)
+            } catch (_: Exception) {
+                // fallthrough to category mapping
+            }
+        }
         return when (preferredTime.lowercase()) {
             "morning" -> LocalTime.of(7, 0)
             "afternoon" -> LocalTime.of(14, 0)
             "evening" -> LocalTime.of(18, 0)
             else -> LocalTime.of(18, 0)
         }
+    }
+
+    companion object {
+        private val HH_MM_REGEX = Regex("^([01]\\d|2[0-3]):[0-5]\\d$")
     }
 
     private fun getAllDays(): Set<DayOfWeek> {

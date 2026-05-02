@@ -160,6 +160,12 @@ class UserService(
         settings.workoutDuration = request.workoutDuration
         request.timeZone?.let { settings.timeZone = validateTimeZone(it) }
 
+        // 프로필 deprecated 필드도 동기화 (mapToProfileResponseV4가 profile에서 읽으므로 동기화 필수)
+        request.preferredWorkoutTime?.let { profile.preferredWorkoutTime = it }
+        request.weeklyWorkoutDays?.let { profile.weeklyWorkoutDays = it }
+        request.workoutSplit?.let { profile.workoutSplit = it }
+        request.workoutDuration?.let { profile.workoutDuration = it }
+
         request.availableEquipment?.let {
             settings.availableEquipment.clear()
             settings.availableEquipment.addAll(it)
@@ -175,6 +181,14 @@ class UserService(
         userRepository.save(user)
         userProfileRepository.save(profile)
         userSettingsRepository.save(settings)
+
+        // 온보딩 완료 시점에 PT 스케줄 생성 (workout_reminder 포함, preferredWorkoutTime 30분 전 발송)
+        try {
+            ptScheduledMessageService.createPTSchedulesForUser(userId)
+            logger.info("PT schedules created for user $userId after onboarding (preferredWorkoutTime=${settings.preferredWorkoutTime})")
+        } catch (e: Exception) {
+            logger.warn("Failed to create PT schedules after onboarding for user $userId: ${e.message}")
+        }
 
         return mapToProfileResponse(user, profile)
     }
@@ -387,7 +401,20 @@ class UserService(
             profile.availableEquipment.addAll(it)
         }
 
-        request.preferredWorkoutTime?.let { profile.preferredWorkoutTime = it }
+        // preferredWorkoutTime은 UserSettings에 저장 — UserSettings가 truth source
+        // 변경 감지를 위해 이전 값 보관 (request에 값이 있을 때만 settings 터치)
+        var previousPreferredTime: String? = null
+        if (request.preferredWorkoutTime != null) {
+            val settings = userSettingsRepository.findByUser_Id(userId).orElse(
+                UserSettings(user = profile.user)
+            )
+            previousPreferredTime = settings.preferredWorkoutTime
+            profile.preferredWorkoutTime = request.preferredWorkoutTime // deprecated 컬럼도 동기화 유지
+            settings.preferredWorkoutTime = request.preferredWorkoutTime
+            settings.updatedAt = AppTime.utcNow()
+            userSettingsRepository.save(settings)
+        }
+
         request.workoutDuration?.let { profile.workoutDuration = it }
 
         request.injuries?.let {
@@ -404,6 +431,16 @@ class UserService(
         val savedProfile = userProfileRepository.saveAndFlush(profile)
 
         logger.debug("Save and flush completed")
+
+        // 운동 시간이 바뀌었으면 PT 스케줄(특히 workout_reminder) 재생성
+        if (request.preferredWorkoutTime != null && previousPreferredTime != request.preferredWorkoutTime) {
+            try {
+                ptScheduledMessageService.createPTSchedulesForUser(userId)
+                logger.info("PT schedules regenerated for user $userId due to preferredWorkoutTime change: $previousPreferredTime -> ${request.preferredWorkoutTime}")
+            } catch (e: Exception) {
+                logger.warn("Failed to regenerate PT schedules on preferredWorkoutTime change for user $userId: ${e.message}")
+            }
+        }
 
         // Clear the persistence context to force re-fetch
         entityManager.clear()
