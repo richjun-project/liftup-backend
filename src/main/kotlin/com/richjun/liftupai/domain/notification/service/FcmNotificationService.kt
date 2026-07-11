@@ -170,7 +170,7 @@ class FcmNotificationService(
             MessagingErrorCode.INVALID_ARGUMENT,
             MessagingErrorCode.UNREGISTERED -> {
                 // 유효하지 않은 토큰, 기기 비활성화
-                logger.warn("Invalid token for device: ${device.deviceToken}. Deactivating device.")
+                logger.warn("Invalid token for device: ${device.deviceToken.take(20)}... Deactivating device.")
                 device.isActive = false
                 notificationDeviceRepository.save(device)
             }
@@ -178,7 +178,7 @@ class FcmNotificationService(
                 logger.error("FCM quota exceeded")
             }
             MessagingErrorCode.SENDER_ID_MISMATCH -> {
-                logger.error("Sender ID mismatch for device: ${device.deviceToken}")
+                logger.error("Sender ID mismatch for device: ${device.deviceToken.take(20)}...")
             }
             else -> {
                 logger.error("FCM error: ${e.messagingErrorCode} - ${e.message}")

@@ -1,6 +1,5 @@
 package com.richjun.liftupai.domain.notification.service
 
-import com.richjun.liftupai.domain.ai.service.GeminiAIService
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.chat.entity.ChatMessage
@@ -12,9 +11,6 @@ import com.richjun.liftupai.domain.notification.util.NotificationLocalization
 import com.richjun.liftupai.domain.notification.util.NotificationScheduleTimeCalculator
 import com.richjun.liftupai.domain.notification.repository.NotificationHistoryRepository
 import com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository
-import com.richjun.liftupai.domain.nutrition.entity.MealType
-import com.richjun.liftupai.domain.nutrition.service.NutritionContextService
-import com.richjun.liftupai.domain.subscription.service.SubscriptionService
 import com.richjun.liftupai.domain.user.entity.PTStyle
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
@@ -24,10 +20,7 @@ import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.concurrent.ConcurrentHashMap
 
 @Service
 @Transactional
@@ -40,54 +33,9 @@ class PTScheduledMessageService(
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val chatMessageRepository: ChatMessageRepository,
     private val notificationService: NotificationService,
-    private val ptMessageTemplates: PTMessageTemplates,
-    private val nutritionContextService: NutritionContextService,
-    private val subscriptionService: SubscriptionService,
-    private val geminiAIService: GeminiAIService
+    private val ptMessageTemplates: PTMessageTemplates
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
-
-    /**
-     * Pro 유저 동적 식단 알림 메시지 캐시.
-     * key = "userId:mealType:date(localUTC)" → message
-     * scheduler가 60초마다 돌고 due 판단 race가 있을 수 있으므로 5분 TTL.
-     */
-    private data class CachedMessage(val message: String, val cachedAtMillis: Long)
-    private val mealMessageCache = ConcurrentHashMap<String, CachedMessage>()
-    private val mealCacheTtlMillis = 5 * 60 * 1000L
-
-    /** scheduleName → 끼니 매핑. null이면 식단 알림 아님 */
-    private fun mealTypeForScheduleName(name: String): MealType? = when (name) {
-        "morning_meal_check" -> MealType.BREAKFAST
-        "lunch_meal_check" -> MealType.LUNCH
-        "dinner_meal_check" -> MealType.DINNER
-        else -> null
-    }
-
-    /** Pro 유저에게만 호출되는 동적 식단 코칭 메시지 생성 (캐시 + AI 호출 실패 시 fallback) */
-    private fun resolveDynamicMealMessage(
-        user: User,
-        mealType: MealType,
-        ptStyle: PTStyle,
-        locale: String,
-        fallback: String
-    ): String {
-        val cacheKey = "${user.id}:${mealType.name}:${LocalDate.now()}"
-        val cached = mealMessageCache[cacheKey]
-        if (cached != null && System.currentTimeMillis() - cached.cachedAtMillis < mealCacheTtlMillis) {
-            return cached.message
-        }
-        return try {
-            val ctx = nutritionContextService.buildTodayContext(user)
-            val msg = geminiAIService.generateMealCoachingMessage(user, ptStyle, mealType, ctx, locale)
-            val finalMsg = msg.ifBlank { fallback }
-            mealMessageCache[cacheKey] = CachedMessage(finalMsg, System.currentTimeMillis())
-            finalMsg
-        } catch (e: Exception) {
-            logger.warn("[PTMessage] dynamic meal message failed for user ${user.id} ($mealType): ${e.message}")
-            fallback
-        }
-    }
 
     /**
      * 사용자의 PT 스타일에 맞는 스케줄 메시지 생성
@@ -102,12 +50,11 @@ class PTScheduledMessageService(
 
         val settings = userSettingsRepository.findByUser(user).orElse(null)
 
-        val ptStyle = profile.ptStyle
         val preferredWorkoutTime = parseWorkoutTime(
             settings?.preferredWorkoutTime ?: profile.preferredWorkoutTime ?: "evening"
         )
 
-        logger.info("Creating PT schedules for user ${user.id} with style $ptStyle")
+        logger.info("Creating PT schedules for user ${user.id}")
 
         // 기존 스케줄 삭제
         deleteExistingPTSchedules(user)
@@ -117,7 +64,7 @@ class PTScheduledMessageService(
             user = user,
             scheduleName = "morning_meal_check",
             time = LocalTime.of(7, 30),
-            message = ptMessageTemplates.getMorningMealMessage(ptStyle, locale),
+            message = ptMessageTemplates.getMorningMealMessage(locale),
             days = getAllDays()
         )
 
@@ -126,7 +73,7 @@ class PTScheduledMessageService(
             user = user,
             scheduleName = "lunch_meal_check",
             time = LocalTime.of(12, 30),
-            message = ptMessageTemplates.getLunchMealMessage(ptStyle, locale),
+            message = ptMessageTemplates.getLunchMealMessage(locale),
             days = getAllDays()
         )
 
@@ -136,7 +83,7 @@ class PTScheduledMessageService(
             user = user,
             scheduleName = "workout_reminder",
             time = workoutReminderTime,
-            message = ptMessageTemplates.getWorkoutReminderMessage(ptStyle, locale),
+            message = ptMessageTemplates.getWorkoutReminderMessage(locale),
             days = getAllDays()
         )
 
@@ -145,7 +92,7 @@ class PTScheduledMessageService(
             user = user,
             scheduleName = "dinner_meal_check",
             time = LocalTime.of(19, 0),
-            message = ptMessageTemplates.getDinnerMealMessage(ptStyle, locale),
+            message = ptMessageTemplates.getDinnerMealMessage(locale),
             days = getAllDays()
         )
 
@@ -154,7 +101,7 @@ class PTScheduledMessageService(
             user = user,
             scheduleName = "sleep_prep",
             time = LocalTime.of(22, 0),
-            message = ptMessageTemplates.getSleepPrepMessage(ptStyle, locale),
+            message = ptMessageTemplates.getSleepPrepMessage(locale),
             days = getAllDays()
         )
 
@@ -206,23 +153,12 @@ class PTScheduledMessageService(
         }
 
         try {
-            // 식단 알림(아침/점심/저녁 meal_check)이고 사용자가 Pro면 → 동적 메시지로 교체
-            // Free 유저는 정적 메시지 그대로 사용 → AI 비용 0
-            val mealType = mealTypeForScheduleName(schedule.scheduleName)
-            val effectiveMessage = if (mealType != null && subscriptionService.hasActiveSubscription(schedule.user.id)) {
-                val locale = resolveLocale(schedule.user.id)
-                val ptStyle = userProfileRepository.findByUser(schedule.user).orElse(null)?.ptStyle
-                    ?: PTStyle.GAME_MASTER
-                resolveDynamicMealMessage(schedule.user, mealType, ptStyle, locale, schedule.message)
-            } else {
-                schedule.message
-            }
-
+            // 고정 템플릿 메시지 그대로 전송 (단일 노멀 페르소나, AI 생성 없음)
             // 1. ChatMessage에 저장 (채팅 히스토리에 표시)
             val chatMessage = ChatMessage(
                 user = schedule.user,
                 userMessage = "",
-                aiResponse = effectiveMessage,
+                aiResponse = schedule.message,
                 messageType = MessageType.SYSTEM,
                 status = MessageStatus.COMPLETED
             )
@@ -230,9 +166,7 @@ class PTScheduledMessageService(
             logger.info("[PTMessage] ChatMessage saved for user ${schedule.user.id}, schedule $scheduleId")
 
             // 2. FCM 전송 및 NotificationHistory 저장 (nextTriggerAt 선갱신 포함)
-            // bodyOverride로 동적 메시지 전달 — schedule.message 정적 템플릿은 DB에 그대로 보존
-            val bodyOverride = if (effectiveMessage != schedule.message) effectiveMessage else null
-            notificationService.sendScheduledNotificationWithFcm(schedule, bodyOverride)
+            notificationService.sendScheduledNotificationWithFcm(schedule, null)
 
             logger.info("[PTMessage] PT message sent and saved to chat for user ${schedule.user.id}")
         } catch (e: Exception) {

@@ -1,7 +1,6 @@
 package com.richjun.liftupai.domain.notification.util
 
 import com.richjun.liftupai.domain.notification.entity.NotificationType
-import com.richjun.liftupai.domain.user.entity.PTStyle
 import java.text.MessageFormat
 import java.util.Locale
 import java.util.ResourceBundle
@@ -48,22 +47,9 @@ object NotificationLocalization {
         }
     }
 
-    fun ptTemplate(context: String, style: PTStyle, locale: String = "en"): String {
-        val styleKey = when (style) {
-            PTStyle.SPARTAN -> "spartan"
-            PTStyle.BURNOUT -> "burnout"
-            PTStyle.GAME_MASTER -> "game_master"
-            PTStyle.INFLUENCER -> "influencer"
-            PTStyle.HIP_HOP -> "hip_hop"
-            PTStyle.RETIRED_TEACHER -> "retired_teacher"
-            PTStyle.OFFICE_MASTER -> "office_master"
-            PTStyle.LA_KOREAN -> "la_korean"
-            PTStyle.BUSAN_VETERAN -> "busan_veteran"
-            PTStyle.SOLDIER -> "soldier"
-            else -> "default"
-        }
-
-        return messages("pt.template.$context.$styleKey", locale).random()
+    /** 푸시/스케줄 메시지는 단일 노멀 페르소나(default 템플릿)로 고정 */
+    fun ptTemplate(context: String, locale: String = "en"): String {
+        return messages("pt.template.$context.default", locale).random()
     }
 
     private fun lookup(key: String, locale: String): String {

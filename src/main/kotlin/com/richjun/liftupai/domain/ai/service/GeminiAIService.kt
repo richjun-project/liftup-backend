@@ -78,40 +78,6 @@ class GeminiAIService(
 
     fun analyzeContent(prompt: String): String = callGeminiAPI(prompt)
 
-    /**
-     * 동적 PT 식단 알림용 — Pro 유저에게만 호출됨.
-     * 사용자의 오늘 식단/운동 기록을 보고 맞춤 코칭 메시지 1~2문장 생성.
-     */
-    fun generateMealCoachingMessage(
-        user: User,
-        ptStyle: PTStyle,
-        mealType: MealType,
-        ctx: DailyNutritionContext,
-        locale: String
-    ): String {
-        val responseLanguage = AILocalization.responseLanguage(locale)
-        val nutritionSection = buildNutritionContextSection(ctx)
-        val mealLabel = mealType.name.lowercase().replaceFirstChar { it.uppercase() }
-        val prompt = """
-            You are a PT coach pinging the user about their upcoming $mealLabel.
-            Respond ONLY in $responseLanguage. 1~2 sentences. No greetings, no markdown, just the coaching message.
-
-            ## CRITICAL: Persona
-            ${styleInstruction(ptStyle)}
-
-            $nutritionSection
-
-            ## Task
-            Based on the data above, write a short, specific nudge for the upcoming $mealLabel.
-            - If protein is well below target, suggest a high-protein option for this meal.
-            - If calories are way ahead of pace, suggest a lighter option.
-            - If the user worked out today, factor that in.
-            - Stay in persona. No generic advice — be concrete (e.g., "닭가슴살 한 조각 더").
-            - Do NOT include numbers/percentages — keep it natural and conversational.
-        """.trimIndent()
-        return callGeminiAPI(prompt, locale).trim().lines().joinToString(" ").take(300)
-    }
-
     /** 플랜 생성 전용 — Pro latest 모델 사용 */
     fun generatePlanContent(prompt: String): String = callGeminiAPI(
         prompt = prompt,

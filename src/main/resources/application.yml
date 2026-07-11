@@ -36,7 +36,9 @@ firebase:
 
 # JWT 설정
 jwt:
-  secret: ${JWT_SECRET:mySecretKeyForJWTTokenGenerationAndValidation12345678}
+  # 기본값 없음 — JWT_SECRET 미설정 시 부팅 실패가 정상 (repo에 노출된 폴백 시크릿으로 서명되는 사고 방지)
+  # 로컬 개발용 기본값은 application-local.yml에만 존재
+  secret: ${JWT_SECRET}
   access-token-expiration: 3600000  # 1시간
   refresh-token-expiration: 2592000000  # 30일
 
