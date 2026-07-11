@@ -19,12 +19,12 @@ import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Service
-@Transactional
 class NutritionService(
     private val userRepository: UserRepository,
     private val mealLogRepository: MealLogRepository,
@@ -33,7 +33,8 @@ class NutritionService(
     private val fileUploadService: FileUploadService,
     private val userProfileRepository: com.richjun.liftupai.domain.user.repository.UserProfileRepository,
     private val userSettingsRepository: UserSettingsRepository,
-    private val nutritionContextService: NutritionContextService
+    private val nutritionContextService: NutritionContextService,
+    private val transactionTemplate: TransactionTemplate
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -89,6 +90,7 @@ class NutritionService(
         )
     }
 
+    @Transactional
     fun logNutrition(userId: Long, request: NutritionLogRequest): NutritionLogResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
@@ -113,53 +115,58 @@ class NutritionService(
     }
 
     fun analyzeMeal(userId: Long, request: MealAnalysisRequest): MealAnalysisResponse {
-        val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("User not found") }
+        // (a) 짧은 트랜잭션: 사용자 조회 + locale 확인
+        val user = transactionTemplate.execute {
+            userRepository.findById(userId)
+                .orElseThrow { ResourceNotFoundException("User not found") }
+        }!!
         val locale = resolveLocale(userId)
 
-        // Gemini AI를 사용한 이미지 기반 식단 분석
+        // (b) 트랜잭션 밖: Gemini AI를 사용한 이미지 기반 식단 분석 (블로킹 외부 호출 — DB 커넥션 점유 없음)
         val aiResponse = geminiAIService.analyzeMealImage(request.imageUrl, user)
 
-        // AI 응답 파싱
-        val parsedResponse = parseMealAnalysisResponse(aiResponse, locale, userId)
+        // (c) 짧은 트랜잭션: AI 응답 파싱 + 결과 저장
+        return transactionTemplate.execute {
+            val parsedResponse = parseMealAnalysisResponse(aiResponse, locale, userId)
 
-        // 분석 결과를 DB에 저장
-        val mealType = determineMealType(userId)
-        val mealLog = MealLog(
-            user = user,
-            mealType = mealType,
-            foods = parsedResponse.mealInfo.ingredients.joinToString(", "),
-            calories = parsedResponse.calories,
-            protein = parsedResponse.macros.protein,
-            carbs = parsedResponse.macros.carbs,
-            fat = parsedResponse.macros.fat,
-            imageUrl = request.imageUrl,
-            timestamp = AppTime.utcNow()
-        )
-        val savedMeal = mealLogRepository.save(mealLog)
+            // 분석 결과를 DB에 저장
+            val mealType = determineMealType(userId)
+            val mealLog = MealLog(
+                user = user,
+                mealType = mealType,
+                foods = parsedResponse.mealInfo.ingredients.joinToString(", "),
+                calories = parsedResponse.calories,
+                protein = parsedResponse.macros.protein,
+                carbs = parsedResponse.macros.carbs,
+                fat = parsedResponse.macros.fat,
+                imageUrl = request.imageUrl,
+                timestamp = AppTime.utcNow()
+            )
+            val savedMeal = mealLogRepository.save(mealLog)
 
-        // 응답에 자동 저장된 mealLogId + mealType 포함 (프론트가 통계 즉시 반영하기 위해)
-        val response = parsedResponse.copy(
-            mealLogId = savedMeal.id,
-            mealTypeEnum = mealType.name
-        )
+            // 응답에 자동 저장된 mealLogId + mealType 포함 (프론트가 통계 즉시 반영하기 위해)
+            val response = parsedResponse.copy(
+                mealLogId = savedMeal.id,
+                mealTypeEnum = mealType.name
+            )
 
-        // 채팅 메시지로도 저장
-        val userMessage = AILocalization.message("nutrition.chat.request.analysis", locale)
+            // 채팅 메시지로도 저장
+            val userMessage = AILocalization.message("nutrition.chat.request.analysis", locale)
 
-        val aiResponseText = formatMealAnalysisForChat(response, locale)
+            val aiResponseText = formatMealAnalysisForChat(response, locale)
 
-        val chatMessage = ChatMessage(
-            user = user,
-            userMessage = userMessage,
-            aiResponse = aiResponseText,
-            messageType = MessageType.IMAGE,
-            attachmentUrl = request.imageUrl,
-            status = MessageStatus.COMPLETED
-        )
-        chatMessageRepository.save(chatMessage)
+            val chatMessage = ChatMessage(
+                user = user,
+                userMessage = userMessage,
+                aiResponse = aiResponseText,
+                messageType = MessageType.IMAGE,
+                attachmentUrl = request.imageUrl,
+                status = MessageStatus.COMPLETED
+            )
+            chatMessageRepository.save(chatMessage)
 
-        return response
+            response
+        }!!
     }
 
     @Transactional(readOnly = true)
@@ -209,6 +216,7 @@ class NutritionService(
         )
     }
 
+    @Transactional
     fun updateMealLog(userId: Long, mealLogId: Long, request: UpdateMealLogRequest): NutritionLogResponse {
         val meal = mealLogRepository.findById(mealLogId)
             .orElseThrow { ResourceNotFoundException("Meal log not found") }
@@ -240,6 +248,7 @@ class NutritionService(
         return NutritionLogResponse(success = true, mealId = mealLogId)
     }
 
+    @Transactional
     fun deleteMealLog(userId: Long, mealLogId: Long): NutritionLogResponse {
         val meal = mealLogRepository.findById(mealLogId)
             .orElseThrow { ResourceNotFoundException("Meal log not found") }
@@ -284,6 +293,7 @@ class NutritionService(
         return sb.toString().trim()
     }
 
+    @Transactional
     fun uploadMealImage(userId: Long, file: MultipartFile): ImageUploadResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
@@ -415,33 +425,38 @@ class NutritionService(
     }
 
     fun getDailyMealPlan(userId: Long): DailyMealPlanResponse {
-        val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("User not found") }
+        // (a) 짧은 트랜잭션: 사용자 조회 + 프로필 조회
+        val user = transactionTemplate.execute {
+            val user = userRepository.findById(userId)
+                .orElseThrow { ResourceNotFoundException("User not found") }
+            // 사용자 프로필 가져오기 (호출부에서 직접 사용하진 않지만 프로필 존재 여부를 사전 확인)
+            userProfileRepository.findByUser(user).orElse(null)
+            user
+        }!!
         val locale = resolveLocale(userId)
 
-        // 사용자 프로필 가져오기
-        val userProfile = userProfileRepository.findByUser(user).orElse(null)
-
-        // AI를 통한 식단 추천 생성
+        // (b) 트랜잭션 밖: AI를 통한 식단 추천 생성 (블로킹 외부 호출 — DB 커넥션 점유 없음)
         val aiResponse = geminiAIService.generateDailyMealPlan(user)
 
-        // AI 응답 파싱
-        val response = parseDailyMealPlanResponse(aiResponse, locale)
+        // (c) 짧은 트랜잭션: AI 응답 파싱 + 채팅 메시지 저장
+        return transactionTemplate.execute {
+            val response = parseDailyMealPlanResponse(aiResponse, locale)
 
-        // 채팅 메시지로 저장
-        val userMessage = AILocalization.message("nutrition.chat.request.daily_plan", locale)
-        val aiResponseText = formatDailyMealPlanForChat(response, locale)
+            // 채팅 메시지로 저장
+            val userMessage = AILocalization.message("nutrition.chat.request.daily_plan", locale)
+            val aiResponseText = formatDailyMealPlanForChat(response, locale)
 
-        val chatMessage = ChatMessage(
-            user = user,
-            userMessage = userMessage,
-            aiResponse = aiResponseText,
-            messageType = MessageType.TEXT,
-            status = MessageStatus.COMPLETED
-        )
-        chatMessageRepository.save(chatMessage)
+            val chatMessage = ChatMessage(
+                user = user,
+                userMessage = userMessage,
+                aiResponse = aiResponseText,
+                messageType = MessageType.TEXT,
+                status = MessageStatus.COMPLETED
+            )
+            chatMessageRepository.save(chatMessage)
 
-        return response
+            response
+        }!!
     }
 
     private fun parseDailyMealPlanResponse(aiResponse: String, locale: String): DailyMealPlanResponse {

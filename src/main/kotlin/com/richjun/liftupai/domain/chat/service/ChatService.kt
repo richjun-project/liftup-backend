@@ -18,47 +18,54 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
 
 @Service
-@Transactional
 class ChatService(
     private val chatMessageRepository: ChatMessageRepository,
     private val userRepository: UserRepository,
     private val userSettingsRepository: UserSettingsRepository,
     private val geminiAIService: GeminiAIService,
     private val aiAnalysisService: AIAnalysisService,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val transactionTemplate: TransactionTemplate
 ) {
 
     fun sendMessage(userId: Long, request: ChatMessageRequest): ChatMessageResponse {
-        val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("User not found") }
+        lateinit var user: User
 
-        // 사용자 메시지 저장
-        var chatMessage = ChatMessage(
-            user = user,
-            userMessage = request.message,
-            messageType = if (request.attachments.isNullOrEmpty()) MessageType.TEXT else MessageType.IMAGE,
-            attachmentUrl = request.attachments?.firstOrNull(),
-            status = MessageStatus.PROCESSING
-        )
+        // (a) 짧은 트랜잭션: 사용자 조회 + 사용자 메시지 저장(PROCESSING)
+        var chatMessage = transactionTemplate.execute {
+            user = userRepository.findById(userId)
+                .orElseThrow { ResourceNotFoundException("User not found") }
 
-        chatMessage = chatMessageRepository.save(chatMessage)
+            val newMessage = ChatMessage(
+                user = user,
+                userMessage = request.message,
+                messageType = if (request.attachments.isNullOrEmpty()) MessageType.TEXT else MessageType.IMAGE,
+                attachmentUrl = request.attachments?.firstOrNull(),
+                status = MessageStatus.PROCESSING
+            )
+
+            chatMessageRepository.save(newMessage)
+        }!!
 
         return try {
             val startTime = System.currentTimeMillis()
 
-            // Gemini AI 응답 생성
+            // (b) 트랜잭션 밖: Gemini AI 응답 생성 (블로킹 외부 호출 — DB 커넥션 점유 없음)
             val aiResponse = geminiAIService.generateResponse(request.message, user)
 
             val responseTime = System.currentTimeMillis() - startTime
 
-            // AI 응답으로 메시지 업데이트
-            chatMessage.aiResponse = aiResponse
-            chatMessage.responseTime = responseTime
-            chatMessage.status = MessageStatus.COMPLETED
-            chatMessage = chatMessageRepository.save(chatMessage)
+            // (c) 짧은 트랜잭션: AI 응답으로 메시지 업데이트
+            chatMessage = transactionTemplate.execute {
+                chatMessage.aiResponse = aiResponse
+                chatMessage.responseTime = responseTime
+                chatMessage.status = MessageStatus.COMPLETED
+                chatMessageRepository.save(chatMessage)
+            }!!
 
             ChatMessageResponse(
                 messageId = chatMessage.id,
@@ -67,10 +74,12 @@ class ChatService(
                 timestamp = AppTime.formatUtcRequired(chatMessage.timestamp)
             )
         } catch (e: Exception) {
-            // 에러 발생 시 상태 업데이트
-            chatMessage.status = MessageStatus.FAILED
-            chatMessage.error = e.message
-            chatMessageRepository.save(chatMessage)
+            // 에러 발생 시 상태 업데이트 (짧은 트랜잭션)
+            transactionTemplate.execute {
+                chatMessage.status = MessageStatus.FAILED
+                chatMessage.error = e.message
+                chatMessageRepository.save(chatMessage)
+            }
             throw e
         }
     }
@@ -106,6 +115,7 @@ class ChatService(
         )
     }
 
+    @Transactional
     fun clearChatHistory(userId: Long) {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
@@ -121,25 +131,26 @@ class ChatService(
         difficulty: String?,
         localeOverride: String?
     ): ChatWorkoutRecommendationResponse {
-        val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("User not found") }
+        // (a) 짧은 트랜잭션: 사용자 조회 + 사용자 메시지 저장(PROCESSING)
         val locale = resolveLocale(userId, localeOverride)
-
-        // 사용자 메시지 생성
         val userMessage = buildWorkoutRequestMessage(duration, equipment, targetMuscle, difficulty, locale)
 
-        // 사용자 메시지를 채팅에 저장
-        var chatMessage = ChatMessage(
-            user = user,
-            userMessage = userMessage,
-            messageType = MessageType.TEXT,
-            status = MessageStatus.PROCESSING
-        )
+        var chatMessage = transactionTemplate.execute {
+            val user = userRepository.findById(userId)
+                .orElseThrow { ResourceNotFoundException("User not found") }
 
-        chatMessage = chatMessageRepository.save(chatMessage)
+            val newMessage = ChatMessage(
+                user = user,
+                userMessage = userMessage,
+                messageType = MessageType.TEXT,
+                status = MessageStatus.PROCESSING
+            )
+
+            chatMessageRepository.save(newMessage)
+        }!!
 
         return try {
-            // AI 운동 추천 생성
+            // (b) 트랜잭션 밖: AI 운동 추천 생성 (블로킹 외부 호출 — DB 커넥션 점유 없음)
             val workoutRecommendation = aiAnalysisService.getAIWorkoutRecommendation(
                 userId,
                 duration,
@@ -152,10 +163,12 @@ class ChatService(
             // 추천을 사용자 친화적인 텍스트로 변환
             val aiResponseText = formatWorkoutRecommendationAsText(workoutRecommendation, locale)
 
-            // AI 응답으로 메시지 업데이트
-            chatMessage.aiResponse = aiResponseText
-            chatMessage.status = MessageStatus.COMPLETED
-            chatMessage = chatMessageRepository.save(chatMessage)
+            // (c) 짧은 트랜잭션: AI 응답으로 메시지 업데이트
+            chatMessage = transactionTemplate.execute {
+                chatMessage.aiResponse = aiResponseText
+                chatMessage.status = MessageStatus.COMPLETED
+                chatMessageRepository.save(chatMessage)
+            }!!
 
             ChatWorkoutRecommendationResponse(
                 messageId = chatMessage.id,
@@ -164,10 +177,12 @@ class ChatService(
                 timestamp = AppTime.formatUtcRequired(chatMessage.timestamp)
             )
         } catch (e: Exception) {
-            // 에러 발생 시 상태 업데이트
-            chatMessage.status = MessageStatus.FAILED
-            chatMessage.error = e.message
-            chatMessageRepository.save(chatMessage)
+            // 에러 발생 시 상태 업데이트 (짧은 트랜잭션)
+            transactionTemplate.execute {
+                chatMessage.status = MessageStatus.FAILED
+                chatMessage.error = e.message
+                chatMessageRepository.save(chatMessage)
+            }
             throw e
         }
     }
