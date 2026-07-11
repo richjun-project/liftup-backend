@@ -38,17 +38,8 @@ data class Exercise(
     @Enumerated(EnumType.STRING)
     val equipment: Equipment? = null,
 
-    @Column(name = "equipment_detail")
-    val equipmentDetail: String? = null,
-
-    @Column(name = "source_category")
-    val sourceCategory: String? = null,
-
     @Column(columnDefinition = "TEXT")
     val instructions: String? = null,
-
-    @Column
-    val imageUrl: String? = null,
 
     @Column(name = "vector_id")
     var vectorId: String? = null,

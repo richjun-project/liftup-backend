@@ -26,11 +26,5 @@ data class PersonalRecord(
     val reps: Int,
 
     @Column(nullable = false)
-    val date: LocalDateTime = LocalDateTime.now(),
-
-    @Column
-    val videoUrl: String? = null,
-
-    @Column(columnDefinition = "TEXT")
-    val notes: String? = null
+    val date: LocalDateTime = LocalDateTime.now()
 )

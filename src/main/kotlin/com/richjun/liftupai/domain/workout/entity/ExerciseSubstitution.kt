@@ -22,11 +22,5 @@ class ExerciseSubstitution(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    val reason: SubstitutionReason,
-
-    @Column(nullable = false)
-    val movementPattern: String,
-
-    @Column(columnDefinition = "TEXT")
-    val notes: String? = null
+    val reason: SubstitutionReason
 )

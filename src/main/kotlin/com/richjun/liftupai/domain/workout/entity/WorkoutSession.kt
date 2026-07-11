@@ -43,9 +43,6 @@ data class WorkoutSession(
     @Column
     var isActive: Boolean = true,
 
-    @Column
-    var syncedFromOffline: Boolean = false,
-
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     var workoutType: WorkoutType? = null,
@@ -54,8 +51,5 @@ data class WorkoutSession(
     var programDay: Int? = null,
 
     @Column
-    var programCycle: Int? = null,
-
-    @Column(length = 50)
-    var recommendationType: String? = null
+    var programCycle: Int? = null
 )

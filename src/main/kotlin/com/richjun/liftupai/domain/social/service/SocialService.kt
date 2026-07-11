@@ -6,6 +6,8 @@ import com.richjun.liftupai.domain.social.entity.SharedWorkout
 import com.richjun.liftupai.domain.social.repository.SharedWorkoutRepository
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
+import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
+import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.i18n.ErrorLocalization
@@ -20,7 +22,8 @@ class SocialService(
     private val userProfileRepository: UserProfileRepository,
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val sharedWorkoutRepository: SharedWorkoutRepository,
-    private val workoutLogRepository: com.richjun.liftupai.domain.workout.repository.WorkoutLogRepository,
+    private val workoutExerciseRepository: WorkoutExerciseRepository,
+    private val exerciseSetRepository: ExerciseSetRepository,
     private val userSettingsRepository: UserSettingsRepository
 ) {
 
@@ -39,15 +42,16 @@ class SocialService(
         val shareId = UUID.randomUUID().toString()
         val shareUrl = "https://liftup.ai/workout/$shareId"
 
-        // WorkoutLog를 repository에서 조회
-        val logs = workoutLogRepository.findBySession(session)
-        val totalVolume = logs.sumOf { log -> (log.weight * log.reps).toInt() }
+        // workout_exercises + exercise_sets에서 세트 정보 조회 (workout_logs 대체)
+        val workoutExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
+        val sets = exerciseSetRepository.findByWorkoutExerciseIdIn(workoutExercises.map { it.id })
+        val totalVolume = sets.sumOf { set -> (set.weight * set.reps).toInt() }
         val duration = if (session.endTime != null) {
             java.time.Duration.between(session.startTime, session.endTime).toMinutes()
         } else {
             0L
         }
-        val totalSets = logs.size
+        val totalSets = sets.size
 
         val title = ErrorLocalization.message("social.workout_complete_title", locale, session.name ?: "Workout")
         val stats = ErrorLocalization.message("social.workout_stats", locale, duration, totalVolume / 1000.0, totalSets)

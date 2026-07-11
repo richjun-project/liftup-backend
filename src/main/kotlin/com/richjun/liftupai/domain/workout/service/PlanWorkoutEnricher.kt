@@ -296,7 +296,7 @@ class PlanWorkoutEnricher(
             SubstituteExerciseDto(
                 exerciseId = alt.id,
                 exerciseName = alt.name,
-                imageUrl = alt.imageUrl,
+                imageUrl = null,
                 reason = if (alt.equipment != exercise.equipment) "EQUIPMENT" else "EQUIVALENT"
             )
         }

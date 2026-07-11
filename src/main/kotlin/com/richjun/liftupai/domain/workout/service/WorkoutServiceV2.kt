@@ -196,8 +196,7 @@ class WorkoutServiceV2(
             status = SessionStatus.IN_PROGRESS,
             workoutType = workoutType,
             programDay = programPosition.day,
-            programCycle = programPosition.cycle,
-            recommendationType = "QUICK"
+            programCycle = programPosition.cycle
         )
         val savedSession = workoutSessionRepository.save(session)
         val exerciseEntities = adjustedWorkout.exercises.map { quickExercise ->
@@ -251,8 +250,7 @@ class WorkoutServiceV2(
             status = SessionStatus.IN_PROGRESS,
             workoutType = workoutType,
             programDay = programPosition.day,
-            programCycle = programPosition.cycle,
-            recommendationType = "AI"
+            programCycle = programPosition.cycle
         )
         val savedSession = workoutSessionRepository.save(session)
         val exerciseEntities = request.aiWorkout.exercises.map { aiExercise ->
@@ -733,7 +731,7 @@ class WorkoutServiceV2(
                 category = exercise.category.name,
                 muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
                 equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
-                imageUrl = if (hasGif) generateGifUrl(exercise) else exercise.imageUrl,
+                imageUrl = if (hasGif) generateGifUrl(exercise) else null,
                 thumbnailUrl = generateThumbnailUrl(exercise),
                 videoUrl = generateVideoUrl(exercise),
                 difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale),
@@ -775,7 +773,7 @@ class WorkoutServiceV2(
                 category = exercise.category.name,
                 muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
                 equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
-                imageUrl = if (hasGif) generateGifUrl(exercise) else exercise.imageUrl,
+                imageUrl = if (hasGif) generateGifUrl(exercise) else null,
                 thumbnailUrl = generateThumbnailUrl(exercise),
                 videoUrl = generateVideoUrl(exercise),
                 difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale),
@@ -2839,8 +2837,7 @@ class WorkoutServiceV2(
                     completedAt = if (setData.completed) {
                         setData.completedAt?.let { AppTime.parseClientDateTime(it, resolveTimeZone(userId)) }
                             ?: fallbackCompletedAt
-                    } else null,
-                    notes = if (setData.completed) "completed" else "incomplete"
+                    } else null
                 )
                 exerciseSetRepository.save(exerciseSet)
 

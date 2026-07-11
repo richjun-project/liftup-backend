@@ -24,8 +24,5 @@ data class WorkoutExercise(
     val sets: MutableList<ExerciseSet> = mutableListOf(),
 
     @Column
-    var totalVolume: Double? = null,  // kg
-
-    @Column(columnDefinition = "TEXT")
-    var notes: String? = null
+    var totalVolume: Double? = null  // kg
 )

@@ -575,10 +575,9 @@ class UserService(
         // 공유 운동 (workout_sessions 참조)
         executeDelete("DELETE FROM shared_workouts WHERE user_id = :userId", userId)
 
-        // 운동 세션 체인 (exercise_sets → workout_exercises → workout_logs → workout_sessions)
+        // 운동 세션 체인 (exercise_sets → workout_exercises → workout_sessions)
         executeDelete("DELETE FROM exercise_sets WHERE workout_exercise_id IN (SELECT we.id FROM workout_exercises we JOIN workout_sessions ws ON we.session_id = ws.id WHERE ws.user_id = :userId)", userId)
         executeDelete("DELETE FROM workout_exercises WHERE session_id IN (SELECT id FROM workout_sessions WHERE user_id = :userId)", userId)
-        executeDelete("DELETE FROM workout_logs WHERE session_id IN (SELECT id FROM workout_sessions WHERE user_id = :userId)", userId)
         executeDelete("DELETE FROM workout_sessions WHERE user_id = :userId", userId)
 
         // 운동 플랜 체인 (user_plan_day_exercises → user_plan_days → user_workout_plans)

@@ -2823,43 +2823,6 @@
     "planCategory": "legs"
   },
   {
-    "slug": "archer-stepback",
-    "defaultLocale": "en",
-    "category": "LEGS",
-    "equipment": "BODYWEIGHT",
-    "equipmentDetail": "None",
-    "sourceCategory": "Bodyweight",
-    "movementPattern": "OTHER",
-    "muscleGroups": [
-      "CORE",
-      "GLUTES",
-      "HAMSTRINGS",
-      "LEGS",
-      "QUADRICEPS",
-      "SHOULDERS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 35,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Archer Stepback",
-        "instructions": "1. Stand tall with your back straight and feet shoulder-width apart.\n2. Extend your arms forward while keeping your palms inward.\n3. Take a step backward by extending your left leg behind you while taking your elbow past your back like an archer.\n4. Hold for a while, return to the initial position, and repeat by taking your right leg backward.",
-        "tips": "1. Engage your core to maintain balance and stability throughout the exercise.\n2. Ensure your front knee is aligned with your ankle and does not extend past your toes to avoid strain on your knee joint.\n3. Perform the movement with controlled motions to maximize muscle activation and prevent injury."
-      },
-      {
-        "locale": "ko",
-        "name": "아처 스텝백",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "legs"
-  },
-  {
     "slug": "arm-circle",
     "defaultLocale": "en",
     "category": "BACK",
@@ -30612,42 +30575,6 @@
     "planCategory": "arms"
   },
   {
-    "slug": "dumbbells-bent-over-row",
-    "defaultLocale": "en",
-    "category": "BACK",
-    "equipment": "DUMBBELL",
-    "equipmentDetail": "Dumbbells",
-    "sourceCategory": "Free Weights",
-    "movementPattern": "DUMBBELL_ROW",
-    "muscleGroups": [
-      "BACK",
-      "BICEPS",
-      "LATS",
-      "SHOULDERS",
-      "TRAPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 85,
-    "difficulty": 45,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Dumbbells bent over row",
-        "instructions": "1. Stand with your feet shoulder-width apart, holding a dumbbell in each hand with your palms facing your body. Bend your knees slightly and hinge forward at the hips. Let your arms hang straight down from your shoulders.\n2. Pull the dumbbells towards your hips, keeping your elbows close to your body and squeezing your shoulder blades together at the top of the movement.\n3. Hold the contraction for a moment, focusing on engaging your back muscles.\n4. Slowly lower the dumbbells back to the starting position with control. Repeat for the desired number of repetitions.",
-        "tips": "1. Keep your back straight and avoid rounding your shoulders.\n2. Exhale as you pull the dumbbells up and inhale as you lower them.\n3. Focus on pulling with your back muscles rather than your arms."
-      },
-      {
-        "locale": "ko",
-        "name": "덤벨 벤트 오버 로우",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": true,
-    "planCategory": "back"
-  },
-  {
     "slug": "dumbbells-bent-over-row-pronated-grip",
     "defaultLocale": "en",
     "category": "BACK",
@@ -31024,42 +30951,6 @@
       {
         "locale": "ko",
         "name": "짐볼 라잉 사이드 랫 스트레칭",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": null
-  },
-  {
-    "slug": "exercise-ball-lying-side-lat-stretch-v-2",
-    "defaultLocale": "en",
-    "category": "FULL_BODY",
-    "equipment": "OTHER",
-    "equipmentDetail": "Exercise Ball",
-    "sourceCategory": "Bodyweight",
-    "movementPattern": "STRETCHING",
-    "muscleGroups": [
-      "BACK",
-      "CORE",
-      "LATS",
-      "SHOULDERS",
-      "TRAPS"
-    ],
-    "recommendationTier": "SPECIALIZED",
-    "popularity": 20,
-    "difficulty": 15,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Exercise Ball Lying Side Lat Stretch V.2",
-        "instructions": "1. Begin by lying on your side with an exercise ball positioned under your armpit and lower ribs. Extend your top leg straight and bend your lower leg, placing the foot flat on the floor for stability.\n2. Allow your bottom arm to hang in a comfortable position for support over the ball and extend your left arm overhead, reaching it along the line of your body.\n3. Allow your body to relax over the ball, feeling a stretch along the side of your torso and through your latissimus dorsi (lats).\n4. Hold the stretch for 15-30 seconds, breathing deeply and steadily. Slowly roll back to the starting position and repeat on the other side.",
-        "tips": "1. Focus on deep, steady breathing, inhaling as you extend into the stretch and exhaling as you hold the stretch.\n2. Avoid overextending your back; only stretch as far as is comfortable without causing strain.\n3. Make sure your top leg is firmly planted on the floor to provide stability and support."
-      },
-      {
-        "locale": "ko",
-        "name": "짐볼 라잉 사이드 랫 스트레칭 V.2",
         "instructions": null,
         "tips": null
       }
@@ -32794,40 +32685,6 @@
     "planCategory": "chest"
   },
   {
-    "slug": "hammer-strength-mts-iso-lateral-decline-press-both-arm",
-    "defaultLocale": "en",
-    "category": "CHEST",
-    "equipment": "MACHINE",
-    "equipmentDetail": "Hammer Strength MTS Iso-Lateral Decline Press Machine",
-    "sourceCategory": "Resistance",
-    "movementPattern": "OTHER",
-    "muscleGroups": [
-      "CHEST",
-      "SHOULDERS",
-      "TRICEPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 25,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "HAMMER STRENGTH MTS ISO-LATERAL DECLINE PRESS Both Arm",
-        "instructions": "1. Sit on the Hammer Strength MTS Iso-Lateral Decline Press, back pressed against the backrest and feet flat on the floor. Grasp the handles with both hands, palms facing down.\n2. Press both handles forward by extending your arms.\n3. Squeeze your chest muscles at the bottom of the movement and slowly return the handles to the starting position with control.\n4. Repeat for the desired number of repetitions.",
-        "tips": "1. Exhale as you press the handles and inhale as you return it to the starting position.\n2. Keep your back pressed against the backrest throughout the exercise.\n3. Focus on engaging your chest muscles throughout the movement."
-      },
-      {
-        "locale": "ko",
-        "name": "해머 스트렝스 MTS 아이소래터럴 디클라인 프레스 보스 암",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "chest"
-  },
-  {
     "slug": "hammer-strength-mts-iso-lateral-decline-press-both-arms",
     "defaultLocale": "en",
     "category": "CHEST",
@@ -33549,41 +33406,6 @@
     "planCategory": "legs"
   },
   {
-    "slug": "in-and-out-squats-jump-bodyweight-2",
-    "defaultLocale": "en",
-    "category": "LEGS",
-    "equipment": "BODYWEIGHT",
-    "equipmentDetail": "None (Bodyweight)",
-    "sourceCategory": "Bodyweight",
-    "movementPattern": "PLYOMETRIC",
-    "muscleGroups": [
-      "CALVES",
-      "GLUTES",
-      "HAMSTRINGS",
-      "QUADRICEPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 35,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "In and out squats jump bodyweight (2)",
-        "instructions": "1. Stand tall with your back straight, feet shoulder-width apart, and clasp your hands in front of your chest.\n2. Lower your hips, jump up and land into a squat position with your knees bent, thighs parallel to the floor, and feet placed wider than your shoulder width.\n3. Then lower your hips again, jump up, and land into a squat position with your knees bent, thighs parallel to the floor, and feet placed hip-width apart this time.\n4. Repeat by jumping in and out alternately.",
-        "tips": "1. Land softly on your forefeet to reduce impact on your joints.\n2. Ensure your knees are aligned with your toes when you squat to avoid strain.\n3. Move quickly but with control to maximize the effectiveness of the exercise and prevent injury."
-      },
-      {
-        "locale": "ko",
-        "name": "인 아웃 스쿼트 점프 맨몸 (2)",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "legs"
-  },
-  {
     "slug": "incline-bench-cable-fly",
     "defaultLocale": "en",
     "category": "ARMS",
@@ -33848,39 +33670,6 @@
       {
         "locale": "ko",
         "name": "아이소래터럴 숄더프레스 얼터네이팅 암",
-        "instructions": null,
-        "tips": null
-      }
-    ],
-    "isPlanEligible": false,
-    "planCategory": "shoulders"
-  },
-  {
-    "slug": "iso-lateral-shoulder-press-both-arm",
-    "defaultLocale": "en",
-    "category": "SHOULDERS",
-    "equipment": "MACHINE",
-    "equipmentDetail": "Iso-Lateral Shoulder Press Machine",
-    "sourceCategory": "Resistance",
-    "movementPattern": "VERTICAL_PRESS_MACHINE",
-    "muscleGroups": [
-      "SHOULDERS",
-      "TRICEPS"
-    ],
-    "recommendationTier": "STANDARD",
-    "popularity": 65,
-    "difficulty": 25,
-    "basicExercise": false,
-    "translations": [
-      {
-        "locale": "en",
-        "name": "Iso Lateral Shoulder Press Both Arm",
-        "instructions": "1. Sit on the Iso-Lateral Shoulder Press machine, back pressed against the backrest and feet flat on the floor. Grasp the handles with both hands, palms facing forward.\n2. Press both handles upward by extending your arms fully with control.\n3. Squeeze your shoulder muscles at the top of the movement and slowly return the handles to the starting position.\n4. Repeat for the desired number of repetitions.",
-        "tips": "1. Keep your back pressed against the backrest throughout the exercise.\n2. Focus on engaging your shoulder muscles throughout the movement.\n3. Exhale as you press the handles upward and inhale as you return them to the starting position."
-      },
-      {
-        "locale": "ko",
-        "name": "아이소래터럴 숄더프레스 보스 암",
         "instructions": null,
         "tips": null
       }

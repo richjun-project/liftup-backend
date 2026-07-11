@@ -30,12 +30,6 @@ data class ExerciseSet(
     val rpe: Int? = null,  // Rate of Perceived Exertion (1-10)
 
     @Column
-    val isPersonalRecord: Boolean = false,
-
-    @Column(columnDefinition = "TEXT")
-    var notes: String? = null,
-
-    @Column
     val completed: Boolean = false,
 
     @Column

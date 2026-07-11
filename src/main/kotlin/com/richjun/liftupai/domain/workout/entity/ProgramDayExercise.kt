@@ -38,12 +38,6 @@ class ProgramDayExercise(
     @Column(nullable = false)
     val targetRPE: Double = 7.0,
 
-    @Column
-    val intensityPercentLow: Int? = null,
-
-    @Column
-    val intensityPercentHigh: Int? = null,
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     val setType: SetType = SetType.WORKING,

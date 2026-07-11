@@ -22,8 +22,5 @@ class InjuryExerciseRestriction(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    val severity: InjurySeverity,
-
-    @Column(columnDefinition = "TEXT")
-    val reason: String? = null
+    val severity: InjurySeverity
 )
