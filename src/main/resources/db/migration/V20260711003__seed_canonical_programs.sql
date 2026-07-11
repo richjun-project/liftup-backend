@@ -21,9 +21,9 @@
 --
 -- progressionModel과 deloadEveryNWeeks의 정합성 (ProgramProgressiveOverloadService 참고):
 --   - UNDULATING: calculateUndulating()의 주간 램프가 4주 메조사이클(week-1)%4로 순환하므로
---     deload_every_n_weeks=4로 맞춰 매 메조사이클 끝에 디로드가 오도록 했다.
+--     deload_everynweeks=4로 맞춰 매 메조사이클 끝에 디로드가 오도록 했다.
 --   - BLOCK: getBlockPhaseAdjustment()/calculateBlock()이 7주 블록(week-1)%7로 축적기(0~1주)→
---     강화기(2~3주)→실현기(4~5주)→디로드(6주)를 계산하므로 deload_every_n_weeks=7로 맞춰
+--     강화기(2~3주)→실현기(4~5주)→디로드(6주)를 계산하므로 deload_everynweeks=7로 맞춰
 --     ProgramEnrollmentService.getCurrentPosition()이 계산하는 isDeloadWeek이 엔진의 내부
 --     블록 디로드 주차와 정확히 일치하도록 했다 (그렇지 않으면 두 디로드 판정이 어긋난다).
 --
@@ -51,13 +51,13 @@
 -- FULL_BODY: 초보자 전신 3일 프로그램 (Full Body Beginner)
 INSERT INTO canonical_programs
     (code, name, split_type, target_experience_level, target_goal, days_per_week,
-     program_duration_weeks, deload_every_n_weeks, progression_model, next_program_code,
+     program_duration_weeks, deload_everynweeks, progression_model, next_program_code,
      version, description, is_active)
 SELECT * FROM (SELECT
     'FULL_BODY' AS code, '초보자 전신 3일 프로그램 (Full Body Beginner)' AS name, 'FULL_BODY' AS split_type,
     'BEGINNER' AS target_experience_level, 'MUSCLE_GAIN' AS target_goal,
     3 AS days_per_week, 10 AS program_duration_weeks,
-    6 AS deload_every_n_weeks, 'LINEAR' AS progression_model,
+    6 AS deload_everynweeks, 'LINEAR' AS progression_model,
     'UPPER_LOWER' AS next_program_code, 1 AS version, '주 3회 전신 운동. 스쿼트/벤치프레스/데드리프트 3대 운동을 매 세션 소량씩 증량하는 선형 진행(Linear Progression) 프로그램으로, 초보자의 빠른 신경계 적응을 활용해 가장 단순하고 확실하게 근력을 쌓는다. 6주마다 디로드.' AS description,
     1 AS is_active
 ) AS tmp
@@ -66,13 +66,13 @@ WHERE NOT EXISTS (SELECT 1 FROM canonical_programs WHERE code = 'FULL_BODY');
 -- UPPER_LOWER: 중급자 상하체 4분할 프로그램 (Upper/Lower Split)
 INSERT INTO canonical_programs
     (code, name, split_type, target_experience_level, target_goal, days_per_week,
-     program_duration_weeks, deload_every_n_weeks, progression_model, next_program_code,
+     program_duration_weeks, deload_everynweeks, progression_model, next_program_code,
      version, description, is_active)
 SELECT * FROM (SELECT
     'UPPER_LOWER' AS code, '중급자 상하체 4분할 프로그램 (Upper/Lower Split)' AS name, 'UPPER_LOWER' AS split_type,
     'INTERMEDIATE' AS target_experience_level, 'MUSCLE_GAIN' AS target_goal,
     4 AS days_per_week, 8 AS program_duration_weeks,
-    4 AS deload_every_n_weeks, 'UNDULATING' AS progression_model,
+    4 AS deload_everynweeks, 'UNDULATING' AS progression_model,
     'PPL' AS next_program_code, 1 AS version, '주 4회 상체/하체 분할. 세션마다 고강도(Heavy)·저강도(Volume) 자극을 번갈아 적용하는 일일 파동 주기화(Daily Undulating Periodization)로 근력과 근비대를 동시에 추구한다. 4주 메조사이클마다 디로드.' AS description,
     1 AS is_active
 ) AS tmp
@@ -81,13 +81,13 @@ WHERE NOT EXISTS (SELECT 1 FROM canonical_programs WHERE code = 'UPPER_LOWER');
 -- PPL: 중급자 푸시/풀/레그 6일 분할 (Push/Pull/Legs)
 INSERT INTO canonical_programs
     (code, name, split_type, target_experience_level, target_goal, days_per_week,
-     program_duration_weeks, deload_every_n_weeks, progression_model, next_program_code,
+     program_duration_weeks, deload_everynweeks, progression_model, next_program_code,
      version, description, is_active)
 SELECT * FROM (SELECT
     'PPL' AS code, '중급자 푸시/풀/레그 6일 분할 (Push/Pull/Legs)' AS name, 'PPL' AS split_type,
     'INTERMEDIATE' AS target_experience_level, 'MUSCLE_GAIN' AS target_goal,
     6 AS days_per_week, 8 AS program_duration_weeks,
-    4 AS deload_every_n_weeks, 'UNDULATING' AS progression_model,
+    4 AS deload_everynweeks, 'UNDULATING' AS progression_model,
     'PPLUL' AS next_program_code, 1 AS version, '주 6회 Push/Pull/Legs를 2회씩 반복하는 고빈도 분할. 전반부는 고강도 저반복, 후반부는 고반복 볼륨 세션으로 파동 주기화하여 근육군별 주 2회 자극 빈도를 확보한다. 4주 메조사이클마다 디로드.' AS description,
     1 AS is_active
 ) AS tmp
@@ -96,14 +96,14 @@ WHERE NOT EXISTS (SELECT 1 FROM canonical_programs WHERE code = 'PPL');
 -- PPLUL: 상급자 PPL+상하체 5일 하이브리드 (Advanced Block Periodization)
 INSERT INTO canonical_programs
     (code, name, split_type, target_experience_level, target_goal, days_per_week,
-     program_duration_weeks, deload_every_n_weeks, progression_model, next_program_code,
+     program_duration_weeks, deload_everynweeks, progression_model, next_program_code,
      version, description, is_active)
 SELECT * FROM (SELECT
     'PPLUL' AS code, '상급자 PPL+상하체 5일 하이브리드 (Advanced Block Periodization)' AS name, 'PPLUL' AS split_type,
     'ADVANCED' AS target_experience_level, 'STRENGTH' AS target_goal,
     5 AS days_per_week, 14 AS program_duration_weeks,
-    7 AS deload_every_n_weeks, 'BLOCK' AS progression_model,
-    NULL AS next_program_code, 1 AS version, '주 5회 Push/Pull/Legs/Upper/Lower 하이브리드 분할. 축적기(고반복·고볼륨) → 강화기(중반복·중강도) → 실현기(저반복·고강도) → 디로드로 이어지는 7주 블록 주기화(Block Periodization)를 통해 상급자의 정체기를 관리하며 최고 강도를 향해 쌓아올린다. deload_every_n_weeks=7은 ProgramProgressiveOverloadService의 7주 블록 계산과 정확히 맞물린다.' AS description,
+    7 AS deload_everynweeks, 'BLOCK' AS progression_model,
+    NULL AS next_program_code, 1 AS version, '주 5회 Push/Pull/Legs/Upper/Lower 하이브리드 분할. 축적기(고반복·고볼륨) → 강화기(중반복·중강도) → 실현기(저반복·고강도) → 디로드로 이어지는 7주 블록 주기화(Block Periodization)를 통해 상급자의 정체기를 관리하며 최고 강도를 향해 쌓아올린다. deload_everynweeks=7은 ProgramProgressiveOverloadService의 7주 블록 계산과 정확히 맞물린다.' AS description,
     1 AS is_active
 ) AS tmp
 WHERE NOT EXISTS (SELECT 1 FROM canonical_programs WHERE code = 'PPLUL');
@@ -231,25 +231,25 @@ FROM canonical_programs cp WHERE cp.code = 'PPLUL'
 -- FULL_BODY day 1 (전신 A - 스쿼트/벤치프레스/로우)
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'FULL_BODY' AND pd.day_number = 1
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-full-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 5 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-full-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 5 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'barbell-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 5 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'barbell-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 5 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'bent-over-barbell-row' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'bent-over-barbell-row' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'high-plank' AS slug, 0 AS is_compound, 3 AS `sets`, 30 AS min_reps, 45 AS max_reps, 60 AS rest_seconds, 6.5 AS target_rpe, 'WORKING' AS set_type, 1 AS is_optional, '플랭크: reps는 초 단위 유지 시간' AS notes
+    SELECT 4 AS order_in_day, 'high-plank' AS slug, 0 AS is_compound, 3 AS `sets`, 30 AS min_reps, 45 AS max_reps, 60 AS rest_seconds, 6.5 AS targetrpe, 'WORKING' AS set_type, 1 AS is_optional, '플랭크: reps는 초 단위 유지 시간' AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -260,25 +260,25 @@ WHERE NOT EXISTS (
 -- FULL_BODY day 2 (전신 B - 스쿼트/오버헤드프레스/풀업)
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'FULL_BODY' AND pd.day_number = 2
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-full-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 5 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-full-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 5 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'barbell-seated-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 5 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'barbell-seated-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 5 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'assisted-pull-up' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'assisted-pull-up' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'side-plank' AS slug, 0 AS is_compound, 3 AS `sets`, 20 AS min_reps, 30 AS max_reps, 60 AS rest_seconds, 6.5 AS target_rpe, 'WORKING' AS set_type, 1 AS is_optional, '사이드 플랭크: 좌우 각 20~30초' AS notes
+    SELECT 4 AS order_in_day, 'side-plank' AS slug, 0 AS is_compound, 3 AS `sets`, 20 AS min_reps, 30 AS max_reps, 60 AS rest_seconds, 6.5 AS targetrpe, 'WORKING' AS set_type, 1 AS is_optional, '사이드 플랭크: 좌우 각 20~30초' AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -289,25 +289,25 @@ WHERE NOT EXISTS (
 -- FULL_BODY day 3 (전신 C - 데드리프트/벤치프레스/로우)
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'FULL_BODY' AND pd.day_number = 3
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 4 AS min_reps, 6 AS max_reps, 210 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 4 AS min_reps, 6 AS max_reps, 210 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'barbell-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 5 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'barbell-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 5 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'bent-over-barbell-row' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'bent-over-barbell-row' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'hanging-knee-raises' AS slug, 0 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 60 AS rest_seconds, 6.5 AS target_rpe, 'WORKING' AS set_type, 1 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'hanging-knee-raises' AS slug, 0 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 60 AS rest_seconds, 6.5 AS targetrpe, 'WORKING' AS set_type, 1 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -318,29 +318,29 @@ WHERE NOT EXISTS (
 -- UPPER_LOWER day 1 (상체 A (고강도))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'UPPER_LOWER' AND pd.day_number = 1
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-bench-press' AS slug, 1 AS is_compound, 4 AS `sets`, 4 AS min_reps, 6 AS max_reps, 180 AS rest_seconds, 8.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-bench-press' AS slug, 1 AS is_compound, 4 AS `sets`, 4 AS min_reps, 6 AS max_reps, 180 AS rest_seconds, 8.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'bent-over-barbell-row' AS slug, 1 AS is_compound, 4 AS `sets`, 6 AS min_reps, 8 AS max_reps, 150 AS rest_seconds, 8.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'bent-over-barbell-row' AS slug, 1 AS is_compound, 4 AS `sets`, 6 AS min_reps, 8 AS max_reps, 150 AS rest_seconds, 8.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'barbell-seated-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 150 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'barbell-seated-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 150 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'cable-pulldown' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 90 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'cable-pulldown' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 90 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'ez-barbell-curl' AS slug, 0 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'ez-barbell-curl' AS slug, 0 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 6 AS order_in_day, 'barbell-lying-triceps-skull-crusher' AS slug, 0 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 6 AS order_in_day, 'barbell-lying-triceps-skull-crusher' AS slug, 0 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -351,27 +351,27 @@ WHERE NOT EXISTS (
 -- UPPER_LOWER day 2 (하체 A (고강도))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'UPPER_LOWER' AND pd.day_number = 2
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-full-squat' AS slug, 1 AS is_compound, 4 AS `sets`, 4 AS min_reps, 6 AS max_reps, 210 AS rest_seconds, 8.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-full-squat' AS slug, 1 AS is_compound, 4 AS `sets`, 4 AS min_reps, 6 AS max_reps, 210 AS rest_seconds, 8.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'barbell-romanian-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'barbell-romanian-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'leg-press-machine-normal-stance' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'leg-press-machine-normal-stance' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'lying-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'lying-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'hanging-knee-raises' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 1 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'hanging-knee-raises' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 1 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -382,29 +382,29 @@ WHERE NOT EXISTS (
 -- UPPER_LOWER day 3 (상체 B (저강도/볼륨))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'UPPER_LOWER' AND pd.day_number = 3
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'dumbbell-incline-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'dumbbell-incline-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'dumbbell-incline-row' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'dumbbell-incline-row' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'dumbbell-standing-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'dumbbell-standing-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'straight-bar-cable-row-normal-grip' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 90 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'straight-bar-cable-row-normal-grip' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 90 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'lateral-raises-dumbbell' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'lateral-raises-dumbbell' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 6 AS order_in_day, 'resistance-band-face-pull' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 6 AS order_in_day, 'resistance-band-face-pull' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -415,27 +415,27 @@ WHERE NOT EXISTS (
 -- UPPER_LOWER day 4 (하체 B (저강도/볼륨))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'UPPER_LOWER' AND pd.day_number = 4
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-front-squats' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-front-squats' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'dumbbell-hip-thrust' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'dumbbell-hip-thrust' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'barbell-bulgarian-split-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, '좌우 각 8~10회' AS notes
+    SELECT 3 AS order_in_day, 'barbell-bulgarian-split-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, '좌우 각 8~10회' AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'seated-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'seated-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'dumbbell-shrugs' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 1 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'dumbbell-shrugs' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 1 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -446,27 +446,27 @@ WHERE NOT EXISTS (
 -- PPL day 1 (Push A (고강도))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPL' AND pd.day_number = 1
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-bench-press' AS slug, 1 AS is_compound, 4 AS `sets`, 4 AS min_reps, 6 AS max_reps, 180 AS rest_seconds, 8.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-bench-press' AS slug, 1 AS is_compound, 4 AS `sets`, 4 AS min_reps, 6 AS max_reps, 180 AS rest_seconds, 8.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'barbell-seated-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 150 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'barbell-seated-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 150 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'barbell-incline-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'barbell-incline-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'lateral-raises-dumbbell' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'lateral-raises-dumbbell' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'barbell-lying-triceps-skull-crusher' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'barbell-lying-triceps-skull-crusher' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -477,29 +477,29 @@ WHERE NOT EXISTS (
 -- PPL day 2 (Pull A (고강도))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPL' AND pd.day_number = 2
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 4 AS min_reps, 6 AS max_reps, 210 AS rest_seconds, 8.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 4 AS min_reps, 6 AS max_reps, 210 AS rest_seconds, 8.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'bent-over-barbell-row' AS slug, 1 AS is_compound, 4 AS `sets`, 6 AS min_reps, 8 AS max_reps, 150 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'bent-over-barbell-row' AS slug, 1 AS is_compound, 4 AS `sets`, 6 AS min_reps, 8 AS max_reps, 150 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'assisted-pull-up' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'assisted-pull-up' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'dumbbell-incline-row' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'dumbbell-incline-row' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'ez-barbell-curl' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'ez-barbell-curl' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 6 AS order_in_day, 'resistance-band-face-pull' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 6 AS order_in_day, 'resistance-band-face-pull' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -510,27 +510,27 @@ WHERE NOT EXISTS (
 -- PPL day 3 (Legs A (고강도))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPL' AND pd.day_number = 3
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-full-squat' AS slug, 1 AS is_compound, 4 AS `sets`, 4 AS min_reps, 6 AS max_reps, 210 AS rest_seconds, 8.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-full-squat' AS slug, 1 AS is_compound, 4 AS `sets`, 4 AS min_reps, 6 AS max_reps, 210 AS rest_seconds, 8.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'barbell-romanian-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'barbell-romanian-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 180 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'leg-press-machine-normal-stance' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'leg-press-machine-normal-stance' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'lying-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'lying-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'hanging-knee-raises' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 1 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'hanging-knee-raises' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 1 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -541,27 +541,27 @@ WHERE NOT EXISTS (
 -- PPL day 4 (Push B (볼륨))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPL' AND pd.day_number = 4
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'dumbbell-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'dumbbell-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'dumbbell-standing-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'dumbbell-standing-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'dumbbell-fly-flat-bench' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 15 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'dumbbell-fly-flat-bench' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 15 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'pec-deck-fly-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'pec-deck-fly-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'barbell-close-grip-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'barbell-close-grip-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -572,27 +572,27 @@ WHERE NOT EXISTS (
 -- PPL day 5 (Pull B (볼륨))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPL' AND pd.day_number = 5
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'cable-seated-row' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'cable-seated-row' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'cable-pulldown' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'cable-pulldown' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'straight-bar-cable-row-normal-grip' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 90 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'straight-bar-cable-row-normal-grip' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 90 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'dumbbell-bent-over-face-pull' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'dumbbell-bent-over-face-pull' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'dumbbell-shrugs' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'dumbbell-shrugs' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -603,27 +603,27 @@ WHERE NOT EXISTS (
 -- PPL day 6 (Legs B (볼륨))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPL' AND pd.day_number = 6
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'dumbbell-goblet-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 15 AS max_reps, 90 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'dumbbell-goblet-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 15 AS max_reps, 90 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'barbell-hip-thrust' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'barbell-hip-thrust' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'barbell-bulgarian-split-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, '좌우 각 8~10회' AS notes
+    SELECT 3 AS order_in_day, 'barbell-bulgarian-split-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, '좌우 각 8~10회' AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'seated-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'seated-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'dumbbell-lunge-to-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 90 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, '좌우 각 8~10회, 전신 컨디셔닝 마무리' AS notes
+    SELECT 5 AS order_in_day, 'dumbbell-lunge-to-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 90 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, '좌우 각 8~10회, 전신 컨디셔닝 마무리' AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -634,27 +634,27 @@ WHERE NOT EXISTS (
 -- PPLUL day 1 (Push (Block))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPLUL' AND pd.day_number = 1
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-bench-press' AS slug, 1 AS is_compound, 4 AS `sets`, 8 AS min_reps, 10 AS max_reps, 180 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-bench-press' AS slug, 1 AS is_compound, 4 AS `sets`, 8 AS min_reps, 10 AS max_reps, 180 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'barbell-seated-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'barbell-seated-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'dumbbell-incline-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'dumbbell-incline-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'lateral-raises-dumbbell' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'lateral-raises-dumbbell' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'barbell-lying-triceps-skull-crusher' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'barbell-lying-triceps-skull-crusher' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -665,27 +665,27 @@ WHERE NOT EXISTS (
 -- PPLUL day 2 (Pull (Block))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPLUL' AND pd.day_number = 2
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 210 AS rest_seconds, 8.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 210 AS rest_seconds, 8.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'bent-over-barbell-row' AS slug, 1 AS is_compound, 4 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'bent-over-barbell-row' AS slug, 1 AS is_compound, 4 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'pull-up-normal-grip' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'pull-up-normal-grip' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'cable-pulldown' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'cable-pulldown' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'ez-barbell-curl' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'ez-barbell-curl' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -696,27 +696,27 @@ WHERE NOT EXISTS (
 -- PPLUL day 3 (Legs (Block))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPLUL' AND pd.day_number = 3
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-full-squat' AS slug, 1 AS is_compound, 4 AS `sets`, 8 AS min_reps, 10 AS max_reps, 210 AS rest_seconds, 8.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-full-squat' AS slug, 1 AS is_compound, 4 AS `sets`, 8 AS min_reps, 10 AS max_reps, 210 AS rest_seconds, 8.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'barbell-romanian-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 180 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'barbell-romanian-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 180 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'leg-press-machine-normal-stance' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'leg-press-machine-normal-stance' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'lying-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'lying-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'barbell-hip-thrust' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'barbell-hip-thrust' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -727,29 +727,29 @@ WHERE NOT EXISTS (
 -- PPLUL day 4 (Upper (Block))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPLUL' AND pd.day_number = 4
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-incline-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-incline-bench-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'cable-seated-row' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'cable-seated-row' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 150 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'dumbbell-standing-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'dumbbell-standing-overhead-press' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'dumbbell-incline-row' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 90 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 4 AS order_in_day, 'dumbbell-incline-row' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 90 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'lateral-raises-dumbbell' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'lateral-raises-dumbbell' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 60 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 6 AS order_in_day, 'barbell-lying-triceps-skull-crusher' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 6 AS order_in_day, 'barbell-lying-triceps-skull-crusher' AS slug, 0 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
@@ -760,27 +760,27 @@ WHERE NOT EXISTS (
 -- PPLUL day 5 (Lower (Block))
 INSERT INTO program_day_exercises
     (program_day_id, exercise_id, order_in_day, is_compound, `sets`, min_reps, max_reps,
-     rest_seconds, target_rpe, set_type, is_optional, notes)
+     rest_seconds, targetrpe, set_type, is_optional, notes)
 SELECT
     d.id,
     (SELECT id FROM exercises WHERE slug = x.slug),
     x.order_in_day, x.is_compound, x.`sets`, x.min_reps, x.max_reps,
-    x.rest_seconds, x.target_rpe, x.set_type, x.is_optional, x.notes
+    x.rest_seconds, x.targetrpe, x.set_type, x.is_optional, x.notes
 FROM (
     SELECT pd.id AS id FROM program_days pd
     JOIN canonical_programs cp ON cp.id = pd.program_id
     WHERE cp.code = 'PPLUL' AND pd.day_number = 5
 ) d
 CROSS JOIN (
-    SELECT 1 AS order_in_day, 'barbell-sumo-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 210 AS rest_seconds, 8.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 1 AS order_in_day, 'barbell-sumo-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 6 AS min_reps, 8 AS max_reps, 210 AS rest_seconds, 8.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 2 AS order_in_day, 'barbell-front-squats' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 180 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 2 AS order_in_day, 'barbell-front-squats' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 180 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 3 AS order_in_day, 'dumbbell-romanian-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 3 AS order_in_day, 'dumbbell-romanian-deadlift' AS slug, 1 AS is_compound, 3 AS `sets`, 10 AS min_reps, 12 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
     UNION ALL
-    SELECT 4 AS order_in_day, 'barbell-bulgarian-split-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, '좌우 각 8~10회' AS notes
+    SELECT 4 AS order_in_day, 'barbell-bulgarian-split-squat' AS slug, 1 AS is_compound, 3 AS `sets`, 8 AS min_reps, 10 AS max_reps, 120 AS rest_seconds, 7.5 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, '좌우 각 8~10회' AS notes
     UNION ALL
-    SELECT 5 AS order_in_day, 'seated-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 75 AS rest_seconds, 7.0 AS target_rpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
+    SELECT 5 AS order_in_day, 'seated-leg-curl-machine' AS slug, 0 AS is_compound, 3 AS `sets`, 12 AS min_reps, 15 AS max_reps, 75 AS rest_seconds, 7.0 AS targetrpe, 'WORKING' AS set_type, 0 AS is_optional, NULL AS notes
 ) x
 WHERE NOT EXISTS (
     SELECT 1 FROM program_day_exercises pde
