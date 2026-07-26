@@ -38,7 +38,7 @@ class WorkoutService(
     private val exerciseTranslationRepository: ExerciseTranslationRepository
 ) {
 
-    @Deprecated("Use WorkoutServiceV2.startNewWorkout() instead")
+    @Deprecated("Use WorkoutSessionService.startNewWorkout() instead")
     fun startWorkout(userId: Long, request: StartWorkoutRequest): StartWorkoutResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
@@ -83,7 +83,7 @@ class WorkoutService(
         }
     }
 
-    @Deprecated("Use WorkoutServiceV2.completeWorkout() instead")
+    @Deprecated("Use WorkoutSessionService.completeWorkout() instead")
     fun endWorkout(userId: Long, sessionId: Long, request: EndWorkoutRequest): WorkoutSummaryResponse {
         val session = findUserSession(userId, sessionId)
 

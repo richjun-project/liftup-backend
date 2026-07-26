@@ -3,7 +3,7 @@ package com.richjun.liftupai.domain.workout.controller
 import com.richjun.liftupai.domain.stats.dto.*
 import com.richjun.liftupai.domain.stats.service.StatsService
 import com.richjun.liftupai.domain.workout.dto.*
-import com.richjun.liftupai.domain.workout.service.WorkoutServiceV2
+import com.richjun.liftupai.domain.workout.service.WorkoutStatsService
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.security.CustomUserDetails
 import org.springframework.http.ResponseEntity
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/v2/stats")
 class StatsControllerV2(
-    private val workoutServiceV2: WorkoutServiceV2,
+    private val workoutStatsService: WorkoutStatsService,
     private val workoutPlanService: com.richjun.liftupai.domain.workout.service.WorkoutPlanService,
     private val statsService: StatsService,
     private val recoveryService: com.richjun.liftupai.domain.recovery.service.RecoveryService
@@ -25,7 +25,7 @@ class StatsControllerV2(
         @RequestParam(required = false) sessionId: Long?,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<WorkoutCompletionStats>> {
-        val response = workoutServiceV2.getWorkoutCompletionStats(userDetails.getId(), sessionId, locale)
+        val response = workoutStatsService.getWorkoutCompletionStats(userDetails.getId(), sessionId, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -36,7 +36,7 @@ class StatsControllerV2(
         @RequestParam month: Int,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<WorkoutCalendarResponse>> {
-        val response = workoutServiceV2.getWorkoutCalendar(userDetails.getId(), year, month, locale)
+        val response = workoutStatsService.getWorkoutCalendar(userDetails.getId(), year, month, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

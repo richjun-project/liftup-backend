@@ -46,7 +46,7 @@ class AIAnalysisService(
     private val geminiAIService: GeminiAIService,
     private val objectMapper: ObjectMapper,
     private val workoutProgressTracker: WorkoutProgressTracker,
-    private val workoutServiceV2: com.richjun.liftupai.domain.workout.service.WorkoutServiceV2,
+    private val ptRecommendationEngine: com.richjun.liftupai.domain.workout.service.PTRecommendationEngine,
     private val workoutSessionRepository: com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository,
     private val chatMessageRepository: ChatMessageRepository,
     private val exerciseNameNormalizer: ExerciseNameNormalizer,
@@ -902,13 +902,13 @@ class AIAnalysisService(
 
                 // PT 시스템으로 세트/렙/무게/휴식 전부 계산
                 val ptRec = try {
-                    workoutServiceV2.calculateFullPTRecommendation(user, matchedExercise)
+                    ptRecommendationEngine.calculateFullPTRecommendation(user, matchedExercise)
                 } catch (e: Exception) {
                     null
                 }
 
                 val suggestedWeight = ptRec?.weight
-                    ?: try { workoutServiceV2.calculateSuggestedWeight(user, matchedExercise) }
+                    ?: try { ptRecommendationEngine.calculateSuggestedWeight(user, matchedExercise) }
                     catch (e: Exception) { calculateWeightByExerciseName(user, matchedExercise.name) }
 
                 // AI 제안값 추출
@@ -1174,7 +1174,7 @@ class AIAnalysisService(
         val translations = translationMap(selectedExercises, locale)
         return selectedExercises.take(exerciseCount).mapIndexed { index, exercise ->
             val ptRec = try {
-                workoutServiceV2.calculateFullPTRecommendation(user, exercise)
+                ptRecommendationEngine.calculateFullPTRecommendation(user, exercise)
             } catch (e: Exception) { null }
 
             AIExerciseDetail(

@@ -58,7 +58,7 @@ class WorkoutServiceV2Test {
 
     @Test
     fun `periodization phases should have distinct intensity ranges`() {
-        // From WorkoutServiceV2 generateFinalRecommendation
+        // From WorkoutRecommendationServiceV2 generateFinalRecommendation
         val phases = mapOf(
             "ACCUMULATION" to (0.65..0.75),
             "INTENSIFICATION" to (0.75..0.85),

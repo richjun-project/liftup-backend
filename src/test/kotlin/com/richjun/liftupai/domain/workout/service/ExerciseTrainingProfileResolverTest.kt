@@ -326,7 +326,7 @@ class ExerciseTrainingProfileResolverTest {
 
         @Test
         fun `PRIMARY_COMPOUND ACCUMULATION returns 4 sets 6-8 reps 180s rest`() {
-            val config = resolver.getConfig(WorkoutServiceV2.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.PRIMARY_COMPOUND)
+            val config = resolver.getConfig(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.PRIMARY_COMPOUND)
             assertEquals(4, config.sets)
             assertEquals("6-8", config.reps)
             assertEquals(180, config.restSeconds)
@@ -334,7 +334,7 @@ class ExerciseTrainingProfileResolverTest {
 
         @Test
         fun `PRIMARY_COMPOUND REALIZATION returns 5 sets 1-3 reps 240s rest`() {
-            val config = resolver.getConfig(WorkoutServiceV2.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.PRIMARY_COMPOUND)
+            val config = resolver.getConfig(PTRecommendationEngine.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.PRIMARY_COMPOUND)
             assertEquals(5, config.sets)
             assertEquals("1-3", config.reps)
             assertEquals(240, config.restSeconds)
@@ -342,7 +342,7 @@ class ExerciseTrainingProfileResolverTest {
 
         @Test
         fun `ISOLATION ACCUMULATION returns 3 sets 12-15 reps 60s rest`() {
-            val config = resolver.getConfig(WorkoutServiceV2.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.ISOLATION)
+            val config = resolver.getConfig(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.ISOLATION)
             assertEquals(3, config.sets)
             assertEquals("12-15", config.reps)
             assertEquals(60, config.restSeconds)
@@ -350,7 +350,7 @@ class ExerciseTrainingProfileResolverTest {
 
         @Test
         fun `ISOLATION DELOAD returns 2 sets 15-20 reps 45s rest`() {
-            val config = resolver.getConfig(WorkoutServiceV2.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.ISOLATION)
+            val config = resolver.getConfig(PTRecommendationEngine.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.ISOLATION)
             assertEquals(2, config.sets)
             assertEquals("15-20", config.reps)
             assertEquals(45, config.restSeconds)
@@ -358,7 +358,7 @@ class ExerciseTrainingProfileResolverTest {
 
         @Test
         fun `CORE_STABILITY ACCUMULATION returns 3 sets 30-60s reps 45s rest`() {
-            val config = resolver.getConfig(WorkoutServiceV2.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.CORE_STABILITY)
+            val config = resolver.getConfig(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.CORE_STABILITY)
             assertEquals(3, config.sets)
             assertEquals("30-60s", config.reps)
             assertEquals(45, config.restSeconds)
@@ -366,7 +366,7 @@ class ExerciseTrainingProfileResolverTest {
 
         @Test
         fun `OLYMPIC_LIFT REALIZATION returns 6 sets 1 rep 240s rest`() {
-            val config = resolver.getConfig(WorkoutServiceV2.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.OLYMPIC_LIFT)
+            val config = resolver.getConfig(PTRecommendationEngine.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.OLYMPIC_LIFT)
             assertEquals(6, config.sets)
             assertEquals("1", config.reps)
             assertEquals(240, config.restSeconds)
@@ -374,7 +374,7 @@ class ExerciseTrainingProfileResolverTest {
 
         @Test
         fun `PLYOMETRIC INTENSIFICATION returns 3 sets 3-5 reps 120s rest`() {
-            val config = resolver.getConfig(WorkoutServiceV2.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.PLYOMETRIC)
+            val config = resolver.getConfig(PTRecommendationEngine.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.PLYOMETRIC)
             assertEquals(3, config.sets)
             assertEquals("3-5", config.reps)
             assertEquals(120, config.restSeconds)
@@ -382,7 +382,7 @@ class ExerciseTrainingProfileResolverTest {
 
         @Test
         fun `CARDIO returns 1 set time-based for all phases`() {
-            WorkoutServiceV2.PeriodizationPhase.entries.forEach { phase ->
+            PTRecommendationEngine.PeriodizationPhase.entries.forEach { phase ->
                 val config = resolver.getConfig(phase, ExerciseTrainingProfile.CARDIO)
                 assertEquals(1, config.sets, "CARDIO $phase sets")
                 assertEquals("time-based", config.reps, "CARDIO $phase reps")
@@ -393,7 +393,7 @@ class ExerciseTrainingProfileResolverTest {
         @Test
         fun `all 28 matrix cells are defined`() {
             ExerciseTrainingProfile.entries.forEach { profile ->
-                WorkoutServiceV2.PeriodizationPhase.entries.forEach { phase ->
+                PTRecommendationEngine.PeriodizationPhase.entries.forEach { phase ->
                     val config = resolver.getConfig(phase, profile)
                     assertTrue(config.sets > 0, "Missing config for $phase x $profile: sets should be > 0")
                     assertTrue(config.reps.isNotBlank(), "Missing config for $phase x $profile: reps should not be blank")
@@ -426,7 +426,7 @@ class ExerciseTrainingProfileResolverTest {
             every { classifier.classifyExercise(squat) } returns ExercisePatternClassifier.MovementPattern.SQUAT
             every { classifier.classifyExercise(curl) } returns ExercisePatternClassifier.MovementPattern.BICEP_CURL_BARBELL
 
-            val phase = WorkoutServiceV2.PeriodizationPhase.ACCUMULATION
+            val phase = PTRecommendationEngine.PeriodizationPhase.ACCUMULATION
             val squatConfig = resolver.resolveConfig(squat, phase)
             val curlConfig = resolver.resolveConfig(curl, phase)
 
@@ -452,7 +452,7 @@ class ExerciseTrainingProfileResolverTest {
             every { classifier.classifyExercise(bench) } returns ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_BARBELL
             every { classifier.classifyExercise(plank) } returns ExercisePatternClassifier.MovementPattern.PLANK
 
-            val phase = WorkoutServiceV2.PeriodizationPhase.DELOAD
+            val phase = PTRecommendationEngine.PeriodizationPhase.DELOAD
             val benchConfig = resolver.resolveConfig(bench, phase)
             val plankConfig = resolver.resolveConfig(plank, phase)
 
@@ -462,7 +462,7 @@ class ExerciseTrainingProfileResolverTest {
 
         @Test
         fun `primary compound gets more rest than isolation in every phase`() {
-            WorkoutServiceV2.PeriodizationPhase.entries.forEach { phase ->
+            PTRecommendationEngine.PeriodizationPhase.entries.forEach { phase ->
                 val primaryConfig = resolver.getConfig(phase, ExerciseTrainingProfile.PRIMARY_COMPOUND)
                 val isolationConfig = resolver.getConfig(phase, ExerciseTrainingProfile.ISOLATION)
 

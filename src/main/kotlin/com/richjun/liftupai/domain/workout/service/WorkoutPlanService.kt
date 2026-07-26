@@ -690,7 +690,7 @@ class WorkoutPlanService(
 
     /**
      * 운동 타입을 필터링용 타겟 근육 문자열로 매핑
-     * WorkoutServiceV2의 필터링 로직과 호환되도록 영어로 반환
+     * ExerciseCatalogDetailService의 필터링 로직과 호환되도록 영어로 반환
      */
     private fun mapWorkoutTypeToTargetMuscle(workoutType: com.richjun.liftupai.domain.workout.entity.WorkoutType): String {
         val focus = WorkoutTargetResolver.primaryFocusForWorkoutType(workoutType)
@@ -702,7 +702,7 @@ class WorkoutPlanService(
 
     /**
      * DB에서 운동 데이터를 필터링해서 가져오기
-     * WorkoutServiceV2의 로직을 재사용하여 일관성 유지
+     * WorkoutRecommendationServiceV2의 로직을 재사용하여 일관성 유지
      */
     private fun getExercisesFromDatabase(
         user: User,
@@ -710,7 +710,7 @@ class WorkoutPlanService(
         targetMuscle: String,
         duration: Int
     ): List<ExerciseDetailV4> {
-        // WorkoutServiceV2의 필터링 로직을 사용
+        // ExerciseCatalogDetailService의 필터링 로직을 사용
         var exercises = exerciseRepository.findAll().toList()
 
         // 1. 장비 필터링 (프로필의 availableEquipment 사용)
@@ -760,7 +760,7 @@ class WorkoutPlanService(
 
     /**
      * 타겟 근육으로 운동 필터링
-     * WorkoutServiceV2의 로직과 동일
+     * WorkoutRecommendationServiceV2의 로직과 동일
      */
     private fun filterByTargetMuscle(exercises: List<Exercise>, targetMuscle: String): List<Exercise> {
         return when (targetMuscle.lowercase()) {

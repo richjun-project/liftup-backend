@@ -1,7 +1,8 @@
 package com.richjun.liftupai.domain.workout.controller
 
 import com.richjun.liftupai.domain.workout.dto.*
-import com.richjun.liftupai.domain.workout.service.WorkoutServiceV2
+import com.richjun.liftupai.domain.workout.service.WorkoutSessionService
+import com.richjun.liftupai.domain.workout.service.WorkoutRecommendationServiceV2
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.security.CustomUserDetails
@@ -15,7 +16,8 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/v2/workouts")
 class WorkoutControllerV2(
-    private val workoutServiceV2: WorkoutServiceV2,
+    private val workoutSessionService: WorkoutSessionService,
+    private val workoutRecommendationServiceV2: WorkoutRecommendationServiceV2,
     private val workoutService: com.richjun.liftupai.domain.workout.service.WorkoutService,
     private val workoutPlanService: com.richjun.liftupai.domain.workout.service.WorkoutPlanService
 ) {
@@ -27,7 +29,7 @@ class WorkoutControllerV2(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @Valid @RequestBody request: StartWorkoutRequestV2
     ): ResponseEntity<ApiResponse<StartWorkoutResponseV2>> {
-        val response = workoutServiceV2.startWorkout(userDetails.getId(), request)
+        val response = workoutSessionService.startWorkout(userDetails.getId(), request)
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success(response))
     }
@@ -38,7 +40,7 @@ class WorkoutControllerV2(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @Valid @RequestBody request: StartWorkoutRequestV2
     ): ResponseEntity<ApiResponse<StartWorkoutResponseV2>> {
-        val response = workoutServiceV2.startNewWorkout(userDetails.getId(), request)
+        val response = workoutSessionService.startNewWorkout(userDetails.getId(), request)
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success(response))
     }
@@ -48,7 +50,7 @@ class WorkoutControllerV2(
     fun continueWorkout(
         @AuthenticationPrincipal userDetails: CustomUserDetails
     ): ResponseEntity<ApiResponse<StartWorkoutResponseV2>> {
-        val response = workoutServiceV2.continueWorkout(userDetails.getId())
+        val response = workoutSessionService.continueWorkout(userDetails.getId())
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -102,7 +104,7 @@ class WorkoutControllerV2(
     ): ResponseEntity<ApiResponse<CompleteWorkoutResponseV2>> {
         logger.debug("completeWorkout called: userId={}, sessionId={}, exercises={}, duration={}",
             userDetails.getId(), sessionId, request.exercises.size, request.duration)
-        val response = workoutServiceV2.completeWorkout(userDetails.getId(), sessionId, request)
+        val response = workoutSessionService.completeWorkout(userDetails.getId(), sessionId, request)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -114,7 +116,7 @@ class WorkoutControllerV2(
         @Valid @RequestBody request: UpdateSessionRequest,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<UpdateSessionResponse>> {
-        val response = workoutServiceV2.updateSession(userDetails.getId(), sessionId, request, locale)
+        val response = workoutSessionService.updateSession(userDetails.getId(), sessionId, request, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -125,7 +127,7 @@ class WorkoutControllerV2(
         @PathVariable sessionId: Long,
         @Valid @RequestBody request: UpdateSetRequest
     ): ResponseEntity<ApiResponse<UpdateSetResponse>> {
-        val response = workoutServiceV2.updateSet(userDetails.getId(), sessionId, request)
+        val response = workoutSessionService.updateSet(userDetails.getId(), sessionId, request)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -136,7 +138,7 @@ class WorkoutControllerV2(
         @Valid @RequestBody request: AdjustNextSetRequest,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<AdjustNextSetResponse>> {
-        val response = workoutServiceV2.adjustNextSet(userDetails.getId(), request, locale)
+        val response = workoutRecommendationServiceV2.adjustNextSet(userDetails.getId(), request, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -149,7 +151,7 @@ class WorkoutControllerV2(
         @RequestParam setNumber: Int,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<RestTimerResponse>> {
-        val response = workoutServiceV2.getRestTimer(userDetails.getId(), exerciseType, intensity, setNumber, locale)
+        val response = workoutRecommendationServiceV2.getRestTimer(userDetails.getId(), exerciseType, intensity, setNumber, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -189,7 +191,7 @@ class WorkoutControllerV2(
         @RequestParam(required = false) targetMuscle: String?,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<QuickWorkoutRecommendationResponse>> {
-        val response = workoutServiceV2.getBasicWorkoutRecommendation(
+        val response = workoutRecommendationServiceV2.getBasicWorkoutRecommendation(
             userDetails.getId(),
             duration,
             equipment,

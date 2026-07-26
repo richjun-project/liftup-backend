@@ -111,9 +111,9 @@ class ProgramEnrollmentService(
 
     /**
      * Internal use only — increments totalCompletedWorkouts on the enrollment.
-     * The primary call path goes through WorkoutServiceV2.completeWorkout(), which
+     * The primary call path goes through WorkoutSessionService.completeWorkout(), which
      * directly updates the enrollment counter. Do NOT call this method from
-     * WorkoutServiceV2 to avoid double-incrementing.
+     * WorkoutSessionService to avoid double-incrementing.
      */
     fun completeWorkout(enrollment: UserProgramEnrollment) {
         enrollment.totalCompletedWorkouts++

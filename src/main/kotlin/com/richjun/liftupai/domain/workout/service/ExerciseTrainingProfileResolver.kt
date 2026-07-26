@@ -119,82 +119,82 @@ class ExerciseTrainingProfileResolver(
          * - Schoenfeld, B.J. (2010). The Mechanisms of Muscle Hypertrophy
          * - Issurin, V. (2010). New Horizons for the Methodology of Training
          */
-        val CONFIG_MATRIX: Map<Pair<WorkoutServiceV2.PeriodizationPhase, ExerciseTrainingProfile>, PhaseExerciseConfig> = mapOf(
+        val CONFIG_MATRIX: Map<Pair<PTRecommendationEngine.PeriodizationPhase, ExerciseTrainingProfile>, PhaseExerciseConfig> = mapOf(
             // ═══ PRIMARY_COMPOUND ═══
             // Big 3: 고중량 저반복, 긴 휴식 (CNS 회복 필요)
-            Pair(WorkoutServiceV2.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.PRIMARY_COMPOUND) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.PRIMARY_COMPOUND) to
                 PhaseExerciseConfig(sets = 4, reps = "6-8", restSeconds = 180, minRestSeconds = 150, maxRestSeconds = 300),
-            Pair(WorkoutServiceV2.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.PRIMARY_COMPOUND) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.PRIMARY_COMPOUND) to
                 PhaseExerciseConfig(sets = 5, reps = "4-6", restSeconds = 210, minRestSeconds = 180, maxRestSeconds = 300),
-            Pair(WorkoutServiceV2.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.PRIMARY_COMPOUND) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.PRIMARY_COMPOUND) to
                 PhaseExerciseConfig(sets = 5, reps = "1-3", restSeconds = 240, minRestSeconds = 210, maxRestSeconds = 300),
-            Pair(WorkoutServiceV2.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.PRIMARY_COMPOUND) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.PRIMARY_COMPOUND) to
                 PhaseExerciseConfig(sets = 3, reps = "8-10", restSeconds = 120, minRestSeconds = 90, maxRestSeconds = 180),
 
             // ═══ SECONDARY_COMPOUND ═══
             // 보조 복합: 중강도, 근비대 위주
-            Pair(WorkoutServiceV2.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.SECONDARY_COMPOUND) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.SECONDARY_COMPOUND) to
                 PhaseExerciseConfig(sets = 4, reps = "8-10", restSeconds = 120, minRestSeconds = 90, maxRestSeconds = 180),
-            Pair(WorkoutServiceV2.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.SECONDARY_COMPOUND) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.SECONDARY_COMPOUND) to
                 PhaseExerciseConfig(sets = 4, reps = "6-8", restSeconds = 150, minRestSeconds = 120, maxRestSeconds = 180),
-            Pair(WorkoutServiceV2.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.SECONDARY_COMPOUND) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.SECONDARY_COMPOUND) to
                 PhaseExerciseConfig(sets = 4, reps = "3-5", restSeconds = 180, minRestSeconds = 150, maxRestSeconds = 240),
-            Pair(WorkoutServiceV2.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.SECONDARY_COMPOUND) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.SECONDARY_COMPOUND) to
                 PhaseExerciseConfig(sets = 3, reps = "10-12", restSeconds = 90, minRestSeconds = 60, maxRestSeconds = 120),
 
             // ═══ ISOLATION ═══
             // 고립: 저중량 고반복, 짧은 휴식 (대사 스트레스 극대화)
-            Pair(WorkoutServiceV2.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.ISOLATION) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.ISOLATION) to
                 PhaseExerciseConfig(sets = 3, reps = "12-15", restSeconds = 60, minRestSeconds = 45, maxRestSeconds = 90),
-            Pair(WorkoutServiceV2.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.ISOLATION) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.ISOLATION) to
                 PhaseExerciseConfig(sets = 3, reps = "10-12", restSeconds = 75, minRestSeconds = 60, maxRestSeconds = 90),
-            Pair(WorkoutServiceV2.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.ISOLATION) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.ISOLATION) to
                 PhaseExerciseConfig(sets = 3, reps = "8-10", restSeconds = 90, minRestSeconds = 60, maxRestSeconds = 90),
-            Pair(WorkoutServiceV2.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.ISOLATION) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.ISOLATION) to
                 PhaseExerciseConfig(sets = 2, reps = "15-20", restSeconds = 45, minRestSeconds = 30, maxRestSeconds = 60),
 
             // ═══ CORE_STABILITY ═══
             // 코어: 시간 기반 (초 단위), 짧은 휴식
-            Pair(WorkoutServiceV2.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.CORE_STABILITY) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.CORE_STABILITY) to
                 PhaseExerciseConfig(sets = 3, reps = "30-60s", restSeconds = 45, minRestSeconds = 30, maxRestSeconds = 60),
-            Pair(WorkoutServiceV2.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.CORE_STABILITY) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.CORE_STABILITY) to
                 PhaseExerciseConfig(sets = 3, reps = "30-45s", restSeconds = 45, minRestSeconds = 30, maxRestSeconds = 60),
-            Pair(WorkoutServiceV2.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.CORE_STABILITY) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.CORE_STABILITY) to
                 PhaseExerciseConfig(sets = 3, reps = "20-30s", restSeconds = 30, minRestSeconds = 20, maxRestSeconds = 45),
-            Pair(WorkoutServiceV2.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.CORE_STABILITY) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.CORE_STABILITY) to
                 PhaseExerciseConfig(sets = 2, reps = "20-30s", restSeconds = 30, minRestSeconds = 20, maxRestSeconds = 45),
 
             // ═══ OLYMPIC_LIFT ═══
             // 올림픽: 폭발력, 초저반복, 긴 휴식 (CNS + 기술 집중)
-            Pair(WorkoutServiceV2.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.OLYMPIC_LIFT) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.OLYMPIC_LIFT) to
                 PhaseExerciseConfig(sets = 5, reps = "3", restSeconds = 180, minRestSeconds = 150, maxRestSeconds = 300),
-            Pair(WorkoutServiceV2.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.OLYMPIC_LIFT) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.OLYMPIC_LIFT) to
                 PhaseExerciseConfig(sets = 5, reps = "2", restSeconds = 210, minRestSeconds = 180, maxRestSeconds = 300),
-            Pair(WorkoutServiceV2.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.OLYMPIC_LIFT) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.OLYMPIC_LIFT) to
                 PhaseExerciseConfig(sets = 6, reps = "1", restSeconds = 240, minRestSeconds = 210, maxRestSeconds = 300),
-            Pair(WorkoutServiceV2.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.OLYMPIC_LIFT) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.OLYMPIC_LIFT) to
                 PhaseExerciseConfig(sets = 3, reps = "3", restSeconds = 120, minRestSeconds = 90, maxRestSeconds = 180),
 
             // ═══ PLYOMETRIC ═══
             // 플라이오: 폭발력, 저반복, 충분한 휴식 (관절 부하 관리)
-            Pair(WorkoutServiceV2.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.PLYOMETRIC) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.PLYOMETRIC) to
                 PhaseExerciseConfig(sets = 3, reps = "5-8", restSeconds = 90, minRestSeconds = 60, maxRestSeconds = 120),
-            Pair(WorkoutServiceV2.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.PLYOMETRIC) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.PLYOMETRIC) to
                 PhaseExerciseConfig(sets = 3, reps = "3-5", restSeconds = 120, minRestSeconds = 90, maxRestSeconds = 180),
-            Pair(WorkoutServiceV2.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.PLYOMETRIC) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.PLYOMETRIC) to
                 PhaseExerciseConfig(sets = 4, reps = "2-3", restSeconds = 150, minRestSeconds = 120, maxRestSeconds = 180),
-            Pair(WorkoutServiceV2.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.PLYOMETRIC) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.PLYOMETRIC) to
                 PhaseExerciseConfig(sets = 2, reps = "5", restSeconds = 60, minRestSeconds = 45, maxRestSeconds = 90),
 
             // ═══ CARDIO ═══
             // 유산소: 시간 기반, 휴식 없음
-            Pair(WorkoutServiceV2.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.CARDIO) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, ExerciseTrainingProfile.CARDIO) to
                 PhaseExerciseConfig(sets = 1, reps = "time-based", restSeconds = 0, minRestSeconds = 0, maxRestSeconds = 0),
-            Pair(WorkoutServiceV2.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.CARDIO) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.INTENSIFICATION, ExerciseTrainingProfile.CARDIO) to
                 PhaseExerciseConfig(sets = 1, reps = "time-based", restSeconds = 0, minRestSeconds = 0, maxRestSeconds = 0),
-            Pair(WorkoutServiceV2.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.CARDIO) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.REALIZATION, ExerciseTrainingProfile.CARDIO) to
                 PhaseExerciseConfig(sets = 1, reps = "time-based", restSeconds = 0, minRestSeconds = 0, maxRestSeconds = 0),
-            Pair(WorkoutServiceV2.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.CARDIO) to
+            Pair(PTRecommendationEngine.PeriodizationPhase.DELOAD, ExerciseTrainingProfile.CARDIO) to
                 PhaseExerciseConfig(sets = 1, reps = "time-based", restSeconds = 0, minRestSeconds = 0, maxRestSeconds = 0)
         )
 
@@ -249,14 +249,14 @@ class ExerciseTrainingProfileResolver(
     /**
      * PeriodizationPhase × ExerciseTrainingProfile → 처방 설정 조회
      */
-    fun getConfig(phase: WorkoutServiceV2.PeriodizationPhase, profile: ExerciseTrainingProfile): PhaseExerciseConfig {
+    fun getConfig(phase: PTRecommendationEngine.PeriodizationPhase, profile: ExerciseTrainingProfile): PhaseExerciseConfig {
         return CONFIG_MATRIX[Pair(phase, profile)] ?: DEFAULT_CONFIG
     }
 
     /**
      * Exercise + PeriodizationPhase → 처방 설정 (편의 메서드)
      */
-    fun resolveConfig(exercise: Exercise, phase: WorkoutServiceV2.PeriodizationPhase): PhaseExerciseConfig {
+    fun resolveConfig(exercise: Exercise, phase: PTRecommendationEngine.PeriodizationPhase): PhaseExerciseConfig {
         return getConfig(phase, resolveProfile(exercise))
     }
 
