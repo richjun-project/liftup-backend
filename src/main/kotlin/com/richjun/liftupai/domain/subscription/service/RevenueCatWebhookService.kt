@@ -192,6 +192,13 @@ class RevenueCatWebhookService(
 
     private fun savePaymentHistory(user: User, subscription: Subscription, event: RevenueCatEvent, status: PaymentStatus) {
         try {
+            // 웹훅 재전송 멱등성: 같은 transactionId 이력이 이미 있으면 스킵
+            // (DB 유니크 제약 uk_payment_history_transaction_id이 백스톱)
+            val txId = event.transactionId
+            if (txId != null && paymentHistoryRepository.findByTransactionId(txId) != null) {
+                log.info("[RevenueCat] Payment history for transaction $txId already exists — skipping duplicate")
+                return
+            }
             val history = PaymentHistory(
                 user = user,
                 subscription = subscription,

@@ -56,8 +56,8 @@ class ExerciseCatalogBootstrapService(
 
         val exerciseCount = exerciseRepository.count()
         if (mode == "if_empty" && exerciseCount > 0) {
-            // 운동 데이터는 있지만 번역이 카탈로그와 다를 수 있으므로 항상 싱크
-            syncTranslations(resource)
+            // 운동 데이터는 있지만 큐레이션 필드/번역이 카탈로그와 다를 수 있으므로 항상 싱크
+            syncCatalog(resource)
             maybeExit()
             return
         }
@@ -125,8 +125,17 @@ class ExerciseCatalogBootstrapService(
         logger.info("Exercise catalog imported: {} exercises, {} translations", savedExercises.size, translations.size)
     }
 
+    /**
+     * 카탈로그의 큐레이션 필드와 번역을 기존 운동 행에 반영한다.
+     *
+     * 카탈로그 JSON이 추천 품질의 단일 진실 소스이므로, 부트스트랩 이후에도
+     * 큐레이션 결과(부위/동작패턴/난이도/인기도/추천등급/플랜풀)를 매 기동 시 동기화한다.
+     * 이 동기화가 없으면 카탈로그를 고쳐도 이미 시딩된 환경에는 영원히 반영되지 않는다.
+     *
+     * 사용자 데이터(vectorId, 세션/기록 등)는 건드리지 않는다.
+     */
     @Transactional
-    fun syncTranslations(resource: ClassPathResource) {
+    fun syncCatalog(resource: ClassPathResource) {
         val catalogType = objectMapper.typeFactory.constructCollectionType(List::class.java, ExerciseCatalogRecord::class.java)
         val catalog: List<ExerciseCatalogRecord> = resource.inputStream.use { objectMapper.readValue(it, catalogType) }
 
@@ -134,17 +143,38 @@ class ExerciseCatalogBootstrapService(
         var updated = 0
         var created = 0
 
-        var planEligibleUpdated = 0
+        var curationUpdated = 0
         for (record in catalog) {
             val exercise = allExercises[record.slug] ?: continue
 
-            // isPlanEligible / planCategory 동기화
-            if (exercise.isPlanEligible != record.isPlanEligible || exercise.planCategory != record.planCategory) {
-                exerciseRepository.save(exercise.copy(
+            // 큐레이션 필드 동기화 — 추천/플랜 파이프라인이 이 값들로 후보를 고른다
+            val needsCurationSync = exercise.category != record.category ||
+                exercise.movementPattern != record.movementPattern ||
+                exercise.equipment != record.equipment ||
+                exercise.difficulty != record.difficulty ||
+                exercise.popularity != record.popularity ||
+                exercise.recommendationTier != record.recommendationTier ||
+                exercise.isBasicExercise != record.basicExercise ||
+                exercise.isPlanEligible != record.isPlanEligible ||
+                exercise.planCategory != record.planCategory ||
+                exercise.muscleGroups != record.muscleGroups
+
+            if (needsCurationSync) {
+                val synced = exerciseRepository.save(exercise.copy(
+                    category = record.category,
+                    movementPattern = record.movementPattern,
+                    equipment = record.equipment,
+                    difficulty = record.difficulty,
+                    popularity = record.popularity,
+                    recommendationTier = record.recommendationTier,
+                    isBasicExercise = record.basicExercise,
                     isPlanEligible = record.isPlanEligible,
-                    planCategory = record.planCategory
+                    planCategory = record.planCategory,
+                    muscleGroups = record.muscleGroups.toMutableSet()
                 ))
-                planEligibleUpdated++
+                // Exercise.vectorId 는 var 이므로 copy 시 보존되지만 명시적으로 유지
+                synced.vectorId = exercise.vectorId
+                curationUpdated++
             }
 
             for (translation in record.translations) {
@@ -170,8 +200,11 @@ class ExerciseCatalogBootstrapService(
                 }
             }
         }
-        if (updated > 0 || created > 0 || planEligibleUpdated > 0) {
-            logger.info("Catalog sync: translations {}/{} updated/created, planEligible {} updated", updated, created, planEligibleUpdated)
+        if (updated > 0 || created > 0 || curationUpdated > 0) {
+            logger.info(
+                "Catalog sync: translations {}/{} updated/created, curation fields {} rows updated",
+                updated, created, curationUpdated
+            )
         }
     }
 
