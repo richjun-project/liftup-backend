@@ -19,6 +19,8 @@ interface NotificationScheduleRepository : JpaRepository<NotificationSchedule, L
 
     fun findByUserAndNotificationType(user: User, notificationType: NotificationType): List<NotificationSchedule>
 
+    fun findByEnabledTrue(): List<NotificationSchedule>
+
     @Query("SELECT ns FROM NotificationSchedule ns WHERE ns.enabled = true AND ns.nextTriggerAt IS NOT NULL AND ns.nextTriggerAt <= :currentTime")
     fun findSchedulesToTrigger(currentTime: LocalDateTime): List<NotificationSchedule>
 

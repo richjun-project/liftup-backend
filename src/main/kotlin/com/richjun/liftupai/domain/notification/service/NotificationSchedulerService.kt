@@ -57,18 +57,23 @@ class NotificationSchedulerService(
         try {
             logger.info("Updating next trigger times for all active schedules")
 
-            val allActiveSchedules = notificationScheduleRepository.findAll()
-                .filter { it.enabled }
+            val activeSchedules = notificationScheduleRepository.findByEnabledTrue()
 
-            allActiveSchedules.forEach { schedule ->
+            val schedulesToUpdate = activeSchedules.mapNotNull { schedule ->
                 val nextTrigger = notificationService.recalculateNextTrigger(schedule)
                 if (schedule.nextTriggerAt != nextTrigger) {
                     schedule.nextTriggerAt = nextTrigger
-                    notificationScheduleRepository.save(schedule)
+                    schedule
+                } else {
+                    null
                 }
             }
 
-            logger.info("Updated ${allActiveSchedules.size} notification schedules")
+            if (schedulesToUpdate.isNotEmpty()) {
+                notificationScheduleRepository.saveAll(schedulesToUpdate)
+            }
+
+            logger.info("Updated ${schedulesToUpdate.size} notification schedules")
         } catch (e: Exception) {
             logger.error("Error updating next trigger times", e)
         }

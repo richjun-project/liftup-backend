@@ -3,6 +3,7 @@ package com.richjun.liftupai.global.exception
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.i18n.ErrorLocalization
 import jakarta.servlet.http.HttpServletRequest
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.BadCredentialsException
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     private fun resolveLocale(request: HttpServletRequest): String {
         val acceptLanguage = request.getHeader("Accept-Language") ?: return "en"
@@ -89,7 +92,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(Exception::class)
     fun handleGeneralException(ex: Exception, request: HttpServletRequest): ResponseEntity<ApiResponse<Nothing>> {
         val locale = resolveLocale(request)
-        ex.printStackTrace()
+        log.error("Unhandled exception", ex)
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiResponse.error("SERVER001", ErrorLocalization.message("error.internal_server_error", locale)))
     }

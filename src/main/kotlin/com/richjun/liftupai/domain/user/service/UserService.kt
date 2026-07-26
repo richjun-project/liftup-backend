@@ -585,6 +585,9 @@ class UserService(
         executeDelete("DELETE FROM user_plan_days WHERE plan_id IN (SELECT id FROM user_workout_plans WHERE user_id = :userId)", userId)
         executeDelete("DELETE FROM user_workout_plans WHERE user_id = :userId", userId)
 
+        // 레거시 운동 플랜 (workout_plans — WorkoutPlanService/WorkoutControllerV2가 사용 중인 별도 테이블)
+        executeDelete("DELETE FROM workout_plans WHERE user_id = :userId", userId)
+
         // 프로그램 등록
         executeDelete("DELETE FROM user_program_enrollments WHERE user_id = :userId", userId)
 
