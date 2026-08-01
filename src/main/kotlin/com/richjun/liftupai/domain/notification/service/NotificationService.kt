@@ -171,24 +171,33 @@ class NotificationService(
             )
         }
 
-        logger.info("[FCM] Sending to ${activeDevices.size} device(s) for user ${request.userId}: title='${request.title}', data=${request.data}")
+        // 사용자가 실제로 쓰는 기기 1대에만 보낸다.
+        // activeDevices는 lastUsedAt 내림차순(가장 최근 사용 순)이므로 앞에서부터 시도하고,
+        // 첫 성공에서 멈춘다. 맨 앞 기기의 토큰이 죽어 있으면(handleFirebaseError가 해당 행을
+        // 비활성화) 다음으로 자동 폴백한다. 이렇게 하면 알림 종류(챗/운동완료/스케줄)와 무관하게
+        // 항상 동일한 "최근 사용 기기"로만 전송돼 멀티기기 불일치가 사라진다.
+        logger.info("[FCM] ${activeDevices.size} active device(s) for user ${request.userId}; sending to most-recent working one: title='${request.title}', data=${request.data}")
 
-        var sentCount = 0
         var failedCount = 0
 
-        activeDevices.forEach { device ->
+        for (device in activeDevices) {
             try {
                 sendToDevice(device, request.title, request.body, request.data, request.imageUrl)
-                sentCount++
+                return PushNotificationResponse(
+                    success = true,
+                    sentCount = 1,
+                    failedCount = failedCount,
+                    message = NotificationLocalization.message("notification.sent", locale)
+                )
             } catch (e: Exception) {
-                logger.error("[FCM] Failed to send to device ${device.id} (${device.platform}): ${e.message}", e)
+                logger.error("[FCM] Failed to send to device ${device.id} (${device.platform}): ${e.message} — falling back to next most-recent device", e)
                 failedCount++
             }
         }
 
         return PushNotificationResponse(
-            success = sentCount > 0,
-            sentCount = sentCount,
+            success = false,
+            sentCount = 0,
             failedCount = failedCount,
             message = NotificationLocalization.message("notification.sent", locale)
         )

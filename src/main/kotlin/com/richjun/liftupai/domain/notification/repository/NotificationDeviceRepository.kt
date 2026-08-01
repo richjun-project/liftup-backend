@@ -19,7 +19,8 @@ interface NotificationDeviceRepository : JpaRepository<NotificationDevice, Long>
 
     fun findByUserAndPlatform(user: User, platform: DevicePlatform): List<NotificationDevice>
 
-    @Query("SELECT nd FROM NotificationDevice nd WHERE nd.user = :user AND nd.isActive = true")
+    // 최근 사용 순 정렬 — 알림은 "가장 최근 쓴 기기 1대"에만 보내므로 순서가 중요하다.
+    @Query("SELECT nd FROM NotificationDevice nd WHERE nd.user = :user AND nd.isActive = true ORDER BY nd.lastUsedAt DESC")
     fun findActiveDevicesByUser(user: User): List<NotificationDevice>
 
     @Query("SELECT nd FROM NotificationDevice nd WHERE nd.lastUsedAt < :date AND nd.isActive = true")
