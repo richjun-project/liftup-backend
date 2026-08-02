@@ -68,7 +68,15 @@ class RevenueCatWebhookService(
         subscription.plan = SubscriptionPlan.PRO
         subscription.status = SubscriptionStatus.ACTIVE
         subscription.startDate = msToLocalDateTime(event.purchasedAtMs) ?: AppTime.utcNow()
-        subscription.expiryDate = msToLocalDateTime(event.expirationAtMs)
+        // 여러 구독이 겹칠 수 있으므로 만료일은 뒤로 당기지 않는다
+        // (promotional 평생 이용권 보유자가 월간을 결제해도 평생 만료일 유지)
+        val newExpiry = msToLocalDateTime(event.expirationAtMs)
+        val currentExpiry = subscription.expiryDate
+        subscription.expiryDate = when {
+            newExpiry == null -> currentExpiry
+            currentExpiry == null -> newExpiry
+            else -> maxOf(currentExpiry, newExpiry)
+        }
         subscription.autoRenew = event.periodType != "NON_RENEWING"
         subscription.updatedAt = AppTime.utcNow()
 
@@ -123,6 +131,20 @@ class RevenueCatWebhookService(
         val userId = parseUserId(event.appUserId) ?: return
 
         subscriptionRepository.findByUser_Id(userId).ifPresent { subscription ->
+            // 사용자는 여러 소스(스토어 구독 + promotional 부여)로 같은 entitlement 를
+            // 가질 수 있다. 만료 이벤트는 개별 구독 단위로 오므로, DB 에 저장된 만료일이
+            // 이벤트의 만료 시점보다 미래라면 더 긴 다른 구독이 살아 있다는 뜻이다.
+            // 이 가드가 없으면 월간 구독 만료 웹훅이 promotional 평생 이용권까지 강등시킨다.
+            val eventExpiry = msToLocalDateTime(event.expirationAtMs)
+            val storedExpiry = subscription.expiryDate
+            if (eventExpiry != null && storedExpiry != null && storedExpiry.isAfter(eventExpiry)) {
+                log.info(
+                    "[RevenueCat] Ignoring expiration for user $userId — a longer subscription remains " +
+                        "(event expiry=$eventExpiry, stored expiry=$storedExpiry)"
+                )
+                return@ifPresent
+            }
+
             subscription.status = SubscriptionStatus.EXPIRED
             subscription.plan = SubscriptionPlan.FREE
             subscription.autoRenew = false
