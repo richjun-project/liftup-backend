@@ -105,8 +105,8 @@ class AuthService(
         val savedUser = userRepository.save(user)
 
         // JWT 토큰 생성
-        val accessToken = jwtTokenProvider.generateAccessToken(savedUser.id, savedUser.email ?: savedUser.deviceId ?: "")
-        val refreshToken = jwtTokenProvider.generateRefreshToken(savedUser.id, savedUser.email ?: savedUser.deviceId ?: "")
+        val accessToken = jwtTokenProvider.generateAccessToken(savedUser.id, savedUser.email ?: savedUser.deviceId ?: savedUser.id.toString())
+        val refreshToken = jwtTokenProvider.generateRefreshToken(savedUser.id, savedUser.email ?: savedUser.deviceId ?: savedUser.id.toString())
 
         // Refresh token 저장
         savedUser.refreshToken = refreshToken
@@ -142,8 +142,8 @@ class AuthService(
         user.lastLoginAt = AppTime.utcNow()
 
         // JWT 토큰 생성
-        val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.email ?: user.deviceId ?: "")
-        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id, user.email ?: user.deviceId ?: "")
+        val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.email ?: user.deviceId ?: user.id.toString())
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id, user.email ?: user.deviceId ?: user.id.toString())
 
         // Refresh token 저장
         user.refreshToken = refreshToken
@@ -182,8 +182,8 @@ class AuthService(
         val user = userRepository.findByRefreshToken(request.refreshToken)
             .orElseThrow { InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale)) }
 
-        val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.email ?: user.deviceId ?: "")
-        val newRefreshToken = jwtTokenProvider.generateRefreshToken(user.id, user.email ?: user.deviceId ?: "")
+        val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.email ?: user.deviceId ?: user.id.toString())
+        val newRefreshToken = jwtTokenProvider.generateRefreshToken(user.id, user.email ?: user.deviceId ?: user.id.toString())
 
         user.refreshToken = newRefreshToken
         userRepository.save(user)
@@ -336,8 +336,8 @@ class AuthService(
         deviceSessionRepository.save(deviceSession)
 
         // JWT 토큰 생성
-        val accessToken = jwtTokenProvider.generateAccessToken(savedUser.id, savedUser.deviceId ?: "")
-        val refreshToken = jwtTokenProvider.generateRefreshToken(savedUser.id, savedUser.deviceId ?: "")
+        val accessToken = jwtTokenProvider.generateAccessToken(savedUser.id, savedUser.deviceId ?: savedUser.id.toString())
+        val refreshToken = jwtTokenProvider.generateRefreshToken(savedUser.id, savedUser.deviceId ?: savedUser.id.toString())
 
         // Refresh token 저장
         savedUser.refreshToken = refreshToken
@@ -371,8 +371,8 @@ class AuthService(
         user.lastLoginAt = AppTime.utcNow()
 
         // JWT 토큰 생성
-        val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.deviceId ?: "")
-        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id, user.deviceId ?: "")
+        val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.deviceId ?: user.id.toString())
+        val refreshToken = jwtTokenProvider.generateRefreshToken(user.id, user.deviceId ?: user.id.toString())
 
         // Refresh token 저장
         user.refreshToken = refreshToken
