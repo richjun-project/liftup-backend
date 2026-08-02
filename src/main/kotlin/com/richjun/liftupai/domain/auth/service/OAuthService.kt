@@ -22,6 +22,8 @@ class OAuthService(
     private val jwtTokenProvider: JwtTokenProvider,
     private val objectMapper: ObjectMapper
 ) {
+    private val log = org.slf4j.LoggerFactory.getLogger(OAuthService::class.java)
+
     @Value("\${oauth.google.client-id:NOT_SET}")
     private lateinit var googleClientId: String
 
@@ -151,6 +153,7 @@ class OAuthService(
         val existingByOAuth = userRepository.findByOauthProviderAndOauthId(provider, oauthId)
         if (existingByOAuth.isPresent) {
             val user = existingByOAuth.get()
+            log.info("[Funnel] oauth-login: provider=$provider userId=${user.id} new=false")
             return generateOAuthResponse(user, isNewUser = false)
         }
 
@@ -162,6 +165,7 @@ class OAuthService(
                 user.oauthProvider = provider
                 user.oauthId = oauthId
                 userRepository.save(user)
+                log.info("[Funnel] oauth-login: provider=$provider userId=${user.id} new=false linked=email")
                 return generateOAuthResponse(user, isNewUser = false)
             }
         }
@@ -176,6 +180,8 @@ class OAuthService(
             isActive = true
         )
         val savedUser = userRepository.save(newUser)
+        // email 부재는 카카오 이메일 미동의 케이스 감지에 중요 (과거 전면 403 사고의 원인)
+        log.info("[Funnel] signup: provider=$provider userId=${savedUser.id} email=${if (email != null) "present" else "ABSENT"}")
         return generateOAuthResponse(savedUser, isNewUser = true)
     }
 

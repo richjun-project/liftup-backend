@@ -38,6 +38,7 @@ class AuthService(
     private val validationUtil: ValidationUtil,
     private val objectMapper: ObjectMapper
 ) {
+    private val log = org.slf4j.LoggerFactory.getLogger(AuthService::class.java)
 
     private fun resolveLocale(): String {
         val attributes = RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes
@@ -334,6 +335,7 @@ class AuthService(
             deviceInfo = request.deviceInfo?.let { objectMapper.writeValueAsString(it) }
         )
         deviceSessionRepository.save(deviceSession)
+        log.info("[Funnel] signup: provider=DEVICE userId=${savedUser.id}")
 
         // JWT 토큰 생성
         val accessToken = jwtTokenProvider.generateAccessToken(savedUser.id, savedUser.deviceId ?: savedUser.id.toString())

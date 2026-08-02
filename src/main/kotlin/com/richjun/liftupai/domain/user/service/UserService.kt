@@ -100,6 +100,9 @@ class UserService(
     }
 
     fun completeOnboarding(userId: Long, request: OnboardingRequest): UserProfileResponse {
+        // [Funnel] 가입(oauth-login/signup)과 이 로그 사이에 이탈한 유저 = 온보딩 중도 포기.
+        // 프로덕션에서 Apple 가입자 2명이 프로필 없이 이탈했는데 원인 로그가 전혀 없었다.
+        logger.info("[Funnel] onboarding-submit: userId=$userId")
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("사용자를 찾을 수 없습니다") }
 
@@ -205,6 +208,7 @@ class UserService(
             logger.warn("Failed to create PT schedules after onboarding for user $userId: ${e.message}")
         }
 
+        logger.info("[Funnel] onboarding-complete: userId=$userId level=${profile.experienceLevel} goals=${profile.goals.size}")
         return mapToProfileResponse(user, profile)
     }
 
