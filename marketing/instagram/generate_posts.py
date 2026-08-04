@@ -142,6 +142,18 @@ DEV_TOPICS = [
 
 # ── 이미지 렌더 ───────────────────────────────────────────────────────────────
 
+# AppleSDGothicNeo 에는 컬러 이모지가 없어 카드에 넣으면 □(tofu)로 깨진다.
+# 카드 텍스트에서만 제거하고 캡션(인스타 앱 렌더)에는 그대로 둔다.
+EMOJI_RE = re.compile(
+    "[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U0001F900-\U0001F9FF"
+    "\U00002B00-\U00002BFF\U0001F1E6-\U0001F1FF️‍❤✨⭐]+"
+)
+
+
+def strip_emoji(s: str) -> str:
+    return EMOJI_RE.sub("", s).strip()
+
+
 def font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(FONT, size, index=5 if bold else 2)
 
@@ -155,6 +167,7 @@ def gradient_bg(c1, c2) -> Image.Image:
 
 
 def draw_wrapped(d: ImageDraw.ImageDraw, text: str, xy, fnt, fill, max_chars, line_gap=14, anchor_center=False):
+    text = strip_emoji(text)
     x, y = xy
     for raw_line in text.split("\n"):
         for line in textwrap.wrap(raw_line, max_chars) or [""]:
