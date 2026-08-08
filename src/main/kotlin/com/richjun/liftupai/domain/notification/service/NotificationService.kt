@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.notification.service
 
+import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.notification.dto.*
 import com.richjun.liftupai.domain.notification.entity.DevicePlatform
@@ -159,6 +160,18 @@ class NotificationService(
         val user = userRepository.findById(request.userId)
             .orElseThrow { ResourceNotFoundException(NotificationLocalization.message("error.user_not_found", locale)) }
 
+        // 유저 알림 토글 확인 — 모든 푸시가 이 메서드를 거치므로 여기서 한 번만 게이팅한다.
+        // (스케줄러가 사전 필터링하는 경로도 있지만, 운동완료처럼 직접 호출하는 경로까지 덮는다)
+        if (!isPushTypeEnabled(user, request.data?.get("type"))) {
+            logger.info("[FCM] type='${request.data?.get("type")}' disabled by user ${request.userId} settings — notification skipped")
+            return PushNotificationResponse(
+                success = false,
+                sentCount = 0,
+                failedCount = 0,
+                message = NotificationLocalization.message("notification.no_active_devices", locale)
+            )
+        }
+
         val activeDevices = notificationDeviceRepository.findActiveDevicesByUser(user)
 
         if (activeDevices.isEmpty()) {
@@ -171,33 +184,28 @@ class NotificationService(
             )
         }
 
-        // 사용자가 실제로 쓰는 기기 1대에만 보낸다.
-        // activeDevices는 lastUsedAt 내림차순(가장 최근 사용 순)이므로 앞에서부터 시도하고,
-        // 첫 성공에서 멈춘다. 맨 앞 기기의 토큰이 죽어 있으면(handleFirebaseError가 해당 행을
-        // 비활성화) 다음으로 자동 폴백한다. 이렇게 하면 알림 종류(챗/운동완료/스케줄)와 무관하게
-        // 항상 동일한 "최근 사용 기기"로만 전송돼 멀티기기 불일치가 사라진다.
-        logger.info("[FCM] ${activeDevices.size} active device(s) for user ${request.userId}; sending to most-recent working one: title='${request.title}', data=${request.data}")
+        // 로그인된 활성 기기 전부에 보낸다(fan-out).
+        // 죽은 토큰은 FcmNotificationService.handleFirebaseError가 UNREGISTERED/INVALID_ARGUMENT를
+        // 받는 즉시 isActive=false로 내리므로, 유령 기기는 다음 발송부터 자동으로 빠진다.
+        // 한 대라도 성공하면 전체를 성공으로 본다(부분 실패는 failedCount로만 보고).
+        logger.info("[FCM] ${activeDevices.size} active device(s) for user ${request.userId}; fanning out: title='${request.title}', data=${request.data}")
 
+        var sentCount = 0
         var failedCount = 0
 
         for (device in activeDevices) {
             try {
                 sendToDevice(device, request.title, request.body, request.data, request.imageUrl)
-                return PushNotificationResponse(
-                    success = true,
-                    sentCount = 1,
-                    failedCount = failedCount,
-                    message = NotificationLocalization.message("notification.sent", locale)
-                )
+                sentCount++
             } catch (e: Exception) {
-                logger.error("[FCM] Failed to send to device ${device.id} (${device.platform}): ${e.message} — falling back to next most-recent device", e)
+                logger.error("[FCM] Failed to send to device ${device.id} (${device.platform}): ${e.message}", e)
                 failedCount++
             }
         }
 
         return PushNotificationResponse(
-            success = false,
-            sentCount = 0,
+            success = sentCount > 0,
+            sentCount = sentCount,
             failedCount = failedCount,
             message = NotificationLocalization.message("notification.sent", locale)
         )
@@ -303,6 +311,24 @@ class NotificationService(
                 data = mapOf("type" to "test")
             )
         )
+    }
+
+    /**
+     * FCM data의 type 값을 유저 알림 설정 토글에 매핑한다.
+     * 설정 행이 없거나 매핑되지 않는 type(streak/rest_day/테스트 등)은 허용.
+     */
+    private fun isPushTypeEnabled(user: User, type: String?): Boolean {
+        if (type == null) return true
+
+        val settings = notificationSettingsRepository.findByUser(user).orElse(null) ?: return true
+
+        return when (type) {
+            "workout_reminder" -> settings.workoutReminder
+            "ai_message" -> settings.aiMessages
+            "achievement", "workout_complete" -> settings.achievements
+            "recovery_alert" -> settings.recoveryAlerts
+            else -> true
+        }
     }
 
     private fun sendToDevice(
