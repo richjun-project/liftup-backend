@@ -60,6 +60,7 @@ class SecurityConfig(
                         "/api/trainers",
                         "/api/subscription/webhook",
                         "/health",
+                        "/uploads/**",
                         "/swagger-ui/**",
                         "/v3/api-docs/**"
                     ).permitAll()

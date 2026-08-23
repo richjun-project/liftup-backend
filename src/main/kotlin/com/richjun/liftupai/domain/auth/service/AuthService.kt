@@ -187,6 +187,8 @@ class AuthService(
         val newRefreshToken = jwtTokenProvider.generateRefreshToken(user.id, user.email ?: user.deviceId ?: user.id.toString())
 
         user.refreshToken = newRefreshToken
+        // 리프레시는 활성 사용자의 유일한 주기적 인증 접점 — DAU 측정을 위해 여기서도 갱신한다
+        user.lastLoginAt = AppTime.utcNow()
         userRepository.save(user)
 
         return AuthResponse(
