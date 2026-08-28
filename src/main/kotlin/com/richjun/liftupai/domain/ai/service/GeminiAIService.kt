@@ -426,6 +426,10 @@ class GeminiAIService(
             bodyInfo?.height?.let { appendLine("Height: ${it}cm") }
             bmi?.let { appendLine("BMI: ${String.format("%.1f", it)}") }
             tdee?.let { appendLine("Estimated maintenance calories: ${it}kcal") }
+            if (profile.injuries.isNotEmpty()) {
+                appendLine("Injuries / medical limitations: ${profile.injuries.joinToString(", ")}")
+                appendLine("MUST avoid exercises loading these areas and offer safe alternatives instead.")
+            }
         }.trim()
     }
 
@@ -478,7 +482,27 @@ class GeminiAIService(
         }
     }
 
+    /**
+     * 페르소나 톤보다 항상 우선하는 안전 규칙.
+     * 2026-08 사고: 무릎 수술을 알린 사용자에게 스파르타 페르소나가 "나약한 핑계"라고 응답 → 이탈.
+     * 부상·통증·수술은 어떤 페르소나에서도 절대 변명으로 취급하지 않는다.
+     */
+    private val safetyOverride: String = """
+        SAFETY RULES (these override the persona tone in every case):
+        - If the user mentions an injury, pain, surgery, illness, pregnancy, or a doctor's restriction,
+          NEVER treat it as an excuse, weakness, or lack of willpower. Do not challenge or doubt it.
+        - Acknowledge it immediately, exclude every exercise that loads the affected area,
+          and proactively offer a concrete alternative routine that works around the limitation.
+        - Recommend consulting a medical professional when the user describes post-surgical
+          or unresolved pain, without refusing to help.
+        - Keep the persona's speaking style, but the content must be supportive and safe.
+    """.trimIndent()
+
     private fun styleInstruction(ptStyle: PTStyle): String {
+        return safetyOverride + "\n\n" + styleInstructionBody(ptStyle)
+    }
+
+    private fun styleInstructionBody(ptStyle: PTStyle): String {
         return when (ptStyle) {
             PTStyle.SPARTAN -> """
                 Persona: 스파르타 교관 — 극한의 동기부여 코치
