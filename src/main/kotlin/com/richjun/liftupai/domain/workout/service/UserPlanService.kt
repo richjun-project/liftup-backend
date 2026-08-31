@@ -280,6 +280,62 @@ class UserPlanService(
         return getPlanDashboard(user.id)
     }
 
+    /**
+     * 활성 플랜에서 특정 운동을 대체 운동으로 교체한다.
+     *
+     * 대체 운동 기능은 원래 `UserProgramEnrollment` 기반 오버라이드만 지원했는데,
+     * 템플릿/AI 플랜 사용자는 enrollment 가 생성되지 않으므로 프로덕션에서 항상 404 였다
+     * (실사 결과 enrollment 0행, override 0행). 플랜 사용자는 플랜 행을 직접 교체한다.
+     *
+     * @return 교체된 행 수 (플랜의 여러 날에 같은 운동이 있으면 모두 교체)
+     */
+    @Transactional
+    fun substituteExerciseInActivePlan(
+        userId: Long,
+        originalExerciseId: Long,
+        substituteExerciseId: Long
+    ): Int {
+        if (originalExerciseId == substituteExerciseId) {
+            throw BadRequestException("Cannot substitute an exercise with itself")
+        }
+        val plan = getActivePlan(userId)
+            ?: throw ResourceNotFoundException("No active plan found")
+        val substitute = exerciseRepository.findById(substituteExerciseId)
+            .orElseThrow { BadRequestException("Substitute exercise not found: $substituteExerciseId") }
+
+        val days = userPlanDayRepository.findByPlanIdOrderByDayNumber(plan.id)
+        var replaced = 0
+        for (day in days) {
+            val exercises = userPlanDayExerciseRepository
+                .findByPlanDayIdWithExerciseOrderByOrderInDay(day.id)
+            // 같은 날에 이미 대체 운동이 있으면 중복 배치가 되므로 건너뛴다
+            if (exercises.any { it.exercise.id == substituteExerciseId }) {
+                log.info(
+                    "Skipping substitution on day {} — plan already contains exercise {}",
+                    day.dayNumber, substituteExerciseId
+                )
+                continue
+            }
+            for (planExercise in exercises.filter { it.exercise.id == originalExerciseId }) {
+                planExercise.exercise = substitute
+                planExercise.isCompound = substitute.muscleGroups.size >= 2
+                userPlanDayExerciseRepository.save(planExercise)
+                replaced++
+            }
+        }
+
+        if (replaced == 0) {
+            throw BadRequestException("Exercise $originalExerciseId is not part of the active plan")
+        }
+        plan.updatedAt = LocalDateTime.now()
+        userWorkoutPlanRepository.save(plan)
+        log.info(
+            "User {} substituted exercise {} -> {} in plan {} ({} rows)",
+            userId, originalExerciseId, substituteExerciseId, plan.id, replaced
+        )
+        return replaced
+    }
+
     @Transactional
     fun completeDay(userId: Long, dayNumber: Int) {
         val plan = getActivePlan(userId)

@@ -15,7 +15,8 @@ class PlanWorkoutEnricher(
     private val userPlanDayRepository: UserPlanDayRepository,
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val workoutExerciseRepository: WorkoutExerciseRepository,
-    private val exerciseSetRepository: ExerciseSetRepository
+    private val exerciseSetRepository: ExerciseSetRepository,
+    private val exerciseSubstitutionService: ExerciseSubstitutionService
 ) {
     private val log = LoggerFactory.getLogger(PlanWorkoutEnricher::class.java)
 
@@ -284,13 +285,29 @@ class PlanWorkoutEnricher(
         return (this / step).roundToInt() * step
     }
 
+    /**
+     * 대체 운동 후보를 전이 효과(transfer efficiency) 순으로 반환한다.
+     *
+     * findAlternativeExercises 는 `ORDER BY e.name` 이라 그대로 take(3) 하면 이름 알파벳
+     * 최상위(숫자로 시작하는 생소한 변형)가 뽑힌다. 이미 있는 전이 점수 계산을 사용해
+     * 실제로 비슷한 효과를 내는 운동이 위로 오게 한다.
+     */
     private fun findSubstitutes(exerciseId: Long, limit: Int, prefetchedExercise: Exercise? = null): List<SubstituteExerciseDto> {
         val exercise = prefetchedExercise ?: return emptyList()
         if (exercise.muscleGroups.isEmpty()) return emptyList()
 
         val alternatives = exerciseRepository.findAlternativeExercises(
             exerciseId, exercise.category, exercise.muscleGroups.toList()
-        ).take(limit)
+        )
+            // 추천 가능한 운동만 (SPECIALIZED/노이즈 제외)
+            .filter { RecommendationExerciseRanking.isGeneralCandidate(it) }
+            .sortedWith(
+                compareByDescending<Exercise> {
+                    exerciseSubstitutionService.calculateTransferScore(exercise, it)
+                }.thenByDescending { it.popularity }
+                    .thenBy { it.id }
+            )
+            .take(limit)
 
         return alternatives.map { alt ->
             SubstituteExerciseDto(

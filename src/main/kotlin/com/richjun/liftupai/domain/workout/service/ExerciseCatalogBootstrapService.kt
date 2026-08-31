@@ -160,7 +160,8 @@ class ExerciseCatalogBootstrapService(
                 exercise.muscleGroups != record.muscleGroups
 
             if (needsCurationSync) {
-                val synced = exerciseRepository.save(exercise.copy(
+                // copy() 는 vectorId(var) 까지 그대로 옮기므로 Qdrant 인덱스 연결이 유지된다
+                exerciseRepository.save(exercise.copy(
                     category = record.category,
                     movementPattern = record.movementPattern,
                     equipment = record.equipment,
@@ -172,8 +173,6 @@ class ExerciseCatalogBootstrapService(
                     planCategory = record.planCategory,
                     muscleGroups = record.muscleGroups.toMutableSet()
                 ))
-                // Exercise.vectorId 는 var 이므로 copy 시 보존되지만 명시적으로 유지
-                synced.vectorId = exercise.vectorId
                 curationUpdated++
             }
 

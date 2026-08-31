@@ -250,8 +250,11 @@ class AIPlanGenerationService(
     }
 
     /**
-     * Bug 3 fix: Resolve exercise by ID with fallback to ESSENTIAL exercise in same category.
-     * Logs a warning instead of silently skipping.
+     * id 로 운동을 확정하고, 없으면 같은 부위의 플랜 후보군 중 인기도 최상위로 대체한다.
+     *
+     * 과거에는 `findByCategory(category).firstOrNull()` 로 폴백했는데 ORDER BY 가 없어
+     * id 최소값(= 이름 알파벳 최상위)이 뽑혔고, 이 때문에 "3 Leg Dog Pose" 처럼
+     * 인기도 20짜리 스트레칭이 사용자 플랜에 저장됐다.
      */
     private fun resolveExerciseWithFallback(exEntry: AIPlanExerciseEntry, workoutType: String): Exercise? {
         val exercise = exerciseRepository.findById(exEntry.exerciseId).orElse(null)
@@ -261,12 +264,12 @@ class AIPlanGenerationService(
             exEntry.exerciseId, exEntry.exerciseName, workoutType)
 
         val category = hallucinationGuardService.mapWorkoutTypeToCategory(workoutType)
-        val fallback = exerciseRepository.findFirstByCategoryAndRecommendationTierOrderByPopularityDesc(
-            category, RecommendationTier.ESSENTIAL
-        ) ?: exerciseRepository.findByCategory(category).firstOrNull()
+        val fallback = exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category).firstOrNull()
 
         if (fallback != null) {
             log.warn("Fallback for '{}': using '{}' (ID={})", exEntry.exerciseName, fallback.name, fallback.id)
+        } else {
+            log.error("No plan-eligible fallback in category {} for '{}'", category, exEntry.exerciseName)
         }
         return fallback
     }

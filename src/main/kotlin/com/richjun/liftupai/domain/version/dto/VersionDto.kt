@@ -6,13 +6,13 @@ import jakarta.validation.constraints.NotNull
 import java.time.LocalDateTime
 
 class VersionCheckRequest() {
-    @field:NotBlank(message = "현재 버전은 필수입니다")
+    @field:NotBlank(message = "{validation.current_version.required}")
     lateinit var currentVersion: String
 
-    @field:NotNull(message = "버전 코드는 필수입니다")
+    @field:NotNull(message = "{validation.version_code.required}")
     var versionCode: Int = 0
 
-    @field:NotBlank(message = "플랫폼은 필수입니다")
+    @field:NotBlank(message = "{validation.platform.required}")
     lateinit var platform: String  // IOS, ANDROID, WEB
 
     var deviceId: String? = null
@@ -72,13 +72,13 @@ data class VersionCheckResponse(
 )
 
 data class CreateVersionRequest(
-    @field:NotBlank(message = "버전은 필수입니다")
+    @field:NotBlank(message = "{validation.version.required}")
     val version: String,
 
-    @field:NotNull(message = "버전 코드는 필수입니다")
+    @field:NotNull(message = "{validation.version_code.required}")
     val versionCode: Int,
 
-    @field:NotBlank(message = "플랫폼은 필수입니다")
+    @field:NotBlank(message = "{validation.platform.required}")
     val platform: String,
 
     val minimumVersion: String? = null,

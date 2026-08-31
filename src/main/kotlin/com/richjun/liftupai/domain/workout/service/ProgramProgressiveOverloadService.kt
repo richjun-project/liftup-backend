@@ -106,8 +106,9 @@ class ProgramProgressiveOverloadService(
                 try {
                     val maxesMap = objectMapper.readValue<Map<String, Double>>(estimatedMaxes)
                     val exerciseKey = exercise.slug
+                    // 정확 일치만 사용한다. 과거에는 부분 문자열 매칭이라
+                    // "bench" 키의 1RM 이 "barbell-bench-squat" 에도 적용됐다.
                     val est1RM = maxesMap[exerciseKey]
-                        ?: maxesMap.entries.firstOrNull { exerciseKey.contains(it.key) || it.key.contains(exerciseKey) }?.value
                     if (est1RM != null && est1RM > 0) {
                         return roundWeight(
                             exercise,
@@ -165,8 +166,12 @@ class ProgramProgressiveOverloadService(
             else -> targetWeight
         }
 
-        // Plateau detection: volume (weight x avg reps) 기반
-        // 무게만 비교하면 100kg×6→100kg×8→100kg×10 (진행 중)을 정체로 오판함
+        // 정체 감지 — 볼륨(무게 × 평균 렙수) 기준.
+        //
+        // 주의: 정체는 "진행이 막혔을 때"만 판정해야 한다. 과거에는 3세션 볼륨 변동이 3% 이내면
+        // 곧바로 무게를 10% 깎았는데, LINEAR 전략은 렙 구간 중간에서 "무게 유지 → 다음 세션에
+        // 렙 +1" 을 지시하므로 **정상적인 유지 구간이 3세션째에 자동 감량**되는 모순이 있었다.
+        // 이제 렙 상한에 도달하지 못한 상태(= 진행 여력이 남아 있음)에서만 정체로 본다.
         val sessionVolumes = lastSets
             .groupBy { it.workoutExercise.session.id }
             .map { (_, sets) ->
@@ -176,26 +181,30 @@ class ProgramProgressiveOverloadService(
             }
             .take(3)
 
-        if (sessionVolumes.size >= 3) {
-            val volumeRange = sessionVolumes.max() - sessionVolumes.min()
+        val plateaued = sessionVolumes.size >= 3 && lastRepsAchieved < maxReps && run {
             val avgVolume = sessionVolumes.average()
-            // 볼륨 변동이 평균의 3% 이내이면 정체
-            if (avgVolume > 0 && volumeRange / avgVolume < 0.03) {
-                logger.info("Plateau detected: volume ~${avgVolume.roundToInt()} for ${sessionVolumes.size} sessions")
-                targetWeight = lastWeight * 0.90
-            }
+            avgVolume > 0 && (sessionVolumes.max() - sessionVolumes.min()) / avgVolume < 0.03
         }
 
-        // LINEAR: reload if below minReps for 2 consecutive sessions
-        if (progressionModel == ProgressionModel.LINEAR) {
-            val recentMaxReps = lastSets.take(6)
+        // LINEAR: 2세션 연속 최소 렙수 미달이면 리로드(더 강한 감량)
+        val needsReload = progressionModel == ProgressionModel.LINEAR && run {
+            val recentAvgReps = lastSets
                 .groupBy { it.workoutExercise.session.id }
                 .values
-                .map { sets -> sets.map { it.reps }.average().toInt() }
+                .take(2)
+                .map { sets -> sets.map { it.reps }.average() }
+            recentAvgReps.size >= 2 && recentAvgReps.all { it < minReps }
+        }
 
-            if (recentMaxReps.size >= 2 && recentMaxReps.all { it < minReps }) {
+        // 리로드가 정체 감량보다 우선한다 (둘 다 걸리면 더 큰 감량 한 번만 적용)
+        when {
+            needsReload -> {
                 targetWeight = lastWeight * 0.85
-                logger.info("LINEAR reload: ${exercise.name} failed minReps for 2 sessions, reducing to 85%")
+                logger.info("LINEAR reload: ${exercise.name} below minReps for 2 sessions, reducing to 85%")
+            }
+            plateaued -> {
+                targetWeight = lastWeight * 0.90
+                logger.info("Plateau detected: ${exercise.name} volume flat for ${sessionVolumes.size} sessions, reducing to 90%")
             }
         }
 
@@ -433,8 +442,17 @@ class ProgramProgressiveOverloadService(
         return blockPhase == 6  // week 7 of 7-week block
     }
 
+    /**
+     * 실제로 만들 수 있는 무게 단위로 반올림한다.
+     *
+     * 덤벨을 2.0kg 단위로 반올림하면 여성/고립 운동의 1.0~1.25kg 증분(calculateLinear)이
+     * 0 또는 2kg 으로 뭉개져 미세 증량이 반영되지 않는다. 증분 크기에 맞춰 해상도를 준다.
+     */
     private fun roundWeight(exercise: Exercise, weight: Double): Double {
         val increment = when {
+            // 가벼운 덤벨 구간은 1kg 해상도. 2.0kg 로 반올림하면 고립운동/여성 사용자의
+            // 1.0~1.25kg 증분이 뭉개져 미세 증량이 전혀 반영되지 않는다.
+            exercise.equipment == Equipment.DUMBBELL && weight < 20.0 -> 1.0
             exercise.equipment == Equipment.DUMBBELL -> 2.0
             weight < 20.0 -> 1.25
             else -> 2.5

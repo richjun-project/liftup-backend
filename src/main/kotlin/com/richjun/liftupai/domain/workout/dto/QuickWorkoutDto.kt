@@ -44,7 +44,16 @@ data class QuickExerciseDetail(
     val order: Int,
 
     @JsonProperty("suggested_weight")
-    val suggestedWeight: Double? = null
+    val suggestedWeight: Double? = null,
+
+    /**
+     * 이 운동이 자극하는 근육군 (로컬라이즈된 표시명).
+     *
+     * 이 필드가 없던 동안 클라이언트는 추천 전체의 targetMuscles 를 모든 운동에 동일하게
+     * 붙여서 표시했다(운동 하나가 8개 근육을 갖는 것처럼 보임).
+     */
+    @JsonProperty("target_muscles")
+    val targetMuscles: List<String> = emptyList()
 )
 
 data class AlternativeWorkout(

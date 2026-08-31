@@ -27,7 +27,9 @@ import com.richjun.liftupai.global.time.AppTime
  * 실패 시 ExerciseRecommendationService로 폴백
  */
 @Service
-@Transactional
+// 추천은 읽기 전용 경로다. 클래스 전체가 쓰기 트랜잭션이면 GET 추천마다 쓰기 트랜잭션이 열린다.
+// 쓰기가 필요한 indexAllExercises 만 개별로 @Transactional 을 붙인다.
+@Transactional(readOnly = true)
 class VectorWorkoutRecommendationService(
     private val exerciseRepository: ExerciseRepository,
     private val exerciseVectorService: ExerciseVectorService,
@@ -52,6 +54,7 @@ class VectorWorkoutRecommendationService(
     /**
      * 모든 운동을 벡터화하여 Qdrant에 저장
      */
+    @Transactional
     fun indexAllExercises() {
         val exercises = exerciseRepository.findAll()
         var indexed = 0
@@ -154,9 +157,11 @@ class VectorWorkoutRecommendationService(
 
         logger.info("Vector search returned ${searchResults.size} results")
 
-        // 결과를 Exercise로 변환 — 배치 조회로 N+1 쿼리 방지
+        // 결과를 Exercise로 변환 — 배치 조회로 N+1 쿼리 방지.
+        // 벡터 유사도 점수를 함께 보존한다(과거에는 버려서 "벡터 추천"이 사실상 룰베이스였다).
         val exerciseIds = searchResults.map { it.first }
         val exerciseMap = exerciseRepository.findAllById(exerciseIds).associateBy { it.id }
+        val similarityById: Map<Long, Float> = searchResults.toMap()
         val exercises = searchResults.mapNotNull { (id, _) -> exerciseMap[id] }
 
         // 회복/안전 필터를 먼저 적용하여 대안 운동이 소실되지 않도록 함
@@ -166,12 +171,31 @@ class VectorWorkoutRecommendationService(
             .let { filterByTargetMuscle(it, targetMuscle) }
             .let { filterByEquipment(it, equipment, availableEquipment) }
             .let { filterByGoal(it, profile?.goals) }
-            .let { filterByDifficulty(it, profile?.experienceLevel) }
-            .let { sortByRelevance(it) }
+            .let { filterByExperience(it, profile?.experienceLevel) }
+            .let { sortByRelevance(it, similarityById) }
             .let { removeDuplicatePatterns(it) }
-            .let { orderByPriority(it) }
+            .let { orderByPriority(it, resolveTargetCategory(targetMuscle, workoutType)) }
             .distinctBy { it.id }
             .take(limit)
+    }
+
+    /**
+     * 요청된 타겟(또는 운동 타입)에 해당하는 대표 카테고리.
+     * 라운드로빈 배분 시 이 카테고리를 맨 앞에 두어, 가슴 데이 1번 운동이 다리 운동이 되는 것을 막는다.
+     */
+    private fun resolveTargetCategory(targetMuscle: String?, workoutType: WorkoutType?): ExerciseCategory? {
+        val key = targetMuscle?.let { WorkoutTargetResolver.recommendationKey(it) }
+            ?: workoutType?.let { WorkoutTargetResolver.recommendationTargetForType(it) }
+            ?: return null
+        return when (key.lowercase()) {
+            "push", "chest" -> ExerciseCategory.CHEST
+            "pull", "back" -> ExerciseCategory.BACK
+            "legs", "lower" -> ExerciseCategory.LEGS
+            "shoulders" -> ExerciseCategory.SHOULDERS
+            "arms" -> ExerciseCategory.ARMS
+            "core" -> ExerciseCategory.CORE
+            else -> null
+        }
     }
 
     /**
@@ -390,27 +414,55 @@ class VectorWorkoutRecommendationService(
         return if (filtered.size >= SAFETY_MIN) filtered else exercises
     }
 
-    private fun filterByDifficulty(exercises: List<Exercise>, level: ExperienceLevel?): List<Exercise> {
-        val range = when (level) {
-            ExperienceLevel.BEGINNER, ExperienceLevel.NOVICE -> 1..40
-            ExperienceLevel.INTERMEDIATE -> 20..70
-            ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT -> 30..100
-            else -> 20..70
+    /**
+     * 경험 수준별 난이도 상한만 적용한다.
+     *
+     * 과거에는 하한도 함께 둔 구간 필터(BEGINNER = 1..40)였는데, 카탈로그의 difficulty 가
+     * 사실상 장비 별칭(바벨 55 / 덤벨 45 / 머신 25)이었기 때문에 **초보자에게 바벨·덤벨 운동이
+     * 통째로 배제**됐다(후보 778개 중 바벨 0개, 덤벨 10개). 하한을 없애고 상한만 두면
+     * 초보자도 벤치프레스·스쿼트를 받고, 고급자도 머신 보조운동을 잃지 않는다.
+     */
+    private fun filterByExperience(exercises: List<Exercise>, level: ExperienceLevel?): List<Exercise> {
+        val maxDifficulty = when (level) {
+            ExperienceLevel.BEGINNER -> 55
+            ExperienceLevel.NOVICE -> 65
+            ExperienceLevel.INTERMEDIATE -> 75
+            ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT -> 100
+            else -> 70
         }
-        val filtered = exercises.filter { it.difficulty in range }
+        val filtered = exercises.filter { it.difficulty <= maxDifficulty }
         return if (filtered.size >= SAFETY_MIN) filtered else exercises
     }
 
-    private fun sortByRelevance(exercises: List<Exercise>): List<Exercise> {
-        return exercises.sortedWith(RecommendationExerciseRanking.patternSelectionComparator())
+    /**
+     * 벡터 유사도를 1차 기준으로, 추천 랭킹을 2차 기준으로 정렬한다.
+     * 유사도는 0.05 단위로 버킷화해 미세한 점수 차이가 정통 운동보다 우선하지 않게 한다.
+     */
+    private fun sortByRelevance(
+        exercises: List<Exercise>,
+        similarityById: Map<Long, Float>
+    ): List<Exercise> {
+        val ranking = RecommendationExerciseRanking.patternSelectionComparator()
+        return exercises.sortedWith(
+            compareByDescending<Exercise> { similarityBucket(similarityById[it.id]) }
+                .thenComparing(ranking)
+        )
+    }
+
+    private fun similarityBucket(score: Float?): Int {
+        if (score == null) return 0
+        return (score / 0.05f).toInt()
     }
 
     private fun filterByRecovery(exercises: List<Exercise>, recoveringMuscles: Set<MuscleGroup>): List<Exercise> {
         if (recoveringMuscles.isEmpty()) return exercises
-        return exercises.filter { exercise ->
+        val filtered = exercises.filter { exercise ->
             // 모든 근육 그룹 체크 (primary + secondary)
             exercise.muscleGroups.none { it in recoveringMuscles }
         }
+        // 회복 중인 근육이 많으면 후보가 0개가 되어 벡터 경로 전체가 무효화된다.
+        // 다른 필터와 동일하게 최소 개수를 보장한다.
+        return if (filtered.size >= SAFETY_MIN) filtered else exercises
     }
 
     private fun filterByTargetMuscle(exercises: List<Exercise>, targetMuscle: String?): List<Exercise> {
@@ -475,36 +527,17 @@ class VectorWorkoutRecommendationService(
     }
 
     /**
-     * 카테고리 균형 라운드 로빈 정렬
-     * 각 카테고리에서 최고 운동을 하나씩 돌아가며 배치
+     * 카테고리 균형 라운드 로빈 정렬.
+     *
+     * 카테고리 안에서는 들어온 순서(= 벡터 유사도 + 추천 랭킹)를 보존한다.
+     * 여기서 다시 정렬하면 sortByRelevance 의 유사도 순서가 통째로 폐기된다.
+     * 타겟 카테고리가 지정되면 맨 앞에 배치한다.
      */
-    private fun orderByPriority(exercises: List<Exercise>): List<Exercise> {
-        val byCategory = exercises
-            .groupBy { it.category }
-            .mapValues { (_, group) ->
-                group.sortedWith(RecommendationExerciseRanking.displayOrderComparator())
-                    .toMutableList()
-            }
-
-        val categoryOrder = listOf(
-            ExerciseCategory.LEGS, ExerciseCategory.BACK, ExerciseCategory.CHEST,
-            ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS, ExerciseCategory.CORE,
-            ExerciseCategory.CARDIO, ExerciseCategory.FULL_BODY
-        )
-
-        val result = mutableListOf<Exercise>()
-        var hasMore = true
-        while (hasMore) {
-            hasMore = false
-            for (category in categoryOrder) {
-                val queue = byCategory[category]
-                if (queue != null && queue.isNotEmpty()) {
-                    result.add(queue.removeFirst())
-                    hasMore = true
-                }
-            }
-        }
-        return result
+    private fun orderByPriority(
+        exercises: List<Exercise>,
+        targetCategory: ExerciseCategory? = null
+    ): List<Exercise> {
+        return RecommendationExerciseRanking.balanceByCategory(exercises, targetCategory)
     }
 
     // === 헬퍼 메서드 ===
@@ -532,7 +565,9 @@ class VectorWorkoutRecommendationService(
             if (allWorkoutExercises.isEmpty()) return emptyMap()
 
             val weIds = allWorkoutExercises.map { it.id }
-            val allSets = exerciseSetRepository.findByWorkoutExerciseIdIn(weIds)
+            // 완료된 세트만 볼륨으로 센다 (ExerciseRecommendationService 와 동일 기준).
+            // 미완료 세트를 포함하면 두 추천 경로의 볼륨 판단이 서로 달라진다.
+            val allSets = exerciseSetRepository.findByWorkoutExerciseIdIn(weIds).filter { it.completed }
             val setCountByWeId = allSets.groupBy { it.workoutExercise.id }.mapValues { it.value.size }
 
             MuscleGroup.values().associate { muscle ->

@@ -20,8 +20,18 @@ interface ExerciseRepository : JpaRepository<Exercise, Long> {
 
     fun findByIsPlanEligibleTrueAndCategory(category: ExerciseCategory): List<Exercise>
 
-    @Query("SELECT e FROM Exercise e WHERE e.isPlanEligible = true AND e.category = :category ORDER BY e.popularity DESC")
+    /** 인기도 동점 시 순서가 흔들리지 않도록 id 를 2차 정렬키로 둔다 (플랜 폴백 재현성 보장) */
+    @Query("SELECT e FROM Exercise e WHERE e.isPlanEligible = true AND e.category = :category ORDER BY e.popularity DESC, e.id ASC")
     fun findPlanEligibleByCategoryOrderByPopularity(@Param("category") category: ExerciseCategory): List<Exercise>
+
+    /** 이름 부분일치 후보를 플랜 후보군으로 한정 — AI 이름 오타 복구 시 생소한 변형 유입 방지 */
+    @Query("""
+        SELECT e FROM Exercise e
+        WHERE e.isPlanEligible = true
+        AND LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%'))
+        ORDER BY e.popularity DESC, LENGTH(e.name) ASC, e.id ASC
+    """)
+    fun findPlanEligibleByNameContaining(@Param("name") name: String): List<Exercise>
 
     fun findByNameContainingIgnoreCase(name: String): List<Exercise>
 

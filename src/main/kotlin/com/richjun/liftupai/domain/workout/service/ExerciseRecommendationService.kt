@@ -94,6 +94,7 @@ class ExerciseRecommendationService(
                 .let { filterByRecommendationPool(it, false) }
                 .let { filterByEquipment(it, equipment) }
                 .let { filterByTargetMuscle(it, targetMuscle) }
+                .sortedWith(RecommendationExerciseRanking.displayOrderComparator())
                 .let { removeDuplicatePatterns(it) }
                 .let { prioritizeByVolume(it, weeklyVolume, experienceLevel) }
                 .let { orderByPriority(it, targetCategory) }
@@ -166,6 +167,9 @@ class ExerciseRecommendationService(
             .let { filterByRecoveryStatus(it, user) }
             .let { filterByEquipment(it, equipment) }
             .let { filterByTargetMuscle(it, targetMuscle) }
+            // 기본 랭킹을 먼저 적용한다. 이후 단계(볼륨 우선순위, 카테고리 라운드로빈)는
+            // 모두 안정 정렬이므로 동순위 안에서는 이 랭킹이 유지된다.
+            .sortedWith(RecommendationExerciseRanking.displayOrderComparator())
             .let { removeDuplicatePatterns(it) }
             .let { prioritizeByVolume(it, weeklyVolume, experienceLevel) }
             .let { orderByPriority(it, targetCategory) }
@@ -371,39 +375,7 @@ class ExerciseRecommendationService(
      * 등데이: BACK → ARMS → LEGS → CHEST → SHOULDERS → CORE
      */
     private fun orderByPriority(exercises: List<Exercise>, targetCategory: ExerciseCategory? = null): List<Exercise> {
-        val byCategory = exercises
-            .groupBy { it.category }
-            .mapValues { (_, group) ->
-                group.sortedWith(RecommendationExerciseRanking.displayOrderComparator())
-                    .toMutableList()
-            }
-
-        // 타겟 카테고리가 있으면 그것을 맨 앞으로
-        val defaultOrder = listOf(
-            ExerciseCategory.LEGS, ExerciseCategory.BACK, ExerciseCategory.CHEST,
-            ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS, ExerciseCategory.CORE,
-            ExerciseCategory.CARDIO, ExerciseCategory.FULL_BODY
-        )
-        val categoryOrder = if (targetCategory != null) {
-            listOf(targetCategory) + defaultOrder.filter { it != targetCategory }
-        } else {
-            defaultOrder
-        }
-
-        val result = mutableListOf<Exercise>()
-        var hasMore = true
-        while (hasMore) {
-            hasMore = false
-            for (category in categoryOrder) {
-                val queue = byCategory[category]
-                if (queue != null && queue.isNotEmpty()) {
-                    result.add(queue.removeFirst())
-                    hasMore = true
-                }
-            }
-        }
-
-        return result
+        return RecommendationExerciseRanking.balanceByCategory(exercises, targetCategory)
     }
 
     // === 주간 볼륨 추적 메서드들 ===

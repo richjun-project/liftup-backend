@@ -283,7 +283,9 @@ class WorkoutRecommendationServiceV2(
                 reps = ptRec?.reps ?: "10-12",
                 rest = ptRec?.restSeconds ?: 60,
                 order = index + 1,
-                suggestedWeight = ptRec?.weight ?: try { ptEngine.calculateSuggestedWeight(user, exercise) } catch (e: Exception) { 0.0 }
+                suggestedWeight = ptRec?.weight ?: try { ptEngine.calculateSuggestedWeight(user, exercise) } catch (e: Exception) { 0.0 },
+                // 운동별 근육군 — 없으면 클라이언트가 추천 전체의 근육을 모든 운동에 동일하게 붙여 표시한다
+                targetMuscles = exercise.muscleGroups.map { WorkoutTargetResolver.displayName(it, locale) }
             )
         }
 

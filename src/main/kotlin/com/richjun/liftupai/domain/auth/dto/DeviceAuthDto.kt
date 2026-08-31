@@ -11,12 +11,12 @@ data class InjuryInput(
 )
 
 data class DeviceRegisterRequest(
-    @field:NotBlank(message = "디바이스 ID는 필수입니다")
+    @field:NotBlank(message = "{validation.device_id.required}")
     @JsonProperty("device_id")
     val deviceId: String,
 
-    @field:NotBlank(message = "닉네임은 필수입니다")
-    @field:Size(min = 2, max = 20, message = "닉네임은 2-20자 사이여야 합니다")
+    @field:NotBlank(message = "{validation.nickname.required}")
+    @field:Size(min = 2, max = 20, message = "{validation.nickname.size}")
     val nickname: String,
 
     @JsonProperty("device_info")
@@ -46,7 +46,7 @@ data class DeviceRegisterRequest(
 )
 
 data class DeviceLoginRequest(
-    @field:NotBlank(message = "디바이스 ID는 필수입니다")
+    @field:NotBlank(message = "{validation.device_id.required}")
     @JsonProperty("device_id")
     val deviceId: String
 )

@@ -32,8 +32,10 @@ class ProgramService(
     private val absenceDetectionService: AbsenceDetectionService,
     private val userSettingsRepository: UserSettingsRepository,
     private val localizationService: ExerciseCatalogLocalizationService,
-    private val exerciseSubstitutionService: ExerciseSubstitutionService
+    private val exerciseSubstitutionService: ExerciseSubstitutionService,
+    private val userPlanService: UserPlanService
 ) {
+    private val log = org.slf4j.LoggerFactory.getLogger(ProgramService::class.java)
 
     @org.springframework.beans.factory.annotation.Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
     private var exerciseMediaBaseUrl: String = "https://liftup-cdn.com"
@@ -432,16 +434,37 @@ class ProgramService(
         }
     }
 
+    /**
+     * 대체 운동 적용.
+     *
+     * 사용자는 두 시스템 중 하나에 있다:
+     *  - 카노니컬 프로그램 등록(UserProgramEnrollment) → 오버라이드 행으로 저장
+     *  - 템플릿/AI 플랜(UserWorkoutPlan) → 플랜의 운동 행을 직접 교체
+     *
+     * 과거에는 enrollment 가 없으면 404 를 던졌는데, 템플릿/AI 플랜은 enrollment 를
+     * 만들지 않으므로 프로덕션에서 대체 운동이 한 번도 성공한 적이 없었다.
+     */
     @Transactional
     fun overrideExercise(userId: Long, request: ExerciseOverrideRequest) {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
-        val enrollment = userProgramEnrollmentRepository.findFirstByUserAndStatusOrderByStartDateDesc(
-            user, EnrollmentStatus.ACTIVE
-        ) ?: throw ResourceNotFoundException("No active program enrollment found")
 
         if (request.originalExerciseId == request.substituteExerciseId) {
             throw BadRequestException("Cannot substitute an exercise with itself")
+        }
+
+        val enrollment = userProgramEnrollmentRepository.findFirstByUserAndStatusOrderByStartDateDesc(
+            user, EnrollmentStatus.ACTIVE
+        )
+        if (enrollment == null) {
+            // 플랜 사용자 경로 — 활성 플랜이 없으면 여기서 ResourceNotFoundException 이 난다
+            val replaced = userPlanService.substituteExerciseInActivePlan(
+                userId = userId,
+                originalExerciseId = request.originalExerciseId,
+                substituteExerciseId = request.substituteExerciseId
+            )
+            log.info("Applied plan-level substitution for user {} ({} rows)", userId, replaced)
+            return
         }
 
         val originalExercise = exerciseRepository.findById(request.originalExerciseId)
