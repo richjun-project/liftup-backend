@@ -53,7 +53,13 @@ class GeminiAIService(
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    fun generateResponse(message: String, user: User): String {
+    fun generateResponse(message: String, user: User): String = generateResponse(message, user, emptyList())
+
+    /**
+     * @param history 직전 대화 (오래된 것부터). 없으면 AI가 자기 직전 답변조차 못 봐서
+     *                "이거 하면 몇 칼로리야?" 같은 후속 질문에 되묻게 된다(2026-09 실사용 로그).
+     */
+    fun generateResponse(message: String, user: User, history: List<Pair<String, String>>): String {
         return try {
             val locale = resolveLocale(user)
             val userProfile = userProfileRepository.findByUser(user).orElse(null)
@@ -66,7 +72,7 @@ class GeminiAIService(
                 println("[GeminiAIService] failed to build nutrition context for user ${user.id}: ${e.message}")
                 null
             }
-            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext)
+            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history)
 
             callGeminiAPI(prompt).ifBlank { getFallbackResponse(message, user, locale) }
         } catch (e: Exception) {
@@ -185,7 +191,8 @@ class GeminiAIService(
         ptStyle: PTStyle,
         locale: String,
         userProfile: com.richjun.liftupai.domain.user.entity.UserProfile? = null,
-        nutritionContext: DailyNutritionContext? = null
+        nutritionContext: DailyNutritionContext? = null,
+        history: List<Pair<String, String>> = emptyList()
     ): String {
         val responseLanguage = AILocalization.responseLanguage(locale)
         val profileSection = userProfile?.let {
@@ -200,6 +207,16 @@ class GeminiAIService(
         } ?: ""
 
         val nutritionSection = nutritionContext?.let { buildNutritionContextSection(it) } ?: ""
+
+        val historySection = if (history.isEmpty()) "" else buildString {
+            appendLine("## Recent conversation (oldest first)")
+            history.takeLast(10).forEach { (userMsg, aiMsg) ->
+                if (userMsg.isNotBlank()) appendLine("User: ${userMsg.take(400)}")
+                if (aiMsg.isNotBlank()) appendLine("You: ${aiMsg.take(400)}")
+            }
+            appendLine()
+            appendLine("When the user says \"this\", \"that routine\", or asks a follow-up, it refers to the exchange above. Never ask what they are referring to if it is answerable from this history.")
+        }
 
         return """
             You are a personal fitness coach chatbot in the LIFTUP AI app.
@@ -216,6 +233,8 @@ class GeminiAIService(
             $profileSection
 
             $nutritionSection
+
+            $historySection
 
             ## Guidelines
             - Give clear, practical guidance on training, nutrition, recovery, and healthy habits.
@@ -426,6 +445,11 @@ class GeminiAIService(
             bodyInfo?.height?.let { appendLine("Height: ${it}cm") }
             bmi?.let { appendLine("BMI: ${String.format("%.1f", it)}") }
             tdee?.let { appendLine("Estimated maintenance calories: ${it}kcal") }
+            profile.age?.let { appendLine("Age: $it") }
+            profile.gender?.let { appendLine("Gender: $it") }
+            if (bmi != null && bmi < 18.5) {
+                appendLine("NOTE: current BMI is already below the healthy range — do not advise further weight loss.")
+            }
             if (profile.injuries.isNotEmpty()) {
                 appendLine("Injuries / medical limitations: ${profile.injuries.joinToString(", ")}")
                 appendLine("MUST avoid exercises loading these areas and offer safe alternatives instead.")
@@ -496,6 +520,28 @@ class GeminiAIService(
         - Recommend consulting a medical professional when the user describes post-surgical
           or unresolved pain, without refusing to help.
         - Keep the persona's speaking style, but the content must be supportive and safe.
+
+        WEIGHT & BODY IMAGE SAFETY (also overrides the persona):
+        - Never coach toward a target weight that would put the user below a healthy BMI (18.5).
+          If the user asks for advice based on a weight lower than that, say plainly that the target
+          is below a healthy range for their height, and redirect to body recomposition
+          (strength + adequate protein) instead of refusing outright.
+        - If the user is a minor (under 19), never prescribe aggressive calorie deficits, extreme
+          cardio volume, or "burn X kcal per hour" targets. Prioritize growth, technique and habit.
+        - Do not glorify hunger, exhaustion, or "no pain no gain" framing for fat-loss requests.
+          Wording like "burn until your heart explodes" is forbidden regardless of persona.
+        - If someone repeatedly pushes for extreme deficits, gently suggest talking to a doctor or
+          dietitian. Stay in character but drop the drill-sergeant pressure for this topic.
+
+        PROFILE VS. USER-STATED NUMBERS:
+        - The profile stats are the source of truth. If the user quotes a different number
+          (e.g. a goal weight), do not silently switch back and forth between the two.
+          Acknowledge the difference once, state which number you are using and why, then stay consistent.
+
+        WHEN THE USER IS FRUSTRATED:
+        - If the user pushes back ("that's not what I asked", "I already told you"), stop pressing
+          the persona's challenge, apologize briefly, and answer the exact question asked.
+          Never respond with lines that dismiss their feelings.
     """.trimIndent()
 
     private fun styleInstruction(ptStyle: PTStyle): String {

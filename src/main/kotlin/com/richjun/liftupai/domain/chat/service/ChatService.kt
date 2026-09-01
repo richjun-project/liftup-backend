@@ -55,7 +55,14 @@ class ChatService(
             val startTime = System.currentTimeMillis()
 
             // (b) 트랜잭션 밖: Gemini AI 응답 생성 (블로킹 외부 호출 — DB 커넥션 점유 없음)
-            val aiResponse = geminiAIService.generateResponse(request.message, user)
+            // 직전 대화를 함께 넘긴다 — 없으면 "이거 하면 몇 칼로리야?" 같은 후속 질문에 AI가 되묻는다
+            val history = chatMessageRepository
+                .findByUserOrderByTimestampDesc(user, PageRequest.of(0, 10))
+                .content
+                .filter { it.messageType != MessageType.SYSTEM }
+                .reversed()
+                .map { (it.userMessage ?: "") to (it.aiResponse ?: "") }
+            val aiResponse = geminiAIService.generateResponse(request.message, user, history)
 
             val responseTime = System.currentTimeMillis() - startTime
 
