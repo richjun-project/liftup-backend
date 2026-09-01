@@ -283,7 +283,9 @@ class WorkoutRecommendationServiceV2(
                 reps = ptRec?.reps ?: "10-12",
                 rest = ptRec?.restSeconds ?: 60,
                 order = index + 1,
-                suggestedWeight = ptRec?.weight ?: try { ptEngine.calculateSuggestedWeight(user, exercise) } catch (e: Exception) { 0.0 },
+                // 맨몸·밴드 종목에 무게를 붙이면 "푸시업 7.5kg" 같은 말이 안 되는 추천이 나간다
+                suggestedWeight = if (isWeightlessExercise(exercise)) null
+                    else (ptRec?.weight ?: try { ptEngine.calculateSuggestedWeight(user, exercise) } catch (e: Exception) { 0.0 }),
                 // 운동별 근육군 — 없으면 클라이언트가 추천 전체의 근육을 모든 운동에 동일하게 붙여 표시한다
                 targetMuscles = exercise.muscleGroups.map { WorkoutTargetResolver.displayName(it, locale) }
             )
@@ -545,4 +547,15 @@ class WorkoutRecommendationServiceV2(
         val exerciseBonus = exerciseCount * 8
         return baseCalories + exerciseBonus
     }
+
+    /** 맨몸·밴드 종목은 무게를 지정할 수 없다 — 표시 자체를 없앤다. */
+    private fun isWeightlessExercise(exercise: Exercise): Boolean {
+        val eq = exercise.equipment
+        if (eq == Equipment.BODYWEIGHT || eq == Equipment.RESISTANCE_BAND) return true
+        val name = exercise.name.lowercase()
+        return listOf("맨몸", "bodyweight", "플랭크", "plank", "버피", "burpee",
+                      "마운틴 클라이머", "mountain climber", "점핑잭", "jumping jack")
+            .any { name.contains(it) }
+    }
+
 }

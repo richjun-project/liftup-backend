@@ -90,7 +90,14 @@ class RevenueCatWebhookService(
 
         subscriptionRepository.findByUser_Id(userId).ifPresent { subscription ->
             subscription.status = SubscriptionStatus.ACTIVE
-            subscription.expiryDate = msToLocalDateTime(event.expirationAtMs)
+            // 여러 구독이 겹칠 수 있으므로 만료일은 뒤로 당기지 않는다(handlePurchase와 동일 규칙)
+            val newExpiry = msToLocalDateTime(event.expirationAtMs)
+            val currentExpiry = subscription.expiryDate
+            subscription.expiryDate = when {
+                newExpiry == null -> currentExpiry
+                currentExpiry == null -> newExpiry
+                else -> maxOf(currentExpiry, newExpiry)
+            }
             subscription.autoRenew = true
             subscription.updatedAt = AppTime.utcNow()
             subscriptionRepository.save(subscription)
@@ -105,12 +112,25 @@ class RevenueCatWebhookService(
     private fun handleCancellation(event: RevenueCatEvent) {
         val userId = parseUserId(event.appUserId) ?: return
 
+        // RevenueCat에는 REFUND 이벤트 타입이 없다. 환불은 CANCELLATION + cancel_reason=CUSTOMER_SUPPORT로 온다.
+        // 이를 구분하지 않으면 환불된 사용자가 원래 만료일까지 PRO를 그대로 쓰게 된다.
+        val isRefund = event.cancelReason?.uppercase() in setOf("CUSTOMER_SUPPORT", "REFUND")
+
         subscriptionRepository.findByUser_Id(userId).ifPresent { subscription ->
             subscription.autoRenew = false
             subscription.cancelledAt = AppTime.utcNow()
             subscription.updatedAt = AppTime.utcNow()
+            if (isRefund) {
+                subscription.status = SubscriptionStatus.EXPIRED
+                subscription.plan = SubscriptionPlan.FREE
+                subscription.expiryDate = AppTime.utcNow()
+            }
             subscriptionRepository.save(subscription)
-            log.info("[RevenueCat] Cancellation for user $userId, access until ${subscription.expiryDate}")
+            if (isRefund) {
+                log.info("[RevenueCat] Refund for user $userId — access revoked immediately")
+            } else {
+                log.info("[RevenueCat] Cancellation for user $userId, access until ${subscription.expiryDate}")
+            }
         }
     }
 
@@ -224,8 +244,11 @@ class RevenueCatWebhookService(
             val history = PaymentHistory(
                 user = user,
                 subscription = subscription,
-                amount = event.price?.toInt() ?: 0,
-                currency = event.currency ?: "USD",
+                // event.price는 USD 환산가라 실제 청구액이 아니다.
+                // 실결제 통화 금액(price_in_purchased_currency)이 있으면 그것과 currency를 짝으로 쓰고,
+                // 없을 때만 USD 환산가로 폴백한다(통화 표기도 USD로 맞춘다).
+                amount = event.priceInPurchasedCurrency ?: event.price ?: 0.0,
+                currency = if (event.priceInPurchasedCurrency != null) (event.currency ?: "KRW") else "USD",
                 paymentMethod = event.store ?: "UNKNOWN",
                 transactionId = event.transactionId,
                 status = status,

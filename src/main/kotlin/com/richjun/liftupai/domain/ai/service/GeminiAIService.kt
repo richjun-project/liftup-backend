@@ -445,11 +445,6 @@ class GeminiAIService(
             bodyInfo?.height?.let { appendLine("Height: ${it}cm") }
             bmi?.let { appendLine("BMI: ${String.format("%.1f", it)}") }
             tdee?.let { appendLine("Estimated maintenance calories: ${it}kcal") }
-            profile.age?.let { appendLine("Age: $it") }
-            profile.gender?.let { appendLine("Gender: $it") }
-            if (bmi != null && bmi < 18.5) {
-                appendLine("NOTE: current BMI is already below the healthy range — do not advise further weight loss.")
-            }
             if (profile.injuries.isNotEmpty()) {
                 appendLine("Injuries / medical limitations: ${profile.injuries.joinToString(", ")}")
                 appendLine("MUST avoid exercises loading these areas and offer safe alternatives instead.")
@@ -521,17 +516,14 @@ class GeminiAIService(
           or unresolved pain, without refusing to help.
         - Keep the persona's speaking style, but the content must be supportive and safe.
 
-        WEIGHT & BODY IMAGE SAFETY (also overrides the persona):
-        - Never coach toward a target weight that would put the user below a healthy BMI (18.5).
-          If the user asks for advice based on a weight lower than that, say plainly that the target
-          is below a healthy range for their height, and redirect to body recomposition
-          (strength + adequate protein) instead of refusing outright.
-        - If the user is a minor (under 19), never prescribe aggressive calorie deficits, extreme
-          cardio volume, or "burn X kcal per hour" targets. Prioritize growth, technique and habit.
-        - Do not glorify hunger, exhaustion, or "no pain no gain" framing for fat-loss requests.
-          Wording like "burn until your heart explodes" is forbidden regardless of persona.
-        - If someone repeatedly pushes for extreme deficits, gently suggest talking to a doctor or
-          dietitian. Stay in character but drop the drill-sergeant pressure for this topic.
+
+        ANSWER QUALITY (this is what the user actually wants):
+        - Answer the exact question asked, first, in the first sentence. Motivation comes after, if at all.
+        - If the user asks "how many calories / how long / how many reps", give a concrete number or range.
+          If their target is not realistically achievable, say so plainly with the realistic number
+          instead of dodging or repeating the same push.
+        - Never tell the user to stop asking, stop calculating, or "just move" as a substitute for the answer.
+        - If you already gave a routine and they ask a follow-up about it, answer about THAT routine.
 
         PROFILE VS. USER-STATED NUMBERS:
         - The profile stats are the source of truth. If the user quotes a different number
@@ -691,7 +683,26 @@ class GeminiAIService(
         return AILocalization.normalizeLocale(language)
     }
 
+    /**
+     * 사용자가 준 URL을 서버가 그대로 fetch하면 내부망·메타데이터 서버까지 긁어올 수 있다(SSRF).
+     * 우리 업로드/미디어 도메인만 허용한다.
+     */
+    private fun isAllowedImageHost(imageUrl: String): Boolean {
+        return try {
+            val uri = java.net.URI(imageUrl)
+            if (uri.scheme?.lowercase() != "https") return false
+            val host = uri.host?.lowercase() ?: return false
+            ALLOWED_IMAGE_HOSTS.any { host == it || host.endsWith(".$it") }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private fun downloadAndEncodeImage(imageUrl: String): String? {
+        if (!isAllowedImageHost(imageUrl)) {
+            println("[GeminiAIService] blocked image fetch for disallowed URL: ${imageUrl.take(80)}")
+            return null
+        }
         return try {
             val request = Request.Builder().url(imageUrl).build()
             client.newCall(request).execute().use { response ->
@@ -821,6 +832,15 @@ class GeminiAIService(
                 AILocalization.message("fallback.response.generic", locale, user.nickname)
         }
     }
+    companion object {
+        /** 이미지 fetch를 허용할 호스트 화이트리스트 */
+        private val ALLOWED_IMAGE_HOSTS = listOf(
+            "api.liftupai.net",
+            "liftupai.net",
+            "dearglobe.s3.ap-northeast-2.amazonaws.com",
+        )
+    }
+
 }
 
 data class GeminiRequest(

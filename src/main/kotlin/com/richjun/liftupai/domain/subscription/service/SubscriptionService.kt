@@ -57,7 +57,7 @@ class SubscriptionService(
         val paymentHistory = PaymentHistory(
             user = user,
             subscription = savedSubscription,
-            amount = request.plan.price,
+            amount = request.plan.price.toDouble(),
             paymentMethod = request.paymentMethod,
             transactionId = request.googlePlayOrderId ?: request.appleTransactionId,
             receiptData = request.receiptData,

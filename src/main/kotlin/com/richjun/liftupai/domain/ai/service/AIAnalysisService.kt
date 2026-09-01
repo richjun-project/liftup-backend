@@ -199,10 +199,24 @@ class AIAnalysisService(
             request.message
         }
 
+        // 직전 대화를 함께 넘긴다. 이 경로가 실제 앱이 쓰는 채팅 엔드포인트이므로
+        // 여기에 히스토리가 없으면 AI가 자기 직전 답변조차 못 봐서 후속 질문에 되묻는다.
+        val history = try {
+            chatMessageRepository
+                .findByUserOrderByTimestampDesc(user, org.springframework.data.domain.PageRequest.of(0, 10))
+                .content
+                .filter { it.messageType != MessageType.SYSTEM }
+                .reversed()
+                .map { (it.userMessage ?: "") to (it.aiResponse ?: "") }
+        } catch (e: Exception) {
+            println("[AIAnalysisService] failed to load chat history for user $userId: ${e.message}")
+            emptyList()
+        }
+
         // Gemini AI에게 응답 요청
         val startTime = System.currentTimeMillis()
         val aiReply = try {
-            geminiAIService.generateResponse(enhancedMessage, user)
+            geminiAIService.generateResponse(enhancedMessage, user, history)
         } catch (e: Exception) {
             // 에러 발생 시 실패 메시지 저장
             val errorMessage = ChatMessage(

@@ -21,7 +21,7 @@ class PaymentHistory(
     val subscription: Subscription,
 
     @Column(nullable = false)
-    val amount: Int,
+    val amount: Double,
 
     @Column(nullable = false)
     val currency: String = "KRW",

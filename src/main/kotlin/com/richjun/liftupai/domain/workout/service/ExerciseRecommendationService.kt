@@ -28,7 +28,9 @@ class ExerciseRecommendationService(
     private val exerciseSetRepository: ExerciseSetRepository,
     private val muscleRecoveryRepository: MuscleRecoveryRepository,
     private val exercisePatternClassifier: ExercisePatternClassifier,
-    private val userProfileRepository: UserProfileRepository
+    private val userProfileRepository: UserProfileRepository,
+    private val userSettingsRepository: com.richjun.liftupai.domain.user.repository.UserSettingsRepository,
+    private val injuryFilterService: InjuryFilterService
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -54,7 +56,26 @@ class ExerciseRecommendationService(
     ): List<Exercise> {
         logger.info("Recommendation request started - user: ${user.id}, target: $targetMuscle, equipment: $equipment, duration: $duration")
 
-        val allExercises = exerciseRepository.findAll()
+        // 부상 부위에 부하가 가는 종목은 후보에서 아예 제외한다.
+        // 홈 화면 빠른 추천은 그동안 부상 정보를 전혀 보지 않아, 무릎 부상자에게도 스쿼트가 추천됐다.
+        val injuries: Set<String> = try {
+            val settingsInjuries = userSettingsRepository.findByUser_Id(user.id)
+                .map { it.injuries.toSet() }.orElse(emptySet())
+            settingsInjuries.ifEmpty {
+                userProfileRepository.findByUser(user).map { it.injuries.toSet() }.orElse(emptySet())
+            }
+        } catch (e: Exception) {
+            logger.warn("Failed to load injuries for user ${user.id}: ${e.message}")
+            emptySet()
+        }
+        val allExercises = exerciseRepository.findAll().let { list ->
+            if (injuries.isEmpty()) list else {
+                val filtered = injuryFilterService.filterExercises(list, injuries)
+                logger.info("Injury filter: ${list.size} -> ${filtered.size} (injuries=$injuries)")
+                // 필터가 너무 공격적이어서 후보가 고갈되면 원본을 쓴다(추천 자체가 실패하는 것보다 낫다)
+                if (filtered.size >= 10) filtered else list
+            }
+        }
 
         // 사용자 프로필 조회 (경험 수준 + 목표)
         val profile = userProfileRepository.findByUser(user).orElse(null)

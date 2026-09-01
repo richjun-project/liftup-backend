@@ -420,21 +420,33 @@ class UserService(
             profile.availableEquipment.addAll(it)
         }
 
-        // preferredWorkoutTime은 UserSettings에 저장 — UserSettings가 truth source
-        // 변경 감지를 위해 이전 값 보관 (request에 값이 있을 때만 settings 터치)
+        request.workoutDuration?.let { profile.workoutDuration = it }
+
+        // 운동 설정의 정본(truth source)은 UserSettings다 — 추천/프로그램 생성 로직이 전부 이쪽을 읽는다.
+        // 예전에는 preferredWorkoutTime만 settings에 반영해서, 사용자가 주간 운동일수·분할·장비·운동시간을
+        // 바꿔도 UI만 바뀌고 실제 추천은 온보딩 당시 값 그대로였다. 아래에서 함께 동기화한다.
         var previousPreferredTime: String? = null
-        if (request.preferredWorkoutTime != null) {
+        val touchesSettings = request.preferredWorkoutTime != null || request.weeklyWorkoutDays != null ||
+            request.workoutSplit != null || request.workoutDuration != null || request.availableEquipment != null
+        if (touchesSettings) {
             val settings = userSettingsRepository.findByUser_Id(userId).orElse(
                 UserSettings(user = profile.user)
             )
             previousPreferredTime = settings.preferredWorkoutTime
-            profile.preferredWorkoutTime = request.preferredWorkoutTime // deprecated 컬럼도 동기화 유지
-            settings.preferredWorkoutTime = request.preferredWorkoutTime
+            request.preferredWorkoutTime?.let {
+                profile.preferredWorkoutTime = it // deprecated 컬럼도 동기화 유지
+                settings.preferredWorkoutTime = it
+            }
+            request.weeklyWorkoutDays?.let { settings.weeklyWorkoutDays = it }
+            request.workoutSplit?.let { settings.workoutSplit = it }
+            request.workoutDuration?.let { settings.workoutDuration = it }
+            request.availableEquipment?.let {
+                settings.availableEquipment.clear()
+                settings.availableEquipment.addAll(it)
+            }
             settings.updatedAt = AppTime.utcNow()
             userSettingsRepository.save(settings)
         }
-
-        request.workoutDuration?.let { profile.workoutDuration = it }
 
         request.injuries?.let {
             profile.injuries.clear()
