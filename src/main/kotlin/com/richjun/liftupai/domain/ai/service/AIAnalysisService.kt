@@ -907,9 +907,11 @@ class AIAnalysisService(
                     null
                 }
 
-                val suggestedWeight = ptRec?.weight
-                    ?: try { ptRecommendationEngine.calculateSuggestedWeight(user, matchedExercise) }
-                    catch (e: Exception) { calculateWeightByExerciseName(user, matchedExercise.name) }
+                val suggestedWeight = if (isWeightlessExercise(matchedExercise)) null else {
+                    ptRec?.weight
+                        ?: try { ptRecommendationEngine.calculateSuggestedWeight(user, matchedExercise) }
+                        catch (e: Exception) { calculateWeightByExerciseName(user, matchedExercise.name) }
+                }
 
                 // AI 제안값 추출
                 val aiSets = (exerciseMap["sets"] as? Number)?.toInt()
@@ -1184,7 +1186,7 @@ class AIAnalysisService(
                 reps = ptRec?.reps ?: "10-12",
                 rest = ptRec?.restSeconds ?: 60,
                 order = index + 1,
-                suggestedWeight = ptRec?.weight,
+                suggestedWeight = if (isWeightlessExercise(exercise)) null else ptRec?.weight,
                 targetMuscles = getExerciseTargetMuscles(exercise, locale),
                 equipmentNeeded = localizeEquipment(exercise.equipment?.name, locale).ifBlank { null },
                 difficultyLevel = localizeDifficulty(null, locale)
@@ -1323,6 +1325,22 @@ class AIAnalysisService(
 
     private fun translationMap(exercises: Collection<Exercise>, locale: String): Map<Long, ExerciseTranslation> {
         return exerciseCatalogLocalizationService.translationMap(exercises, locale)
+    }
+
+
+    /**
+     * 맨몸·밴드 운동은 바벨처럼 무게를 지정할 수 없다.
+     * 2026-09 실사용 로그에서 "푸시업 - 권장 무게 7.5kg", "맨몸 스쿼트 - 권장 무게 12.5kg" 처럼
+     * 말이 안 되는 추천이 나가 사용자 신뢰를 깎았다. 이런 종목은 무게를 비워 표시 자체를 없앤다.
+     */
+    private fun isWeightlessExercise(exercise: com.richjun.liftupai.domain.workout.entity.Exercise): Boolean {
+        val eq = exercise.equipment
+        if (eq == com.richjun.liftupai.domain.workout.entity.Equipment.BODYWEIGHT ||
+            eq == com.richjun.liftupai.domain.workout.entity.Equipment.RESISTANCE_BAND) return true
+        val name = exercise.name.lowercase()
+        return listOf("맨몸", "bodyweight", "플랭크", "plank", "버피", "burpee",
+                      "마운틴 클라이머", "mountain climber", "점핑잭", "jumping jack")
+            .any { name.contains(it) }
     }
 
     private fun localizedExerciseName(
