@@ -153,24 +153,50 @@ class PTScheduledMessageService(
         }
 
         try {
-            // 고정 템플릿 메시지 그대로 전송 (단일 노멀 페르소나, AI 생성 없음)
+            // 발송 시점에 템플릿을 다시 읽는다.
+            // schedule.message는 스케줄 생성 시점의 스냅샷이라, 템플릿 문구를 고쳐도
+            // 이미 생성된 행은 옛 문구를 그대로 보낸다(2026-04 생성 행이 9월까지 옛 문구 발송).
+            val body = resolveTemplateMessage(schedule)
+
             // 1. ChatMessage에 저장 (채팅 히스토리에 표시)
             val chatMessage = ChatMessage(
                 user = schedule.user,
                 userMessage = "",
-                aiResponse = schedule.message,
+                aiResponse = body,
                 messageType = MessageType.SYSTEM,
                 status = MessageStatus.COMPLETED
             )
             chatMessageRepository.save(chatMessage)
             logger.info("[PTMessage] ChatMessage saved for user ${schedule.user.id}, schedule $scheduleId")
 
-            // 2. FCM 전송 및 NotificationHistory 저장 (nextTriggerAt 선갱신 포함)
-            notificationService.sendScheduledNotificationWithFcm(schedule, null)
+            // 2. 저장된 스냅샷이 낡았으면 갱신해 두 번 다시 옛 문구가 나가지 않게 한다
+            if (schedule.message != body) {
+                logger.info("[PTMessage] Stale snapshot replaced for schedule $scheduleId")
+                schedule.message = body
+            }
+
+            // 3. FCM 전송 및 NotificationHistory 저장 (nextTriggerAt 선갱신 포함)
+            notificationService.sendScheduledNotificationWithFcm(schedule, body)
 
             logger.info("[PTMessage] PT message sent and saved to chat for user ${schedule.user.id}")
         } catch (e: Exception) {
             logger.error("[PTMessage] Failed to send PT message for schedule ${schedule.id}: ${e.message}", e)
+        }
+    }
+
+    /**
+     * scheduleName으로 현재 템플릿 문구를 다시 해석한다.
+     * 알려진 PT 스케줄이 아니면(사용자 정의 스케줄 등) 저장된 message를 그대로 쓴다.
+     */
+    private fun resolveTemplateMessage(schedule: NotificationSchedule): String {
+        val locale = resolveLocale(schedule.user.id)
+        return when (schedule.scheduleName) {
+            "morning_meal_check" -> ptMessageTemplates.getMorningMealMessage(locale)
+            "lunch_meal_check" -> ptMessageTemplates.getLunchMealMessage(locale)
+            "workout_reminder" -> ptMessageTemplates.getWorkoutReminderMessage(locale)
+            "dinner_meal_check" -> ptMessageTemplates.getDinnerMealMessage(locale)
+            "sleep_prep" -> ptMessageTemplates.getSleepPrepMessage(locale)
+            else -> schedule.message
         }
     }
 
