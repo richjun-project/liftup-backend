@@ -56,8 +56,15 @@ class ExerciseCatalogBootstrapService(
 
         val exerciseCount = exerciseRepository.count()
         if (mode == "if_empty" && exerciseCount > 0) {
-            // 운동 데이터는 있지만 큐레이션 필드/번역이 카탈로그와 다를 수 있으므로 항상 싱크
-            syncCatalog(resource)
+            // 운동 데이터는 있지만 큐레이션 필드/번역이 카탈로그와 다를 수 있으므로 항상 싱크.
+            // @Transactional 안에서 제약 위반이 나면 내부 catch로도 롤백 표시가 지워지지 않아
+            // 커밋 시점에 다시 터진다 → 여기서 막지 않으면 기동 실패로 서비스 전체가 내려간다.
+            // 카탈로그 싱크는 부가 작업이므로 실패해도 앱은 떠야 한다.
+            try {
+                syncCatalog(resource)
+            } catch (e: Exception) {
+                logger.error("Exercise catalog sync failed — 앱은 계속 기동한다: {}", e.message, e)
+            }
             maybeExit()
             return
         }
@@ -144,6 +151,7 @@ class ExerciseCatalogBootstrapService(
         var created = 0
 
         var curationUpdated = 0
+        var failed = 0
         for (record in catalog) {
             val exercise = allExercises[record.slug] ?: continue
 
@@ -177,32 +185,49 @@ class ExerciseCatalogBootstrapService(
             }
 
             for (translation in record.translations) {
-                val existing = exerciseTranslationRepository.findByExerciseIdAndLocale(exercise.id, translation.locale)
-                if (existing != null) {
-                    if (existing.displayName != translation.name) {
-                        exerciseTranslationRepository.save(existing.copy(
+                // 카탈로그 한 건의 데이터 문제로 서버 기동 전체가 실패하면 안 된다
+                // (locale+display_name 유니크 제약 위반으로 프로덕션이 부팅 크래시 루프에 빠진 적이 있다)
+                try {
+                    val existing = exerciseTranslationRepository.findByExerciseIdAndLocale(exercise.id, translation.locale)
+                    if (existing != null) {
+                        // 이름뿐 아니라 설명/팁이 새로 생긴 경우도 반영해야 한다
+                        // (이름만 비교하면 ko처럼 이름이 이미 있는 로케일에 instructions/tips가 영원히 안 채워진다)
+                        val nextInstructions = translation.instructions ?: existing.instructions
+                        val nextTips = translation.tips ?: existing.tips
+                        if (existing.displayName != translation.name ||
+                            existing.instructions != nextInstructions ||
+                            existing.tips != nextTips
+                        ) {
+                            exerciseTranslationRepository.save(existing.copy(
+                                displayName = translation.name,
+                                instructions = nextInstructions,
+                                tips = nextTips
+                            ))
+                            updated++
+                        }
+                    } else {
+                        exerciseTranslationRepository.save(ExerciseTranslation(
+                            exercise = exercise,
+                            locale = translation.locale,
                             displayName = translation.name,
-                            instructions = translation.instructions ?: existing.instructions,
-                            tips = translation.tips ?: existing.tips
+                            instructions = translation.instructions,
+                            tips = translation.tips
                         ))
-                        updated++
+                        created++
                     }
-                } else {
-                    exerciseTranslationRepository.save(ExerciseTranslation(
-                        exercise = exercise,
-                        locale = translation.locale,
-                        displayName = translation.name,
-                        instructions = translation.instructions,
-                        tips = translation.tips
-                    ))
-                    created++
+                } catch (e: Exception) {
+                    failed++
+                    logger.error(
+                        "Catalog translation sync failed: slug={} locale={} name={} — {}",
+                        record.slug, translation.locale, translation.name, e.message
+                    )
                 }
             }
         }
-        if (updated > 0 || created > 0 || curationUpdated > 0) {
+        if (updated > 0 || created > 0 || curationUpdated > 0 || failed > 0) {
             logger.info(
-                "Catalog sync: translations {}/{} updated/created, curation fields {} rows updated",
-                updated, created, curationUpdated
+                "Catalog sync: translations {}/{} updated/created, {} failed, curation fields {} rows updated",
+                updated, created, failed, curationUpdated
             )
         }
     }
