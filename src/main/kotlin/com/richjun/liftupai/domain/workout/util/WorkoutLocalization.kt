@@ -113,7 +113,9 @@ object WorkoutLocalization {
     }
 
     fun keywordAliases(key: String): List<String> {
-        val locales = listOf("en", "ko")
+        // Same coverage fix as AILocalization.keywordAliases: include every locale workout_messages_*.properties
+        // ships keyword aliases for, so ja keywords in the bundle actually get matched.
+        val locales = listOf("en", "ko", "ja")
         return locales
             .flatMap { locale ->
                 maybeMessage(key, locale)

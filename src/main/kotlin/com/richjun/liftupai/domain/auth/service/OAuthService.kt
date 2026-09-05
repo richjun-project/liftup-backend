@@ -3,6 +3,7 @@ package com.richjun.liftupai.domain.auth.service
 import com.richjun.liftupai.domain.auth.dto.*
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.auth.repository.UserRepository
+import com.richjun.liftupai.global.i18n.ErrorLocalization
 import com.richjun.liftupai.global.security.JwtTokenProvider
 import com.richjun.liftupai.global.time.AppTime
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -35,7 +36,7 @@ class OAuthService(
 
     // ==================== GOOGLE ====================
 
-    fun loginWithGoogle(request: GoogleLoginRequest): OAuthResponse {
+    fun loginWithGoogle(request: GoogleLoginRequest, locale: String? = null): OAuthResponse {
         val payload = verifyGoogleToken(request.idToken)
         val email = payload["email"] as? String
             ?: throw IllegalArgumentException("Google token does not contain email")
@@ -68,11 +69,12 @@ class OAuthService(
 
     // ==================== APPLE ====================
 
-    fun loginWithApple(request: AppleLoginRequest): OAuthResponse {
+    fun loginWithApple(request: AppleLoginRequest, locale: String? = null): OAuthResponse {
         val payload = verifyAppleToken(request.identityToken)
         val appleId = payload["sub"] as String
         val email = payload["email"] as? String
-        val name = request.fullName ?: email?.substringBefore("@") ?: "사용자"
+        val name = request.fullName ?: email?.substringBefore("@")
+            ?: ErrorLocalization.message("user.default_nickname", locale ?: "en")
 
         return findOrCreateUser(
             provider = "APPLE",
@@ -107,13 +109,14 @@ class OAuthService(
 
     // ==================== KAKAO ====================
 
-    fun loginWithKakao(request: KakaoLoginRequest): OAuthResponse {
+    fun loginWithKakao(request: KakaoLoginRequest, locale: String? = null): OAuthResponse {
         val userInfo = getKakaoUserInfo(request.accessToken)
         val kakaoId = userInfo["id"].toString()
         val kakaoAccount = userInfo["kakao_account"] as? Map<*, *>
         val email = kakaoAccount?.get("email") as? String
         val profile = kakaoAccount?.get("profile") as? Map<*, *>
-        val nickname = profile?.get("nickname") as? String ?: email?.substringBefore("@") ?: "사용자"
+        val nickname = profile?.get("nickname") as? String ?: email?.substringBefore("@")
+            ?: ErrorLocalization.message("user.default_nickname", locale ?: "en")
 
         return findOrCreateUser(
             provider = "KAKAO",

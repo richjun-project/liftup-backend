@@ -382,6 +382,11 @@ class AIPlanGenerationService(
         val trainingStyle = request.trainingStyle ?: "balanced"
         val focusAreas = request.focusAreas?.joinToString(", ") ?: "none"
         val strengthData = buildStrengthDataSummary(request)
+        // planName/dayName used to be hardcoded to always generate in Korean regardless of the user's
+        // language, so en/ja users saw Korean plan/day names on their home dashboard. Derive the target
+        // language from the request's locale (falls back to Korean only when no locale was supplied, to
+        // preserve existing behavior for older clients).
+        val responseLanguage = com.richjun.liftupai.domain.ai.util.AILocalization.responseLanguage(request.locale ?: "ko")
 
         return """
 You are an expert strength & conditioning coach creating a workout plan.
@@ -440,12 +445,12 @@ ${buildRPETargets(request.experienceLevel, trainingStyle)}
    - Advanced: BLOCK (accumulation→intensification→realization)
 
 13. Use the strength data to decide exercise complexity, progression model, and starting volume conservatively.
-14. Plan name in Korean, descriptive and motivating.
+14. Plan name in $responseLanguage, descriptive and motivating.
 
 ## JSON Schema (respond EXACTLY in this format)
 {
-  "planName": "string (Korean)",
-  "planDescription": "string (Korean)",
+  "planName": "string (in $responseLanguage)",
+  "planDescription": "string (in $responseLanguage)",
   "splitType": "FULL_BODY|UPPER_LOWER|PPL|BRO_SPLIT|PPLUL",
   "totalDays": ${request.weeklyDays},
   "estimatedWeeks": 8,
@@ -453,7 +458,7 @@ ${buildRPETargets(request.experienceLevel, trainingStyle)}
   "days": [
     {
       "dayNumber": 1,
-      "dayName": "string (Korean, descriptive with target muscles, e.g. '밀기 가슴·어깨·삼두', '하체 스쿼트·런지', '당기기 등·이두')",
+      "dayName": "string (in $responseLanguage, descriptive with target muscles, e.g. 'Push: Chest, Shoulders, Triceps', 'Legs: Squat, Lunge', 'Pull: Back, Biceps' — translated into $responseLanguage)",
       "workoutType": "PUSH|PULL|LEGS|UPPER|LOWER|FULL_BODY",
       "estimatedDurationMinutes": number,
       "exercises": [

@@ -507,13 +507,21 @@ class WorkoutService(
         val profile = userProfileRepository.findByUser_Id(userId).orElse(null)
         val settings = userSettingsRepository.findByUser_Id(userId).orElse(null)
 
-        // 근육 회복 상태 계산
-        val recoveryStatus = calculateMuscleRecovery(userId)
+        // 근육 회복 상태 계산 (내부용 캐노니컬 값 + 화면 표시용 로케일 지역화 값)
+        val locale = resolveLocale(userId)
+        val recoveryInfo = calculateMuscleRecoveryInfo(userId)
+        val recoveryStatus = recoveryInfo.map { info ->
+            MuscleRecoveryStatus(
+                muscle = WorkoutTargetResolver.displayName(info.muscleGroup, locale),
+                recoveryPercentage = info.recoveryPercentage,
+                lastWorked = AppTime.formatUtc(info.lastWorked)
+            )
+        }
 
-        // 회복된 근육군 찾기
-        val wellRecoveredMuscles = recoveryStatus
+        // 회복된 근육군 찾기 (캐노니컬 MuscleGroup 기준 — 로케일에 영향받지 않음)
+        val wellRecoveredMuscles = recoveryInfo
             .filter { it.recoveryPercentage >= 80 }
-            .map { it.muscle }
+            .map { it.muscleGroup }
 
         // 타겟 근육군 결정 (회복 상태와 최근 운동 이력 고려)
         val targetMuscles = determineTargetMuscles(userId, wellRecoveredMuscles)
@@ -609,7 +617,7 @@ class WorkoutService(
 
     @Transactional(readOnly = true)
     fun getRecoveryStatus(userId: Long): RecoveryStatusResponse {
-        val muscleGroups = calculateMuscleRecovery(userId)
+        val muscleGroups = calculateMuscleRecovery(userId, resolveLocale(userId))
         val overallFatigue = calculateOverallFatigue(userId)
 
         return RecoveryStatusResponse(
@@ -826,7 +834,16 @@ class WorkoutService(
         return (baseCalories + volumeBonus).toInt()
     }
 
-    private fun calculateMuscleRecovery(userId: Long): List<MuscleRecoveryStatus> {
+    // 근육군별 회복 상태 (로케일 무관 내부 계산 결과). muscleGroup은 캐노니컬 enum이므로
+    // 화면 표시용 지역화, 그리고 회복된 근육군을 다시 WorkoutFocus/MuscleGroup으로 되돌리는
+    // 내부 로직(determineTargetMuscles) 양쪽에 안전하게 재사용할 수 있다.
+    private data class MuscleGroupRecoveryInfo(
+        val muscleGroup: MuscleGroup,
+        val recoveryPercentage: Int,
+        val lastWorked: LocalDateTime?
+    )
+
+    private fun calculateMuscleRecoveryInfo(userId: Long): List<MuscleGroupRecoveryInfo> {
         val user = userRepository.findById(userId).orElse(null) ?: return emptyList()
         val recentSessions = workoutSessionRepository.findTop7ByUserOrderByStartTimeDesc(user)
 
@@ -848,10 +865,22 @@ class WorkoutService(
 
             val recoveryPercentage = minOf(100, (hoursSinceWork * 100 / 48).toInt()) // 48시간 = 100% 회복
 
-            MuscleRecoveryStatus(
-                muscle = getMuscleGroupKoreanName(muscle),
+            MuscleGroupRecoveryInfo(
+                muscleGroup = muscle,
                 recoveryPercentage = recoveryPercentage,
-                lastWorked = AppTime.formatUtc(lastWorked)
+                lastWorked = lastWorked
+            )
+        }
+    }
+
+    // 화면에 노출되는 근육명은 사용자 로케일로 지역화한다 (TodayWorkoutRecommendation.recoveryStatus,
+    // RecoveryStatusResponse.muscleGroups[].name 을 통해 실제로 사용자에게 도달함).
+    private fun calculateMuscleRecovery(userId: Long, locale: String): List<MuscleRecoveryStatus> {
+        return calculateMuscleRecoveryInfo(userId).map { info ->
+            MuscleRecoveryStatus(
+                muscle = WorkoutTargetResolver.displayName(info.muscleGroup, locale),
+                recoveryPercentage = info.recoveryPercentage,
+                lastWorked = AppTime.formatUtc(info.lastWorked)
             )
         }
     }
@@ -1107,7 +1136,7 @@ class WorkoutService(
         )
     }
 
-    private fun determineTargetMuscles(userId: Long, wellRecoveredMuscles: List<String>): List<String> {
+    private fun determineTargetMuscles(userId: Long, wellRecoveredMuscles: List<MuscleGroup>): List<String> {
         // 최근 7일간 운동 이력 조회
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
@@ -1135,7 +1164,7 @@ class WorkoutService(
             WorkoutFocus.CORE
         )
         val recoveredFocuses = wellRecoveredMuscles
-            .mapNotNull { WorkoutTargetResolver.resolveFocus(it) ?: WorkoutTargetResolver.resolveMuscleGroup(it)?.let(WorkoutTargetResolver::focusForMuscleGroup) }
+            .map(WorkoutTargetResolver::focusForMuscleGroup)
             .toSet()
         val underworkedMuscles = focusPriority.filter { focus ->
             (recoveredFocuses.isEmpty() || focus in recoveredFocuses) &&
@@ -1302,11 +1331,6 @@ class WorkoutService(
     }
 
     private fun minOf(a: Double, b: Double): Double = if (a < b) a else b
-
-    // 근육군 이름 매핑
-    private fun getMuscleGroupKoreanName(muscleGroup: MuscleGroup): String {
-        return WorkoutTargetResolver.displayName(muscleGroup, locale = "ko")
-    }
 
     private fun getEnglishMuscleGroups(koreanName: String): List<MuscleGroup> {
         return WorkoutTargetResolver.muscleGroupsFor(koreanName).toList()

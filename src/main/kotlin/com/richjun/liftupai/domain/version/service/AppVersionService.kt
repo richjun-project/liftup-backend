@@ -7,6 +7,7 @@ import com.richjun.liftupai.domain.version.entity.Platform
 import com.richjun.liftupai.domain.version.entity.UpdateType
 import com.richjun.liftupai.domain.version.repository.AppVersionRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
+import com.richjun.liftupai.global.i18n.ErrorLocalization
 import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -26,16 +27,17 @@ class AppVersionService(
      */
     @Transactional(readOnly = true)
     fun checkVersion(request: VersionCheckRequest): VersionCheckResponse {
+        val locale = request.locale ?: "en"
         val platform = try {
             Platform.valueOf(request.platform.uppercase())
         } catch (e: Exception) {
-            throw IllegalArgumentException("유효하지 않은 플랫폼입니다: ${request.platform}")
+            throw IllegalArgumentException("Invalid platform: ${request.platform}")
         }
 
         // 최신 버전 조회
         val latestVersionList = appVersionRepository.findLatestByPlatform(platform)
         if (latestVersionList.isEmpty()) {
-            throw ResourceNotFoundException("해당 플랫폼의 버전 정보를 찾을 수 없습니다")
+            throw ResourceNotFoundException(ErrorLocalization.message("error.platform_version_not_found", locale))
         }
         val latestVersion = latestVersionList.first()
 
@@ -204,12 +206,15 @@ class AppVersionService(
 
         val latestVersionList = appVersionRepository.findLatestByPlatform(platformEnum)
         if (latestVersionList.isEmpty()) {
-            throw ResourceNotFoundException("버전 정보를 찾을 수 없습니다")
+            throw ResourceNotFoundException(ErrorLocalization.message("error.version_info_not_found", "en"))
         }
         val latestVersion = latestVersionList.first()
 
         latestVersion.maintenanceMode = enabled
-        latestVersion.maintenanceMessage = if (enabled) message ?: "서버 점검 중입니다. 잠시 후 다시 시도해주세요." else null
+        // Leave null when the admin didn't supply an explicit message, rather than persisting a single
+        // hardcoded-Korean default: a stored default can't vary per requester locale, but the per-request
+        // fallback in createMaintenanceResponse() below can.
+        latestVersion.maintenanceMessage = if (enabled) message else null
         latestVersion.updatedAt = AppTime.utcNow()
 
         appVersionRepository.save(latestVersion)
@@ -232,7 +237,7 @@ class AppVersionService(
             releaseNotes = null,
             maintenanceMode = true,
             maintenanceMessage = maintenanceInfo.maintenanceMessage
-                ?: "서버 점검 중입니다. 잠시 후 다시 시도해주세요.",
+                ?: ErrorLocalization.message("maintenance.default_message", request.locale ?: "en"),
             features = null
         )
     }

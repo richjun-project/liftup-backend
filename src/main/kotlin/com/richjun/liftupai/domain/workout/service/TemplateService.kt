@@ -3,6 +3,7 @@ package com.richjun.liftupai.domain.workout.service
 import com.richjun.liftupai.domain.workout.dto.response.*
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.repository.*
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,23 +26,40 @@ class TemplateService(
     private fun videoUrl(exercise: Exercise): String {
         return "${exerciseMediaBaseUrl.trimEnd('/')}/exercises/${exercise.slug}/video.mp4"
     }
-    fun getAllTemplates(userId: Long?): List<TemplateSummaryResponse> {
+
+    // Preset (PLAN_SOURCE=PRESET) template name/description/day-name are seeded once in Korean by
+    // TemplateBootstrapService and have no per-locale column, so we look up a translation from
+    // workout_messages*.properties by template code instead. AI_GENERATED plans have no such bundle entry
+    // (they're generated per-user, not preset), so they fall back to the stored value unchanged.
+    private fun translatedTemplateName(code: String, fallback: String, locale: String): String {
+        return WorkoutLocalization.maybeMessage("template.$code.name", locale) ?: fallback
+    }
+
+    private fun translatedTemplateDescription(code: String, fallback: String?, locale: String): String? {
+        return WorkoutLocalization.maybeMessage("template.$code.description", locale) ?: fallback
+    }
+
+    private fun translatedDayName(code: String, dayNumber: Int, fallback: String, locale: String): String {
+        return WorkoutLocalization.maybeMessage("template.$code.day.$dayNumber.name", locale) ?: fallback
+    }
+
+    fun getAllTemplates(userId: Long?, locale: String = "en"): List<TemplateSummaryResponse> {
         val systemTemplates = templateRepository.findByIsActiveTrueAndSourceTypeOrderBySortOrder(PlanSourceType.PRESET)
         val userAIPlans = if (userId != null) {
             templateRepository.findByOwnerUserIdAndSourceType(userId, PlanSourceType.AI_GENERATED)
         } else emptyList()
 
-        return (systemTemplates + userAIPlans).map { it.toSummaryResponse() }
+        return (systemTemplates + userAIPlans).map { it.toSummaryResponse(locale) }
     }
 
-    fun getSystemTemplates(): List<TemplateSummaryResponse> {
+    fun getSystemTemplates(locale: String = "en"): List<TemplateSummaryResponse> {
         return templateRepository.findByIsActiveTrueAndSourceTypeOrderBySortOrder(PlanSourceType.PRESET)
-            .map { it.toSummaryResponse() }
+            .map { it.toSummaryResponse(locale) }
     }
 
-    fun getUserAIPlans(userId: Long): List<TemplateSummaryResponse> {
+    fun getUserAIPlans(userId: Long, locale: String = "en"): List<TemplateSummaryResponse> {
         return templateRepository.findByOwnerUserIdAndSourceType(userId, PlanSourceType.AI_GENERATED)
-            .map { it.toSummaryResponse() }
+            .map { it.toSummaryResponse(locale) }
     }
 
     fun getTemplateDetail(code: String, locale: String = "ko"): TemplateDetailResponse {
@@ -64,7 +82,7 @@ class TemplateService(
             val exercises = templateDayExerciseRepository.findByTemplateDayIdOrderByOrderInDay(day.id)
             TemplateDayResponse(
                 dayNumber = day.dayNumber,
-                dayName = day.dayName,
+                dayName = translatedDayName(template.code, day.dayNumber, day.dayName, locale),
                 workoutType = day.workoutType.name,
                 estimatedDurationMinutes = day.estimatedDurationMinutes,
                 exercises = exercises.map { ex ->
@@ -89,8 +107,8 @@ class TemplateService(
 
         return TemplateDetailResponse(
             code = template.code,
-            name = template.name,
-            description = template.description,
+            name = translatedTemplateName(template.code, template.name, locale),
+            description = translatedTemplateDescription(template.code, template.description, locale),
             targetGoal = template.targetGoal,
             targetExperience = template.targetExperience,
             splitType = template.splitType.name,
@@ -100,10 +118,10 @@ class TemplateService(
         )
     }
 
-    private fun WorkoutPlanTemplate.toSummaryResponse() = TemplateSummaryResponse(
+    private fun WorkoutPlanTemplate.toSummaryResponse(locale: String = "en") = TemplateSummaryResponse(
         code = code,
-        name = name,
-        description = description,
+        name = translatedTemplateName(code, name, locale),
+        description = translatedTemplateDescription(code, description, locale),
         targetGoal = targetGoal,
         targetExperience = targetExperience,
         splitType = splitType.name,

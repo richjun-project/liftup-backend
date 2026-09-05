@@ -228,7 +228,7 @@ class GeminiAIService(
             This is not a suggestion — it is the defining trait of your character.
             Your word choice, sentence endings, tone, and attitude must all reflect this persona consistently.
 
-            ${styleInstruction(ptStyle)}
+            ${styleInstruction(ptStyle, responseLanguage)}
 
             $profileSection
 
@@ -317,7 +317,7 @@ class GeminiAIService(
             $profileInfo
 
             PT style:
-            ${styleInstruction(ptStyle)}
+            ${styleInstruction(ptStyle, responseLanguage)}
 
             Goal guidance:
             $goalGuidance
@@ -371,7 +371,7 @@ class GeminiAIService(
             $profileInfo
 
             PT style:
-            ${styleInstruction(ptStyle)}
+            ${styleInstruction(ptStyle, responseLanguage)}
 
             Daily macro targets (calculated from user's body):
             - Calories: ${calorieTarget}kcal
@@ -536,8 +536,20 @@ class GeminiAIService(
           Never respond with lines that dismiss their feelings.
     """.trimIndent()
 
-    private fun styleInstruction(ptStyle: PTStyle): String {
-        return safetyOverride + "\n\n" + styleInstructionBody(ptStyle)
+    private fun styleInstruction(ptStyle: PTStyle, responseLanguage: String): String {
+        // styleInstructionBody's Speaking style / Example lines are written only in Korean. An LLM tends to
+        // follow concrete examples more strongly than an abstract instruction, so the persona block can
+        // override the "Respond ONLY in $responseLanguage" instruction stated earlier in the prompt for
+        // non-Korean locales. This explicit reminder re-asserts the response language after the persona
+        // examples, without needing to hand-translate 10 persona blocks into en/ja.
+        val languageReminder = if (responseLanguage.equals("Korean", ignoreCase = true)) {
+            ""
+        } else {
+            "\n\nIMPORTANT: The \"Example lines\" above are written in Korean purely to illustrate the persona's TONE and ATTITUDE " +
+                "(bluntness, warmth, sarcasm, formality, etc). Do NOT reuse their Korean words, phrases, or sentence endings. " +
+                "Translate the tone into $responseLanguage and respond ONLY in $responseLanguage — never mix in Korean words or endings."
+        }
+        return safetyOverride + "\n\n" + styleInstructionBody(ptStyle) + languageReminder
     }
 
     private fun styleInstructionBody(ptStyle: PTStyle): String {

@@ -22,9 +22,10 @@ class UserPlanController(
     // --- Templates ---
     @GetMapping("/templates")
     fun getTemplates(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false, defaultValue = "en") locale: String
     ): ResponseEntity<Map<String, Any>> {
-        val templates = templateService.getAllTemplates(userDetails.getId())
+        val templates = templateService.getAllTemplates(userDetails.getId(), locale)
         return ResponseEntity.ok(mapOf("success" to true, "data" to templates))
     }
 
@@ -41,18 +42,20 @@ class UserPlanController(
     fun applyTemplate(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @PathVariable code: String,
-        @RequestBody(required = false) request: ApplyTemplateRequest?
+        @RequestBody(required = false) request: ApplyTemplateRequest?,
+        @RequestParam(required = false, defaultValue = "en") locale: String
     ): ResponseEntity<Map<String, Any>> {
-        val dashboard = userPlanService.applyTemplate(userDetails.getUser(), code, request)
+        val dashboard = userPlanService.applyTemplate(userDetails.getUser(), code, request, locale)
         return ResponseEntity.ok(mapOf("success" to true, "data" to dashboard))
     }
 
     // --- Plan Management ---
     @GetMapping("/plans/active")
     fun getActivePlan(
-        @AuthenticationPrincipal userDetails: CustomUserDetails
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(required = false, defaultValue = "en") locale: String
     ): ResponseEntity<Map<String, Any>> {
-        val dashboard = userPlanService.getPlanDashboard(userDetails.getId())
+        val dashboard = userPlanService.getPlanDashboard(userDetails.getId(), locale)
         return ResponseEntity.ok(mapOf("success" to true, "data" to dashboard))
     }
 
@@ -70,10 +73,11 @@ class UserPlanController(
     @PutMapping("/plans/active/days/{dayNumber}/complete")
     fun completeDay(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @PathVariable dayNumber: Int
+        @PathVariable dayNumber: Int,
+        @RequestParam(required = false, defaultValue = "en") locale: String
     ): ResponseEntity<Map<String, Any>> {
         userPlanService.completeDay(userDetails.getId(), dayNumber)
-        val dashboard = userPlanService.getPlanDashboard(userDetails.getId())
+        val dashboard = userPlanService.getPlanDashboard(userDetails.getId(), locale)
         return ResponseEntity.ok(mapOf("success" to true, "data" to dashboard, "message" to "Day completed"))
     }
 
@@ -129,12 +133,19 @@ class UserPlanController(
     }
 
     // --- AI Plan Generation (기존 동기 방식 유지) ---
+    // locale은 다른 엔드포인트와 동일하게 전역 LocaleInterceptor가 붙이는 쿼리 파라미터로 받는다.
     @PostMapping("/plans/generate-ai")
     fun generateAIPlan(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @RequestBody request: GenerateAIPlanRequest
+        @RequestBody request: GenerateAIPlanRequest,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<Map<String, Any>> {
-        val dashboard = aiPlanGenerationService.generateAndApplyPlan(userDetails.getUser(), request)
+        val effectiveRequest = if (locale != null && request.locale == null) {
+            request.copy(locale = locale)
+        } else {
+            request
+        }
+        val dashboard = aiPlanGenerationService.generateAndApplyPlan(userDetails.getUser(), effectiveRequest)
         return ResponseEntity.ok(mapOf("success" to true, "data" to dashboard))
     }
 

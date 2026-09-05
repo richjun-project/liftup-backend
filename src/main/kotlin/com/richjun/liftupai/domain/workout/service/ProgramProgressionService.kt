@@ -692,8 +692,8 @@ class ProgramProgressionService(
                 daysPerWeek = program.daysPerWeek,
                 description = program.description ?: "",
                 benefits = listOf(
-                    "${program.progressionModel.name} 주기화",
-                    "${program.daysPerWeek}일/주 훈련"
+                    WorkoutLocalization.message("progression.benefit.periodization", locale, program.progressionModel.name),
+                    WorkoutLocalization.message("progression.benefit.frequency", locale, program.daysPerWeek)
                 ),
                 difficulty = program.targetExperienceLevel.name.lowercase()
             )

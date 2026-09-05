@@ -46,5 +46,6 @@ data class GenerateAIPlanRequest(
     val strengthAssessment: Map<String, Any>? = null,
     val estimatedMaxes: Map<String, Double>? = null,
     val workingWeights: Map<String, Double>? = null,
-    val strengthLevel: String? = null
+    val strengthLevel: String? = null,
+    val locale: String? = null
 )

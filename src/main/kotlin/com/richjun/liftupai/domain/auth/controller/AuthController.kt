@@ -137,20 +137,29 @@ class AuthController(
     }
 
     @PostMapping("/oauth/google")
-    fun loginWithGoogle(@RequestBody request: GoogleLoginRequest): ResponseEntity<ApiResponse<OAuthResponse>> {
-        val response = oAuthService.loginWithGoogle(request)
+    fun loginWithGoogle(
+        @RequestBody request: GoogleLoginRequest,
+        @RequestParam(required = false) locale: String?
+    ): ResponseEntity<ApiResponse<OAuthResponse>> {
+        val response = oAuthService.loginWithGoogle(request, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @PostMapping("/oauth/apple")
-    fun loginWithApple(@RequestBody request: AppleLoginRequest): ResponseEntity<ApiResponse<OAuthResponse>> {
-        val response = oAuthService.loginWithApple(request)
+    fun loginWithApple(
+        @RequestBody request: AppleLoginRequest,
+        @RequestParam(required = false) locale: String?
+    ): ResponseEntity<ApiResponse<OAuthResponse>> {
+        val response = oAuthService.loginWithApple(request, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @PostMapping("/oauth/kakao")
-    fun loginWithKakao(@RequestBody request: KakaoLoginRequest): ResponseEntity<ApiResponse<OAuthResponse>> {
-        val response = oAuthService.loginWithKakao(request)
+    fun loginWithKakao(
+        @RequestBody request: KakaoLoginRequest,
+        @RequestParam(required = false) locale: String?
+    ): ResponseEntity<ApiResponse<OAuthResponse>> {
+        val response = oAuthService.loginWithKakao(request, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 }

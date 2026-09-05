@@ -19,6 +19,15 @@ class GlobalExceptionHandler {
     private val log = LoggerFactory.getLogger(javaClass)
 
     private fun resolveLocale(request: HttpServletRequest): String {
+        val queryLocale = request.getParameter("locale")
+        if (!queryLocale.isNullOrBlank()) {
+            return when {
+                queryLocale.startsWith("ko") -> "ko"
+                queryLocale.startsWith("ja") -> "ja"
+                queryLocale.startsWith("en") -> "en"
+                else -> "en"
+            }
+        }
         val acceptLanguage = request.getHeader("Accept-Language") ?: return "en"
         val primary = acceptLanguage.split(",").firstOrNull()?.trim()?.split(";")?.firstOrNull()?.trim() ?: return "en"
         return when {
@@ -28,39 +37,51 @@ class GlobalExceptionHandler {
         }
     }
 
+    // NOTE: ex.message is intentionally NOT used here. ResourceNotFoundException / DuplicateResourceException /
+    // InvalidCredentialsException / UnauthorizedException / BadRequestException all require a non-null message at
+    // construction, so `ex.message` is never null and previously always won over locale-aware ErrorLocalization
+    // lookups, leaking whatever literal (often Korean) string was hardcoded at the throw site to every locale.
+    // Always resolve through ErrorLocalization so the response matches the caller's locale.
+    // ex.message is still captured via log.warn (with method+path) for ops debugging — it just never
+    // reaches the response body.
     @ExceptionHandler(ResourceNotFoundException::class)
     fun handleResourceNotFoundException(ex: ResourceNotFoundException, request: HttpServletRequest): ResponseEntity<ApiResponse<Nothing>> {
         val locale = resolveLocale(request)
+        log.warn("ResourceNotFoundException at {} {}: {}", request.method, request.requestURI, ex.message)
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(ApiResponse.error("NOT_FOUND", ex.message ?: ErrorLocalization.message("error.resource_not_found", locale)))
+            .body(ApiResponse.error("NOT_FOUND", ErrorLocalization.message("error.resource_not_found", locale)))
     }
 
     @ExceptionHandler(DuplicateResourceException::class)
     fun handleDuplicateResourceException(ex: DuplicateResourceException, request: HttpServletRequest): ResponseEntity<ApiResponse<Nothing>> {
         val locale = resolveLocale(request)
+        log.warn("DuplicateResourceException at {} {}: {}", request.method, request.requestURI, ex.message)
         return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(ApiResponse.error("VALID002", ex.message ?: ErrorLocalization.message("error.duplicate_resource", locale)))
+            .body(ApiResponse.error("VALID002", ErrorLocalization.message("error.duplicate_resource", locale)))
     }
 
     @ExceptionHandler(InvalidCredentialsException::class)
     fun handleInvalidCredentialsException(ex: InvalidCredentialsException, request: HttpServletRequest): ResponseEntity<ApiResponse<Nothing>> {
         val locale = resolveLocale(request)
+        log.warn("InvalidCredentialsException at {} {}: {}", request.method, request.requestURI, ex.message)
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(ApiResponse.error("AUTH001", ex.message ?: ErrorLocalization.message("error.authentication_failed", locale)))
+            .body(ApiResponse.error("AUTH001", ErrorLocalization.message("error.authentication_failed", locale)))
     }
 
     @ExceptionHandler(UnauthorizedException::class)
     fun handleUnauthorizedException(ex: UnauthorizedException, request: HttpServletRequest): ResponseEntity<ApiResponse<Nothing>> {
         val locale = resolveLocale(request)
+        log.warn("UnauthorizedException at {} {}: {}", request.method, request.requestURI, ex.message)
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-            .body(ApiResponse.error("AUTH003", ex.message ?: ErrorLocalization.message("error.insufficient_permissions", locale)))
+            .body(ApiResponse.error("AUTH003", ErrorLocalization.message("error.insufficient_permissions", locale)))
     }
 
     @ExceptionHandler(BadRequestException::class)
     fun handleBadRequestException(ex: BadRequestException, request: HttpServletRequest): ResponseEntity<ApiResponse<Nothing>> {
         val locale = resolveLocale(request)
+        log.warn("BadRequestException at {} {}: {}", request.method, request.requestURI, ex.message)
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ApiResponse.error("VALID001", ex.message ?: ErrorLocalization.message("error.bad_request", locale)))
+            .body(ApiResponse.error("VALID001", ErrorLocalization.message("error.bad_request", locale)))
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)

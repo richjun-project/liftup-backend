@@ -17,11 +17,16 @@ class AppVersionController(
     /**
      * 버전 체크 API - 클라이언트 앱에서 호출
      * 인증 불필요 (로그인 전에도 체크 가능해야 함)
+     *
+     * locale은 다른 엔드포인트와 동일하게 전역 LocaleInterceptor가 붙이는
+     * 쿼리 파라미터로 받는다 (로그인 전이라 UserSettings를 조회할 수 없음).
      */
     @PostMapping("/check")
     fun checkVersion(
-        @Valid @RequestBody request: VersionCheckRequest
+        @Valid @RequestBody request: VersionCheckRequest,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<VersionCheckResponse>> {
+        request.locale = locale ?: request.locale
         val response = appVersionService.checkVersion(request)
         return ResponseEntity.ok(ApiResponse.success(response))
     }

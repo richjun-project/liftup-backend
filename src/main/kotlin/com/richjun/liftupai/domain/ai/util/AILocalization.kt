@@ -34,7 +34,11 @@ object AILocalization {
     }
 
     fun keywordAliases(key: String): List<String> {
-        val locales = listOf("en", "ko")
+        // Must cover every locale that ai_messages_*.properties ships keywords for (en/ko/ja), otherwise
+        // getFallbackResponse()'s keyword classification silently ignores a locale's keywords even though
+        // its bundle already defines them (e.g. ja was missing here despite ai_messages_ja.properties
+        // having fallback.keyword.* entries).
+        val locales = listOf("en", "ko", "ja")
         return locales
             .flatMap { locale ->
                 maybeMessage(key, locale)

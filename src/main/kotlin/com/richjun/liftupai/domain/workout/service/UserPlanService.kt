@@ -49,7 +49,27 @@ class UserPlanService(
         return userWorkoutPlanRepository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, PlanStatus.ACTIVE)
     }
 
-    fun getPlanDashboard(userId: Long): PlanDashboardResponse {
+    // Preset templates have no per-locale name column (see TemplateService for the same lookup against
+    // workout_messages*.properties). A plan created from a preset template records the template code as
+    // sourceId, so we can re-resolve the locale-correct name/dayName at read time regardless of which
+    // locale was active when the plan was first created/persisted. AI-generated and custom plans have no
+    // bundle entry for their sourceId and simply fall back to the stored (creation-time) value.
+    private fun translatedPlanName(plan: UserWorkoutPlan, locale: String): String {
+        if (plan.sourceType != PlanSourceType.TEMPLATE) return plan.planName
+        return WorkoutLocalization.maybeMessage("template.${plan.sourceId}.name", locale) ?: plan.planName
+    }
+
+    private fun translatedPlanDescription(plan: UserWorkoutPlan, locale: String): String? {
+        if (plan.sourceType != PlanSourceType.TEMPLATE) return plan.planDescription
+        return WorkoutLocalization.maybeMessage("template.${plan.sourceId}.description", locale) ?: plan.planDescription
+    }
+
+    private fun translatedPlanDayName(plan: UserWorkoutPlan, dayNumber: Int, fallback: String, locale: String): String {
+        if (plan.sourceType != PlanSourceType.TEMPLATE) return fallback
+        return WorkoutLocalization.maybeMessage("template.${plan.sourceId}.day.$dayNumber.name", locale) ?: fallback
+    }
+
+    fun getPlanDashboard(userId: Long, locale: String = "en"): PlanDashboardResponse {
         val plan = getActivePlan(userId)
             ?: throw ResourceNotFoundException("No active plan found")
 
@@ -60,8 +80,8 @@ class UserPlanService(
 
         return PlanDashboardResponse(
             planId = plan.id,
-            planName = plan.planName,
-            planDescription = plan.planDescription,
+            planName = translatedPlanName(plan, locale),
+            planDescription = translatedPlanDescription(plan, locale),
             splitType = plan.splitType.name,
             sourceType = plan.sourceType.name,
             totalDays = plan.totalDays,
@@ -71,7 +91,7 @@ class UserPlanService(
             days = days.map { day ->
                 PlanDayOverview(
                     dayNumber = day.dayNumber,
-                    dayName = day.dayName,
+                    dayName = translatedPlanDayName(plan, day.dayNumber, day.dayName, locale),
                     workoutType = day.workoutType.name,
                     estimatedDuration = day.estimatedDurationMinutes,
                     exerciseCount = dayExerciseCounts[day.id] ?: 0,
@@ -112,7 +132,7 @@ class UserPlanService(
 
         val baseResponse = DayWorkoutResponse(
             dayNumber = day.dayNumber,
-            dayName = day.dayName,
+            dayName = translatedPlanDayName(plan, day.dayNumber, day.dayName, locale),
             workoutType = day.workoutType.name,
             estimatedDuration = day.estimatedDurationMinutes,
             completionCount = day.totalCompletions,
@@ -163,9 +183,9 @@ class UserPlanService(
     }
 
     @Transactional
-    fun applyTemplate(user: User, templateCode: String, request: ApplyTemplateRequest?): PlanDashboardResponse {
+    fun applyTemplate(user: User, templateCode: String, request: ApplyTemplateRequest?, locale: String = "en"): PlanDashboardResponse {
         val template = templateRepository.findByCode(templateCode)
-            ?: throw ResourceNotFoundException("Template not found: $templateCode")
+            ?: throw ResourceNotFoundException(WorkoutLocalization.message("error.template_not_found", locale, templateCode))
 
         // Abandon existing active plan
         abandonActivePlan(user.id)
@@ -175,8 +195,8 @@ class UserPlanService(
             user = user,
             sourceType = if (template.sourceType == PlanSourceType.AI_GENERATED) PlanSourceType.AI_GENERATED else PlanSourceType.TEMPLATE,
             sourceId = template.code,
-            planName = template.name,
-            planDescription = template.description,
+            planName = WorkoutLocalization.maybeMessage("template.${template.code}.name", locale) ?: template.name,
+            planDescription = WorkoutLocalization.maybeMessage("template.${template.code}.description", locale) ?: template.description,
             splitType = template.splitType,
             totalDays = template.totalDays,
             currentDay = 1,
@@ -191,7 +211,7 @@ class UserPlanService(
             val planDay = UserPlanDay(
                 plan = savedPlan,
                 dayNumber = templateDay.dayNumber,
-                dayName = templateDay.dayName,
+                dayName = WorkoutLocalization.maybeMessage("template.${template.code}.day.${templateDay.dayNumber}.name", locale) ?: templateDay.dayName,
                 workoutType = templateDay.workoutType,
                 estimatedDurationMinutes = templateDay.estimatedDurationMinutes
             )

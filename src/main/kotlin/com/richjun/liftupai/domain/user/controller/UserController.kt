@@ -3,6 +3,7 @@ package com.richjun.liftupai.domain.user.controller
 import com.richjun.liftupai.domain.user.dto.*
 import com.richjun.liftupai.domain.user.service.UserService
 import com.richjun.liftupai.global.common.ApiResponse
+import com.richjun.liftupai.global.i18n.ErrorLocalization
 import com.richjun.liftupai.global.security.CustomUserDetails
 import jakarta.validation.Valid
 import org.springframework.http.ResponseEntity
@@ -26,11 +27,12 @@ class UserController(
     @PostMapping("/profile")
     fun createProfile(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Valid @RequestBody request: ProfileRequest
+        @Valid @RequestBody request: ProfileRequest,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<Map<String, Any>>> {
         val profile = userService.createProfile(userDetails.getId(), request)
         return ResponseEntity.ok(ApiResponse.success(mapOf(
-            "message" to "프로필이 생성되었습니다",
+            "message" to ErrorLocalization.message("profile.created", locale ?: "en"),
             "profile" to profile
         )))
     }
@@ -38,11 +40,12 @@ class UserController(
     @PutMapping("/profile")
     fun updateProfile(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Valid @RequestBody request: ProfileUpdateRequest
+        @Valid @RequestBody request: ProfileUpdateRequest,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<Map<String, Any>>> {
         val profile = userService.updateProfileV4(userDetails.getId(), request)
         return ResponseEntity.ok(ApiResponse.success(mapOf(
-            "message" to "프로필이 업데이트되었습니다",
+            "message" to ErrorLocalization.message("profile.updated", locale ?: "en"),
             "profile" to profile
         )))
     }

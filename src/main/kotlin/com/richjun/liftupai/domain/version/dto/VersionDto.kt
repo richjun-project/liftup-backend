@@ -18,18 +18,24 @@ class VersionCheckRequest() {
     var deviceId: String? = null
     var osVersion: String? = null
 
+    // Client's UI locale (ko/en/ja). No auth session exists yet at this call site (pre-login version gate),
+    // so this cannot be read from UserSettings — it must come from the request itself.
+    var locale: String? = null
+
     constructor(
         currentVersion: String,
         versionCode: Int,
         platform: String,
         deviceId: String? = null,
-        osVersion: String? = null
+        osVersion: String? = null,
+        locale: String? = null
     ) : this() {
         this.currentVersion = currentVersion
         this.versionCode = versionCode
         this.platform = platform
         this.deviceId = deviceId
         this.osVersion = osVersion
+        this.locale = locale
     }
 }
 
