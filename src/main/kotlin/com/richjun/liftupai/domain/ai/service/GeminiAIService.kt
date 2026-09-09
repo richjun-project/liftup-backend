@@ -61,7 +61,17 @@ class GeminiAIService(
      */
     fun generateResponse(message: String, user: User, history: List<Pair<String, String>>): String {
         return try {
-            val locale = resolveLocale(user)
+            // 저장된 설정보다 "사용자가 실제로 쓴 언어"를 우선한다.
+            //
+            // 2026-09-06 실사용 로그: 일본 사용자가 일본어로 질문했는데
+            // UserSettings.language 가 기본값 'ko' 라서 AI가 한국어로 답했고,
+            // "日本語にして"(일본어로 해줘)라는 요청에도 한국어로
+            // "시스템상 한국어로만 답변할 수 있다"고 답했다. 그 사용자는 다시 오지 않았다.
+            // 클라이언트의 로케일 동기화가 어떤 이유로든 실패해도 대화는 통해야 한다.
+            val storedLocale = resolveLocale(user)
+            val locale = detectLocaleFromText(message)
+                ?.also { detected -> persistLocaleIfChanged(user, detected, storedLocale) }
+                ?: storedLocale
             val userProfile = userProfileRepository.findByUser(user).orElse(null)
             val ptStyle = userProfile?.ptStyle ?: PTStyle.GAME_MASTER
             // 채팅 AI가 "오늘 식단 잘 하고 있어?" 같은 질문에 실데이터로 답할 수 있도록 컨텍스트 주입.
@@ -691,6 +701,46 @@ class GeminiAIService(
 
     private fun calculateFatTarget(calories: Int): Double =
         com.richjun.liftupai.domain.nutrition.util.NutritionTargetCalculator.calculateFatTarget(calories)
+
+    /**
+     * 메시지에 쓰인 문자로 언어를 판별한다. 판단이 서지 않으면 null (저장된 설정을 그대로 쓴다).
+     *
+     * 가나(ひらがな/カタカナ)와 한글은 서로 배타적이라 오탐 위험이 거의 없다.
+     * 라틴 문자만으로 이뤄진 문장은 영어로 본다 — 다만 "OK", "3세트" 같은 짧은 조각으로
+     * 언어를 바꿔버리면 안 되므로 최소 길이 조건을 둔다.
+     */
+    internal fun detectLocaleFromText(text: String): String? {
+        val hasKana = text.any { it in '\u3040'..'\u30ff' }
+        val hasHangul = text.any { it in '\uac00'..'\ud7a3' || it in '\u3130'..'\u318f' }
+        if (hasKana && !hasHangul) return "ja"
+        if (hasHangul && !hasKana) return "ko"
+        if (hasKana && hasHangul) return null // 섞여 있으면 판단 보류
+
+        val letters = text.count { it.isLetter() }
+        val ascii = text.count { it.isLetter() && it.code < 128 }
+        // 한자만 있는 문장은 ja/ko/zh 구분이 안 되므로 보류한다.
+        val hasCjkIdeograph = text.any { it in '\u4e00'..'\u9fff' }
+        if (hasCjkIdeograph) return null
+        if (letters >= 8 && ascii == letters) return "en"
+        return null
+    }
+
+    /**
+     * 판별된 언어가 저장값과 다르면 설정을 갱신한다.
+     * 채팅뿐 아니라 푸시 알림·에러 메시지까지 같은 언어로 따라오게 하기 위함이다.
+     * (일본 사용자가 3일 내내 한국어 체크인 알림을 받고 있었다.)
+     */
+    private fun persistLocaleIfChanged(user: User, detected: String, stored: String) {
+        if (detected == stored) return
+        try {
+            val settings = userSettingsRepository.findByUser(user).orElse(null) ?: return
+            settings.language = detected
+            userSettingsRepository.save(settings)
+            println("[GeminiAIService] user ${user.id} locale $stored -> $detected (메시지 언어 기준)")
+        } catch (e: Exception) {
+            println("[GeminiAIService] locale persist failed for user ${user.id}: ${e.message}")
+        }
+    }
 
     private fun resolveLocale(user: User): String {
         val language = userSettingsRepository.findByUser(user).orElse(null)?.language
