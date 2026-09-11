@@ -23,6 +23,7 @@ import java.util.Optional
 class TemplateInjuryFilterTest {
 
     private val settingsRepo = mock(UserSettingsRepository::class.java)
+    private val profileRepo = mock(com.richjun.liftupai.domain.user.repository.UserProfileRepository::class.java)
 
     private fun service(): UserPlanService = UserPlanService(
         mock(com.richjun.liftupai.domain.workout.repository.UserWorkoutPlanRepository::class.java),
@@ -37,7 +38,7 @@ class TemplateInjuryFilterTest {
         mock(WeightRecommendationService::class.java),
         mock(ProgramProgressiveOverloadService::class.java),
         mock(PlanWorkoutEnricher::class.java),
-        mock(com.richjun.liftupai.domain.user.repository.UserProfileRepository::class.java),
+        profileRepo,
         mock(com.richjun.liftupai.domain.workout.repository.ExerciseTranslationRepository::class.java),
     )
 
@@ -46,7 +47,25 @@ class TemplateInjuryFilterTest {
         val settings = UserSettings(user = user)
         settings.injuries = injuries.toMutableSet()
         `when`(settingsRepo.findByUser_Id(1L)).thenReturn(Optional.of(settings))
+        `when`(profileRepo.findByUser_Id(1L)).thenReturn(Optional.empty())
         return user
+    }
+
+    /** 기기 가입 경로는 부상을 user_profile_injuries 에 넣는다. 이쪽도 읽어야 한다. */
+    private fun userWithProfileInjuries(vararg injuries: String): User {
+        val user = User(id = 1L, email = "t@t.t", password = null, nickname = "QA")
+        val profile = com.richjun.liftupai.domain.user.entity.UserProfile(user = user)
+        profile.injuries = injuries.toMutableSet()
+        `when`(profileRepo.findByUser_Id(1L)).thenReturn(Optional.of(profile))
+        `when`(settingsRepo.findByUser_Id(1L)).thenReturn(Optional.empty())
+        return user
+    }
+
+    @Test
+    @DisplayName("기기 가입으로 프로필에 저장된 부상도 읽는다 — 이걸 놓쳐 필터가 무력화됐었다")
+    fun readsProfileInjuries() {
+        val user = userWithProfileInjuries("knee:severe")
+        assertThat(service().resolveInjuries(user, null)).containsExactly("knee")
     }
 
     @Test

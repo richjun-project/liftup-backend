@@ -269,7 +269,15 @@ class UserPlanService(
         val raw = if (fromRequest.isNotEmpty()) {
             fromRequest
         } else {
-            userSettingsRepository.findByUser_Id(user.id).orElse(null)?.injuries?.toList().orEmpty()
+            // 부상이 두 테이블에 나뉘어 저장된다 — 하나만 보면 필터가 조용히 무력화된다.
+            //   기기 가입(AuthService)      → user_profile_injuries
+            //   온보딩 설정(UserService)    → user_settings_injuries
+            // 실제로 한쪽만 읽었다가 무릎 부상 사용자의 플랜에 하체 운동이 그대로 들어갔다.
+            val fromProfile = userProfileRepository.findByUser_Id(user.id)
+                .orElse(null)?.injuries?.toList().orEmpty()
+            val fromSettings = userSettingsRepository.findByUser_Id(user.id)
+                .orElse(null)?.injuries?.toList().orEmpty()
+            fromProfile + fromSettings
         }
         return raw.map { it.substringBefore(':').trim().lowercase() }
             .filter { it.isNotEmpty() && it != "none" }

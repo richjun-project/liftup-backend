@@ -185,7 +185,7 @@ class InjuryFilterService(
         if (injuries.isEmpty()) return exercises
         val restrictions = getRestrictedExercises(injuries)
         val restrictedIds = restrictions.map { it.restrictedExercise.id }.toSet()
-        return exercises.filter { it.id !in restrictedIds }
+        return exercises.filter { it.id !in restrictedIds && !isRestrictedByRule(it, injuries) }
     }
 
     /**
@@ -195,7 +195,56 @@ class InjuryFilterService(
         if (injuries.isEmpty()) return false
         val restrictions = getRestrictedExercises(injuries)
         val restrictedIds = restrictions.map { it.restrictedExercise.id }.toSet()
-        return exerciseId in restrictedIds
+        if (exerciseId in restrictedIds) return true
+        // 큐레이션 테이블(injury_exercise_restrictions)은 현재 비어 있다.
+        // 테이블만 믿으면 필터가 조용히 아무 것도 거르지 않으므로(실제로 무릎 수술자에게
+        // 스쿼트·런지·레그프레스가 그대로 나갔다) 종목 속성 기반 규칙으로 폴백한다.
+        val exercise = exerciseRepository.findById(exerciseId).orElse(null) ?: return false
+        return isRestrictedByRule(exercise, injuries)
+    }
+
+    /**
+     * 종목의 부위/동작 패턴으로 부상 제한 여부를 판정한다.
+     *
+     * 큐레이션 데이터가 채워지면 위의 테이블 조회가 먼저 잡아내고, 이 규칙은 미등록 종목의
+     * 안전망으로 남는다. 애매하면 제한하는 쪽(보수적)으로 판단한다 — 부상 부위를 쓰는 운동을
+     * 한 번 빼먹는 비용이, 잘못 넣어 다치게 하는 비용보다 훨씬 싸다.
+     */
+    fun isRestrictedByRule(exercise: Exercise, injuries: Set<String>): Boolean {
+        val parts = injuries.map { it.substringBefore(':').trim().lowercase() }.toSet()
+        val pattern = exercise.movementPattern?.uppercase().orEmpty()
+        val muscles = exercise.muscleGroups.map { it.name }.toSet()
+
+        fun hitsPattern(vararg p: String) = p.any { pattern == it }
+        fun hitsMuscle(vararg m: String) = m.any { it in muscles }
+
+        for (part in parts) {
+            val restricted = when (part) {
+                "knee" -> hitsPattern("SQUAT", "LUNGE", "LEG_PRESS", "LEG_EXTENSION", "LEG_CURL", "PLYOMETRIC") ||
+                    hitsMuscle("QUADRICEPS", "HAMSTRINGS", "CALVES")
+                "hip" -> hitsPattern("SQUAT", "LUNGE", "HIP_HINGE", "DEADLIFT", "GLUTE_FOCUSED", "LEG_PRESS", "PLYOMETRIC") ||
+                    hitsMuscle("GLUTES", "HAMSTRINGS")
+                "lower_back", "back", "lowerback" ->
+                    hitsPattern("DEADLIFT", "HIP_HINGE", "BARBELL_ROW", "SQUAT", "CLEAN", "SNATCH", "ROTATION", "CARRY", "COMPOUND_COMPLEX")
+                "shoulder" -> hitsPattern(
+                    "VERTICAL_PRESS_BARBELL", "VERTICAL_PRESS_DUMBBELL", "VERTICAL_PRESS_MACHINE",
+                    "INCLINE_PRESS_BARBELL", "INCLINE_PRESS_DUMBBELL", "HORIZONTAL_PRESS_BARBELL",
+                    "HORIZONTAL_PRESS_DUMBBELL", "DIPS", "PUSHUP", "FLY", "LATERAL_RAISE", "FRONT_RAISE",
+                    "UPRIGHT_ROW", "PULLUP_CHINUP", "SNATCH", "CLEAN"
+                ) || hitsMuscle("SHOULDERS")
+                "elbow" -> hitsPattern(
+                    "BICEP_CURL_BARBELL", "BICEP_CURL_DUMBBELL", "BICEP_CURL_CABLE",
+                    "TRICEP_OVERHEAD", "TRICEP_LYING", "TRICEP_PUSHDOWN", "DIPS", "PUSHUP", "PULLUP_CHINUP"
+                ) || hitsMuscle("BICEPS", "TRICEPS")
+                "wrist" -> hitsPattern(
+                    "PUSHUP", "PLANK", "ROLLOUT", "CLEAN", "SNATCH", "CARRY",
+                    "HORIZONTAL_PRESS_BARBELL", "VERTICAL_PRESS_BARBELL"
+                ) || hitsMuscle("FOREARMS")
+                else -> false
+            }
+            if (restricted) return true
+        }
+        return false
     }
 
     // ─── 자동 대체 운동 적용 ─────────────────────────────────────────
