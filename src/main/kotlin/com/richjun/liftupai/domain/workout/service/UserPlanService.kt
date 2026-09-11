@@ -25,6 +25,8 @@ class UserPlanService(
     private val templateRepository: WorkoutPlanTemplateRepository,
     private val templateDayRepository: TemplateDayRepository,
     private val templateDayExerciseRepository: TemplateDayExerciseRepository,
+    private val injuryFilterService: InjuryFilterService,
+    private val userSettingsRepository: com.richjun.liftupai.domain.user.repository.UserSettingsRepository,
     private val exerciseRepository: ExerciseRepository,
     private val weightRecommendationService: WeightRecommendationService,
     private val progressiveOverloadService: ProgramProgressiveOverloadService,
@@ -187,6 +189,11 @@ class UserPlanService(
         val template = templateRepository.findByCode(templateCode)
             ?: throw ResourceNotFoundException(WorkoutLocalization.message("error.template_not_found", locale, templateCode))
 
+        // 부상 정보는 요청값을 우선하되, 없으면 온보딩에서 저장된 설정값을 쓴다.
+        // (앱이 요청에 injuries 를 안 실어 보내는 경로가 있어 설정값 폴백이 필요하다)
+        val injuries = resolveInjuries(user, request)
+        var skippedForInjury = 0
+
         // Abandon existing active plan
         abandonActivePlan(user.id)
 
@@ -219,6 +226,17 @@ class UserPlanService(
 
             val templateExercises = templateDayExerciseRepository.findByTemplateDayIdOrderByOrderInDay(templateDay.id)
             for (templateEx in templateExercises) {
+                // 부상 부위를 건드리는 종목은 플랜에 넣지 않는다.
+                //
+                // 2026-08-26 실사용 사고: 무릎 수술을 신고한 사용자(user_settings_injuries='knee')의
+                // 템플릿 플랜에 하체 운동 6개가 그대로 들어갔다. 부상 필터는 AI 추천·프로그램 등록·
+                // 대체운동 경로에만 연결돼 있었고, 신규 사용자 대부분이 타는 템플릿 경로에는 없었다.
+                if (injuries.isNotEmpty() &&
+                    injuryFilterService.isExerciseRestricted(templateEx.exercise.id, injuries)
+                ) {
+                    skippedForInjury++
+                    continue
+                }
                 val planExercise = UserPlanDayExercise(
                     planDay = savedDay,
                     exercise = templateEx.exercise,
@@ -235,8 +253,27 @@ class UserPlanService(
             }
         }
 
-        log.info("User {} applied template {} as new plan {}", user.id, templateCode, savedPlan.id)
+        log.info(
+            "User {} applied template {} as new plan {} (injuries={}, exercisesSkipped={})",
+            user.id, templateCode, savedPlan.id, injuries, skippedForInjury
+        )
         return getPlanDashboard(user.id)
+    }
+
+    /**
+     * 부상 목록 해석. 요청에 담겨 오면 그것을, 없으면 온보딩에서 저장된 UserSettings 값을 쓴다.
+     * 저장 형식이 "knee:severe" 처럼 심각도가 붙어 오는 경우가 있어 부위만 남긴다.
+     */
+    internal fun resolveInjuries(user: User, request: ApplyTemplateRequest?): Set<String> {
+        val fromRequest = request?.injuries?.filter { it.isNotBlank() }.orEmpty()
+        val raw = if (fromRequest.isNotEmpty()) {
+            fromRequest
+        } else {
+            userSettingsRepository.findByUser_Id(user.id).orElse(null)?.injuries?.toList().orEmpty()
+        }
+        return raw.map { it.substringBefore(':').trim().lowercase() }
+            .filter { it.isNotEmpty() && it != "none" }
+            .toSet()
     }
 
     @Transactional
