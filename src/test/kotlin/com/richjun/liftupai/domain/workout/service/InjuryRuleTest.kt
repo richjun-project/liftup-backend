@@ -75,6 +75,16 @@ class InjuryRuleTest {
     }
 
     @Test
+    @DisplayName("허리 부상이면 런지와 스탠딩 바벨 오버헤드 프레스도 제한된다")
+    fun lowerBackAlsoBlocksLungeAndStandingPress() {
+        val injuries = setOf("lower_back")
+        assertThat(service.isRestrictedByRule(ex("LUNGE", MuscleGroup.QUADRICEPS), injuries)).isTrue()
+        assertThat(service.isRestrictedByRule(ex("VERTICAL_PRESS_BARBELL", MuscleGroup.SHOULDERS), injuries)).isTrue()
+        // 대조 — 앉아서 하는 머신 종목은 통과해야 한다
+        assertThat(service.isRestrictedByRule(ex("LEG_PRESS", MuscleGroup.QUADRICEPS), injuries)).isFalse()
+    }
+
+    @Test
     @DisplayName("양성 대조 — 부상이 없으면 어떤 종목도 제한되지 않는다")
     fun noInjuryNoRestriction() {
         assertThat(service.isRestrictedByRule(ex("SQUAT", MuscleGroup.QUADRICEPS), emptySet())).isFalse()

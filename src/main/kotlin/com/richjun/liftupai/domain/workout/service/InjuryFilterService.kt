@@ -224,8 +224,14 @@ class InjuryFilterService(
                     hitsMuscle("QUADRICEPS", "HAMSTRINGS", "CALVES")
                 "hip" -> hitsPattern("SQUAT", "LUNGE", "HIP_HINGE", "DEADLIFT", "GLUTE_FOCUSED", "LEG_PRESS", "PLYOMETRIC") ||
                     hitsMuscle("GLUTES", "HAMSTRINGS")
+                // 허리는 "선 자세로 척추에 하중이 실리는" 동작 전반이 문제다.
+                // 런지와 스탠딩 바벨 오버헤드 프레스도 여기 포함된다(치환 검토 중 누락 발견).
                 "lower_back", "back", "lowerback" ->
-                    hitsPattern("DEADLIFT", "HIP_HINGE", "BARBELL_ROW", "SQUAT", "CLEAN", "SNATCH", "ROTATION", "CARRY", "COMPOUND_COMPLEX")
+                    hitsPattern(
+                        "DEADLIFT", "HIP_HINGE", "BARBELL_ROW", "SQUAT", "LUNGE",
+                        "CLEAN", "SNATCH", "ROTATION", "CARRY", "COMPOUND_COMPLEX",
+                        "VERTICAL_PRESS_BARBELL"
+                    )
                 "shoulder" -> hitsPattern(
                     "VERTICAL_PRESS_BARBELL", "VERTICAL_PRESS_DUMBBELL", "VERTICAL_PRESS_MACHINE",
                     "INCLINE_PRESS_BARBELL", "INCLINE_PRESS_DUMBBELL", "HORIZONTAL_PRESS_BARBELL",
