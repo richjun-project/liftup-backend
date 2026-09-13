@@ -180,9 +180,31 @@ class FcmNotificationService(
             MessagingErrorCode.SENDER_ID_MISMATCH -> {
                 logger.error("Sender ID mismatch for device: ${device.deviceToken.take(20)}...")
             }
+            MessagingErrorCode.THIRD_PARTY_AUTH_ERROR -> {
+                // APNs 인증 실패. 기기 문제가 아니라 서버/콘솔 설정 문제이므로
+                // 절대 기기를 비활성화하면 안 된다.
+                logger.error(
+                    "[FCM] APNs 인증 실패 (THIRD_PARTY_AUTH_ERROR). " +
+                        "Firebase 콘솔의 APNs 인증 키, 그리고 앱이 사용하는 Firebase appId 가 " +
+                        "실제 번들 ID 로 등록된 앱과 같은지 확인해야 한다. device=${'$'}{device.id} " +
+                        "raw=${'$'}{rawResponseOf(e)}"
+                )
+            }
             else -> {
-                logger.error("FCM error: ${e.messagingErrorCode} - ${e.message}")
+                // messagingErrorCode 가 null 로 오는 경우가 있어(예: 원본 401) 그것만으로는
+                // 원인을 알 수 없다. 원본 HTTP 응답을 함께 남긴다.
+                logger.error(
+                    "FCM error: ${'$'}{e.messagingErrorCode} - ${'$'}{e.message} " +
+                        "device=${'$'}{device.id} raw=${'$'}{rawResponseOf(e)}"
+                )
             }
         }
+    }
+
+    /** 진단용 원본 HTTP 응답. SDK 버전에 따라 없을 수 있으므로 실패해도 무시한다. */
+    private fun rawResponseOf(e: FirebaseMessagingException): String = try {
+        e.httpResponse?.content?.take(500) ?: "-"
+    } catch (ignored: Throwable) {
+        "-"
     }
 }
