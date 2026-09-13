@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.ai.service
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.richjun.liftupai.domain.ai.util.AILocalization
 import com.richjun.liftupai.domain.auth.entity.User
@@ -15,6 +16,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.MediaType.Companion.toMediaType
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.concurrent.TimeUnit
@@ -46,6 +48,16 @@ class GeminiAIService(
 
     @Value("\${gemini.plan-temperature:0.4}")
     private var planTemperature: Double = 0.4
+
+    /**
+     * 채팅 응답의 thinking 수준. gemini-flash-latest(3.x)는 기본적으로 매 응답마다 thinking 토큰
+     * 800~1,200개를 쓰는데, 운영에서 실측한 결과 기본값 중앙값 8.2초 → low 3.9초였고
+     * 칼로리 계산·안전 판단 답변 품질은 차이가 없었다(2026-09-13). 빈 값이면 설정을 보내지 않는다.
+     */
+    @Value("\${gemini.chat-thinking-level:low}")
+    private var chatThinkingLevel: String = "low"
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -84,7 +96,10 @@ class GeminiAIService(
             }
             val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history)
 
-            callGeminiAPI(prompt).ifBlank { getFallbackResponse(message, user, locale) }
+            // callGeminiAPI 는 실패 시 에러 문구를 "정상 답변"처럼 돌려줘서 폴백이 한 번도 동작하지 않았다.
+            // 채팅은 실패를 null 로 받아 폴백 응답을 보여준다.
+            callChatModel(prompt, user.id)?.takeIf { it.isNotBlank() }
+                ?: getFallbackResponse(message, user, locale)
         } catch (e: Exception) {
             println("Error generating Gemini chat response: ${e.message}")
             e.printStackTrace()
@@ -853,6 +868,65 @@ class GeminiAIService(
         }
     }
 
+    /**
+     * 채팅 전용 Gemini 호출. 실패하면 null.
+     * 호출마다 지연·토큰·종료 사유를 한 줄로 남긴다 — 응답이 10~30초 걸린 사례의 원인을
+     * 사후에 알 수 없었기 때문이다.
+     */
+    private fun callChatModel(prompt: String, userId: Long): String? {
+        val first = executeChatRequest(prompt, chatThinkingLevel.takeIf { it.isNotBlank() })
+        val result = if (first is ChatCallResult.Rejected && shouldRetryWithoutThinking(first.code, first.body, chatThinkingLevel)) {
+            log.warn("[AI-CHAT] thinking 설정이 거부되어 설정 없이 재시도한다: code={} body={}", first.code, first.body.take(200))
+            executeChatRequest(prompt, null)
+        } else {
+            first
+        }
+        return when (result) {
+            is ChatCallResult.Success -> {
+                val u = result.response.usageMetadata
+                log.info(
+                    "[AI-CHAT] user={} ms={} model={} thinking={} promptTokens={} thoughtsTokens={} outputTokens={} finish={}",
+                    userId, result.elapsedMs, result.response.modelVersion ?: model, result.thinkingLevel ?: "-",
+                    u?.promptTokenCount, u?.thoughtsTokenCount ?: 0, u?.candidatesTokenCount,
+                    result.response.candidates?.firstOrNull()?.finishReason,
+                )
+                result.response.candidates?.firstOrNull()?.content?.parts
+                    ?.mapNotNull { it.text }?.joinToString("")?.takeIf { it.isNotBlank() }
+            }
+            is ChatCallResult.Rejected -> {
+                log.error("[AI-CHAT] FAILED user={} ms={} code={} body={}", userId, result.elapsedMs, result.code, result.body.take(300))
+                null
+            }
+            is ChatCallResult.Error -> {
+                log.error("[AI-CHAT] FAILED user={} ms={} error={}", userId, result.elapsedMs, result.message)
+                null
+            }
+        }
+    }
+
+    private fun executeChatRequest(prompt: String, thinkingLevel: String?): ChatCallResult {
+        val started = System.currentTimeMillis()
+        return try {
+            val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+            val body = objectMapper.writeValueAsString(buildChatRequest(prompt, temperature, maxTokens, thinkingLevel))
+            val request = Request.Builder()
+                .url(url)
+                .post(body.toRequestBody("application/json".toMediaType()))
+                .build()
+            client.newCall(request).execute().use { response ->
+                val raw = response.body?.string().orEmpty()
+                val elapsed = System.currentTimeMillis() - started
+                if (!response.isSuccessful) {
+                    ChatCallResult.Rejected(response.code, raw, elapsed)
+                } else {
+                    ChatCallResult.Success(objectMapper.readValue(raw, GeminiResponse::class.java), elapsed, thinkingLevel)
+                }
+            }
+        } catch (e: Exception) {
+            ChatCallResult.Error(e.message ?: e.javaClass.simpleName, System.currentTimeMillis() - started)
+        }
+    }
+
     private fun callGeminiAPI(
         prompt: String,
         locale: String = "en",
@@ -953,13 +1027,58 @@ data class GenerationConfig(
     val temperature: Double = 0.7,
     val maxOutputTokens: Int = 2048,
     val topP: Double = 0.95,
-    val topK: Int = 40
+    val topK: Int = 40,
+    // 전역 ObjectMapper 가 SNAKE_CASE 라서 이름을 명시한다(Gemini 는 camelCase 가 표준).
+    @get:JsonProperty("thinkingConfig")
+    val thinkingConfig: ThinkingConfig? = null,
+)
+
+data class ThinkingConfig(
+    @get:JsonProperty("thinkingLevel")
+    val thinkingLevel: String,
 )
 
 data class GeminiResponse(
-    val candidates: List<GeminiCandidate>?
+    val candidates: List<GeminiCandidate>?,
+    // 응답은 camelCase 로 온다. 전역 SNAKE_CASE 매퍼에서 이름을 명시하지 않으면 조용히 null 이 된다.
+    @JsonProperty("usageMetadata")
+    val usageMetadata: GeminiUsageMetadata? = null,
+    @JsonProperty("modelVersion")
+    val modelVersion: String? = null,
 )
 
 data class GeminiCandidate(
-    val content: GeminiContent
+    val content: GeminiContent?,
+    @JsonProperty("finishReason")
+    val finishReason: String? = null,
 )
+
+data class GeminiUsageMetadata(
+    @JsonProperty("promptTokenCount") val promptTokenCount: Int? = null,
+    @JsonProperty("candidatesTokenCount") val candidatesTokenCount: Int? = null,
+    @JsonProperty("thoughtsTokenCount") val thoughtsTokenCount: Int? = null,
+    @JsonProperty("totalTokenCount") val totalTokenCount: Int? = null,
+)
+
+internal sealed class ChatCallResult {
+    abstract val elapsedMs: Long
+    data class Success(val response: GeminiResponse, override val elapsedMs: Long, val thinkingLevel: String?) : ChatCallResult()
+    data class Rejected(val code: Int, val body: String, override val elapsedMs: Long) : ChatCallResult()
+    data class Error(val message: String, override val elapsedMs: Long) : ChatCallResult()
+}
+
+/** 채팅 요청 본문. thinkingLevel 이 null 이면 thinkingConfig 를 보내지 않는다. */
+internal fun buildChatRequest(prompt: String, temperature: Double, maxTokens: Int, thinkingLevel: String?) = GeminiRequest(
+    contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
+    generationConfig = GenerationConfig(
+        temperature = temperature,
+        maxOutputTokens = maxTokens,
+        topP = 0.95,
+        topK = 40,
+        thinkingConfig = thinkingLevel?.let { ThinkingConfig(it) },
+    ),
+)
+
+/** thinking 설정을 보냈는데 모델이 그 설정을 이해하지 못해 400 을 준 경우만 재시도한다. */
+internal fun shouldRetryWithoutThinking(code: Int, body: String, sentThinkingLevel: String?): Boolean =
+    !sentThinkingLevel.isNullOrBlank() && code == 400 && body.contains("thinking", ignoreCase = true)

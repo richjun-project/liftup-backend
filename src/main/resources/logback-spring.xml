@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  운영(prod) 로그를 파일로도 남긴다.
+  docker logs 는 컨테이너가 재생성(배포)될 때마다 사라져서, 장애나 사용자 이슈를
+  사후에 추적할 수 없었다. /app/logs 는 compose 에서 호스트 ./logs 로 마운트한다.
+
+  디스크가 작다(15G 중 85% 사용) — 파일당 20MB, 14일, 총 1GB 를 넘지 않게 자른다.
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <springProfile name="prod">
+        <property name="LOG_DIR" value="${LOG_DIR:-/app/logs}"/>
+
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_DIR}/liftupai.log</file>
+            <encoder>
+                <pattern>${FILE_LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_DIR}/liftupai.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+                <maxFileSize>20MB</maxFileSize>
+                <maxHistory>14</maxHistory>
+                <totalSizeCap>1GB</totalSizeCap>
+                <cleanHistoryOnStart>true</cleanHistoryOnStart>
+            </rollingPolicy>
+        </appender>
+
+        <!-- 파일 쓰기가 요청 스레드를 막지 않게 비동기로. 레벨과 무관하게 버리지 않되(discardingThreshold=0),
+             디스크 I/O 가 막혀 큐가 가득 차면 요청을 멈추는 대신 로그를 버린다(neverBlock). -->
+        <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+            <queueSize>2048</queueSize>
+            <discardingThreshold>0</discardingThreshold>
+            <neverBlock>true</neverBlock>
+            <appender-ref ref="FILE"/>
+        </appender>
+
+        <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="!prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+</configuration>

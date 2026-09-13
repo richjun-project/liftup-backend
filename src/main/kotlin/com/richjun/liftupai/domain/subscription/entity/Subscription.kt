@@ -42,6 +42,10 @@ class Subscription(
     @Column
     var autoRenew: Boolean = false,
 
+    /** 현재 이용 권한을 주는 구독의 출처(RevenueCat store). 예: APP_STORE, PLAY_STORE, PROMOTIONAL */
+    @Column(length = 32)
+    var store: String? = null,
+
     @Column(nullable = false)
     val createdAt: LocalDateTime = AppTime.utcNow(),
 

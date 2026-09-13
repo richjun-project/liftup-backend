@@ -65,19 +65,18 @@ class RevenueCatWebhookService(
         val user = findUser(userId) ?: return
         val subscription = findOrCreateSubscription(user)
 
+        // 여러 구독이 겹칠 수 있다(스토어 구독 + promotional 평생 이용권).
+        // 이용 기간이 더 긴(같거나) 쪽이 "대표 구독"이 되고, 만료일·출처·자동갱신은 대표 구독을 따른다.
+        // 짧은 구독 이벤트가 긴 구독의 만료일/출처/자동갱신을 덮어쓰면 안 된다.
+        val takesOver = takesOverAccess(subscription, event)
         subscription.plan = SubscriptionPlan.PRO
         subscription.status = SubscriptionStatus.ACTIVE
-        subscription.startDate = msToLocalDateTime(event.purchasedAtMs) ?: AppTime.utcNow()
-        // 여러 구독이 겹칠 수 있으므로 만료일은 뒤로 당기지 않는다
-        // (promotional 평생 이용권 보유자가 월간을 결제해도 평생 만료일 유지)
-        val newExpiry = msToLocalDateTime(event.expirationAtMs)
-        val currentExpiry = subscription.expiryDate
-        subscription.expiryDate = when {
-            newExpiry == null -> currentExpiry
-            currentExpiry == null -> newExpiry
-            else -> maxOf(currentExpiry, newExpiry)
+        if (takesOver) {
+            subscription.startDate = msToLocalDateTime(event.purchasedAtMs) ?: AppTime.utcNow()
+            subscription.expiryDate = if (isLifetime(event)) null else msToLocalDateTime(event.expirationAtMs)
+            subscription.store = event.store ?: subscription.store
+            subscription.autoRenew = !isNonRenewing(event)
         }
-        subscription.autoRenew = event.periodType != "NON_RENEWING"
         subscription.updatedAt = AppTime.utcNow()
 
         subscriptionRepository.save(subscription)
@@ -89,16 +88,15 @@ class RevenueCatWebhookService(
         val userId = parseUserId(event.appUserId) ?: return
 
         subscriptionRepository.findByUser_Id(userId).ifPresent { subscription ->
+            // handlePurchase 와 같은 대표 구독 규칙
+            val takesOver = takesOverAccess(subscription, event)
+            subscription.plan = SubscriptionPlan.PRO
             subscription.status = SubscriptionStatus.ACTIVE
-            // 여러 구독이 겹칠 수 있으므로 만료일은 뒤로 당기지 않는다(handlePurchase와 동일 규칙)
-            val newExpiry = msToLocalDateTime(event.expirationAtMs)
-            val currentExpiry = subscription.expiryDate
-            subscription.expiryDate = when {
-                newExpiry == null -> currentExpiry
-                currentExpiry == null -> newExpiry
-                else -> maxOf(currentExpiry, newExpiry)
+            if (takesOver) {
+                subscription.expiryDate = msToLocalDateTime(event.expirationAtMs) ?: subscription.expiryDate
+                subscription.store = event.store ?: subscription.store
+                subscription.autoRenew = true
             }
-            subscription.autoRenew = true
             subscription.updatedAt = AppTime.utcNow()
             subscriptionRepository.save(subscription)
 
@@ -117,6 +115,15 @@ class RevenueCatWebhookService(
         val isRefund = event.cancelReason?.uppercase() in setOf("CUSTOMER_SUPPORT", "REFUND")
 
         subscriptionRepository.findByUser_Id(userId).ifPresent { subscription ->
+            // 해지·환불 이벤트는 개별 구독 단위로 온다. 더 긴 다른 구독(예: promotional 평생 이용권)이
+            // 대표 구독이면 그 권한은 그대로 둔다 — 예전엔 월간 구독 환불이 평생 이용권까지 즉시 회수했다.
+            if (longerAccessRemains(subscription, event)) {
+                log.info(
+                    "[RevenueCat] Ignoring ${if (isRefund) "refund" else "cancellation"} for user $userId — " +
+                        "a longer subscription remains (store=${subscription.store}, expiry=${subscription.expiryDate})"
+                )
+                return@ifPresent
+            }
             subscription.autoRenew = false
             subscription.cancelledAt = AppTime.utcNow()
             subscription.updatedAt = AppTime.utcNow()
@@ -138,6 +145,11 @@ class RevenueCatWebhookService(
         val userId = parseUserId(event.appUserId) ?: return
 
         subscriptionRepository.findByUser_Id(userId).ifPresent { subscription ->
+            // 더 긴 다른 구독이 대표면 그 구독의 자동갱신 상태를 이 이벤트로 바꾸지 않는다
+            if (longerAccessRemains(subscription, event)) {
+                log.info("[RevenueCat] Uncancellation for user $userId ignored for representative subscription (store=${subscription.store})")
+                return@ifPresent
+            }
             subscription.autoRenew = true
             subscription.cancelledAt = null
             subscription.status = SubscriptionStatus.ACTIVE
@@ -155,12 +167,11 @@ class RevenueCatWebhookService(
             // 가질 수 있다. 만료 이벤트는 개별 구독 단위로 오므로, DB 에 저장된 만료일이
             // 이벤트의 만료 시점보다 미래라면 더 긴 다른 구독이 살아 있다는 뜻이다.
             // 이 가드가 없으면 월간 구독 만료 웹훅이 promotional 평생 이용권까지 강등시킨다.
-            val eventExpiry = msToLocalDateTime(event.expirationAtMs)
-            val storedExpiry = subscription.expiryDate
-            if (eventExpiry != null && storedExpiry != null && storedExpiry.isAfter(eventExpiry)) {
+            if (longerAccessRemains(subscription, event)) {
                 log.info(
                     "[RevenueCat] Ignoring expiration for user $userId — a longer subscription remains " +
-                        "(event expiry=$eventExpiry, stored expiry=$storedExpiry)"
+                        "(event expiry=${msToLocalDateTime(event.expirationAtMs)}, stored expiry=${subscription.expiryDate}, " +
+                        "store=${subscription.store})"
                 )
                 return@ifPresent
             }
@@ -178,6 +189,11 @@ class RevenueCatWebhookService(
         val userId = parseUserId(event.appUserId) ?: return
 
         subscriptionRepository.findByUser_Id(userId).ifPresent { subscription ->
+            // 결제 문제는 해당 스토어 구독에만 해당한다 — 평생 이용권 같은 더 긴 권한은 건드리지 않는다
+            if (longerAccessRemains(subscription, event)) {
+                log.info("[RevenueCat] Billing issue for user $userId ignored — a longer subscription remains (store=${subscription.store})")
+                return@ifPresent
+            }
             subscription.status = SubscriptionStatus.PENDING
             subscription.updatedAt = AppTime.utcNow()
             subscriptionRepository.save(subscription)
@@ -206,6 +222,47 @@ class RevenueCatWebhookService(
 
         // 새 사용자 활성화
         handlePurchase(event)
+    }
+
+    // === 대표 구독 판정 ===
+
+    /** 갱신되지 않는 이용권: 일회성 구매, promotional 부여 */
+    private fun isNonRenewing(event: RevenueCatEvent): Boolean =
+        event.type == "NON_RENEWING_PURCHASE" ||
+            event.periodType?.uppercase() in setOf("NON_RENEWING", "PROMOTIONAL") ||
+            event.store?.uppercase() == "PROMOTIONAL"
+
+    /** 만료일이 없는 갱신 안 되는 이용권 = 평생 이용권 */
+    private fun isLifetime(event: RevenueCatEvent): Boolean =
+        isNonRenewing(event) && event.expirationAtMs == null
+
+    /** 저장된 구독이 지금 PRO 권한을 주고 있는가 */
+    private fun hasActiveAccess(subscription: Subscription): Boolean =
+        subscription.status == SubscriptionStatus.ACTIVE && subscription.plan != SubscriptionPlan.FREE
+
+    /**
+     * 이 구매/갱신 이벤트가 대표 구독이 되는가 — 이용 기간이 현재 대표 구독보다 길거나 같을 때.
+     * 만료일 null + 활성 PRO 는 평생 이용권이므로 무엇도 이를 넘지 못한다(다른 평생 이용권만 동등).
+     */
+    internal fun takesOverAccess(subscription: Subscription, event: RevenueCatEvent): Boolean {
+        if (!hasActiveAccess(subscription)) return true
+        val stored = subscription.expiryDate
+        if (isLifetime(event)) return true
+        if (stored == null) return false
+        val incoming = msToLocalDateTime(event.expirationAtMs) ?: return false
+        return !incoming.isBefore(stored)
+    }
+
+    /** 이 해지/만료/환불 이벤트와 무관한 더 긴 구독이 권한을 주고 있는가 */
+    internal fun longerAccessRemains(subscription: Subscription, event: RevenueCatEvent): Boolean {
+        if (!hasActiveAccess(subscription)) return false
+        val stored = subscription.expiryDate
+        val eventExpiry = msToLocalDateTime(event.expirationAtMs)
+        // 평생 이용권이 대표인데 다른 출처의 이벤트가 왔다
+        if (stored == null) {
+            return subscription.store?.uppercase() == "PROMOTIONAL" && event.store?.uppercase() != "PROMOTIONAL"
+        }
+        return eventExpiry != null && stored.isAfter(eventExpiry)
     }
 
     // === 헬퍼 메서드 ===
