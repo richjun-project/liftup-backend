@@ -50,12 +50,13 @@ class RevenueCatRepresentativeSubscriptionTest {
     private fun send(
         type: String, store: String, expiration: Long?, periodType: String = "NORMAL",
         tx: String = "$type-$store-$expiration", cancelReason: String? = null,
+        environment: String = "PRODUCTION",
     ) = service.handleWebhookEvent(
         RevenueCatWebhookEvent(
             event = RevenueCatEvent(
                 type = type, appUserId = "36", productId = "p", periodType = periodType,
                 purchasedAtMs = T0, expirationAtMs = expiration, store = store,
-                transactionId = tx, cancelReason = cancelReason,
+                transactionId = tx, cancelReason = cancelReason, environment = environment,
             )
         )
     )
@@ -164,6 +165,31 @@ class RevenueCatRepresentativeSubscriptionTest {
         assertEquals(SubscriptionStatus.ACTIVE, sub().status)
         assertEquals(SubscriptionPlan.PRO, sub().plan)
         assertEquals("PLAY_STORE", sub().store)
+    }
+
+    @Test
+    fun `sandbox 결제 - 권한은 주되 출처와 결제 이력에 SANDBOX 표시`() {
+        val methods = mutableListOf<String>()
+        every { paymentHistoryRepository.findByTransactionId(any()) } returns null
+        every { paymentHistoryRepository.save(any()) } answers {
+            firstArg<com.richjun.liftupai.domain.subscription.entity.PaymentHistory>().also { methods.add(it.paymentMethod) }
+        }
+        send("INITIAL_PURCHASE", "APP_STORE", T0 + 31 * DAY, environment = "SANDBOX")
+        assertEquals(SubscriptionPlan.PRO, sub().plan, "심사관(sandbox)에게도 Pro 가 열려야 한다")
+        assertEquals("SANDBOX:APP_STORE", sub().store)
+        assertEquals(listOf("SANDBOX:APP_STORE"), methods)
+    }
+
+    @Test
+    fun `운영 결제는 접두어 없이 기록`() {
+        val methods = mutableListOf<String>()
+        every { paymentHistoryRepository.findByTransactionId(any()) } returns null
+        every { paymentHistoryRepository.save(any()) } answers {
+            firstArg<com.richjun.liftupai.domain.subscription.entity.PaymentHistory>().also { methods.add(it.paymentMethod) }
+        }
+        send("INITIAL_PURCHASE", "app_store", T0 + 31 * DAY)
+        assertEquals("APP_STORE", sub().store)
+        assertEquals(listOf("APP_STORE"), methods)
     }
 
     @Test

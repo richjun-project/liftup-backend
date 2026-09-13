@@ -74,7 +74,7 @@ class RevenueCatWebhookService(
         if (takesOver) {
             subscription.startDate = msToLocalDateTime(event.purchasedAtMs) ?: AppTime.utcNow()
             subscription.expiryDate = if (isLifetime(event)) null else msToLocalDateTime(event.expirationAtMs)
-            subscription.store = event.store ?: subscription.store
+            subscription.store = storeLabel(event) ?: subscription.store
             subscription.autoRenew = !isNonRenewing(event)
         }
         subscription.updatedAt = AppTime.utcNow()
@@ -94,7 +94,7 @@ class RevenueCatWebhookService(
             subscription.status = SubscriptionStatus.ACTIVE
             if (takesOver) {
                 subscription.expiryDate = msToLocalDateTime(event.expirationAtMs) ?: subscription.expiryDate
-                subscription.store = event.store ?: subscription.store
+                subscription.store = storeLabel(event) ?: subscription.store
                 subscription.autoRenew = true
             }
             subscription.updatedAt = AppTime.utcNow()
@@ -226,6 +226,16 @@ class RevenueCatWebhookService(
 
     // === 대표 구독 판정 ===
 
+    /**
+     * 저장용 출처 표기. sandbox 결제는 "SANDBOX:APP_STORE" 처럼 접두어를 붙인다.
+     * sandbox 이벤트를 무시하지 않는 이유: App Store 심사관은 sandbox 로 결제하므로
+     * 무시하면 심사 중 Pro 기능이 열리지 않아 리젝된다. 대신 지표에서 거를 수 있게 표시만 한다.
+     */
+    internal fun storeLabel(event: RevenueCatEvent): String? {
+        val store = event.store?.uppercase() ?: return null
+        return if (event.environment?.uppercase() == "SANDBOX") "SANDBOX:$store" else store
+    }
+
     /** 갱신되지 않는 이용권: 일회성 구매, promotional 부여 */
     private fun isNonRenewing(event: RevenueCatEvent): Boolean =
         event.type == "NON_RENEWING_PURCHASE" ||
@@ -306,7 +316,8 @@ class RevenueCatWebhookService(
                 // 없을 때만 USD 환산가로 폴백한다(통화 표기도 USD로 맞춘다).
                 amount = event.priceInPurchasedCurrency ?: event.price ?: 0.0,
                 currency = if (event.priceInPurchasedCurrency != null) (event.currency ?: "KRW") else "USD",
-                paymentMethod = event.store ?: "UNKNOWN",
+                // sandbox(테스트·심사) 결제가 실매출과 섞이지 않게 표시한다
+                paymentMethod = storeLabel(event) ?: "UNKNOWN",
                 transactionId = event.transactionId,
                 status = status,
                 paymentDate = msToLocalDateTime(event.purchasedAtMs) ?: AppTime.utcNow()
