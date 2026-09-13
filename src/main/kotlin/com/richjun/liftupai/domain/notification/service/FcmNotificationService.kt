@@ -186,16 +186,16 @@ class FcmNotificationService(
                 logger.error(
                     "[FCM] APNs 인증 실패 (THIRD_PARTY_AUTH_ERROR). " +
                         "Firebase 콘솔의 APNs 인증 키, 그리고 앱이 사용하는 Firebase appId 가 " +
-                        "실제 번들 ID 로 등록된 앱과 같은지 확인해야 한다. device=${'$'}{device.id} " +
-                        "raw=${'$'}{rawResponseOf(e)}"
+                        "실제 번들 ID 로 등록된 앱과 같은지 확인해야 한다. device=${device.id} " +
+                        "raw=${rawResponseOf(e)}"
                 )
             }
             else -> {
                 // messagingErrorCode 가 null 로 오는 경우가 있어(예: 원본 401) 그것만으로는
                 // 원인을 알 수 없다. 원본 HTTP 응답을 함께 남긴다.
                 logger.error(
-                    "FCM error: ${'$'}{e.messagingErrorCode} - ${'$'}{e.message} " +
-                        "device=${'$'}{device.id} raw=${'$'}{rawResponseOf(e)}"
+                    "FCM error: ${e.messagingErrorCode} - ${e.message} " +
+                        "device=${device.id} raw=${rawResponseOf(e)}"
                 )
             }
         }
