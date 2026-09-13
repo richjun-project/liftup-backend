@@ -187,7 +187,10 @@ class UserService(
             profile.strengthTestCompleted = true
             val estimatedMaxes = StrengthAssessmentEstimator.estimateMaxes(
                 assessment = assessment,
-                bodyWeightKg = request.bodyInfo?.weight
+                bodyWeightKg = request.bodyInfo?.weight ?: profile.bodyInfo?.weight,
+                gender = profile.gender,
+                age = profile.age,
+                experienceLevel = profile.experienceLevel,
             )
             if (estimatedMaxes.isNotEmpty()) {
                 profile.estimatedMaxes = objectMapper.writeValueAsString(estimatedMaxes)

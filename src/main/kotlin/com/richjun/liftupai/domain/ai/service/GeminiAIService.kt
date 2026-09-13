@@ -59,6 +59,9 @@ class GeminiAIService(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
+    /** 채팅 안전 판정·사후 검사 (프롬프트 밖의 코드 규칙). */
+    internal val chatSafety = ChatSafetyService()
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(5, TimeUnit.MINUTES)
@@ -85,24 +88,58 @@ class GeminiAIService(
                 ?.also { detected -> persistLocaleIfChanged(user, detected, storedLocale) }
                 ?: storedLocale
             val userProfile = userProfileRepository.findByUser(user).orElse(null)
+            val settingsInjuries = try {
+                userSettingsRepository.findByUser(user).orElse(null)?.injuries.orEmpty()
+            } catch (e: Exception) {
+                emptySet()
+            }
             val ptStyle = userProfile?.ptStyle ?: PTStyle.GAME_MASTER
             // 채팅 AI가 "오늘 식단 잘 하고 있어?" 같은 질문에 실데이터로 답할 수 있도록 컨텍스트 주입.
             // 실패해도 채팅은 계속 동작해야 하므로 try/catch.
             val nutritionContext = try {
                 nutritionContextService.buildTodayContext(user)
             } catch (e: Exception) {
-                println("[GeminiAIService] failed to build nutrition context for user ${user.id}: ${e.message}")
+                log.warn("[AI-CHAT] nutrition context unavailable for user {}: {}", user.id, e.message)
                 null
             }
-            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history)
 
-            // callGeminiAPI 는 실패 시 에러 문구를 "정상 답변"처럼 돌려줘서 폴백이 한 번도 동작하지 않았다.
-            // 채팅은 실패를 null 로 받아 폴백 응답을 보여준다.
-            callChatModel(prompt, user.id)?.takeIf { it.isNotBlank() }
-                ?: getFallbackResponse(message, user, locale)
+            // 안전 판정과 수치 계산은 모델이 아니라 서버가 한다 — 프롬프트만 믿으면 샌다.
+            val risk = chatSafety.assess(userProfile, settingsInjuries, message, history, locale)
+            val facts = ChatComputedFacts.build(userProfile, message, risk)
+            if (risk.hasAnyRisk) {
+                log.info(
+                    "[AI-CHAT] risk user={} minor={} underweight={} senior={} injuries={} redFlag={} eating={} pregnancy={} meds={}",
+                    user.id, risk.minor, risk.underweight, risk.senior, risk.injuries, risk.redFlagSymptoms,
+                    risk.eatingDisorderCues, risk.pregnancy, risk.medicationOrSupplement,
+                )
+            }
+
+            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history, risk, facts)
+            val first = callChatModel(prompt, user.id)
+            val firstViolations = chatSafety.validate(first, risk)
+            if (firstViolations.isEmpty()) {
+                return first!!
+            }
+
+            // 1회 재생성: 위반 사유를 명시해서 고치게 한다.
+            log.warn("[AI-CHAT] reply rejected user={} violations={} — regenerating", user.id, firstViolations)
+            val retryPrompt = buildChatPrompt(
+                message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history, risk, facts,
+                rejection = chatSafety.rejectionBlock(firstViolations, risk),
+            )
+            val second = callChatModel(retryPrompt, user.id)
+            val secondViolations = chatSafety.validate(second, risk)
+            if (secondViolations.isEmpty()) {
+                return second!!
+            }
+            if (secondViolations == listOf(ChatSafetyService.Violation.EMPTY_REPLY) && !risk.hasAnyRisk) {
+                // 모델 호출 자체가 실패했고 위험 요소도 없다 → 예전처럼 키워드 폴백
+                return getFallbackResponse(message, user, locale)
+            }
+            log.error("[AI-CHAT] reply rejected twice user={} violations={} — safe fallback", user.id, secondViolations)
+            chatSafety.safeFallback(risk, user.nickname)
         } catch (e: Exception) {
-            println("Error generating Gemini chat response: ${e.message}")
-            e.printStackTrace()
+            log.error("[AI-CHAT] generateResponse failed for user {}: {}", user.id, e.message, e)
             getFallbackResponse(message, user, resolveLocale(user))
         }
     }
@@ -210,50 +247,54 @@ class GeminiAIService(
         return callGeminiAPI(prompt, locale)
     }
 
-    private fun buildChatPrompt(
+    /**
+     * 프롬프트 순서가 곧 우선순위다. 하드 규칙 → 계산값 → 프로필 → 대화 → 페르소나 → 가이드 → 메시지.
+     * 페르소나 예시가 뒤에 오는 이유: 모델은 구체적 예시를 강하게 따르므로, 예시가 규칙 앞에 오면 규칙이 밀린다.
+     */
+    internal fun buildChatPrompt(
         message: String,
         nickname: String,
         ptStyle: PTStyle,
         locale: String,
         userProfile: com.richjun.liftupai.domain.user.entity.UserProfile? = null,
         nutritionContext: DailyNutritionContext? = null,
-        history: List<Pair<String, String>> = emptyList()
+        history: List<Pair<String, String>> = emptyList(),
+        risk: ChatSafetyService.RiskProfile = chatSafety.assess(userProfile, emptyList(), message, history, locale),
+        facts: ChatComputedFacts.Facts = ChatComputedFacts.build(userProfile, message, risk),
+        rejection: String? = null,
     ): String {
         val responseLanguage = AILocalization.responseLanguage(locale)
-        val profileSection = userProfile?.let {
-            val profileInfo = buildUserProfileInfo(it)
-            """
+        val hardRules = chatSafety.hardRulesBlock(risk)
+        val factsBlock = ChatComputedFacts.promptBlock(facts)
+        val profileSection = """
             ## User Profile
-            $profileInfo
+            ${buildUserProfileInfo(userProfile, risk)}
 
-            Use this information to personalize your advice when the conversation is about training, nutrition, recovery, or body composition.
-            For casual conversation, you don't need to reference this data.
-            """.trimIndent()
-        } ?: ""
-
+            Use this when the conversation is about training, nutrition, recovery, or body composition. For casual talk you need not cite it.
+            Values marked "unknown" are unknown — never guess them.
+        """.trimIndent()
         val nutritionSection = nutritionContext?.let { buildNutritionContextSection(it) } ?: ""
+        val historySection = ChatHistoryCondenser.promptBlock(ChatHistoryCondenser.condense(history))
+        val personaSection = """
+            ## Character & Speaking Style
+            Fully embody this persona in every reply — word choice, sentence endings, attitude.
+            The persona is a VOICE, not a policy: it never overrides the HARD RULES or SAFETY RULES above.
+            Its bluntness is for motivation only — never aimed at an injury, pain, illness, a minor, an underweight user, or a frustrated user.
 
-        val historySection = if (history.isEmpty()) "" else buildString {
-            appendLine("## Recent conversation (oldest first)")
-            history.takeLast(10).forEach { (userMsg, aiMsg) ->
-                if (userMsg.isNotBlank()) appendLine("User: ${userMsg.take(400)}")
-                if (aiMsg.isNotBlank()) appendLine("You: ${aiMsg.take(400)}")
-            }
-            appendLine()
-            appendLine("When the user says \"this\", \"that routine\", or asks a follow-up, it refers to the exchange above. Never ask what they are referring to if it is answerable from this history.")
-        }
+            ${styleInstructionBody(ptStyle)}${languageReminder(responseLanguage)}
+        """.trimIndent()
+        val rejectionSection = rejection ?: ""
 
         return """
             You are a personal fitness coach chatbot in the LIFTUP AI app.
             The user's name is $nickname.
             Respond ONLY in $responseLanguage.
 
-            ## CRITICAL: Character & Speaking Style
-            You MUST fully embody the following persona in EVERY response.
-            This is not a suggestion — it is the defining trait of your character.
-            Your word choice, sentence endings, tone, and attitude must all reflect this persona consistently.
+            $hardRules
 
-            ${styleInstruction(ptStyle, responseLanguage)}
+            $safetyOverride
+
+            $factsBlock
 
             $profileSection
 
@@ -261,18 +302,28 @@ class GeminiAIService(
 
             $historySection
 
+            $personaSection
+
             ## Guidelines
-            - Give clear, practical guidance on training, nutrition, recovery, and healthy habits.
-            - Keep answers concise (2-4 sentences) unless the user explicitly asks for more detail.
-            - Stay in character at all times — never break persona or speak in a generic AI tone.
+            - Answer the exact question first. Give clear, practical guidance on training, nutrition, recovery, and healthy habits.
+            - Keep answers concise (2-4 sentences) unless the user asks for a routine, a plan, or more detail — then give the full structure.
+            - Stay in character — never speak in a generic AI tone — but content must obey the rules above.
             - Address the user as "$nickname" naturally (not every sentence).
-            - When giving nutrition or workout advice, factor in the user's profile (goals, body stats, experience) for personalized recommendations.
-            - When the user asks about today's diet, calories, or progress, refer to the "Today's Nutrition" section above with concrete numbers (consumed/remaining kcal, macros, meals logged).
+            - Use the profile (age, sex, BMI category, goals, experience) and COMPUTED FACTS for any number you state.
+            - When the user asks about today's diet, calories, or progress, use the "Today's Nutrition" section with concrete numbers.
+            - Never claim the app changed anything. You can only advise in chat.
+
+            $rejectionSection
 
             ## User message
             $message
-        """.trimIndent()
+        """.trimIndent().replace(Regex("\\n{3,}"), "\n\n")
     }
+
+    private fun languageReminder(responseLanguage: String): String =
+        if (responseLanguage.equals("Korean", ignoreCase = true)) "" else
+            "\n\nIMPORTANT: The \"Example lines\" above are written in Korean purely to illustrate the persona's TONE and ATTITUDE. " +
+                "Do NOT reuse their Korean words, phrases, or sentence endings. Translate the tone into $responseLanguage and respond ONLY in $responseLanguage."
 
     private fun buildNutritionContextSection(ctx: DailyNutritionContext): String {
         val workoutAdjustment = if (ctx.workoutBurnedKcal > 0) " (adjusted +${ctx.workoutBurnedKcal} for today's workout)" else ""
@@ -457,22 +508,42 @@ class GeminiAIService(
         """.trimIndent()
     }
 
-    private fun buildUserProfileInfo(profile: com.richjun.liftupai.domain.user.entity.UserProfile): String {
+    /** 식단 프롬프트 등 채팅 외 경로용 — 메시지 문맥 없이 프로필만으로 판정한다. */
+    private fun buildUserProfileInfo(profile: com.richjun.liftupai.domain.user.entity.UserProfile): String =
+        buildUserProfileInfo(profile, chatSafety.assess(profile, emptyList(), "", emptyList(), "en"))
+
+    private fun buildUserProfileInfo(
+        profile: com.richjun.liftupai.domain.user.entity.UserProfile?,
+        risk: ChatSafetyService.RiskProfile,
+    ): String {
+        if (profile == null) return "No profile on file — age, sex, weight, height, goals are all unknown. Ask before assuming."
         val bodyInfo = profile.bodyInfo
-        val goals = profile.goals.joinToString(", ")
-        val bmi = calculateBmi(bodyInfo?.weight, bodyInfo?.height)
+        val goals = profile.goals.joinToString(", ").ifBlank { "unknown" }
         val tdee = calculateTDEE(profile)
+        val flags = buildList {
+            if (risk.minor) add("MINOR")
+            if (risk.senior) add("SENIOR")
+            if (risk.underweight) add("UNDERWEIGHT")
+            if (risk.bmiCategory == ChatSafetyService.BmiCategory.OBESE) add("OBESE")
+            if (risk.pregnancy) add("PREGNANCY_MENTIONED")
+        }
 
         return buildString {
+            appendLine("Age: ${profile.age ?: "unknown"}")
+            appendLine("Sex: ${profile.gender ?: "unknown"}")
             appendLine("Goals: $goals")
             appendLine("Experience level: ${profile.experienceLevel}")
-            bodyInfo?.weight?.let { appendLine("Weight: ${it}kg") }
-            bodyInfo?.height?.let { appendLine("Height: ${it}cm") }
-            bmi?.let { appendLine("BMI: ${String.format("%.1f", it)}") }
-            tdee?.let { appendLine("Estimated maintenance calories: ${it}kcal") }
-            if (profile.injuries.isNotEmpty()) {
-                appendLine("Injuries / medical limitations: ${profile.injuries.joinToString(", ")}")
+            appendLine("Weight: ${bodyInfo?.weight?.let { "${it}kg" } ?: "unknown"}")
+            appendLine("Height: ${bodyInfo?.height?.let { "${it}cm" } ?: "unknown"}")
+            val bmiLine = risk.bmi?.let { "${String.format("%.1f", it)} (${risk.bmiCategory?.name?.lowercase()}; WHO cut-offs 18.5/25/30, Asian overweight cut-off 23)" } ?: "unknown"
+            appendLine("BMI: $bmiLine")
+            appendLine("Estimated maintenance calories: ${tdee?.let { "${it}kcal" } ?: "unknown"}")
+            if (flags.isNotEmpty()) appendLine("Flags: ${flags.joinToString(", ")}")
+            if (risk.injuries.isNotEmpty()) {
+                appendLine("Injuries / medical limitations: ${risk.injuries.joinToString(", ")}")
                 appendLine("MUST avoid exercises loading these areas and offer safe alternatives instead.")
+            } else {
+                appendLine("Injuries: none reported")
             }
         }.trim()
     }
@@ -603,7 +674,8 @@ class GeminiAIService(
         return when (ptStyle) {
             PTStyle.SPARTAN -> """
                 Persona: 스파르타 교관 — 극한의 동기부여 코치
-                Tone: 강압적, 단호, 변명 불허, 극도로 동기부여적
+                Tone: 강압적, 단호, 게으름에는 변명 불허, 극도로 동기부여적
+                (부상·통증·질병·미성년·저체중은 변명이 아니다 — 이때는 단호함을 "안전을 지키는 쪽"으로 쓴다)
                 Speaking style: 짧고 강렬한 명령문. 감정적 호소보다 팩트 위주. "~해.", "~하라고." 체.
                 Example lines:
                 - "변명은 근육을 키우지 않아. 지금 당장 시작해."
@@ -614,6 +686,7 @@ class GeminiAIService(
             PTStyle.BURNOUT -> """
                 Persona: 3년차 번아웃 김PT — 모든 변명 다 들어본 현타 온 트레이너
                 Tone: 시니컬, 건조한 유머, 현실적이고 직설적이지만 결국 도움됨
+                (냉소는 게으름에만. 아프다·다쳤다는 말에는 냉소 없이 바로 대안을 준다)
                 Speaking style: 반말 섞인 편한 말투. 한숨 섞인 톤. "~인데요...", "아 그거요..." 체.
                 Example lines:
                 - "아... 또 쉬겠다는 거죠? 네 예상했어요."
@@ -684,6 +757,7 @@ class GeminiAIService(
             PTStyle.BUSAN_VETERAN -> """
                 Persona: 부산 선수 출신 동수형 — 거친 부산 사투리로 팩트폭격하는 현실적인 트레이너
                 Tone: 거친 베테랑, 강압적, 직설적, 사투리
+                (팩트폭격은 훈련 태도에만. 부상·통증 얘기엔 "그건 쉬어야 한다"로 단호하게 보호한다)
                 Speaking style: 부산 사투리 적극 사용. "~하이가", "~노", "~아이가", "와 마!" 체.
                 금지: 문장 끝에 "이기"를 붙이지 마라("~다 이기", "이기 뭐꼬" 등).
                 실제 부산 말투가 아니라 특정 커뮤니티 밈으로 읽혀 불쾌감을 준다.

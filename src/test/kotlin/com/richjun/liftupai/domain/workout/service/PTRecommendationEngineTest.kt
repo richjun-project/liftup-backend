@@ -66,8 +66,13 @@ class PTRecommendationEngineTest {
             userProgramEnrollmentRepository,
             exercisePatternClassifier,
             exerciseTrainingProfileResolver,
-            sharedSupport
+            sharedSupport,
+            WeightRecommendationService(
+                personalRecordRepository, mockk(), userProfileRepository, exercisePatternClassifier,
+                com.fasterxml.jackson.databind.ObjectMapper()
+            ),
         )
+        every { personalRecordRepository.findTopByUserIdAndExerciseIdOrderByWeightDesc(any(), any()) } returns null
 
         testUser = User(id = 1L, email = "test@test.com", nickname = "TestUser", level = UserLevel.INTERMEDIATE)
 
@@ -325,8 +330,8 @@ class PTRecommendationEngineTest {
             val advancedWeight = weightForLevel(ExperienceLevel.ADVANCED)
 
             val ratio = beginnerWeight / advancedWeight
-            assertEquals(0.5, ratio, 0.05,
-                "BEGINNER/ADVANCED ratio should be ~0.5 (multipliers 0.5 vs 1.0), got $ratio")
+            assertEquals(0.48, ratio, 0.06,
+                "BEGINNER/ADVANCED ratio should be ~0.48 (multipliers 0.6 vs 1.25), got $ratio")
         }
 
         @Test
@@ -335,8 +340,8 @@ class PTRecommendationEngineTest {
             val advancedWeight = weightForLevel(ExperienceLevel.ADVANCED)
 
             val ratio = noviceWeight / advancedWeight
-            assertEquals(0.6, ratio, 0.05,
-                "NOVICE/ADVANCED ratio should be ~0.6 (multipliers 0.6 vs 1.0), got $ratio")
+            assertEquals(0.6, ratio, 0.06,
+                "NOVICE/ADVANCED ratio should be ~0.6 (multipliers 0.75 vs 1.25), got $ratio")
         }
 
         @Test
@@ -345,8 +350,8 @@ class PTRecommendationEngineTest {
             val advancedWeight = weightForLevel(ExperienceLevel.ADVANCED)
 
             val ratio = expertWeight / advancedWeight
-            assertEquals(1.1, ratio, 0.05,
-                "EXPERT/ADVANCED ratio should be ~1.1 (multipliers 1.1 vs 1.0), got $ratio")
+            assertEquals(1.12, ratio, 0.06,
+                "EXPERT/ADVANCED ratio should be ~1.12 (multipliers 1.4 vs 1.25), got $ratio")
         }
 
         private fun weightForLevel(level: ExperienceLevel): Double {
@@ -484,5 +489,101 @@ class PTRecommendationEngineTest {
             startDate = LocalDateTime.now().minusWeeks(8),
             totalCompletedWorkouts = totalCompleted
         )
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. 프로필 추정 1RM / 미성년 상한 (2026-09 실사용 사고 회귀)
+    // -------------------------------------------------------------------------
+
+    @Nested
+    inner class ProfileStrengthAndAgeCaps {
+
+        private fun stubNoHistoryWith(profile: UserProfile, exercise: Exercise = testExercise) {
+            every { userProfileRepository.findByUser_Id(1L) } returns Optional.of(profile)
+            every { workoutSessionRepository.findByUserAndStartTimeAfter(testUser, any()) } returns emptyList()
+            every { workoutExerciseRepository.findBySessionIdOrderByOrderInSession(any()) } returns emptyList()
+            every { personalRecordRepository.findTopByUserAndExerciseOrderByWeightDesc(testUser, exercise) } returns null
+            every { userProgramEnrollmentRepository.findFirstByUserAndStatusOrderByStartDateDesc(testUser, EnrollmentStatus.ACTIVE) } returns null
+            every { workoutSessionRepository.findAllByUserAndStatus(testUser, SessionStatus.COMPLETED) } returns emptyList()
+        }
+
+        @Test
+        fun `벤치 1RM 100kg 자기신고 사용자는 20kg 이 아니라 60kg 이상을 받는다`() {
+            val jp = UserProfile(
+                id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 75.0), gender = "male", age = 30,
+                experienceLevel = ExperienceLevel.INTERMEDIATE,
+                estimatedMaxes = """{"barbell-bench-press":100.0,"HORIZONTAL_PRESS_BARBELL":100.0}""",
+            )
+            stubNoHistoryWith(jp)
+
+            val result = ptEngine.calculateFullPTRecommendation(testUser, testExercise)
+
+            assertTrue(result.weight >= 60.0, "추정 1RM 100 기준 60kg 이상이어야 한다, got ${result.weight}")
+            assertTrue(result.weight <= 100.0, "1RM 을 넘으면 안 된다, got ${result.weight}")
+            assertTrue(result.intensity in 50..95, "강도 ${result.intensity}% 는 주기화 밴드 안")
+        }
+
+        @Test
+        fun `같은 사용자라도 추정 1RM 이 없으면 초보 기본값 수준으로 떨어진다 (양성 대조)`() {
+            val noMax = UserProfile(
+                id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 75.0), gender = "male", age = 30,
+                experienceLevel = ExperienceLevel.INTERMEDIATE,
+            )
+            stubNoHistoryWith(noMax)
+            val without = ptEngine.calculateFullPTRecommendation(testUser, testExercise).weight
+
+            val withMax = noMax.apply { estimatedMaxes = """{"barbell-bench-press":100.0}""" }
+            stubNoHistoryWith(withMax)
+            val with = ptEngine.calculateFullPTRecommendation(testUser, testExercise).weight
+
+            assertTrue(with > without, "추정치 반영 $with > 미반영 $without")
+        }
+
+        @Test
+        fun `미성년(15세)은 강도가 1RM 의 75% 를 넘지 않고 세트는 4 이하다`() {
+            val minor = UserProfile(
+                id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 42.0), gender = "female", age = 15,
+                experienceLevel = ExperienceLevel.BEGINNER,
+                estimatedMaxes = """{"barbell-bench-press":30.0}""",
+            )
+            stubNoHistoryWith(minor)
+
+            val result = ptEngine.calculateFullPTRecommendation(testUser, testExercise)
+
+            assertTrue(result.weight <= 30.0 * 0.75 + 0.01, "15세 강도 상한 75%: ${result.weight}")
+            assertTrue(result.sets <= 4, "15세 세트 상한 4: ${result.sets}")
+        }
+
+        @Test
+        fun `고령(68세)은 강도 75% 상한과 세트 3 이하`() {
+            val senior = UserProfile(
+                id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 70.0), gender = "male", age = 68,
+                experienceLevel = ExperienceLevel.BEGINNER,
+                estimatedMaxes = """{"barbell-bench-press":60.0}""",
+            )
+            stubNoHistoryWith(senior)
+
+            val result = ptEngine.calculateFullPTRecommendation(testUser, testExercise)
+
+            assertTrue(result.weight <= 45.0 + 0.01, "68세 강도 상한: ${result.weight}")
+            assertTrue(result.sets <= 3, "68세 세트 상한 3: ${result.sets}")
+        }
+
+        @Test
+        fun `성인은 같은 조건에서 미성년 상한에 걸리지 않는다 (양성 대조)`() {
+            val adult = UserProfile(
+                id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 42.0), gender = "female", age = 28,
+                experienceLevel = ExperienceLevel.BEGINNER,
+                estimatedMaxes = """{"barbell-bench-press":30.0}""",
+            )
+            stubNoHistoryWith(adult)
+            val adultW = ptEngine.calculateFullPTRecommendation(testUser, testExercise).weight
+
+            val minor = adult.apply { age = 15 }
+            stubNoHistoryWith(minor)
+            val minorW = ptEngine.calculateFullPTRecommendation(testUser, testExercise).weight
+
+            assertTrue(minorW <= adultW, "minor $minorW <= adult $adultW")
+        }
     }
 }

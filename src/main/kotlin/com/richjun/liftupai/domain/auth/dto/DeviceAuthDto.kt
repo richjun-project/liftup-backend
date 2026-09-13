@@ -7,8 +7,19 @@ import jakarta.validation.constraints.Size
 data class InjuryInput(
     @JsonProperty("body_part")
     val bodyPart: String,
-    val severity: String
-)
+    /**
+     * 앱의 온보딩은 부위만 고르고 severity 를 보내지 않는다(null 로 옴).
+     * 예전엔 non-null 이라 부상을 하나라도 고른 기기 가입이 전부 500 으로 실패했다.
+     */
+    val severity: String? = null,
+) {
+    /** 저장/필터에 쓰는 유효 severity. 없으면 보수적으로 moderate. */
+    val effectiveSeverity: String get() = severity?.takeIf { it.isNotBlank() } ?: DEFAULT_SEVERITY
+
+    companion object {
+        const val DEFAULT_SEVERITY = "moderate"
+    }
+}
 
 data class DeviceRegisterRequest(
     @field:NotBlank(message = "{validation.device_id.required}")

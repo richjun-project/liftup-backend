@@ -40,6 +40,8 @@ class WorkoutRecommendationServiceV2Test {
     private lateinit var autoProgramSelector: AutoProgramSelector
     private lateinit var sharedSupport: WorkoutV2SharedSupport
     private lateinit var ptEngine: PTRecommendationEngine
+    private lateinit var injuryFilterService: InjuryFilterService
+    private lateinit var muscleRecoveryRepository: com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository
 
     private lateinit var testUser: User
     private lateinit var testUserProfile: UserProfile
@@ -67,6 +69,10 @@ class WorkoutRecommendationServiceV2Test {
         autoProgramSelector = mockk()
         sharedSupport = WorkoutV2SharedSupport(userSettingsRepository, exerciseCatalogLocalizationService, workoutSessionRepository)
         ptEngine = mockk()
+        injuryFilterService = mockk()
+        muscleRecoveryRepository = mockk()
+        every { injuryFilterService.filterExercises(any(), any()) } answers { firstArg() }
+        every { muscleRecoveryRepository.findByUser(any()) } returns emptyList()
 
         workoutRecommendationServiceV2 = WorkoutRecommendationServiceV2(
             userRepository,
@@ -78,7 +84,9 @@ class WorkoutRecommendationServiceV2Test {
             autoProgramSelector,
             null,
             sharedSupport,
-            ptEngine
+            ptEngine,
+            injuryFilterService,
+            muscleRecoveryRepository,
         )
 
         testUser = User(id = 1L, email = "test@test.com", nickname = "TestUser", level = UserLevel.INTERMEDIATE)
@@ -249,6 +257,127 @@ class WorkoutRecommendationServiceV2Test {
             // 60분 = 6개 운동이 목표
             assertEquals(6, result.recommendation.exercises.size,
                 "60-min workout should have 6 exercises, got ${result.recommendation.exercises.size}")
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // 최종 안전망: 부상·장비·회복·중복 (추천 출처와 무관하게 마지막에 걸러진다)
+    // -------------------------------------------------------------------------
+
+    @Nested
+    inner class SafetyFilters {
+
+        private fun ex(id: Long, slug: String, pattern: String, cat: ExerciseCategory, eq: Equipment, vararg muscles: MuscleGroup) =
+            Exercise(id = id, slug = slug, name = slug, category = cat, movementPattern = pattern, equipment = eq,
+                muscleGroups = muscles.toMutableSet())
+
+        private val squat = ex(1, "barbell-full-squat", "SQUAT", ExerciseCategory.LEGS, Equipment.BARBELL, MuscleGroup.QUADRICEPS, MuscleGroup.GLUTES)
+        private val lunge = ex(2, "barbell-lunge", "LUNGE", ExerciseCategory.LEGS, Equipment.BARBELL, MuscleGroup.QUADRICEPS)
+        private val bench = ex(3, "barbell-bench-press", "HORIZONTAL_PRESS_BARBELL", ExerciseCategory.CHEST, Equipment.BARBELL, MuscleGroup.CHEST)
+        private val dbRow = ex(4, "dumbbell-bent-over-row", "DUMBBELL_ROW", ExerciseCategory.BACK, Equipment.DUMBBELL, MuscleGroup.BACK)
+        private val pushup = ex(5, "push-up", "PUSHUP", ExerciseCategory.CHEST, Equipment.BODYWEIGHT, MuscleGroup.CHEST)
+        private val plank = ex(6, "plank", "PLANK", ExerciseCategory.CORE, Equipment.BODYWEIGHT, MuscleGroup.CORE)
+        private val benchDup = ex(7, "barbell-bench-press-2", "HORIZONTAL_PRESS_BARBELL", ExerciseCategory.CHEST, Equipment.BARBELL, MuscleGroup.CHEST)
+            .let { Exercise(id = 7, slug = it.slug, name = "barbell-bench-press", category = it.category, movementPattern = it.movementPattern, equipment = it.equipment, muscleGroups = it.muscleGroups) }
+
+        /** 실제 규칙(부상 부위→패턴)으로 동작하는 InjuryFilterService. 큐레이션 테이블은 비어 있다(운영과 동일). */
+        private fun realInjuryService(): InjuryFilterService = InjuryFilterService(
+            mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true)
+        )
+
+        private fun serviceWith(injury: InjuryFilterService) = WorkoutRecommendationServiceV2(
+            userRepository, userProfileRepository, userSettingsRepository, workoutSessionRepository, workoutProgressTracker,
+            exerciseRecommendationService, autoProgramSelector, null, sharedSupport, ptEngine, injury, muscleRecoveryRepository,
+        )
+
+        @Test
+        fun `무릎 부상 사용자의 최종 추천에 스쿼트·런지가 없다 (규칙 추천이 폴백으로 되돌려도)`() {
+            val profile = UserProfile(id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 70.0), gender = "male")
+            profile.injuries = mutableSetOf("knee:severe")
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+
+            val result = serviceWith(realInjuryService()).applySafetyFilters(testUser, profile, listOf(squat, lunge, bench, dbRow), 2)
+
+            assertEquals(listOf(bench, dbRow), result)
+        }
+
+        @Test
+        fun `부상 필터는 결과가 적어져도 완화하지 않는다`() {
+            val profile = UserProfile(id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 70.0), gender = "male")
+            profile.injuries = mutableSetOf("knee")
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+
+            val result = serviceWith(realInjuryService()).applySafetyFilters(testUser, profile, listOf(squat, lunge), 2)
+
+            assertTrue(result.isEmpty(), "무릎 부상자에게 하체만 남았으면 비어야 한다: $result")
+        }
+
+        @Test
+        fun `부상이 없으면 아무것도 걸러지지 않는다 (양성 대조)`() {
+            val profile = UserProfile(id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 70.0), gender = "male")
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+
+            val result = serviceWith(realInjuryService()).applySafetyFilters(testUser, profile, listOf(squat, lunge, bench, dbRow), 2)
+
+            assertEquals(4, result.size)
+        }
+
+        @Test
+        fun `홈트 장비없음(bodyweight) 사용자는 바벨·덤벨 종목을 받지 않는다`() {
+            val profile = UserProfile(id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 65.0), gender = "male")
+            profile.availableEquipment = mutableSetOf("bodyweight")
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+
+            val result = serviceWith(realInjuryService()).applySafetyFilters(testUser, profile, listOf(squat, bench, pushup, plank, dbRow), 2)
+
+            assertEquals(listOf(pushup, plank), result)
+        }
+
+        @Test
+        fun `덤벨만 있으면 바벨 종목은 빠지고 덤벨·맨몸은 남는다`() {
+            val profile = UserProfile(id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 65.0), gender = "male")
+            profile.availableEquipment = mutableSetOf("dumbbells")
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+
+            val result = serviceWith(realInjuryService()).applySafetyFilters(testUser, profile, listOf(squat, bench, pushup, dbRow), 2)
+
+            assertEquals(listOf(pushup, dbRow), result)
+        }
+
+        @Test
+        fun `장비 필터로 결과가 최소 개수 미만이 되면 장비 필터만 푼다 (부상은 유지)`() {
+            val profile = UserProfile(id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 65.0), gender = "male")
+            profile.availableEquipment = mutableSetOf("kettlebell")
+            profile.injuries = mutableSetOf("knee")
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+
+            val result = serviceWith(realInjuryService()).applySafetyFilters(testUser, profile, listOf(squat, bench, dbRow), 2)
+
+            assertEquals(listOf(bench, dbRow), result, "케틀벨만으론 0개라 장비 필터는 풀리지만 스쿼트는 여전히 없다")
+        }
+
+        @Test
+        fun `회복률 50% 미만 근육의 주동 운동은 빠진다`() {
+            val profile = UserProfile(id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 70.0), gender = "male")
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+            every { muscleRecoveryRepository.findByUser(testUser) } returns listOf(
+                com.richjun.liftupai.domain.recovery.entity.MuscleRecovery(
+                    user = testUser, muscleGroup = "chest", lastWorked = java.time.LocalDateTime.now(), recoveryPercentage = 30)
+            )
+
+            val result = serviceWith(realInjuryService()).applySafetyFilters(testUser, profile, listOf(bench, pushup, dbRow, squat), 2)
+
+            assertEquals(listOf(dbRow, squat), result)
+        }
+
+        @Test
+        fun `같은 운동(id 또는 이름 중복)은 한 번만 나간다`() {
+            val profile = UserProfile(id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 70.0), gender = "male")
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+
+            val result = serviceWith(realInjuryService()).applySafetyFilters(testUser, profile, listOf(bench, bench, benchDup, dbRow), 2)
+
+            assertEquals(listOf(bench, dbRow), result)
         }
     }
 }

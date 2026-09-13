@@ -308,7 +308,7 @@ class AuthService(
         // Store as "bodyPart:severity" so InjuryFilterService can apply severity-aware filtering
         request.injuries?.let { injuries ->
             profile.injuries.clear()
-            profile.injuries.addAll(injuries.map { "${it.bodyPart}:${it.severity}" })
+            profile.injuries.addAll(injuries.map { "${it.bodyPart}:${it.effectiveSeverity}" })
         }
 
         // Compute initial 1RM estimates from bodyweight strength assessment
@@ -316,7 +316,10 @@ class AuthService(
             profile.strengthTestCompleted = true
             val estimatedMaxes = StrengthAssessmentEstimator.estimateMaxes(
                 assessment = assessment,
-                bodyWeightKg = request.bodyInfo?.weight
+                bodyWeightKg = request.bodyInfo?.weight,
+                gender = profile.gender,
+                age = profile.age,
+                experienceLevel = profile.experienceLevel,
             )
             if (estimatedMaxes.isNotEmpty()) {
                 profile.estimatedMaxes = objectMapper.writeValueAsString(estimatedMaxes)

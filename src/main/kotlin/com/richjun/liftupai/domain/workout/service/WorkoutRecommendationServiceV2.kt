@@ -1,6 +1,8 @@
 package com.richjun.liftupai.domain.workout.service
 
 import com.richjun.liftupai.domain.auth.repository.UserRepository
+import com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository
+import com.richjun.liftupai.domain.user.entity.UserProfile
 import com.richjun.liftupai.domain.user.entity.ExperienceLevel
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
@@ -43,7 +45,9 @@ class WorkoutRecommendationServiceV2(
     @Autowired(required = false)
     private val vectorRecommendationService: VectorWorkoutRecommendationService?,
     private val sharedSupport: WorkoutV2SharedSupport,
-    private val ptEngine: PTRecommendationEngine
+    private val ptEngine: PTRecommendationEngine,
+    private val injuryFilterService: InjuryFilterService,
+    private val muscleRecoveryRepository: MuscleRecoveryRepository,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -241,7 +245,7 @@ class WorkoutRecommendationServiceV2(
         // 벡터 추천 우선 시도, 실패 시 rule-based 폴백
         // 벡터 결과가 목표의 절반 미만이면 rule-based로 폴백 (인덱싱 미완료 등 대비)
         val minAcceptableCount = (targetExerciseCount + 1) / 2
-        val exercises = try {
+        val rawExercises = try {
             vectorRecommendationService?.recommendExercises(
                 user = user,
                 profile = userProfile,
@@ -261,6 +265,8 @@ class WorkoutRecommendationServiceV2(
             duration = workoutDuration,
             limit = targetExerciseCount
         )
+        // 추천 출처(벡터/규칙)와 무관하게 마지막에 한 번 더 거른다 — 부상·장비·회복·중복
+        val exercises = applySafetyFilters(user, userProfile, rawExercises, minAcceptableCount)
         val translations = sharedSupport.translationMap(exercises, locale)
 
         logger.info("Workout recommendation completed: ${exercises.size} exercises (target: $targetExerciseCount)")
@@ -525,6 +531,9 @@ class WorkoutRecommendationServiceV2(
     }
 
     companion object {
+        /** "헬스장 전부" 를 뜻하는 장비 토큰 — 이게 있으면 장비 필터를 걸지 않는다 */
+        private val FULL_GYM_TOKENS = setOf("GYM", "FULL_GYM", "ALL", "FULL", "COMMERCIAL_GYM", "EVERYTHING")
+
         private val knownRecommendationEquipmentTokens = listOf(
             "resistance_band",
             "bodyweight",
@@ -546,6 +555,101 @@ class WorkoutRecommendationServiceV2(
         val baseCalories = duration * 5
         val exerciseBonus = exerciseCount * 8
         return baseCalories + exerciseBonus
+    }
+
+    /**
+     * 최종 안전망. 벡터/규칙 추천이 무엇을 돌려주든 부상 부위 운동·보유하지 않은 장비·회복 안 된 근육·중복은
+     * 여기서 걸러진다.
+     *
+     * 규칙 추천 서비스(ExerciseRecommendationService)는 후보가 모자라면 부상 필터를 통째로 되돌리는 폴백이 있고
+     * (filtered < 10 → 원본 사용), 벡터 추천은 부상을 보지 않는다. 그래서 상류만 믿을 수 없다.
+     * 부상 필터는 절대 완화하지 않는다. 장비·회복 필터는 결과가 minAcceptableCount 미만이 되면 그 필터만 푼다
+     * (추천이 비는 것보다 낫다 — 다치게 하는 것보다는 아니다).
+     */
+    internal fun applySafetyFilters(
+        user: com.richjun.liftupai.domain.auth.entity.User,
+        profile: UserProfile?,
+        exercises: List<Exercise>,
+        minAcceptableCount: Int,
+    ): List<Exercise> {
+        val settings = try { userSettingsRepository.findByUser_Id(user.id).orElse(null) } catch (e: Exception) { null }
+
+        var result = exercises
+            .distinctBy { it.id }
+            .distinctBy { it.name.trim().lowercase() }
+
+        // 1. 부상 — 완화 없음
+        val injuries: Set<String> = settings?.injuries?.takeIf { it.isNotEmpty() }?.toSet()
+            ?: profile?.injuries?.toSet().orEmpty()
+        if (injuries.isNotEmpty()) {
+            val before = result.size
+            result = injuryFilterService.filterExercises(result, injuries)
+            if (result.size < before) {
+                logger.info("Safety filter(injury): $before -> ${result.size} (injuries=$injuries) for user ${user.id}")
+            }
+        }
+
+        // 2. 보유 장비 — 맨몸/밴드류는 항상 허용
+        val available = normalizeEquipmentTokens(
+            settings?.availableEquipment?.takeIf { it.isNotEmpty() } ?: profile?.availableEquipment.orEmpty()
+        )
+        if (available.isNotEmpty() && available.none { it in FULL_GYM_TOKENS }) {
+            val byEquipment = result.filter { allowedByEquipment(it, available) }
+            if (byEquipment.size >= minAcceptableCount) {
+                if (byEquipment.size < result.size) {
+                    logger.info("Safety filter(equipment): ${result.size} -> ${byEquipment.size} (available=$available) for user ${user.id}")
+                }
+                result = byEquipment
+            } else {
+                logger.warn("Safety filter(equipment) relaxed: only ${byEquipment.size} < $minAcceptableCount match available=$available for user ${user.id}")
+            }
+        }
+
+        // 3. 회복률 50% 미만 근육
+        val recovering: Set<MuscleGroup> = try {
+            muscleRecoveryRepository.findByUser(user)
+                .filter { it.recoveryPercentage < RecommendationConstants.RECOVERY_THRESHOLD_PERCENT }
+                .flatMap { WorkoutTargetResolver.muscleGroupsFor(it.muscleGroup) }
+                .toSet()
+        } catch (e: Exception) {
+            emptySet()
+        }
+        if (recovering.isNotEmpty()) {
+            val rested = result.filter { ex -> ex.muscleGroups.none { it in recovering } }
+            if (rested.size >= minAcceptableCount) {
+                if (rested.size < result.size) {
+                    logger.info("Safety filter(recovery): ${result.size} -> ${rested.size} (recovering=$recovering) for user ${user.id}")
+                }
+                result = rested
+            } else {
+                logger.warn("Safety filter(recovery) relaxed: only ${rested.size} < $minAcceptableCount rested for user ${user.id}")
+            }
+        }
+
+        return result
+    }
+
+    private fun normalizeEquipmentTokens(raw: Collection<String>): Set<String> = raw
+        .map { it.trim().uppercase().replace(Regex("[^A-Z0-9]+"), "_").trim('_') }
+        .filter { it.isNotEmpty() }
+        .map {
+            when (it) {
+                "BAND", "BANDS", "RESISTANCE_BANDS", "RESISTANCE_BAND" -> "RESISTANCE_BAND"
+                "KETTLEBELLS" -> "KETTLEBELL"
+                "DUMBBELLS" -> "DUMBBELL"
+                "BARBELLS" -> "BARBELL"
+                "MACHINES" -> "MACHINE"
+                "CABLES", "CABLE_MACHINE" -> "CABLE"
+                "NONE", "NO_EQUIPMENT", "BODY_WEIGHT" -> "BODYWEIGHT"
+                else -> it
+            }
+        }
+        .toSet()
+
+    private fun allowedByEquipment(exercise: Exercise, available: Set<String>): Boolean {
+        val eq = exercise.equipment ?: return true
+        if (eq == Equipment.BODYWEIGHT || eq == Equipment.OTHER) return true
+        return eq.name in available
     }
 
     /** 맨몸·밴드 종목은 무게를 지정할 수 없다 — 표시 자체를 없앤다. */

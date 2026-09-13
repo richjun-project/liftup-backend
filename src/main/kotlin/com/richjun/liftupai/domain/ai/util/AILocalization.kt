@@ -70,7 +70,12 @@ object AILocalization {
         return bundle(locale).containsKey(key) || bundle("en").containsKey(key)
     }
 
+    // 기본 fallback 컨트롤은 요청 로케일 번들이 없으면 JVM 기본 로케일(예: ko_KR 머신의 ko) 번들을
+    // 먼저 집는다 — 영어 사용자가 ko_KR 서버에서 한국어 폴백을 받게 되는 함정. 기본(base) 번들로만 폴백한다.
+    private val noFallback: ResourceBundle.Control =
+        ResourceBundle.Control.getNoFallbackControl(ResourceBundle.Control.FORMAT_PROPERTIES)
+
     private fun bundle(locale: String): ResourceBundle {
-        return ResourceBundle.getBundle(BASENAME, toLocale(locale))
+        return ResourceBundle.getBundle(BASENAME, toLocale(locale), noFallback)
     }
 }

@@ -8,7 +8,10 @@ import com.richjun.liftupai.domain.workout.dto.request.GenerateAIPlanRequest
 import com.richjun.liftupai.domain.workout.dto.response.PlanDashboardResponse
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.repository.*
+import com.richjun.liftupai.domain.user.repository.UserProfileRepository
+import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.user.service.StrengthAssessmentEstimator
+import com.richjun.liftupai.domain.workout.dto.request.ApplyTemplateRequest
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
@@ -30,6 +33,8 @@ class AIPlanGenerationService(
     private val userPlanDayRepository: UserPlanDayRepository,
     private val userPlanDayExerciseRepository: UserPlanDayExerciseRepository,
     private val injuryFilterService: InjuryFilterService,
+    private val userProfileRepository: UserProfileRepository,
+    private val userSettingsRepository: UserSettingsRepository,
     private val objectMapper: ObjectMapper,
     @Lazy private val self: AIPlanGenerationService
 ) {
@@ -43,52 +48,185 @@ class AIPlanGenerationService(
         user: User,
         request: GenerateAIPlanRequest,
         onProgress: (step: Int, message: String) -> Unit
+    ): PlanDashboardResponse = generate(user, request, onProgress, streamChunk = null)
+
+    /**
+     * 스트리밍 응답을 쓰는 경로. Gemini 청크를 [onChunk] 로 흘려보내되,
+     * 검증·보정·재시도·폴백은 동기 경로와 완전히 같은 파이프라인을 탄다.
+     */
+    fun generateAndApplyPlanStreaming(
+        user: User,
+        request: GenerateAIPlanRequest,
+        onChunk: (accumulated: String, chunkSize: Int) -> Unit,
+        onProgress: (step: Int, message: String) -> Unit = { _, _ -> }
+    ): PlanDashboardResponse = generate(user, request, onProgress, streamChunk = onChunk)
+
+    /** 한 번의 생성 시도 결과 */
+    internal data class Attempt(val plan: AIPlanResponse, val report: PlanQualityReport, val repairs: List<RepairLog>, val adjustments: List<String>)
+
+    private fun generate(
+        user: User,
+        request: GenerateAIPlanRequest,
+        onProgress: (step: Int, message: String) -> Unit,
+        streamChunk: ((String, Int) -> Unit)?
     ): PlanDashboardResponse {
         log.info("Generating AI plan for user {} with goals: {}", user.id, request.goals)
+
+        // 부상은 요청 + 프로필 + 설정을 합친다. 한쪽만 보면 필터가 조용히 무력화된다(UserPlanService 와 같은 이유).
+        val injuries = resolveInjuries(user, request)
+        val effectiveRequest = if (injuries.isNotEmpty()) request.copy(injuries = injuries.toList()) else request
+        val targets = targetsOf(effectiveRequest)
+        val constraints = PlanConstraints(
+            allowedEquipment = PlanConstraints.normalizeEquipment(effectiveRequest.equipment),
+            injuries = injuries,
+            isRestricted = { ex -> injuries.isNotEmpty() && injuryFilterService.isExerciseRestricted(ex.id, injuries) }
+        )
 
         // 1. Build prompt
         onProgress(1, "운동 데이터베이스 분석 중...")
         val exercisePool = curatedExercisePoolService.getPromptReadyExerciseList(
-            availableEquipment = request.equipment.toSet()
+            availableEquipment = effectiveRequest.equipment.toSet()
         )
-        val prompt = buildPlanGenerationPrompt(request, exercisePool)
+        val prompt = buildPlanGenerationPrompt(effectiveRequest, exercisePool, targets)
 
-        // 2. Call Gemini AI (동기 호출)
+        // 2. Call Gemini AI
         onProgress(2, "AI가 맞춤 플랜을 설계하고 있어요...")
-        val aiResponse = callGeminiWithRetry(prompt, maxRetries = 3)
+        val firstRaw = try {
+            if (streamChunk != null) callGeminiStreamingWithRetry(prompt, 3, streamChunk) else callGeminiWithRetry(prompt, 3)
+        } catch (e: Exception) {
+            log.error("Gemini call failed for user {}: {} — falling back to template", user.id, e.message)
+            return fallbackToTemplate(user, effectiveRequest, injuries, onProgress, "AI 호출 실패")
+        }
 
-        // 3. Parse JSON response
+        // 3. Parse (실패 시 JSON-only 지시로 1회 재요청)
         onProgress(3, "AI 응답을 분석하고 있어요...")
-        val parsedPlan = parseAIPlanResponse(aiResponse)
-
-        // 4. Validate & repair hallucinations
-        onProgress(4, "운동 정확도를 검증하고 있어요...")
-        val validatedPlan = hallucinationGuardService.validateAndRepairPlan(parsedPlan)
-        log.info("Hallucination guard: ${validatedPlan.repairs.size} repairs made")
-
-        // 5. Quality check
-        onProgress(5, "플랜 품질을 최종 검토하고 있어요...")
-        val qualityReport = planQualityValidator.validate(validatedPlan.plan)
-        if (!qualityReport.isValid) {
-            log.warn("Quality validation failed, attempting regeneration...")
-            onProgress(5, "품질 기준 미달, AI가 다시 설계하고 있어요...")
-            val retryResponse = callGeminiWithRetry(
-                prompt + "\n\nPREVIOUS ATTEMPT FAILED VALIDATION. Be more careful with exercise selection.",
-                maxRetries = 1
-            )
-            val retryPlan = parseAIPlanResponse(retryResponse)
-            val retryValidated = hallucinationGuardService.validateAndRepairPlan(retryPlan)
-            val retryQuality = planQualityValidator.validate(retryValidated.plan)
-            if (!retryQuality.isValid) {
-                log.error("Second attempt also failed quality check. Proceeding anyway with warnings.")
+        var parsed = tryParse(firstRaw)
+        if (parsed == null) {
+            log.warn("First AI response unparsable — retrying once with JSON-only instruction")
+            val retryRaw = try { callGeminiWithRetry(prompt + PARSE_FIX_INSTRUCTION, 1) } catch (e: Exception) { "" }
+            parsed = tryParse(retryRaw)
+            if (parsed == null) {
+                return fallbackToTemplate(user, effectiveRequest, injuries, onProgress, "AI 응답 파싱 실패")
             }
-            onProgress(6, "플랜을 저장하고 있어요...")
-            return self.persistAIPlan(user, retryValidated.plan, request)
+        }
+
+        // 4~5. Guard → normalize → validate
+        onProgress(4, "운동 정확도를 검증하고 있어요...")
+        onProgress(5, "플랜 품질을 최종 검토하고 있어요...")
+        var attempt = runPipeline(parsed, constraints, targets)
+
+        if (!attempt.report.isValid) {
+            log.warn("Quality validation failed ({} errors), regenerating with fix instructions", attempt.report.errors.size)
+            onProgress(5, "품질 기준 미달, AI가 다시 설계하고 있어요...")
+            val fixPrompt = prompt + buildFixInstructions(attempt.report)
+            val retryParsed = try { tryParse(callGeminiWithRetry(fixPrompt, 1)) } catch (e: Exception) { null }
+            if (retryParsed != null) {
+                val retryAttempt = runPipeline(retryParsed, constraints, targets)
+                // 재시도가 더 나으면 채택, 아니면 첫 시도를 유지
+                if (retryAttempt.report.isValid || retryAttempt.report.errors.size < attempt.report.errors.size) {
+                    attempt = retryAttempt
+                }
+            }
+        }
+
+        if (!attempt.report.isValid && !isUsable(attempt.plan)) {
+            log.error("AI plan unusable after retry: {} — falling back to template",
+                attempt.report.errors.map { it.message })
+            return fallbackToTemplate(user, effectiveRequest, injuries, onProgress, "AI 플랜 품질 미달")
+        }
+        if (!attempt.report.isValid) {
+            log.warn("Persisting AI plan with remaining warnings: {}", attempt.report.errors.map { it.message })
         }
 
         // 6. Persist
         onProgress(6, "플랜을 저장하고 있어요...")
-        return self.persistAIPlan(user, validatedPlan.plan, request)
+        return self.persistAIPlan(user, attempt.plan, effectiveRequest)
+    }
+
+    /** 환각 복구(제약 포함) → 서버 보정 → 검증 */
+    internal fun runPipeline(parsed: AIPlanResponse, constraints: PlanConstraints, targets: PlanTargets): Attempt {
+        val guarded = hallucinationGuardService.validateAndRepairPlan(parsed, constraints)
+        log.info("Hallucination guard: ${guarded.repairs.size} repairs made")
+        val normalized = planQualityValidator.normalize(guarded.plan, targets)
+        val report = planQualityValidator.validate(normalized.plan, targets)
+        return Attempt(normalized.plan, report, guarded.repairs, normalized.adjustments)
+    }
+
+    /** 오류가 남아도 사용자에게 줄 수 있는 최소 조건: 모든 날에 운동 3개 이상, 일수 일치 */
+    private fun isUsable(plan: AIPlanResponse): Boolean =
+        plan.days.isNotEmpty() && plan.days.size == plan.totalDays && plan.days.all { it.exercises.size >= 3 }
+
+    private fun tryParse(raw: String): AIPlanResponse? = try {
+        if (raw.isBlank()) null else parseAIPlanResponse(raw)
+    } catch (e: Exception) {
+        log.warn("AI plan parse failed: {}", e.message)
+        null
+    }
+
+    internal fun buildFixInstructions(report: PlanQualityReport): String {
+        val lines = report.errors.map { "- " + (it.fixInstruction ?: it.message) }.distinct()
+        return "\n\nPREVIOUS ATTEMPT FAILED VALIDATION. Fix ALL of the following and respond with the full corrected JSON only:\n" +
+            lines.joinToString("\n")
+    }
+
+    internal fun targetsOf(request: GenerateAIPlanRequest): PlanTargets = PlanTargets(
+        primaryGoal = PlanGoal.fromGoals(request.goals),
+        experienceLevel = request.experienceLevel,
+        weeklyDays = request.weeklyDays,
+        sessionDurationMinutes = request.sessionDuration,
+        age = request.age,
+        bmi = PlanTargets.bmiOf(request.height, request.weight),
+        locale = request.locale ?: "ko"
+    )
+
+    internal fun resolveInjuries(user: User, request: GenerateAIPlanRequest): Set<String> {
+        val fromRequest = request.injuries.orEmpty()
+        val fromProfile = try {
+            userProfileRepository.findByUser_Id(user.id).orElse(null)?.injuries?.toList().orEmpty()
+        } catch (e: Exception) { emptyList() }
+        val fromSettings = try {
+            userSettingsRepository.findByUser_Id(user.id).orElse(null)?.injuries?.toList().orEmpty()
+        } catch (e: Exception) { emptyList() }
+        return (fromRequest + fromProfile + fromSettings)
+            .map { it.substringBefore(':').trim().lowercase() }
+            .filter { it.isNotEmpty() && it != "none" }
+            .toSet()
+    }
+
+    /**
+     * AI 가 끝내 쓸 만한 플랜을 못 주면 사전 템플릿을 적용한다.
+     * 경험 수준과 주간 일수가 가장 가까운 프리셋을 고르고, 부상·장비 필터는 applyTemplate 이 처리한다.
+     * 사용자는 에러 대신 플랜을 받는다.
+     */
+    internal fun fallbackToTemplate(
+        user: User,
+        request: GenerateAIPlanRequest,
+        injuries: Set<String>,
+        onProgress: (step: Int, message: String) -> Unit,
+        reason: String
+    ): PlanDashboardResponse {
+        onProgress(6, "검증된 기본 플랜을 적용하고 있어요...")
+        val code = chooseFallbackTemplateCode(request)
+        log.warn("AI plan fallback → template '{}' for user {} ({})", code, user.id, reason)
+        return userPlanService.applyTemplate(
+            user, code,
+            ApplyTemplateRequest(injuries = injuries.toList().ifEmpty { null }, equipment = request.equipment.ifEmpty { null }),
+            request.locale ?: "ko"
+        )
+    }
+
+    internal fun chooseFallbackTemplateCode(request: GenerateAIPlanRequest): String {
+        val presets = try {
+            templateRepository.findByIsActiveTrueAndSourceTypeOrderBySortOrder(PlanSourceType.PRESET)
+        } catch (e: Exception) { emptyList() }
+        if (presets.isEmpty()) return DEFAULT_FALLBACK_TEMPLATE
+        val exp = request.experienceLevel.lowercase()
+        val expRank = mapOf("beginner" to 0, "novice" to 0, "intermediate" to 1, "advanced" to 2, "expert" to 2)
+        val userRank = expRank[exp] ?: 0
+        return presets.minByOrNull { t ->
+            val tRank = expRank[t.targetExperience.lowercase()] ?: 1
+            kotlin.math.abs(tRank - userRank) * 2 + kotlin.math.abs(t.totalDays - request.weeklyDays) + (if (t.isPremium) 5 else 0)
+        }?.code ?: DEFAULT_FALLBACK_TEMPLATE
     }
 
     @Transactional
@@ -123,7 +261,7 @@ class AIPlanGenerationService(
         )
         val savedTemplate = templateRepository.save(template)
 
-        val injuries = request.injuries?.toSet() ?: emptySet()
+        val injuries = request.injuries?.map { it.substringBefore(':').trim().lowercase() }?.toSet() ?: emptySet()
 
         // Pre-resolve all exercises once to avoid duplicate resolution
         val resolvedExercises = mutableMapOf<Long, Exercise?>()
@@ -378,7 +516,7 @@ class AIPlanGenerationService(
         throw RuntimeException("AI 응답에서 완전한 JSON 객체를 찾을 수 없습니다.")
     }
 
-    private fun buildPlanGenerationPrompt(request: GenerateAIPlanRequest, exercisePool: String): String {
+    private fun buildPlanGenerationPrompt(request: GenerateAIPlanRequest, exercisePool: String, targets: PlanTargets): String {
         val trainingStyle = request.trainingStyle ?: "balanced"
         val focusAreas = request.focusAreas?.joinToString(", ") ?: "none"
         val strengthData = buildStrengthDataSummary(request)
@@ -410,6 +548,8 @@ You MUST respond with ONLY a valid JSON object. No explanations, no markdown, ju
 - Existing split preference: ${request.workoutSplit ?: "auto"}
 
 $strengthData
+
+${buildPopulationRules(targets)}
 
 ## Available Exercises (USE ONLY THESE — do NOT invent exercises)
 $exercisePool
@@ -446,6 +586,10 @@ ${buildRPETargets(request.experienceLevel, trainingStyle)}
 
 13. Use the strength data to decide exercise complexity, progression model, and starting volume conservatively.
 14. Plan name in $responseLanguage, descriptive and motivating.
+15. Injuries listed above are hard constraints: never include an exercise that loads an injured area.
+16. Never schedule the same workoutType on two consecutive days (except FULL_BODY). Across the week include upper body, lower body AND core.
+17. Never list the same exercise, or two exercises with the same movement pattern, in one day.
+18. The sum of set×(reps×3s + rest) per day must fit the session duration (${request.sessionDuration} min ±20%).
 
 ## JSON Schema (respond EXACTLY in this format)
 {
@@ -480,6 +624,24 @@ ${buildRPETargets(request.experienceLevel, trainingStyle)}
   "coachingNotes": "string (Korean, overall advice)"
 }
 """.trimIndent()
+    }
+
+    /**
+     * 미성년·고령·저체중·비만 사용자용 보수 규칙. 프롬프트로 요구하고, 서버(PlanQualityValidator.normalize)가
+     * 같은 규칙을 결정적으로 강제한다 — 프롬프트만 믿지 않는다.
+     */
+    internal fun buildPopulationRules(t: PlanTargets): String {
+        if (!t.isSpecialPopulation) return ""
+        val rules = mutableListOf<String>()
+        if (t.isMinor) {
+            rules += "- The user is a MINOR (age ${t.age}). Frame the plan around fitness, strength and health — NEVER around weight loss, dieting or fat burning, even if the goal says weight loss. Do not use words like 감량/다이어트/weight loss in planName, planDescription or coachingNotes."
+            rules += "- Minors: no near-maximal loads (no reps below 6, RPE ≤ 7), no plyometrics/jumps, no Olympic lifts (clean/snatch). Prioritize technique."
+        }
+        if (t.isElderly) rules += "- The user is ${t.age} years old: joint-friendly movements, RPE ≤ 7, reps ≥ 6, rest ≥ 90s, no jumps/plyometrics, no Olympic lifts, include balance/mobility-friendly exercises."
+        if (t.isUnderweight) rules += "- The user is underweight (BMI ${"%.1f".format(t.bmi)}): keep weekly volume moderate (≤ ${t.weeklySetCap} working sets), emphasize compound strength work, never a fat-loss framing."
+        if (t.isObese) rules += "- The user has BMI ${"%.1f".format(t.bmi)}: avoid jumping/plyometric and high-impact moves, prefer machines/bodyweight variations that are joint-friendly, longer rest between sets."
+        rules += "- Total weekly working sets must not exceed ${t.weeklySetCap}; per day not more than ${t.dailySetCap}."
+        return "## Safety Rules For This User (MANDATORY)\n" + rules.joinToString("\n")
     }
 
     private fun buildStrengthDataSummary(request: GenerateAIPlanRequest): String {
@@ -675,5 +837,10 @@ ${buildRPETargets(request.experienceLevel, trainingStyle)}
    - Isolation: RPE 7.0-8.5"""
             }
         }
+    }
+
+    companion object {
+        const val DEFAULT_FALLBACK_TEMPLATE = "beginner_fullbody"
+        const val PARSE_FIX_INSTRUCTION = "\n\nYOUR PREVIOUS RESPONSE WAS NOT VALID JSON. Respond with ONLY the JSON object described in the schema. No prose, no markdown fences."
     }
 }

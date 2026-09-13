@@ -32,7 +32,8 @@ class PTRecommendationEngine(
     private val userProgramEnrollmentRepository: UserProgramEnrollmentRepository,
     private val exercisePatternClassifier: ExercisePatternClassifier,
     private val exerciseTrainingProfileResolver: ExerciseTrainingProfileResolver,
-    private val sharedSupport: WorkoutV2SharedSupport
+    private val sharedSupport: WorkoutV2SharedSupport,
+    private val weightRecommendationService: WeightRecommendationService,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -65,7 +66,8 @@ class PTRecommendationEngine(
             recentHistory = recentSessions,
             locale = locale,
             bodyFatPercentage = bodyFatPercentage,
-            age = userProfile?.age
+            age = userProfile?.age,
+            profile = userProfile,
         )
 
         logger.info("Advanced PT System - Exercise: ${exercise.name}, " +
@@ -143,7 +145,8 @@ class PTRecommendationEngine(
             locale = locale,
             programPhaseOverride = programPhaseOverride,
             bodyFatPercentage = bodyFatPercentage,
-            age = userProfile?.age
+            age = userProfile?.age,
+            profile = userProfile,
         )
     }
 
@@ -162,11 +165,17 @@ class PTRecommendationEngine(
         locale: String,
         programPhaseOverride: PeriodizationPhase? = null,
         bodyFatPercentage: Double? = null,
-        age: Int? = null
+        age: Int? = null,
+        profile: com.richjun.liftupai.domain.user.entity.UserProfile? = null,
     ): PTRecommendation {
 
-        // 1. 기본 무게 계산 (체조성 보정 포함)
-        val baseWeight = calculateBaseWeight(exercise, bodyWeight, gender, experienceLevel, bodyFatPercentage)
+        // 1. 기본 무게 계산 (체조성·연령 보정 포함) — WeightRecommendationService 와 같은 표를 쓴다
+        val baseWeight = calculateBaseWeight(exercise, bodyWeight, gender, experienceLevel, bodyFatPercentage, age)
+
+        // 1-b. PR 이 없으면 프로필의 자기 신고/온보딩 추정치를 1RM·시작 무게로 쓴다.
+        //      예전엔 이 값을 아무도 읽지 않아 벤치 1RM 100kg 사용자에게 초보 기본값(20kg)이 나갔다.
+        val estimated1RM = if (personalRecord == null) weightRecommendationService.resolveEstimated1RM(profile, exercise) else null
+        val declaredWorkingWeight = if (recentHistory.isEmpty()) weightRecommendationService.resolveWorkingWeight(profile, exercise) else null
 
         // 2. 최근 운동 분석
         val performanceAnalysis = analyzeRecentPerformance(recentHistory)
@@ -187,7 +196,9 @@ class PTRecommendationEngine(
             recoveryStatus = recoveryStatus,
             periodizationPhase = periodizationPhase,
             locale = locale,
-            age = age
+            age = age,
+            estimated1RM = estimated1RM,
+            declaredWorkingWeight = declaredWorkingWeight,
         )
 
         // 6. 최종 추천 생성
@@ -402,12 +413,22 @@ class PTRecommendationEngine(
         recoveryStatus: RecoveryStatus,
         periodizationPhase: PeriodizationPhase,
         locale: String,
-        age: Int? = null
+        age: Int? = null,
+        estimated1RM: Double? = null,
+        declaredWorkingWeight: Double? = null,
     ): ProgressionPlan {
 
-        val lastWeight = recentHistory.firstOrNull()?.weight ?: baseWeight
-        // prWeight가 0이 되지 않도록 보장
-        val prWeight = (personalRecord?.weight ?: lastWeight * 1.2).takeIf { it > 0 } ?: baseWeight.takeIf { it > 0 } ?: 10.0
+        // 운동 특성별 분화된 세트/횟수/휴식 처방 (시작 무게를 목표 반복수에 맞추기 위해 먼저 푼다)
+        val config = exerciseTrainingProfileResolver.resolveConfig(exercise, periodizationPhase)
+        val targetRepsForStart = parseUpperReps(config.reps) ?: 10
+
+        // 시작 무게: 최근 이력 → 직접 입력 작업 무게 → 추정 1RM 의 목표 반복수 작업 무게 → 프로필 기본값
+        val lastWeight = recentHistory.firstOrNull()?.weight
+            ?: declaredWorkingWeight
+            ?: estimated1RM?.let { weightRecommendationService.workingWeightFor1RM(it, targetRepsForStart) }
+            ?: baseWeight
+        // prWeight가 0이 되지 않도록 보장. PR 이 없어도 추정 1RM 이 있으면 그것이 %1RM 밴드의 기준이다.
+        val prWeight = (personalRecord?.weight ?: estimated1RM ?: lastWeight * 1.2).takeIf { it > 0 } ?: baseWeight.takeIf { it > 0 } ?: 10.0
 
         // 주기화에 따른 강도 설정
         val intensityRange = when (periodizationPhase) {
@@ -479,10 +500,13 @@ class PTRecommendationEngine(
 
             // 4. PR 대비 안전 상한선 (110% 제한)
             targetWeight = targetWeight.coerceAtMost(prWeight * 1.1)
-        }
 
-        // 운동 특성별 분화된 세트/횟수/휴식 처방
-        val config = exerciseTrainingProfileResolver.resolveConfig(exercise, periodizationPhase)
+            // 5. 미성년·고령 강도 상한 (%1RM). 성장판/관절 보호 — 주기화 밴드보다 우선한다.
+            val ageIntensityCap = RecommendationConstants.getAgeIntensityCap(age)
+            if (ageIntensityCap < 1.0) {
+                targetWeight = targetWeight.coerceAtMost(prWeight * ageIntensityCap)
+            }
+        }
 
         // 점진적 과부하 전략 결정: 무게→렙→세트→템포 순으로 로테이션
         val strategy = when (performanceAnalysis.trend) {
@@ -517,6 +541,9 @@ class PTRecommendationEngine(
             }
         }
 
+        // 미성년·고령 볼륨 상한
+        val cappedSets = sets.coerceAtMost(RecommendationConstants.getAgeMaxSets(age)).coerceAtLeast(1)
+
         // intensity 계산 시 NaN 방지
         val intensity = if (prWeight > 0 && targetWeight.isFinite()) {
             (targetWeight / prWeight * 100).roundToInt()
@@ -526,12 +553,18 @@ class PTRecommendationEngine(
 
         return ProgressionPlan(
             weight = roundToPlate(targetWeight),
-            sets = sets,
+            sets = cappedSets,
             reps = reps,
             restSeconds = config.restSeconds,
             intensity = intensity,
             focus = determineFocus(performanceAnalysis, periodizationPhase, strategy, locale)
         )
+    }
+
+    /** "8-12" → 12, "10" → 10, 시간 기반("30s")은 null */
+    private fun parseUpperReps(reps: String): Int? {
+        if (reps.contains("s") || reps == "time-based") return null
+        return reps.split("-").lastOrNull()?.trim()?.toIntOrNull()?.takeIf { it in 1..36 }
     }
 
     /**
@@ -602,33 +635,25 @@ class PTRecommendationEngine(
     }
 
     // Helper 함수들
-    private fun calculateBaseWeight(exercise: Exercise, bodyWeight: Double, gender: String, experienceLevel: com.richjun.liftupai.domain.user.entity.ExperienceLevel, bodyFatPercentage: Double? = null): Double {
+    private fun calculateBaseWeight(
+        exercise: Exercise,
+        bodyWeight: Double,
+        gender: String,
+        experienceLevel: com.richjun.liftupai.domain.user.entity.ExperienceLevel,
+        bodyFatPercentage: Double? = null,
+        age: Int? = null,
+    ): Double {
         // 체조성 보정: 제지방량(LBM) 기반 계산
         val effectiveWeight = if (bodyFatPercentage != null && bodyFatPercentage in 5.0..50.0) {
             bodyWeight * (1.0 - bodyFatPercentage / 100.0)  // 제지방량
         } else {
             bodyWeight * 0.80  // 체지방률 미입력 시 기본 20% 가정
         }
-
-        val genderMultiplier = when (gender) {
-            "female" -> when (exercise.category) {
-                ExerciseCategory.CHEST, ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS -> 0.7
-                ExerciseCategory.LEGS -> 0.85
-                else -> 0.75
-            }
-            else -> 1.0
-        }
-
-        val experienceMultiplier = when (experienceLevel) {
-            com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER -> 0.5
-            com.richjun.liftupai.domain.user.entity.ExperienceLevel.NOVICE -> 0.6
-            com.richjun.liftupai.domain.user.entity.ExperienceLevel.INTERMEDIATE -> 0.75
-            com.richjun.liftupai.domain.user.entity.ExperienceLevel.ADVANCED -> 1.0
-            com.richjun.liftupai.domain.user.entity.ExperienceLevel.EXPERT -> 1.1
-        }
-
-        val baseWeight = getExerciseBaseWeight(exercise, effectiveWeight)
-        return baseWeight * genderMultiplier * experienceMultiplier
+        // 계수 표는 WeightRecommendationService 가 단일 출처다 — 플랜 화면과 홈 추천이 다른 무게를 내지 않게.
+        return getExerciseBaseWeight(exercise, effectiveWeight) *
+            weightRecommendationService.genderMultiplier(gender, exercise.category) *
+            weightRecommendationService.experienceMultiplier(experienceLevel) *
+            weightRecommendationService.ageMultiplier(age)
     }
 
     private fun getRecentWorkoutHistory(user: com.richjun.liftupai.domain.auth.entity.User, exercise: Exercise, days: Int): List<WorkoutData> {
@@ -916,70 +941,10 @@ class PTRecommendationEngine(
     }
 
     /**
-     * 운동별 기본 무게 계산 (남성 중급자 기준)
-     * PT의 경험적 데이터 기반
+     * 운동별 기본 무게 계산 (남성 중급자 기준). 표는 WeightRecommendationService.patternBaseRatio 에 있다.
      */
     private fun getExerciseBaseWeight(exercise: Exercise, bodyWeight: Double): Double {
         val pattern = exercisePatternClassifier.classifyExercise(exercise)
-        val baseRatio = when (pattern) {
-            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_BARBELL -> 0.75
-            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_DUMBBELL -> 0.3
-            ExercisePatternClassifier.MovementPattern.HORIZONTAL_PRESS_MACHINE -> 0.7
-            ExercisePatternClassifier.MovementPattern.INCLINE_PRESS_BARBELL -> 0.65
-            ExercisePatternClassifier.MovementPattern.INCLINE_PRESS_DUMBBELL -> 0.25
-            ExercisePatternClassifier.MovementPattern.DECLINE_PRESS -> 0.8
-            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_BARBELL -> 0.5
-            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_DUMBBELL -> 0.22
-            ExercisePatternClassifier.MovementPattern.VERTICAL_PRESS_MACHINE -> 0.45
-            ExercisePatternClassifier.MovementPattern.DIPS,
-            ExercisePatternClassifier.MovementPattern.PUSHUP -> 0.0
-            ExercisePatternClassifier.MovementPattern.FLY -> 0.2
-            ExercisePatternClassifier.MovementPattern.PULLUP_CHINUP,
-            ExercisePatternClassifier.MovementPattern.INVERTED_ROW -> 0.0
-            ExercisePatternClassifier.MovementPattern.LAT_PULLDOWN -> 0.6
-            ExercisePatternClassifier.MovementPattern.BARBELL_ROW -> 0.6
-            ExercisePatternClassifier.MovementPattern.DUMBBELL_ROW -> 0.35
-            ExercisePatternClassifier.MovementPattern.CABLE_ROW -> 0.65
-            ExercisePatternClassifier.MovementPattern.DEADLIFT -> 1.2
-            ExercisePatternClassifier.MovementPattern.HIP_HINGE -> 0.8
-            ExercisePatternClassifier.MovementPattern.SQUAT -> 0.9
-            ExercisePatternClassifier.MovementPattern.LUNGE -> 0.4
-            ExercisePatternClassifier.MovementPattern.LEG_PRESS -> 1.8
-            ExercisePatternClassifier.MovementPattern.LEG_CURL -> 0.4
-            ExercisePatternClassifier.MovementPattern.LEG_EXTENSION -> 0.5
-            ExercisePatternClassifier.MovementPattern.GLUTE_FOCUSED -> 0.7
-            ExercisePatternClassifier.MovementPattern.CALF -> 0.8
-            ExercisePatternClassifier.MovementPattern.LATERAL_RAISE -> 0.1
-            ExercisePatternClassifier.MovementPattern.FRONT_RAISE -> 0.12
-            ExercisePatternClassifier.MovementPattern.REAR_DELT -> 0.08
-            ExercisePatternClassifier.MovementPattern.FACE_PULL -> 0.2
-            ExercisePatternClassifier.MovementPattern.UPRIGHT_ROW -> 0.4
-            ExercisePatternClassifier.MovementPattern.SHRUG -> 0.6
-            ExercisePatternClassifier.MovementPattern.BICEP_CURL_BARBELL -> 0.35
-            ExercisePatternClassifier.MovementPattern.BICEP_CURL_DUMBBELL -> 0.15
-            ExercisePatternClassifier.MovementPattern.BICEP_CURL_CABLE -> 0.3
-            ExercisePatternClassifier.MovementPattern.TRICEP_OVERHEAD -> 0.35
-            ExercisePatternClassifier.MovementPattern.TRICEP_LYING -> 0.3
-            ExercisePatternClassifier.MovementPattern.TRICEP_PUSHDOWN -> 0.4
-            ExercisePatternClassifier.MovementPattern.CRUNCH,
-            ExercisePatternClassifier.MovementPattern.LEG_RAISE,
-            ExercisePatternClassifier.MovementPattern.PLANK,
-            ExercisePatternClassifier.MovementPattern.ROLLOUT,
-            ExercisePatternClassifier.MovementPattern.CARDIO,
-            ExercisePatternClassifier.MovementPattern.PLYOMETRIC,
-            ExercisePatternClassifier.MovementPattern.STRETCHING -> 0.0
-            ExercisePatternClassifier.MovementPattern.ROTATION -> 0.15
-            else -> when (exercise.category) {
-                ExerciseCategory.CHEST -> 0.5
-                ExerciseCategory.BACK -> 0.6
-                ExerciseCategory.LEGS -> 0.7
-                ExerciseCategory.SHOULDERS -> 0.35
-                ExerciseCategory.ARMS -> 0.25
-                ExerciseCategory.CORE -> 0.0
-                else -> 0.4
-            }
-        }
-
-        return bodyWeight * baseRatio
+        return bodyWeight * weightRecommendationService.patternBaseRatio(pattern, exercise.category)
     }
 }

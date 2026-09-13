@@ -109,6 +109,28 @@ object RecommendationConstants {
     }
 
     /**
+     * 연령 기반 강도 상한(%1RM). 미성년(성장판)·고령(관절)은 고강도 근접 세트를 피한다.
+     * ACSM 청소년 저항운동 지침: 60-75% 1RM 이하 중강도 권장.
+     */
+    fun getAgeIntensityCap(age: Int?): Double = when {
+        age == null -> 1.0
+        age < 18 -> 0.75
+        age >= 65 -> 0.75
+        age >= 60 -> 0.85
+        else -> 1.0
+    }
+
+    /** 연령 기반 종목당 최대 세트 수(볼륨 상한). */
+    fun getAgeMaxSets(age: Int?): Int = when {
+        age == null -> 6
+        age < 16 -> 3
+        age < 18 -> 4
+        age >= 65 -> 3
+        age >= 60 -> 4
+        else -> 6
+    }
+
+    /**
      * 목표별 복합운동 최소 비율 (0.0-1.0)
      *
      * - STRENGTH: 근력 목표 → 70% 복합 (큰 무게·다관절 위주)

@@ -85,9 +85,12 @@ class UserServiceOnboardingTest {
         assertTrue(savedProfile.captured.strengthTestCompleted)
         assertNotNull(savedProfile.captured.estimatedMaxes)
         val maxes = objectMapper.readValue<Map<String, Double>>(savedProfile.captured.estimatedMaxes!!)
-        assertEquals(40.0, maxes["bench-press"]!!, 0.001)
-        assertEquals(60.667, maxes["lat-pulldown"]!!, 0.001)
-        assertEquals(89.6, maxes["leg-press"]!!, 0.001)
+        // 1RM 추정(초보 남성 80kg, 30세): 벤치 Epley 68.3 → 초보 상한 0.75×80 = 60,
+        // 풀업 5회 → 93.3 → 상한 1.0×80 → 랫풀다운 ×0.9 = 72, 스쿼트 12회 → 95.2 → 상한 80 → 레그프레스 ×1.5 = 120
+        assertEquals(60.0, maxes["bench-press"]!!, 0.001)
+        assertEquals(60.0, maxes["barbell-bench-press"]!!, 0.001, "실제 카탈로그 slug 키도 저장돼야 플랜이 읽는다")
+        assertEquals(72.0, maxes["lat-pulldown"]!!, 0.001)
+        assertEquals(120.0, maxes["leg-press"]!!, 0.001)
         assertEquals(setOf("DUMBBELL"), savedProfile.captured.availableEquipment)
         assertEquals(setOf("knee"), savedProfile.captured.injuries)
     }

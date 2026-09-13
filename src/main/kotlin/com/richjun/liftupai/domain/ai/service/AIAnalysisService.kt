@@ -61,6 +61,8 @@ class AIAnalysisService(
     private val userExerciseOverrideRepository: UserExerciseOverrideRepository
 ) {
 
+    private val log = org.slf4j.LoggerFactory.getLogger(AIAnalysisService::class.java)
+
     private data class RecommendationProgramContext(
         val programDays: Int,
         val programType: String,
@@ -361,8 +363,10 @@ class AIAnalysisService(
             limit = 20 // 충분한 후보 확보
         )
 
-        // 부상 기반 운동 제외
-        val userInjuries = settings?.injuries ?: profile?.injuries ?: emptySet()
+        // 부상 기반 운동 제외. settings 행은 가입 시 항상 생기지만 injuries 는 비어 있고,
+        // 기기 가입 부상은 user_profile_injuries 에 저장된다 — `settings?.injuries ?: profile?.injuries` 는
+        // 빈 집합을 골라 필터를 통째로 무력화했다(로컬 e2e: 무릎 부상자 6개 중 4개가 무릎 부하 운동).
+        val userInjuries = resolveUserInjuries(settings, profile)
         val injuryFilteredCandidates = if (userInjuries.isNotEmpty()) {
             injuryFilterService.filterExercises(rawCandidates, userInjuries)
         } else {
@@ -393,7 +397,7 @@ class AIAnalysisService(
         val aiResponse = geminiAIService.generateRecommendations(prompt)
 
         // AI 응답을 WorkoutRecommendationDetail로 파싱
-        val recommendation = parseAIWorkoutResponse(user, aiResponse, duration, equipment, adjustedTargetMuscle, locale)
+        val recommendation = parseAIWorkoutResponse(user, aiResponse, duration, equipment, adjustedTargetMuscle, locale, userInjuries)
 
         // 대체 운동 생성
         val alternatives = generateAIAlternatives(duration, equipment, adjustedTargetMuscle, locale)
@@ -431,6 +435,27 @@ class AIAnalysisService(
             workoutSequence = autoRecommendation?.workoutSequence
                 ?: workoutProgressTracker.getWorkoutTypeSequence(configuredProgramType)
         )
+    }
+
+    /**
+     * 부상 목록: settings 에 값이 있으면 그것, 비어 있으면 profile(기기 가입 경로가 저장하는 곳).
+     * 형식은 "knee:moderate" 처럼 심각도가 붙을 수 있다 — InjuryFilterService 가 파싱한다.
+     */
+    internal fun resolveUserInjuries(settings: UserSettings?, profile: UserProfile?): Set<String> {
+        val fromSettings = settings?.injuries?.filter { it.isNotBlank() }.orEmpty()
+        val raw = if (fromSettings.isNotEmpty()) fromSettings else profile?.injuries?.filter { it.isNotBlank() }.orEmpty()
+        return raw.filter { it.substringBefore(':').trim().lowercase() != "none" }.toSet()
+    }
+
+    /** 부상 제한(큐레이션 테이블 + 종목 속성 규칙) 종목을 제거한다. */
+    internal fun dropInjuryRestricted(byId: Map<Long, Exercise>, injuries: Set<String>): Map<Long, Exercise> {
+        if (injuries.isEmpty() || byId.isEmpty()) return byId
+        val safeIds = injuryFilterService.filterExercises(byId.values.toList(), injuries).map { it.id }.toSet()
+        val dropped = byId.keys - safeIds
+        if (dropped.isNotEmpty()) {
+            println("[AIAnalysisService] dropped ${dropped.size} injury-restricted exercise(s) from AI pick: ${dropped.map { byId[it]?.name }}")
+        }
+        return byId.filterKeys { it in safeIds }
     }
 
     private fun collectAvailableEquipment(settings: UserSettings?, profile: UserProfile?): Set<String> {
@@ -864,7 +889,8 @@ class AIAnalysisService(
         duration: Int?,
         equipment: String?,
         targetMuscle: String?,
-        locale: String
+        locale: String,
+        injuries: Set<String> = emptySet(),
     ): AIWorkoutDetail {
         return try {
             val cleanedResponse = aiResponse
@@ -885,9 +911,11 @@ class AIAnalysisService(
             val exerciseIds = exercisesList.mapNotNull { exerciseMap ->
                 extractExerciseId(exerciseMap["id"])
             }.distinct()
-            val exerciseById = exerciseIds.associateWith { id ->
+            val loadedById = exerciseIds.associateWith { id ->
                 exerciseRepository.findById(id).orElse(null)
             }.filterValues { it != null }.mapValues { it.value!! }
+            // AI 가 후보 밖 id 를 골라도 부상 부위 운동은 여기서 최종 차단한다
+            val exerciseById = dropInjuryRestricted(loadedById, injuries)
             val translations = translationMap(exerciseById.values, locale)
             val usedExerciseIds = mutableSetOf<Long>()
 
@@ -901,7 +929,7 @@ class AIAnalysisService(
 
                 val matchedExercise = exerciseById[exerciseId]
                 if (matchedExercise == null) {
-                    println("Skipping exercise id $exerciseId: not found in DB")
+                    println("Skipping exercise id $exerciseId: not found in DB or restricted by injury")
                     return@mapIndexedNotNull null
                 }
 
@@ -1163,11 +1191,16 @@ class AIAnalysisService(
             else -> 8
         }
 
+        val fallbackInjuries = resolveUserInjuries(
+            userSettingsRepository.findByUser_Id(user.id).orElse(null),
+            userProfileRepository.findByUser_Id(user.id).orElse(null),
+        )
         val allExercises = fallbackCandidates(targetMuscle, equipment)
             .ifEmpty {
                 exerciseRepository.findAll()
                     .sortedWith(RecommendationExerciseRanking.displayOrderComparator())
             }
+            .let { if (fallbackInjuries.isEmpty()) it else injuryFilterService.filterExercises(it, fallbackInjuries) }
         val selectedExercises = mutableListOf<Exercise>()
 
         // 카테고리별로 하나씩만 선택하여 다양성 확보
@@ -1291,40 +1324,59 @@ class AIAnalysisService(
     /**
      * AI 응답에서 인사이트 파싱
      */
+    /**
+     * AI 응답에서 ai_insights 를 뽑는다. 응답이 잘리거나(JSON 미완성) JSON 이 아니어도 추천 자체는 나가야 하므로
+     * 어떤 경우에도 예외를 던지지 않는다 — 전체 파싱 실패 시 정규식으로 필드만 건지고, 그것도 없으면 기본 인사이트.
+     * (로컬 e2e 2026-09-14: "Unexpected end-of-input within/between Object entries" 가 매 요청 println 으로 찍혔다)
+     */
     private fun parseAIInsights(aiResponse: String, locale: String): AIWorkoutInsights? {
+        val cleanedResponse = aiResponse
+            .replace("```json", "")
+            .replace("```", "")
+            .trim()
+
+        val jsonResponse: Map<String, Any>? = try {
+            objectMapper.readValue<Map<String, Any>>(cleanedResponse)
+        } catch (e: Exception) {
+            log.warn("[AI-RECO] insights JSON parse failed (len={}): {}", cleanedResponse.length, e.message?.take(160))
+            null
+        }
+
         return try {
-            val cleanedResponse = aiResponse
-                .replace("```json", "")
-                .replace("```", "")
-                .trim()
-
-            val jsonResponse = objectMapper.readValue<Map<String, Any>>(cleanedResponse)
-            val aiInsightsMap = jsonResponse["ai_insights"] as? Map<String, Any>
-
-            if (aiInsightsMap != null) {
-                // 디버그 로깅
-                println("AI Insights Map: $aiInsightsMap")
-
-                val insights = AIWorkoutInsights(
+            val aiInsightsMap = jsonResponse?.get("ai_insights") as? Map<*, *>
+            val insights = if (aiInsightsMap != null) {
+                AIWorkoutInsights(
                     workoutRationale = aiInsightsMap["workout_rationale"] as? String,
                     keyPoint = aiInsightsMap["key_point"] as? String,
                     nextStep = aiInsightsMap["next_step"] as? String
                 )
-
-                // 값이 하나라도 있으면 반환
-                if (insights.workoutRationale != null || insights.keyPoint != null || insights.nextStep != null) {
-                    return insights
-                }
+            } else {
+                // 잘린 응답에서라도 문자열 필드는 건질 수 있다
+                salvageInsightsFromText(cleanedResponse)
             }
-
-            // AI가 insights를 제공하지 않은 경우 기본값 생성
-            println("WARNING: ai_insights is missing or empty in AI response, generating defaults")
-            return generateDefaultInsights(jsonResponse, locale)
+            if (insights != null && (insights.workoutRationale != null || insights.keyPoint != null || insights.nextStep != null)) {
+                insights
+            } else {
+                log.debug("[AI-RECO] ai_insights missing — generating defaults")
+                generateDefaultInsights(jsonResponse ?: emptyMap(), locale)
+            }
         } catch (e: Exception) {
-            println("ERROR parsing AI insights: ${e.message}")
-            // AI 응답 파싱 실패 시 null 반환
+            log.warn("[AI-RECO] insights build failed: {}", e.message?.take(160))
             null
         }
+    }
+
+    /** "workout_rationale": "..." 형태의 문자열 필드를 정규식으로 추출한다(잘린 JSON 대비). */
+    internal fun salvageInsightsFromText(text: String): AIWorkoutInsights? {
+        fun field(name: String): String? {
+            // "name" : "value" — value 안의 이스케이프된 따옴표를 허용한다
+            val regex = Regex("\"" + Regex.escape(name) + "\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"")
+            return regex.find(text)?.groupValues?.get(1)
+                ?.replace("\\\"", "\"")?.replace("\\n", "\n")?.trim()?.takeIf { it.isNotEmpty() }
+        }
+        val r = field("workout_rationale"); val k = field("key_point"); val n = field("next_step")
+        if (r == null && k == null && n == null) return null
+        return AIWorkoutInsights(workoutRationale = r, keyPoint = k, nextStep = n)
     }
 
     private fun resolveLocale(userId: Long, localeOverride: String?): String {

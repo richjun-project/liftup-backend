@@ -57,6 +57,36 @@ class InjuryFilterService(
 
     companion object {
         private val DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        /** 큐레이션 테이블 조회 캐시 TTL. 테이블은 사실상 정적이고(현재 0행) 부상 세트도 몇 종류 안 된다. */
+        private const val RESTRICTION_CACHE_TTL_MS = 60_000L
+        private const val RESTRICTION_CACHE_MAX = 256
+    }
+
+    /** injuries 집합 → (계산 시각, 제한 운동 id). 플랜 가드가 후보 수백 개를 순회하며 isExerciseRestricted 를 부르는 동안 DB 를 한 번만 친다. */
+    private val restrictionIdCache = java.util.concurrent.ConcurrentHashMap<Set<String>, Pair<Long, Set<Long>>>()
+
+    /**
+     * 부상 세트에 대한 큐레이션 테이블 제한 운동 id. 60초 캐시.
+     * 종목 속성 규칙(isRestrictedByRule)은 DB 를 안 타므로 여기 포함하지 않는다 — [restrictionChecker] 가 둘을 합친다.
+     */
+    fun restrictedExerciseIds(injuries: Set<String>): Set<Long> {
+        if (injuries.isEmpty()) return emptySet()
+        val now = System.currentTimeMillis()
+        restrictionIdCache[injuries]?.let { (at, ids) -> if (now - at < RESTRICTION_CACHE_TTL_MS) return ids }
+        val ids = getRestrictedExercises(injuries).map { it.restrictedExercise.id }.toSet()
+        if (restrictionIdCache.size >= RESTRICTION_CACHE_MAX) restrictionIdCache.clear()
+        restrictionIdCache[injuries] = now to ids
+        return ids
+    }
+
+    /**
+     * 요청 단위로 한 번 만들어 후보마다 호출하는 검사기. 테이블 id 는 한 번만 계산하고, 속성 규칙은 메모리에서 판정한다.
+     * 예: `val restricted = injuryFilterService.restrictionChecker(injuries); candidates.filterNot(restricted)`
+     */
+    fun restrictionChecker(injuries: Set<String>): (Exercise) -> Boolean {
+        if (injuries.isEmpty()) return { false }
+        val tableIds = restrictedExerciseIds(injuries)
+        return { exercise -> exercise.id in tableIds || isRestrictedByRule(exercise, injuries) }
     }
 
     // ─── 회복 단계 판정 ───────────────────────────────────────────────
@@ -183,9 +213,8 @@ class InjuryFilterService(
 
     fun filterExercises(exercises: List<Exercise>, injuries: Set<String>): List<Exercise> {
         if (injuries.isEmpty()) return exercises
-        val restrictions = getRestrictedExercises(injuries)
-        val restrictedIds = restrictions.map { it.restrictedExercise.id }.toSet()
-        return exercises.filter { it.id !in restrictedIds && !isRestrictedByRule(it, injuries) }
+        val restricted = restrictionChecker(injuries)
+        return exercises.filterNot(restricted)
     }
 
     /**
@@ -193,9 +222,7 @@ class InjuryFilterService(
      */
     fun isExerciseRestricted(exerciseId: Long, injuries: Set<String>): Boolean {
         if (injuries.isEmpty()) return false
-        val restrictions = getRestrictedExercises(injuries)
-        val restrictedIds = restrictions.map { it.restrictedExercise.id }.toSet()
-        if (exerciseId in restrictedIds) return true
+        if (exerciseId in restrictedExerciseIds(injuries)) return true
         // 큐레이션 테이블(injury_exercise_restrictions)은 현재 비어 있다.
         // 테이블만 믿으면 필터가 조용히 아무 것도 거르지 않으므로(실제로 무릎 수술자에게
         // 스쿼트·런지·레그프레스가 그대로 나갔다) 종목 속성 기반 규칙으로 폴백한다.
