@@ -85,8 +85,14 @@ class UserPlanService(
         injuries: Set<String>,
         exclude: Set<Long>,
         needed: Int,
+        allowedEquipment: Set<String> = emptySet(),
     ): List<Exercise> {
         if (needed <= 0) return emptyList()
+        // 사용자에게 없는 장비의 운동으로 채우면 못 한다(운영: 덤벨만 있는 사용자에게 바벨 벤치). 맨몸은 항상 허용.
+        fun equipmentOk(ex: Exercise): Boolean {
+            val eq = ex.equipment?.name ?: return true
+            return allowedEquipment.isEmpty() || eq == "BODYWEIGHT" || eq in allowedEquipment
+        }
         val categories = refillCategoriesFor(workoutType) + listOf(
             ExerciseCategory.CORE, ExerciseCategory.CHEST, ExerciseCategory.BACK,
             ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS,
@@ -99,12 +105,21 @@ class UserPlanService(
             for (ex in candidates) {
                 if (picked.size >= needed) break
                 if (ex.id in seen) continue
+                if (!equipmentOk(ex)) continue
                 if (injuries.isNotEmpty() && injuryFilterService.isExerciseRestricted(ex.id, injuries)) continue
                 seen += ex.id
                 picked += ex
             }
         }
         return picked
+    }
+
+    /** 요청 장비 → 설정 장비 순. 비어 있으면 제한 없음. 표기는 Equipment enum 이름(BARBELL 등)으로 정규화. */
+    internal fun resolveAllowedEquipment(user: User, request: ApplyTemplateRequest?): Set<String> {
+        val fromRequest = request?.equipment?.filter { it.isNotBlank() }.orEmpty()
+        val raw = if (fromRequest.isNotEmpty()) fromRequest else
+            userSettingsRepository.findByUser_Id(user.id).orElse(null)?.availableEquipment?.toList().orEmpty()
+        return raw.map { it.trim().uppercase().replace(" ", "_").replace("-", "_") }.filter { it.isNotBlank() }.toSet()
     }
 
     private fun refillCategoriesFor(workoutType: String): List<ExerciseCategory> = when (workoutType.uppercase()) {
@@ -318,6 +333,7 @@ class UserPlanService(
                     injuries = injuries,
                     exclude = keptExerciseIds,
                     needed = TARGET_EXERCISES_PER_DAY - keptInDay,
+                    allowedEquipment = resolveAllowedEquipment(user, request),
                 )
                 refill.forEachIndexed { i, ex ->
                     userPlanDayExerciseRepository.save(

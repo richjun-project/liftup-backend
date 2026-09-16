@@ -116,7 +116,9 @@ class GeminiAIService(
 
             val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history, risk, facts)
             val first = callChatModel(prompt, user.id)
-            val firstViolations = chatSafety.validate(first, risk)
+            // 닉네임은 어떤 문자든 올 수 있다(한글 닉네임의 일본어 사용자). 언어 검사에서 뺀다.
+            // 2026-09-16 운영: 한글 닉네임 때문에 일본어 답변이 LANGUAGE_MISMATCH 로 두 번 거부돼 폴백만 나갔다.
+            val firstViolations = chatSafety.validate(first?.replace(user.nickname, ""), risk)
             if (firstViolations.isEmpty()) {
                 return first!!
             }
@@ -128,7 +130,7 @@ class GeminiAIService(
                 rejection = chatSafety.rejectionBlock(firstViolations, risk),
             )
             val second = callChatModel(retryPrompt, user.id)
-            val secondViolations = chatSafety.validate(second, risk)
+            val secondViolations = chatSafety.validate(second?.replace(user.nickname, ""), risk)
             if (secondViolations.isEmpty()) {
                 return second!!
             }
