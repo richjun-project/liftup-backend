@@ -289,12 +289,21 @@ class UserService(
         // 프로필이 있을 때만 재생성하고, 재생성은 별도 트랜잭션에서 돌려 설정 저장과 분리한다.
         if (previousLanguage != settings.language) {
             if (userProfileRepository.findByUser_Id(userId).isPresent) {
-                try {
-                    ptScheduledMessageService.recreatePTSchedulesInNewTransaction(userId)
-                    logger.info("PT schedules regenerated for user $userId due to language change: $previousLanguage -> ${settings.language}")
-                } catch (e: Exception) {
-                    logger.warn("Failed to regenerate PT schedules on language change for user $userId: ${e.message}")
-                }
+                // REQUIRES_NEW 는 새 커넥션이라 아직 커밋되지 않은 새 언어를 못 본다(옛 언어로 재생성됨).
+                // 커밋이 끝난 뒤에 돌린다.
+                val newLanguage = settings.language
+                org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                    object : org.springframework.transaction.support.TransactionSynchronization {
+                        override fun afterCommit() {
+                            try {
+                                ptScheduledMessageService.recreatePTSchedulesInNewTransaction(userId)
+                                logger.info("PT schedules regenerated for user $userId due to language change: $previousLanguage -> $newLanguage")
+                            } catch (e: Exception) {
+                                logger.warn("Failed to regenerate PT schedules on language change for user $userId: ${e.message}")
+                            }
+                        }
+                    }
+                )
             } else {
                 logger.info("Language changed for user $userId before onboarding — schedules will be created at onboarding")
             }

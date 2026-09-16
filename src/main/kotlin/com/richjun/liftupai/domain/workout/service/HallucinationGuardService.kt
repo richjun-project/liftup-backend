@@ -96,7 +96,8 @@ data class PlanConstraints(
 ) {
     fun equipmentAllowed(exercise: Exercise): Boolean {
         val name = exercise.equipment?.name ?: return true
-        return allowedEquipment.isEmpty() || name == "BODYWEIGHT" || name in allowedEquipment
+        // 다른 경로(추천 V2·템플릿·개인화)와 같은 규칙: 맨몸·기타(밴드/볼) 는 항상 허용
+        return allowedEquipment.isEmpty() || name == "BODYWEIGHT" || name == "OTHER" || name in allowedEquipment
     }
 
     fun accepts(exercise: Exercise): Boolean =

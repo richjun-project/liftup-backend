@@ -259,7 +259,15 @@ class ChatSafetyService {
         val sentences = reply.split(Regex("(?<=[.!?。！？\\n])"))
         return sentences.any { s ->
             val lower = s.lowercase()
-            names.any { lower.contains(it) } && !containsAny(lower, NEGATION_KEYWORDS)
+            if (names.none { lower.contains(it) }) return@any false
+            // "스쿼트 대신 레그 익스텐션을 하세요" — '대신/instead' 앞은 배제, 뒤는 권유
+            val pivot = INSTEAD_KEYWORDS.map { lower.indexOf(it) }.filter { it >= 0 }.minOrNull()
+            if (pivot != null) {
+                val recommendedPart = lower.substring(pivot)
+                return@any names.any { recommendedPart.contains(it) } && !containsAny(recommendedPart.substringAfter(INSTEAD_KEYWORDS.first { recommendedPart.startsWith(it) || recommendedPart.contains(it) }), STRONG_NEGATION)
+            }
+            // "재활이 끝난 뒤 스쿼트로 돌아가려면 의사 승인이 필요해요" — 미래·조건부 복귀 설명은 권유가 아니다
+            !containsAny(lower, NEGATION_KEYWORDS) && !containsAny(lower, DEFERRED_RETURN_KEYWORDS)
         }
     }
 
@@ -269,10 +277,17 @@ class ChatSafetyService {
         val kana = reply.count { it in '぀'..'ヿ' }
         val letters = reply.count { it.isLetter() }
         if (letters == 0) return false
+        // 인용부호 안(운동명·음식명 인용)은 언어 판정에서 제외한다
+        val body = reply.replace(Regex("[\"'「」『』“”‘’\\[\\]()][^\"'「」『』“”‘’\\[\\]()]{1,40}[\"'「」『』“”‘’\\[\\]()]"), " ")
+        val h = body.count { it in '가'..'힣' }.toDouble()
+        val k = body.count { it in '぀'..'ヿ' }.toDouble()
+        val cjk = body.count { it in '一'..'鿿' }.toDouble()
+        val latin = body.count { it in 'a'..'z' || it in 'A'..'Z' }.toDouble()
+        val total = (h + k + cjk + latin).takeIf { it > 0 } ?: return false
         return when (lang) {
-            "ko" -> hangul == 0 || kana > 0
-            "ja" -> kana == 0 && reply.none { it in '一'..'鿿' } || hangul > 0
-            "en" -> hangul > 0 || kana > 0
+            "ko" -> h / total < 0.3 && total >= 8            // 한영 혼용 페르소나("오늘도 파이팅! Let's go bro!")는 허용, 거의 전부 외국어면 불일치
+            "ja" -> (k + cjk) / total < 0.5 || h / total > 0.2
+            "en" -> latin / total < 0.6 || (h + k) / total > 0.2
             else -> false
         }
     }
@@ -282,6 +297,8 @@ class ChatSafetyService {
     private fun extremeCalorieIntake(text: String): Boolean {
         val lower = text.lowercase()
         if (!containsAny(lower, INTAKE_KEYWORDS)) return false
+        // "300kcal 간식" 은 신호가 아니다 — 하루 총량 문맥("하루", "per day", "一日")일 때만
+        if (!containsAny(lower, listOf("하루", "일일", "per day", "a day", "daily", "total", "一日", "1日", "毎日"))) return false
         return KCAL_NUMBER.findAll(lower).any { m ->
             val n = m.groupValues[1].replace(",", "").toIntOrNull() ?: return@any false
             n in 1..799
@@ -365,6 +382,13 @@ class ChatSafetyService {
         private val BURN_KEYWORDS = listOf("태우", "소모", "소비", "burn", "expend", "消費", "燃焼")
         private val INTAKE_KEYWORDS = listOf("섭취", "먹", "식사", "식단", "eat", "intake", "consume", "diet", "meal", "摂取", "食べ", "食事", "食")
 
+        private val DEFERRED_RETURN_KEYWORDS = listOf(
+            "돌아가", "복귀", "나중에", "이후에", "끝난 뒤", "끝나면", "승인", "허락", "허가", "회복된 후", "회복되면",
+            "return to", "once cleared", "after rehab", "when cleared", "doctor's approval", "later on",
+            "復帰", "許可", "承認", "回復したら", "治ったら",
+        )
+        private val INSTEAD_KEYWORDS = listOf("대신", "instead of", "instead", "rather than", "代わりに", "代わり")
+        private val STRONG_NEGATION = listOf("하지 마", "하지마", "금지", "안 돼", "안돼", "don't", "do not", "never", "禁止", "やめ")
         private val NEGATION_KEYWORDS = listOf(
             "하지 마", "하지마", "피하", "제외", "금지", "빼고", "대신", "안 돼", "안돼", "말고", "말아", "않", "삼가", "쉬", "피해",
             "avoid", "skip", "don't", "do not", "not ", "instead", "never", "no ", "without", "exclude", "rather than", "stay away",

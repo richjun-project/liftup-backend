@@ -78,4 +78,7 @@ interface WorkoutSessionRepository : JpaRepository<WorkoutSession, Long> {
     fun countByUserAndStartTimeAfter(user: User, startTime: LocalDateTime): Long
 
     fun findByUserAndStartTimeAfter(user: User, startTime: LocalDateTime): List<WorkoutSession>
+
+    /** 방치된 진행 중 세션 정리용 */
+    fun findAllByStatusAndStartTimeBefore(status: SessionStatus, before: LocalDateTime): List<WorkoutSession>
 }

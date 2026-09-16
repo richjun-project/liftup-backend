@@ -34,6 +34,8 @@ object ChatComputedFacts {
     )
 
     private val STATED_WEIGHT = Regex("(\\d{2,3}(?:\\.\\d)?)\\s*(kg|킬로|키로|kilo|キロ)")
+    private val EQUIPMENT_CTX = listOf("덤벨", "바벨", "원판", "케틀벨", "플레이트", "dumbbell", "barbell", "plate", "kettlebell", "ダンベル", "バーベル", "プレート", "세트", "set", "セット", "들", "lift", "curl", "press", "row", "squat", "bench", "데드", "스쿼트", "벤치", "컬", "프레스", "로우")
+    private val BODY_WEIGHT_CTX = listOf("체중", "몸무게", "weigh", "body", "体重", "kg인데", "키로인데", "kg이고", "키로고", "kg 기준", "키로 기준", "키로인", "i am", "i'm", "나는", "내가", "저는", "제가")
     private val TARGET_KCAL = Regex("(\\d{3,4})\\s*(kcal|칼로리|칼|cal\\b|calories|キロカロリー|カロリー)")
     private val WEIGHT_X_REPS = Regex("(\\d{1,3}(?:\\.\\d)?)\\s*(kg|킬로|키로|kilo|キロ)[^\\d]{0,12}(\\d{1,2})\\s*(회|번|reps?|rep|回)")
     private val CALORIE_TOPIC = listOf("칼로리", "kcal", "칼 ", "cal", "calorie", "태우", "소모", "burn", "カロリー", "消費", "燃焼")
@@ -46,7 +48,15 @@ object ChatComputedFacts {
         val lines = mutableListOf<String>()
         val lower = message.lowercase()
         val profileWeight = profile?.bodyInfo?.weight
-        val statedWeight = STATED_WEIGHT.find(lower)?.groupValues?.get(1)?.toDoubleOrNull()
+        // "30kg 덤벨로", "60kg×8회" 는 장비 무게지 체중이 아니다. 뒤에 장비·세트 문맥이 붙으면 제외하고,
+        // 프로필 체중과 다른 값은 "체중/몸무게/weigh/体重" 문맥이 있거나 "N키로인데" 꼴일 때만 체중으로 본다.
+        val statedWeight = STATED_WEIGHT.findAll(lower).map { m ->
+            val after = lower.substring(m.range.last + 1).take(14)
+            val before = lower.substring(0, m.range.first).takeLast(14)
+            val equipmentCtx = EQUIPMENT_CTX.any { after.contains(it) || before.contains(it) } || WEIGHT_X_REPS.containsMatchIn(lower.substring(m.range.first).take(30))
+            val bodyCtx = BODY_WEIGHT_CTX.any { before.contains(it) || after.contains(it) } || after.startsWith("인데") || after.startsWith("인데") || after.startsWith("기준")
+            if (equipmentCtx && !bodyCtx) null else m.groupValues[1].toDoubleOrNull()
+        }.filterNotNull().firstOrNull()
             ?.takeIf { it in 25.0..300.0 && (profileWeight == null || kotlin.math.abs(it - profileWeight) >= 0.5) }
 
         // 신체 기본값

@@ -48,7 +48,8 @@ class TemplateRefillTest {
         val picked = service().pickRefillExercises("LEGS", setOf("knee"), exclude = emptySet(), needed = 4)
         assertEquals(4, picked.size)
         assertTrue(picked.none { it.id in setOf(1L, 2L) }, "무릎 제한 운동이 섞이면 안 된다: ${picked.map { it.name }}")
-        assertEquals(listOf("Plank", "Dead bug", "Bench", "Push-up"), picked.map { it.name })
+        // 라운드로빈이라 순서는 고정하지 않는다 — 코어·상체에서 골고루, 4개
+        assertEquals(setOf("Plank", "Dead bug", "Bench", "Row"), picked.map { it.name }.toSet())
     }
 
     @Test
@@ -72,6 +73,8 @@ class TemplateRefillTest {
     @Test
     fun `양성 대조 - 부상이 없으면 그날 부위 운동을 그대로 고른다`() {
         val picked = service().pickRefillExercises("LEGS", emptySet(), emptySet(), 2)
-        assertEquals(listOf("Squat", "Leg curl"), picked.map { it.name })
+        // 하체 날: 다리 → 코어 라운드로빈이라 [Squat, Plank]. 제한이 없으니 다리 운동이 그대로 들어간다.
+        assertEquals("Squat", picked.first().name)
+        assertTrue(picked.any { it.category == ExerciseCategory.LEGS })
     }
 }

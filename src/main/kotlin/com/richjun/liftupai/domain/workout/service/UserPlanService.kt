@@ -95,16 +95,22 @@ class UserPlanService(
         )
         val picked = mutableListOf<Exercise>()
         val seen = exclude.toMutableSet()
-        for (category in categories.distinct()) {
-            if (picked.size >= needed) break
-            val candidates = exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category)
-            for (ex in candidates) {
+        // 카테고리별 후보 큐를 만들고 라운드로빈으로 뽑는다 — 한 부위(가슴)만 몰리지 않게
+        val queues = categories.distinct().map { category ->
+            exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category).filter { ex ->
+                ex.id !in seen && equipmentOk(ex) && (injuries.isEmpty() || !injuryFilterService.isExerciseRestricted(ex.id, injuries))
+            }.iterator()
+        }
+        var progressed = true
+        while (picked.size < needed && progressed) {
+            progressed = false
+            for (q in queues) {
                 if (picked.size >= needed) break
-                if (ex.id in seen) continue
-                if (!equipmentOk(ex)) continue
-                if (injuries.isNotEmpty() && injuryFilterService.isExerciseRestricted(ex.id, injuries)) continue
-                seen += ex.id
-                picked += ex
+                while (q.hasNext()) {
+                    val ex = q.next()
+                    if (ex.id in seen) continue
+                    seen += ex.id; picked += ex; progressed = true; break
+                }
             }
         }
         return picked
@@ -282,6 +288,8 @@ class UserPlanService(
 
         // Copy template days and exercises
         val templateDays = templateDayRepository.findByTemplateIdOrderByDayNumber(template.id)
+        // 재구성으로 넣은 운동은 플랜 전체에서 한 번만(운영 계정 123: 3일 모두 같은 3개가 들어갔다)
+        val refillUsedAcrossPlan = mutableSetOf<Long>()
         for (templateDay in templateDays) {
             val planDay = UserPlanDay(
                 plan = savedPlan,
@@ -342,10 +350,11 @@ class UserPlanService(
                 val refill = pickRefillExercises(
                     workoutType = templateDay.workoutType.name,
                     injuries = injuries,
-                    exclude = keptExerciseIds,
+                    exclude = keptExerciseIds + refillUsedAcrossPlan,
                     needed = TARGET_EXERCISES_PER_DAY - keptInDay,
                     allowedEquipment = allowedEquipment,
                 )
+                refillUsedAcrossPlan += refill.map { it.id }
                 refill.forEachIndexed { i, ex ->
                     userPlanDayExerciseRepository.save(
                         UserPlanDayExercise(

@@ -118,7 +118,7 @@ class GeminiAIService(
             val first = callChatModel(prompt, user.id)
             // 닉네임은 어떤 문자든 올 수 있다(한글 닉네임의 일본어 사용자). 언어 검사에서 뺀다.
             // 2026-09-16 운영: 한글 닉네임 때문에 일본어 답변이 LANGUAGE_MISMATCH 로 두 번 거부돼 폴백만 나갔다.
-            val firstViolations = chatSafety.validate(first?.replace(user.nickname, ""), risk)
+            val firstViolations = chatSafety.validate(maskNickname(first, user.nickname), risk)
             if (firstViolations.isEmpty()) {
                 return first!!
             }
@@ -130,12 +130,13 @@ class GeminiAIService(
                 rejection = chatSafety.rejectionBlock(firstViolations, risk),
             )
             val second = callChatModel(retryPrompt, user.id)
-            val secondViolations = chatSafety.validate(second?.replace(user.nickname, ""), risk)
+            val secondViolations = chatSafety.validate(maskNickname(second, user.nickname), risk)
             if (secondViolations.isEmpty()) {
                 return second!!
             }
-            if (secondViolations == listOf(ChatSafetyService.Violation.EMPTY_REPLY) && !risk.hasAnyRisk) {
-                // 모델 호출 자체가 실패했고 위험 요소도 없다 → 예전처럼 키워드 폴백
+            if (secondViolations == listOf(ChatSafetyService.Violation.EMPTY_REPLY)) {
+                // 모델 호출 자체가 실패한 것 — "안녕?" 에 부상 안내 폴백을 내면 안 되니 키워드 폴백
+                log.error("[AI-CHAT] model returned nothing twice user={} — keyword fallback", user.id)
                 return getFallbackResponse(message, user, locale)
             }
             log.error("[AI-CHAT] reply rejected twice user={} violations={} — safe fallback", user.id, secondViolations)
@@ -944,9 +945,13 @@ class GeminiAIService(
 
                 val responseBody = response.body?.string()
                 val geminiResponse = objectMapper.readValue(responseBody, GeminiResponse::class.java)
-                geminiResponse.candidates?.firstOrNull()
-                    ?.content?.parts?.firstOrNull()
-                    ?.text ?: AILocalization.message("ai.error.response_unavailable", locale)
+                val cand = geminiResponse.candidates?.firstOrNull()
+                // parts 가 여러 개일 수 있다 — 첫 조각만 쓰면 JSON 이 잘린다. 길이·finishReason 을 남겨 잘림 원인을 추적한다.
+                val text = cand?.content?.parts?.mapNotNull { it.text }?.joinToString("")?.takeIf { it.isNotBlank() }
+                val u = geminiResponse.usageMetadata
+                log.info("[AI-CALL] model={} chars={} finish={} promptTokens={} thoughts={} out={}",
+                    geminiResponse.modelVersion ?: model, text?.length ?: 0, cand?.finishReason, u?.promptTokenCount, u?.thoughtsTokenCount ?: 0, u?.candidatesTokenCount)
+                text ?: AILocalization.message("ai.error.response_unavailable", locale)
             }
         } catch (e: Exception) {
             println("Error calling Gemini API with image: ${e.message}")
@@ -960,6 +965,10 @@ class GeminiAIService(
      * 호출마다 지연·토큰·종료 사유를 한 줄로 남긴다 — 응답이 10~30초 걸린 사례의 원인을
      * 사후에 알 수 없었기 때문이다.
      */
+    /** 검사용 닉네임 마스킹. 2자 이하("AI","no")는 본문 단어까지 지우므로 건드리지 않는다. */
+    private fun maskNickname(reply: String?, nickname: String?): String? =
+        if (reply == null || nickname.isNullOrBlank() || nickname.length < 3) reply else reply.replace(nickname, "")
+
     private fun callChatModel(prompt: String, userId: Long): String? {
         val first = executeChatRequest(prompt, chatThinkingLevel.takeIf { it.isNotBlank() })
         val result = if (first is ChatCallResult.Rejected && shouldRetryWithoutThinking(first.code, first.body, chatThinkingLevel)) {
@@ -1055,9 +1064,12 @@ class GeminiAIService(
 
                 val responseBody = response.body?.string()
                 val geminiResponse = objectMapper.readValue(responseBody, GeminiResponse::class.java)
-                geminiResponse.candidates?.firstOrNull()
-                    ?.content?.parts?.firstOrNull()
-                    ?.text ?: AILocalization.message("ai.error.response_unavailable", locale)
+                val cand = geminiResponse.candidates?.firstOrNull()
+                val text = cand?.content?.parts?.mapNotNull { it.text }?.joinToString("")?.takeIf { it.isNotBlank() }
+                val u = geminiResponse.usageMetadata
+                log.info("[AI-CALL] model={} chars={} finish={} promptTokens={} thoughts={} out={}",
+                    geminiResponse.modelVersion ?: useModel, text?.length ?: 0, cand?.finishReason, u?.promptTokenCount, u?.thoughtsTokenCount ?: 0, u?.candidatesTokenCount)
+                text ?: AILocalization.message("ai.error.response_unavailable", locale)
             }
         } catch (e: Exception) {
             println("Error calling Gemini API: ${e.message}")

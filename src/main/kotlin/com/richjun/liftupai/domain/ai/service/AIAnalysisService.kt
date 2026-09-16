@@ -475,10 +475,18 @@ class AIAnalysisService(
      * 보유 장비로 할 수 없는 운동을 빼고, 빠진 운동마다 같은 카테고리의 가능한 운동(인기순, 부상 안전)으로 대체한다.
      * @return (최종 id→운동 맵, 새로 추가된 대체 운동 목록)
      */
+    /** 회복률 50% 미만 근육(벡터 후보 단계와 같은 기준). 조회 실패 시 빈 집합. */
+    private fun recoveringMuscles(user: com.richjun.liftupai.domain.auth.entity.User): Set<com.richjun.liftupai.domain.workout.entity.MuscleGroup> = try {
+        muscleRecoveryRepository.findByUser(user)
+            .filter { it.recoveryPercentage < com.richjun.liftupai.domain.workout.service.RecommendationConstants.RECOVERY_THRESHOLD_PERCENT }
+            .flatMap { com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver.muscleGroupsFor(it.muscleGroup) }.toSet()
+    } catch (e: Exception) { emptySet() }
+
     internal fun replaceEquipmentMismatch(
         byId: Map<Long, Exercise>,
         availableEquipment: Set<String>,
         injuries: Set<String>,
+        recovering: Set<com.richjun.liftupai.domain.workout.entity.MuscleGroup> = emptySet(),
     ): Pair<Map<Long, Exercise>, List<Exercise>> {
         val available = normalizeAvailableEquipment(availableEquipment)
         if (available.isEmpty()) return byId to emptyList()
@@ -493,6 +501,7 @@ class AIAnalysisService(
             val candidates = try { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category) } catch (e: Exception) { emptyList() }
             return candidates.firstOrNull { c ->
                 c.id !in usedIds && c.name.trim().lowercase() !in usedNames && ok(c) &&
+                    c.muscleGroups.none { it in recovering } &&
                     (injuries.isEmpty() || injuryFilterService.filterExercises(listOf(c), injuries).isNotEmpty())
             }?.also { usedIds += it.id; usedNames += it.name.trim().lowercase() }
         }
@@ -970,7 +979,7 @@ class AIAnalysisService(
             val injurySafeById = dropInjuryRestricted(loadedById, injuries)
             // 보유 장비로 못 하는 운동도 차단하고, 빠진 만큼 같은 부위의 가능한 운동으로 채운다
             // (2026-09-16 운영: 덤벨만 있는 사용자에게 바벨 벤치·케이블 풀다운·어시스트 풀업이 그대로 나갔다)
-            val (exerciseById, replacements) = replaceEquipmentMismatch(injurySafeById, availableEquipment, injuries)
+            val (exerciseById, replacements) = replaceEquipmentMismatch(injurySafeById, availableEquipment, injuries, recoveringMuscles(user))
             val exercisesList = aiExercisesList + replacements.map { mapOf<String, Any>("id" to it.id, "sets" to 3) }
             val translations = translationMap(exerciseById.values, locale)
             val usedExerciseIds = mutableSetOf<Long>()
@@ -1258,7 +1267,12 @@ class AIAnalysisService(
             }
             .let { if (fallbackInjuries.isEmpty()) it else injuryFilterService.filterExercises(it, fallbackInjuries) }
             // 폴백도 보유 장비를 지킨다 — AI 경로가 실패했다고 바벨을 덤벨 사용자에게 주면 안 된다
-            .let { list -> if (fallbackEquipment.isEmpty()) list else list.filter { equipmentUsable(it, fallbackEquipment) }.ifEmpty { list } }
+            .let { list ->
+                if (fallbackEquipment.isEmpty()) list else list.filter { equipmentUsable(it, fallbackEquipment) }.ifEmpty {
+                    log.warn("[AI-RECO] fallback: no candidate matches equipment {} for user {} — using bodyweight-only", fallbackEquipment, user.id)
+                    list.filter { it.equipment?.name == "BODYWEIGHT" }.ifEmpty { list }
+                }
+            }
         val selectedExercises = mutableListOf<Exercise>()
 
         // 카테고리별로 하나씩만 선택하여 다양성 확보

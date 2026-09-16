@@ -172,7 +172,7 @@ object StrengthAssessmentEstimator {
     /** 미성년(성장판)·고령(관절·회복)은 상한을 낮춘다. */
     internal fun ageFactor(age: Int?): Double = when {
         age == null -> 1.0
-        age < 18 -> 0.75
+        age < com.richjun.liftupai.domain.ai.service.ChatSafetyService.MINOR_AGE_LIMIT -> 0.75
         age < 50 -> 1.0
         age < 60 -> 0.9
         else -> 0.8

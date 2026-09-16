@@ -602,7 +602,12 @@ class WorkoutRecommendationServiceV2(
                 // 2026-09-16 운영: 덤벨만 있는 사용자에게 후보 5개 중 2개만 맞아 필터를 "완화" →
                 // 바벨 벤치·바벨 스컬크러셔가 그대로 추천됐다. 완화는 채울 후보가 정말 없을 때만.
                 val removed = result.filter { it !in byEquipment }
-                val topped = topUpByEquipment(byEquipment, removed, available, injuries, result.size)
+                val recoveringNow: Set<MuscleGroup> = try {
+                    muscleRecoveryRepository.findByUser(user)
+                        .filter { it.recoveryPercentage < RecommendationConstants.RECOVERY_THRESHOLD_PERCENT }
+                        .flatMap { WorkoutTargetResolver.muscleGroupsFor(it.muscleGroup) }.toSet()
+                } catch (e: Exception) { emptySet() }
+                val topped = topUpByEquipment(byEquipment, removed, available, injuries, result.size, recoveringNow)
                 if (topped.size >= minAcceptableCount) {
                     logger.info("Safety filter(equipment): ${result.size} -> ${byEquipment.size} + topped up to ${topped.size} (available=$available) for user ${user.id}")
                     result = topped
@@ -660,6 +665,7 @@ class WorkoutRecommendationServiceV2(
         available: Set<String>,
         injuries: Set<String>,
         target: Int,
+        recovering: Set<MuscleGroup> = emptySet(),
     ): List<Exercise> {
         val repo = exerciseRepository ?: return kept
         val out = kept.toMutableList()
@@ -671,6 +677,7 @@ class WorkoutRecommendationServiceV2(
             val pick = candidates.firstOrNull { c ->
                 c.id !in usedIds && c.name.trim().lowercase() !in usedNames &&
                     allowedByEquipment(c, available) &&
+                    c.muscleGroups.none { it in recovering } &&
                     (injuries.isEmpty() || injuryFilterService.filterExercises(listOf(c), injuries).isNotEmpty())
             } ?: continue
             usedIds += pick.id; usedNames += pick.name.trim().lowercase(); out += pick

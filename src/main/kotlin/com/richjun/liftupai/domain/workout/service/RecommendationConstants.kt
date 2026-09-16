@@ -114,7 +114,7 @@ object RecommendationConstants {
      */
     fun getAgeIntensityCap(age: Int?): Double = when {
         age == null -> 1.0
-        age < 18 -> 0.75
+        age < com.richjun.liftupai.domain.ai.service.ChatSafetyService.MINOR_AGE_LIMIT -> 0.75
         age >= 65 -> 0.75
         age >= 60 -> 0.85
         else -> 1.0
@@ -124,7 +124,7 @@ object RecommendationConstants {
     fun getAgeMaxSets(age: Int?): Int = when {
         age == null -> 6
         age < 16 -> 3
-        age < 18 -> 4
+        age < com.richjun.liftupai.domain.ai.service.ChatSafetyService.MINOR_AGE_LIMIT -> 4
         age >= 65 -> 3
         age >= 60 -> 4
         else -> 6

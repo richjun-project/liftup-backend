@@ -205,7 +205,7 @@ class WeightRecommendationService(
     /** 미성년·고령 보수 계수(기본값에만 적용, PR/자기 신고는 본인 실측이라 건드리지 않는다). */
     fun ageMultiplier(age: Int?): Double = when {
         age == null -> 1.0
-        age < 18 -> 0.75
+        age < com.richjun.liftupai.domain.ai.service.ChatSafetyService.MINOR_AGE_LIMIT -> 0.75
         age < 50 -> 1.0
         age < 60 -> 0.9
         else -> 0.8
