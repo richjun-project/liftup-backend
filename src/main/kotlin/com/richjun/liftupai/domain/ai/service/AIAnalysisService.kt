@@ -397,7 +397,7 @@ class AIAnalysisService(
         val aiResponse = geminiAIService.generateRecommendations(prompt)
 
         // AI 응답을 WorkoutRecommendationDetail로 파싱
-        val recommendation = parseAIWorkoutResponse(user, aiResponse, duration, equipment, adjustedTargetMuscle, locale, userInjuries)
+        val recommendation = parseAIWorkoutResponse(user, aiResponse, duration, equipment, adjustedTargetMuscle, locale, userInjuries, availableEquipment)
 
         // 대체 운동 생성
         val alternatives = generateAIAlternatives(duration, equipment, adjustedTargetMuscle, locale)
@@ -456,6 +456,57 @@ class AIAnalysisService(
             println("[AIAnalysisService] dropped ${dropped.size} injury-restricted exercise(s) from AI pick: ${dropped.map { byId[it]?.name }}")
         }
         return byId.filterKeys { it in safeIds }
+    }
+
+    /** 보유 장비 표기를 Equipment enum 이름으로 정규화. 헬스장 전체 보유 표기는 "제한 없음"(빈 집합). */
+    internal fun normalizeAvailableEquipment(raw: Collection<String>): Set<String> {
+        val norm = raw.map { it.trim().uppercase().replace(Regex("[^A-Z0-9]+"), "_").trim('_') }
+            .map { when (it) { "DUMBBELLS" -> "DUMBBELL"; "BARBELLS" -> "BARBELL"; "KETTLEBELLS" -> "KETTLEBELL"; "BANDS", "BAND", "RESISTANCE_BANDS" -> "RESISTANCE_BAND"; else -> it } }
+            .filter { it.isNotEmpty() }.toSet()
+        return if (norm.any { it in setOf("GYM", "FULL_GYM", "ALL", "FULL", "COMMERCIAL_GYM", "EVERYTHING") }) emptySet() else norm
+    }
+
+    internal fun equipmentUsable(ex: Exercise, available: Set<String>): Boolean {
+        val eq = ex.equipment?.name ?: return true
+        return available.isEmpty() || eq == "BODYWEIGHT" || eq == "OTHER" || eq in available
+    }
+
+    /**
+     * 보유 장비로 할 수 없는 운동을 빼고, 빠진 운동마다 같은 카테고리의 가능한 운동(인기순, 부상 안전)으로 대체한다.
+     * @return (최종 id→운동 맵, 새로 추가된 대체 운동 목록)
+     */
+    internal fun replaceEquipmentMismatch(
+        byId: Map<Long, Exercise>,
+        availableEquipment: Set<String>,
+        injuries: Set<String>,
+    ): Pair<Map<Long, Exercise>, List<Exercise>> {
+        val available = normalizeAvailableEquipment(availableEquipment)
+        if (available.isEmpty()) return byId to emptyList()
+        fun ok(ex: Exercise) = equipmentUsable(ex, available)
+        val kept = byId.filterValues { ok(it) }
+        val removed = byId.values.filter { !ok(it) }
+        if (removed.isEmpty()) return byId to emptyList()
+        val usedIds = kept.keys.toMutableSet()
+        val usedNames = kept.values.map { it.name.trim().lowercase() }.toMutableSet()
+        val replacements = mutableListOf<Exercise>()
+        fun pickFrom(category: ExerciseCategory): Exercise? {
+            val candidates = try { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category) } catch (e: Exception) { emptyList() }
+            return candidates.firstOrNull { c ->
+                c.id !in usedIds && c.name.trim().lowercase() !in usedNames && ok(c) &&
+                    (injuries.isEmpty() || injuryFilterService.filterExercises(listOf(c), injuries).isNotEmpty())
+            }?.also { usedIds += it.id; usedNames += it.name.trim().lowercase() }
+        }
+        // 1차: 빠진 운동과 같은 카테고리. 2차: 그래도 모자라면 다른 상체·코어 카테고리로 개수를 맞춘다.
+        for (gone in removed) pickFrom(gone.category)?.let { replacements += it }
+        val fillers = listOf(ExerciseCategory.CHEST, ExerciseCategory.BACK, ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS, ExerciseCategory.CORE, ExerciseCategory.LEGS)
+        var guard = 0
+        while (replacements.size < removed.size && guard++ < 12) {
+            val before = replacements.size
+            for (cat in fillers) { if (replacements.size >= removed.size) break; pickFrom(cat)?.let { replacements += it } }
+            if (replacements.size == before) break
+        }
+        log.info("[AIAnalysisService] equipment filter: dropped ${removed.map { it.name }} → replaced with ${replacements.map { it.name }} (available=$available)")
+        return (kept + replacements.associateBy { it.id }) to replacements
     }
 
     private fun collectAvailableEquipment(settings: UserSettings?, profile: UserProfile?): Set<String> {
@@ -891,6 +942,7 @@ class AIAnalysisService(
         targetMuscle: String?,
         locale: String,
         injuries: Set<String> = emptySet(),
+        availableEquipment: Set<String> = emptySet(),
     ): AIWorkoutDetail {
         return try {
             val cleanedResponse = aiResponse
@@ -899,7 +951,7 @@ class AIAnalysisService(
                 .trim()
 
             val jsonResponse = objectMapper.readValue<Map<String, Any>>(cleanedResponse)
-            val exercisesList = jsonResponse["exercises"] as? List<Map<String, Any>> ?: emptyList()
+            val aiExercisesList = jsonResponse["exercises"] as? List<Map<String, Any>> ?: emptyList()
             val estimatedCalories = (jsonResponse["estimated_calories"] as? Number)?.toInt() ?: calculateCalories(duration ?: 30)
             val difficulty = localizeDifficulty(jsonResponse["difficulty"] as? String, locale)
 
@@ -908,14 +960,18 @@ class AIAnalysisService(
             val coachingMessage = jsonResponse["coaching_message"] as? String
             val workoutFocus = jsonResponse["workout_focus"] as? String
 
-            val exerciseIds = exercisesList.mapNotNull { exerciseMap ->
+            val exerciseIds = aiExercisesList.mapNotNull { exerciseMap ->
                 extractExerciseId(exerciseMap["id"])
             }.distinct()
             val loadedById = exerciseIds.associateWith { id ->
                 exerciseRepository.findById(id).orElse(null)
             }.filterValues { it != null }.mapValues { it.value!! }
             // AI 가 후보 밖 id 를 골라도 부상 부위 운동은 여기서 최종 차단한다
-            val exerciseById = dropInjuryRestricted(loadedById, injuries)
+            val injurySafeById = dropInjuryRestricted(loadedById, injuries)
+            // 보유 장비로 못 하는 운동도 차단하고, 빠진 만큼 같은 부위의 가능한 운동으로 채운다
+            // (2026-09-16 운영: 덤벨만 있는 사용자에게 바벨 벤치·케이블 풀다운·어시스트 풀업이 그대로 나갔다)
+            val (exerciseById, replacements) = replaceEquipmentMismatch(injurySafeById, availableEquipment, injuries)
+            val exercisesList = aiExercisesList + replacements.map { mapOf<String, Any>("id" to it.id, "sets" to 3) }
             val translations = translationMap(exerciseById.values, locale)
             val usedExerciseIds = mutableSetOf<Long>()
 
@@ -1191,16 +1247,18 @@ class AIAnalysisService(
             else -> 8
         }
 
-        val fallbackInjuries = resolveUserInjuries(
-            userSettingsRepository.findByUser_Id(user.id).orElse(null),
-            userProfileRepository.findByUser_Id(user.id).orElse(null),
-        )
+        val fbSettings = userSettingsRepository.findByUser_Id(user.id).orElse(null)
+        val fbProfile = userProfileRepository.findByUser_Id(user.id).orElse(null)
+        val fallbackInjuries = resolveUserInjuries(fbSettings, fbProfile)
+        val fallbackEquipment = normalizeAvailableEquipment(collectAvailableEquipment(fbSettings, fbProfile))
         val allExercises = fallbackCandidates(targetMuscle, equipment)
             .ifEmpty {
                 exerciseRepository.findAll()
                     .sortedWith(RecommendationExerciseRanking.displayOrderComparator())
             }
             .let { if (fallbackInjuries.isEmpty()) it else injuryFilterService.filterExercises(it, fallbackInjuries) }
+            // 폴백도 보유 장비를 지킨다 — AI 경로가 실패했다고 바벨을 덤벨 사용자에게 주면 안 된다
+            .let { list -> if (fallbackEquipment.isEmpty()) list else list.filter { equipmentUsable(it, fallbackEquipment) }.ifEmpty { list } }
         val selectedExercises = mutableListOf<Exercise>()
 
         // 카테고리별로 하나씩만 선택하여 다양성 확보

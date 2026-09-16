@@ -72,10 +72,12 @@ class AIWorkoutRecommendationInjuryTest {
     )
 
     /** 로컬 e2e 와 같은 사용자: settings 행 존재(부상 비어 있음), 부상은 profile 에 "knee:moderate" */
-    private fun stubKneeUser(aiPicks: List<Exercise>) {
+    private fun stubKneeUser(aiPicks: List<Exercise>, equipment: Set<String> = emptySet()) {
         val profile = UserProfile(id = 1L, user = user, bodyInfo = BodyInfo(weight = 78.0), gender = "male", age = 34, experienceLevel = ExperienceLevel.INTERMEDIATE)
         profile.injuries = mutableSetOf("knee:moderate")
-        val settings = UserSettings(user = user) // injuries 비어 있음, availableEquipment 비어 있음
+        profile.availableEquipment = equipment.toMutableSet()
+        val settings = UserSettings(user = user) // injuries 비어 있음, availableEquipment 비어 있음(프로필 폴백)
+        every { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(any()) } answers { all.filter { it.category == firstArg<ExerciseCategory>() } }
         every { userRepository.findById(1L) } returns Optional.of(user)
         every { userProfileRepository.findByUser_Id(1L) } returns Optional.of(profile)
         every { userSettingsRepository.findByUser_Id(1L) } returns Optional.of(settings)
@@ -106,6 +108,27 @@ class AIWorkoutRecommendationInjuryTest {
         val s = UserSettings(user = user).apply { injuries = mutableSetOf("shoulder") }
         assertEquals(setOf("shoulder"), service.resolveUserInjuries(s, profile), "settings 에 값이 있으면 settings 우선")
         assertTrue(service.resolveUserInjuries(UserSettings(user = user).apply { injuries = mutableSetOf("none") }, null).isEmpty())
+    }
+
+    @Test
+    @DisplayName("덤벨만 있는 무릎 부상 사용자: 바벨·케이블 운동은 빠지고 같은 부위의 덤벨 운동으로 대체된다")
+    fun dumbbellOnlyUserGetsNoBarbell() {
+        val dbBench = ex(20, "dumbbell-bench-press", "HORIZONTAL_PRESS_DUMBBELL", ExerciseCategory.CHEST, Equipment.DUMBBELL, MuscleGroup.CHEST)
+        val dbRow = ex(21, "dumbbell-row", "DUMBBELL_ROW", ExerciseCategory.BACK, Equipment.DUMBBELL, MuscleGroup.BACK)
+        val dbOhp = ex(22, "dumbbell-shoulder-press", "VERTICAL_PRESS_DUMBBELL", ExerciseCategory.SHOULDERS, Equipment.DUMBBELL, MuscleGroup.SHOULDERS)
+        val plank = ex(23, "plank", "PLANK", ExerciseCategory.CORE, Equipment.BODYWEIGHT, MuscleGroup.CORE)
+        val extra = listOf(dbBench, dbRow, dbOhp, plank)
+        stubKneeUser(aiPicks = listOf(bench, row, pulldown, ohp, curl, squat), equipment = setOf("dumbbell"))
+        every { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(any()) } answers { (all + extra).filter { it.category == firstArg<ExerciseCategory>() } }
+        every { exerciseRepository.findAll() } returns all + extra
+        extra.forEach { e -> every { exerciseRepository.findById(e.id) } returns Optional.of(e) }
+
+        val result = service.getAIWorkoutRecommendation(userId = 1L, duration = 30)
+
+        val names = result.recommendation.exercises.map { it.name }
+        assertTrue(names.none { it in listOf(bench.name, row.name, pulldown.name, ohp.name, squat.name) }, "바벨/케이블/부상 운동이 남아 있다: $names")
+        assertTrue(names.size >= 4, "대체로 개수가 유지돼야 한다: $names")
+        assertTrue(names.all { it in (all + extra).filter { e -> e.equipment == Equipment.DUMBBELL || e.equipment == Equipment.BODYWEIGHT }.map { it.name } }, "덤벨·맨몸만: $names")
     }
 
     @Test
