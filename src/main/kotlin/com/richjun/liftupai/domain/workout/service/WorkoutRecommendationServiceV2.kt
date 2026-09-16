@@ -48,6 +48,8 @@ class WorkoutRecommendationServiceV2(
     private val ptEngine: PTRecommendationEngine,
     private val injuryFilterService: InjuryFilterService,
     private val muscleRecoveryRepository: MuscleRecoveryRepository,
+    @Autowired(required = false)
+    private val exerciseRepository: com.richjun.liftupai.domain.workout.repository.ExerciseRepository? = null,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -595,13 +597,18 @@ class WorkoutRecommendationServiceV2(
         )
         if (available.isNotEmpty() && available.none { it in FULL_GYM_TOKENS }) {
             val byEquipment = result.filter { allowedByEquipment(it, available) }
-            if (byEquipment.size >= minAcceptableCount) {
-                if (byEquipment.size < result.size) {
-                    logger.info("Safety filter(equipment): ${result.size} -> ${byEquipment.size} (available=$available) for user ${user.id}")
+            if (byEquipment.size < result.size) {
+                // 걸러낸 만큼 같은 부위의 "보유 장비로 할 수 있는" 운동으로 채운다.
+                // 2026-09-16 운영: 덤벨만 있는 사용자에게 후보 5개 중 2개만 맞아 필터를 "완화" →
+                // 바벨 벤치·바벨 스컬크러셔가 그대로 추천됐다. 완화는 채울 후보가 정말 없을 때만.
+                val removed = result.filter { it !in byEquipment }
+                val topped = topUpByEquipment(byEquipment, removed, available, injuries, result.size)
+                if (topped.size >= minAcceptableCount) {
+                    logger.info("Safety filter(equipment): ${result.size} -> ${byEquipment.size} + topped up to ${topped.size} (available=$available) for user ${user.id}")
+                    result = topped
+                } else {
+                    logger.warn("Safety filter(equipment) relaxed: only ${topped.size} < $minAcceptableCount match available=$available for user ${user.id}")
                 }
-                result = byEquipment
-            } else {
-                logger.warn("Safety filter(equipment) relaxed: only ${byEquipment.size} < $minAcceptableCount match available=$available for user ${user.id}")
             }
         }
 
@@ -645,6 +652,31 @@ class WorkoutRecommendationServiceV2(
             }
         }
         .toSet()
+
+    /** 장비가 안 맞아 빠진 운동을 같은 카테고리·보유 장비·부상 안전 운동으로 대체한다(인기순). */
+    private fun topUpByEquipment(
+        kept: List<Exercise>,
+        removed: List<Exercise>,
+        available: Set<String>,
+        injuries: Set<String>,
+        target: Int,
+    ): List<Exercise> {
+        val repo = exerciseRepository ?: return kept
+        val out = kept.toMutableList()
+        val usedIds = out.map { it.id }.toMutableSet()
+        val usedNames = out.map { it.name.trim().lowercase() }.toMutableSet()
+        for (gone in removed) {
+            if (out.size >= target) break
+            val candidates = try { repo.findPlanEligibleByCategoryOrderByPopularity(gone.category) } catch (e: Exception) { emptyList() }
+            val pick = candidates.firstOrNull { c ->
+                c.id !in usedIds && c.name.trim().lowercase() !in usedNames &&
+                    allowedByEquipment(c, available) &&
+                    (injuries.isEmpty() || injuryFilterService.filterExercises(listOf(c), injuries).isNotEmpty())
+            } ?: continue
+            usedIds += pick.id; usedNames += pick.name.trim().lowercase(); out += pick
+        }
+        return out
+    }
 
     private fun allowedByEquipment(exercise: Exercise, available: Set<String>): Boolean {
         val eq = exercise.equipment ?: return true

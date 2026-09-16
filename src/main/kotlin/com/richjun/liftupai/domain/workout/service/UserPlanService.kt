@@ -88,11 +88,7 @@ class UserPlanService(
         allowedEquipment: Set<String> = emptySet(),
     ): List<Exercise> {
         if (needed <= 0) return emptyList()
-        // 사용자에게 없는 장비의 운동으로 채우면 못 한다(운영: 덤벨만 있는 사용자에게 바벨 벤치). 맨몸은 항상 허용.
-        fun equipmentOk(ex: Exercise): Boolean {
-            val eq = ex.equipment?.name ?: return true
-            return allowedEquipment.isEmpty() || eq == "BODYWEIGHT" || eq in allowedEquipment
-        }
+        fun equipmentOk(ex: Exercise) = equipmentAllowed(ex, allowedEquipment)
         val categories = refillCategoriesFor(workoutType) + listOf(
             ExerciseCategory.CORE, ExerciseCategory.CHEST, ExerciseCategory.BACK,
             ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS,
@@ -114,11 +110,19 @@ class UserPlanService(
         return picked
     }
 
+    /** 보유 장비로 할 수 있는 종목인가. 장비 미지정·맨몸·기타는 항상 허용. */
+    internal fun equipmentAllowed(ex: Exercise, allowedEquipment: Set<String>): Boolean {
+        val eq = ex.equipment?.name ?: return true
+        return allowedEquipment.isEmpty() || eq == "BODYWEIGHT" || eq == "OTHER" || eq in allowedEquipment
+    }
+
     /** 요청 장비 → 설정 장비 순. 비어 있으면 제한 없음. 표기는 Equipment enum 이름(BARBELL 등)으로 정규화. */
     internal fun resolveAllowedEquipment(user: User, request: ApplyTemplateRequest?): Set<String> {
         val fromRequest = request?.equipment?.filter { it.isNotBlank() }.orEmpty()
+        // 기기 가입(AuthService)은 프로필에만 장비를 쓰고, 온보딩 완료(UserService)는 설정에도 쓴다 — 둘 다 본다.
         val raw = if (fromRequest.isNotEmpty()) fromRequest else
-            userSettingsRepository.findByUser_Id(user.id).orElse(null)?.availableEquipment?.toList().orEmpty()
+            userSettingsRepository.findByUser_Id(user.id).orElse(null)?.availableEquipment?.takeIf { it.isNotEmpty() }?.toList()
+                ?: userProfileRepository.findByUser_Id(user.id).orElse(null)?.availableEquipment?.toList().orEmpty()
         return raw.map { it.trim().uppercase().replace(" ", "_").replace("-", "_") }.filter { it.isNotBlank() }.toSet()
     }
 
@@ -256,6 +260,7 @@ class UserPlanService(
         // (앱이 요청에 injuries 를 안 실어 보내는 경로가 있어 설정값 폴백이 필요하다)
         val injuries = resolveInjuries(user, request)
         var skippedForInjury = 0
+        var skippedForEquipment = 0
 
         // Abandon existing active plan
         abandonActivePlan(user.id)
@@ -288,6 +293,7 @@ class UserPlanService(
             val savedDay = userPlanDayRepository.save(planDay)
 
             val templateExercises = templateDayExerciseRepository.findByTemplateDayIdOrderByOrderInDay(templateDay.id)
+            val allowedEquipment = resolveAllowedEquipment(user, request)
             val keptExerciseIds = mutableSetOf<Long>()
             var keptInDay = 0
             var lastOrder = 0
@@ -301,6 +307,11 @@ class UserPlanService(
                     injuryFilterService.isExerciseRestricted(templateEx.exercise.id, injuries)
                 ) {
                     skippedForInjury++
+                    continue
+                }
+                // 보유 장비로 못 하는 종목도 넣지 않는다(덤벨만 있는 사용자에게 바벨 벤치 — 2026-09-16 운영 검증).
+                if (!equipmentAllowed(templateEx.exercise, allowedEquipment)) {
+                    skippedForEquipment++
                     continue
                 }
                 keptExerciseIds += templateEx.exercise.id
@@ -333,7 +344,7 @@ class UserPlanService(
                     injuries = injuries,
                     exclude = keptExerciseIds,
                     needed = TARGET_EXERCISES_PER_DAY - keptInDay,
-                    allowedEquipment = resolveAllowedEquipment(user, request),
+                    allowedEquipment = allowedEquipment,
                 )
                 refill.forEachIndexed { i, ex ->
                     userPlanDayExerciseRepository.save(
@@ -358,8 +369,8 @@ class UserPlanService(
         }
 
         log.info(
-            "User {} applied template {} as new plan {} (injuries={}, exercisesSkipped={})",
-            user.id, templateCode, savedPlan.id, injuries, skippedForInjury
+            "User {} applied template {} as new plan {} (injuries={}, exercisesSkipped={}, skippedForEquipment={})",
+            user.id, templateCode, savedPlan.id, injuries, skippedForInjury, skippedForEquipment
         )
         return getPlanDashboard(user.id)
     }

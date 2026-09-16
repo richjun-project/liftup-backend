@@ -285,9 +285,12 @@ class WorkoutRecommendationServiceV2Test {
             mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true)
         )
 
-        private fun serviceWith(injury: InjuryFilterService) = WorkoutRecommendationServiceV2(
+        private fun serviceWith(
+            injury: InjuryFilterService,
+            repo: com.richjun.liftupai.domain.workout.repository.ExerciseRepository? = null,
+        ) = WorkoutRecommendationServiceV2(
             userRepository, userProfileRepository, userSettingsRepository, workoutSessionRepository, workoutProgressTracker,
-            exerciseRecommendationService, autoProgramSelector, null, sharedSupport, ptEngine, injury, muscleRecoveryRepository,
+            exerciseRecommendationService, autoProgramSelector, null, sharedSupport, ptEngine, injury, muscleRecoveryRepository, repo,
         )
 
         @Test
@@ -345,7 +348,24 @@ class WorkoutRecommendationServiceV2Test {
         }
 
         @Test
-        fun `장비 필터로 결과가 최소 개수 미만이 되면 장비 필터만 푼다 (부상은 유지)`() {
+        fun `장비가 안 맞아 빠진 운동은 같은 부위의 보유 장비 운동으로 채운다 (부상은 유지)`() {
+            val profile = UserProfile(id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 65.0), gender = "male")
+            profile.availableEquipment = mutableSetOf("dumbbell")
+            profile.injuries = mutableSetOf("knee")
+            every { userSettingsRepository.findByUser_Id(1L) } returns Optional.empty()
+            val dbBench = ex(90, "dumbbell-bench-press", "HORIZONTAL_PRESS_DUMBBELL", ExerciseCategory.CHEST, Equipment.DUMBBELL, MuscleGroup.CHEST)
+            val repo = mockk<com.richjun.liftupai.domain.workout.repository.ExerciseRepository>()
+            every { repo.findPlanEligibleByCategoryOrderByPopularity(ExerciseCategory.CHEST) } returns listOf(bench, dbBench)
+            every { repo.findPlanEligibleByCategoryOrderByPopularity(any()) } returns emptyList()
+            every { repo.findPlanEligibleByCategoryOrderByPopularity(ExerciseCategory.CHEST) } returns listOf(bench, dbBench)
+
+            val result = serviceWith(realInjuryService(), repo).applySafetyFilters(testUser, profile, listOf(squat, bench, dbRow), 2)
+
+            assertEquals(listOf(dbRow, dbBench), result, "바벨 벤치 → 덤벨 벤치로 대체, 스쿼트는 부상으로 제외")
+        }
+
+        @Test
+        fun `대체 후보가 없어 최소 개수 미만이면 장비 필터만 푼다 (부상은 유지)`() {
             val profile = UserProfile(id = 1L, user = testUser, bodyInfo = BodyInfo(weight = 65.0), gender = "male")
             profile.availableEquipment = mutableSetOf("kettlebell")
             profile.injuries = mutableSetOf("knee")
