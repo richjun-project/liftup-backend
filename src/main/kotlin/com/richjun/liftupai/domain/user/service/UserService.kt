@@ -281,12 +281,22 @@ class UserService(
         }
 
         // 언어 변경 시 PT 스케줄 메시지 재생성 (새 언어로 템플릿 반영)
+        //
+        // 2026-09-13~15 실사용 사고: 앱이 첫 로그인 직후(온보딩 전) 언어를 동기화하는데,
+        // createPTSchedulesForUser 는 @Transactional 이라 "프로필 없음" 예외가 이 트랜잭션을
+        // rollback-only 로 표시했다. 여기서 catch 해도 커밋 시점에 UnexpectedRollbackException 이 나서
+        // **언어 설정 자체가 저장되지 않았고**, 일본어 사용자가 한국어 AI 를 받았다.
+        // 프로필이 있을 때만 재생성하고, 재생성은 별도 트랜잭션에서 돌려 설정 저장과 분리한다.
         if (previousLanguage != settings.language) {
-            try {
-                ptScheduledMessageService.createPTSchedulesForUser(userId)
-                logger.info("PT schedules regenerated for user $userId due to language change: $previousLanguage -> ${settings.language}")
-            } catch (e: Exception) {
-                logger.warn("Failed to regenerate PT schedules on language change for user $userId: ${e.message}")
+            if (userProfileRepository.findByUser_Id(userId).isPresent) {
+                try {
+                    ptScheduledMessageService.recreatePTSchedulesInNewTransaction(userId)
+                    logger.info("PT schedules regenerated for user $userId due to language change: $previousLanguage -> ${settings.language}")
+                } catch (e: Exception) {
+                    logger.warn("Failed to regenerate PT schedules on language change for user $userId: ${e.message}")
+                }
+            } else {
+                logger.info("Language changed for user $userId before onboarding — schedules will be created at onboarding")
             }
         }
 

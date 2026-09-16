@@ -196,7 +196,11 @@ class ChatSafetyService {
         return out
     }
 
-    /** 최종 안전 폴백(로케일별). 재생성까지 실패했을 때만 쓴다. */
+    /**
+     * 최종 안전 폴백(로케일별). 재생성까지 실패했을 때만 쓴다.
+     * 섭식장애/미성년/저체중 폴백에는 실제 값이 있을 때만 프로필 기반 한 문장(BMI·나이)을 덧붙인다 —
+     * 일반 문구만 나가면 "왜 안 되는지"가 빠져 사용자가 같은 질문을 반복한다(e2e uw_02).
+     */
     fun safeFallback(risk: RiskProfile, nickname: String): String {
         val key = when {
             risk.redFlagSymptoms -> "safety.fallback.red_flag"
@@ -205,7 +209,21 @@ class ChatSafetyService {
             risk.injuries.isNotEmpty() -> "safety.fallback.injury"
             else -> "safety.fallback.generic"
         }
-        return AILocalization.message(key, risk.locale, nickname)
+        val base = AILocalization.message(key, risk.locale, nickname)
+        if (key != "safety.fallback.eating" && key != "safety.fallback.minor_underweight") return base
+        return listOfNotNull(base, profileContextSentence(risk)).joinToString(" ")
+    }
+
+    /** "지금 BMI 17.3은 저체중이라…" / "15세는 성장기라…" — 값이 있을 때만. */
+    internal fun profileContextSentence(risk: RiskProfile): String? {
+        val bmi = risk.bmi?.takeIf { risk.underweight }?.let { "%.1f".format(it) }
+        val age = risk.age?.takeIf { risk.minor }
+        return when {
+            bmi != null && age != null -> AILocalization.message("safety.fallback.context.minor_underweight", risk.locale, age, bmi)
+            bmi != null -> AILocalization.message("safety.fallback.context.underweight", risk.locale, bmi)
+            age != null -> AILocalization.message("safety.fallback.context.minor", risk.locale, age)
+            else -> null
+        }
     }
 
     // ───────────────────────── 내부 규칙 ─────────────────────────
@@ -219,9 +237,18 @@ class ChatSafetyService {
         return sentences.any { s ->
             val lower = s.lowercase()
             val hasKcal = KCAL_NUMBER.containsMatchIn(lower)
-            val restriction = containsAny(lower, DEFICIT_KEYWORDS)
+            if (!hasKcal) return@any false
+            // 소모 칼로리 정보("버피 1시간 ~340kcal 태워요")는 섭취 조언이 아니다
             val burnOnly = containsAny(lower, BURN_KEYWORDS) && !containsAny(lower, INTAKE_KEYWORDS)
-            hasKcal && restriction && !burnOnly
+            if (burnOnly) return@any false
+            // "유지 칼로리 1800kcal 채워 먹어라", "최소 1500kcal 이상" — 늘리라는 조언은 위반이 아니다
+            val increase = containsAny(lower, INCREASE_KEYWORDS)
+            val explicitDeficit = containsAny(lower, EXPLICIT_DEFICIT_KEYWORDS)
+            if (increase && !explicitDeficit) return@any false
+            // "1200kcal 이하로 먹지 마세요" — 제한을 부정하는 문장
+            val floorPhrase = containsAny(lower, FLOOR_KEYWORDS)
+            if (floorPhrase && containsAny(lower, NEGATION_KEYWORDS) && !explicitDeficit) return@any false
+            containsAny(lower, DEFICIT_KEYWORDS)
         }
     }
 
@@ -325,6 +352,16 @@ class ChatSafetyService {
             "deficit", "cut ", "cutting", "reduce", "restrict", "lose weight", "weight loss", "to lose", "below", "limit your",
             "減ら", "制限", "減量", "欠損", "カット", "痩せる", "以下に",
         )
+        /** 섭취를 늘리라는 조언 — 제한이 아니다 */
+        private val INCREASE_KEYWORDS = listOf(
+            "채워", "채우", "이상", "늘리", "늘려", "더 먹", "충분히", "부족하", "최소", "유지 칼로리", "유지칼로리", "맞춰 먹", "맞춰서 먹",
+            "at least", "increase", "more than", "enough", "fill", "maintenance", "minimum", "no less than", "eat up to",
+            "以上", "増や", "十分", "維持カロリー", "最低", "しっかり食べ",
+        )
+        /** 늘리라는 말과 함께 있어도 명백한 감량 지시 */
+        private val EXPLICIT_DEFICIT_KEYWORDS = listOf("적자", "결핍", "감량 목표", "deficit", "cut to", "cutting to", "減量目標", "欠損")
+        /** "~이하로" 류 하한선 표현 (부정어와 함께면 제한이 아님) */
+        private val FLOOR_KEYWORDS = listOf("이하로", "아래로", "below", "under ", "以下", "未満")
         private val BURN_KEYWORDS = listOf("태우", "소모", "소비", "burn", "expend", "消費", "燃焼")
         private val INTAKE_KEYWORDS = listOf("섭취", "먹", "식사", "식단", "eat", "intake", "consume", "diet", "meal", "摂取", "食べ", "食事", "食")
 

@@ -304,6 +304,17 @@ class GeminiAIService(
 
             $personaSection
 
+            ## APP FACTS (the only screens that exist — never invent a tab, button, or feature)
+            - Bottom tabs: Home / AI PT (this chat) / Stats / Profile. There is NO "Meals" or "Diet" tab.
+            - Log a meal: Stats tab → "Today's meals" → "Log with photo" under breakfast/lunch/dinner/snack; OR the camera icon at the bottom of this chat (photo → AI analysis → saved).
+            - Muscle recovery map and weekly stats: Stats tab.
+            - Change the workout plan: Home → gear icon on the plan card → "Workout plan settings" (basic routines / my AI routines / create AI routine).
+            - Start today's workout: Home → "Start workout" button. Weights can be edited on the workout screen.
+            - Injuries, body info (age/height/weight), goals, AI PT persona (10 styles): Profile tab.
+            - Notifications: Profile tab → notification settings.
+            - Subscription (Pro): Profile tab → subscription section. Meal logging and chat are available on the free plan.
+            - If the user cannot find something, tell them the exact path above. Never blame their app version or say "maybe your plan is limited".
+
             ## Guidelines
             - Answer the exact question first. Give clear, practical guidance on training, nutrition, recovery, and healthy habits.
             - Keep answers concise (2-4 sentences) unless the user asks for a routine, a plan, or more detail — then give the full structure.

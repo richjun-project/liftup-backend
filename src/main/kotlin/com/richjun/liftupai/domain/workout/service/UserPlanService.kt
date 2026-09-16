@@ -36,6 +36,11 @@ class UserPlanService(
 ) {
     private val log = LoggerFactory.getLogger(UserPlanService::class.java)
 
+    companion object {
+        /** 템플릿 하루 운동 수 목표. 부상으로 빠진 만큼 여기까지 채운다. */
+        const val TARGET_EXERCISES_PER_DAY = 5
+    }
+
     @org.springframework.beans.factory.annotation.Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
     private var exerciseMediaBaseUrl: String = "https://liftup-cdn.com"
 
@@ -69,6 +74,49 @@ class UserPlanService(
     private fun translatedPlanDayName(plan: UserWorkoutPlan, dayNumber: Int, fallback: String, locale: String): String {
         if (plan.sourceType != PlanSourceType.TEMPLATE) return fallback
         return WorkoutLocalization.maybeMessage("template.${plan.sourceId}.day.$dayNumber.name", locale) ?: fallback
+    }
+
+    /**
+     * 부상 부위를 피하는 대체 운동. 그날의 부위 → 코어 → 상체 순으로, 인기순.
+     * 카탈로그에 후보가 없으면 빈 목록(그날은 있는 만큼만 간다).
+     */
+    internal fun pickRefillExercises(
+        workoutType: String,
+        injuries: Set<String>,
+        exclude: Set<Long>,
+        needed: Int,
+    ): List<Exercise> {
+        if (needed <= 0) return emptyList()
+        val categories = refillCategoriesFor(workoutType) + listOf(
+            ExerciseCategory.CORE, ExerciseCategory.CHEST, ExerciseCategory.BACK,
+            ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS,
+        )
+        val picked = mutableListOf<Exercise>()
+        val seen = exclude.toMutableSet()
+        for (category in categories.distinct()) {
+            if (picked.size >= needed) break
+            val candidates = exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category)
+            for (ex in candidates) {
+                if (picked.size >= needed) break
+                if (ex.id in seen) continue
+                if (injuries.isNotEmpty() && injuryFilterService.isExerciseRestricted(ex.id, injuries)) continue
+                seen += ex.id
+                picked += ex
+            }
+        }
+        return picked
+    }
+
+    private fun refillCategoriesFor(workoutType: String): List<ExerciseCategory> = when (workoutType.uppercase()) {
+        "PUSH", "CHEST" -> listOf(ExerciseCategory.CHEST, ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS)
+        "PULL", "BACK" -> listOf(ExerciseCategory.BACK, ExerciseCategory.ARMS)
+        "LEGS", "LOWER" -> listOf(ExerciseCategory.LEGS, ExerciseCategory.CORE)
+        "UPPER" -> listOf(ExerciseCategory.CHEST, ExerciseCategory.BACK, ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS)
+        "SHOULDERS" -> listOf(ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS)
+        "ARMS" -> listOf(ExerciseCategory.ARMS, ExerciseCategory.SHOULDERS)
+        "ABS", "CORE" -> listOf(ExerciseCategory.CORE)
+        "CARDIO" -> listOf(ExerciseCategory.CARDIO, ExerciseCategory.LEGS)
+        else -> listOf(ExerciseCategory.LEGS, ExerciseCategory.CHEST, ExerciseCategory.BACK, ExerciseCategory.CORE)
     }
 
     fun getPlanDashboard(userId: Long, locale: String = "en"): PlanDashboardResponse {
@@ -225,6 +273,9 @@ class UserPlanService(
             val savedDay = userPlanDayRepository.save(planDay)
 
             val templateExercises = templateDayExerciseRepository.findByTemplateDayIdOrderByOrderInDay(templateDay.id)
+            val keptExerciseIds = mutableSetOf<Long>()
+            var keptInDay = 0
+            var lastOrder = 0
             for (templateEx in templateExercises) {
                 // 부상 부위를 건드리는 종목은 플랜에 넣지 않는다.
                 //
@@ -237,6 +288,9 @@ class UserPlanService(
                     skippedForInjury++
                     continue
                 }
+                keptExerciseIds += templateEx.exercise.id
+                keptInDay++
+                lastOrder = templateEx.orderInDay
                 val planExercise = UserPlanDayExercise(
                     planDay = savedDay,
                     exercise = templateEx.exercise,
@@ -250,6 +304,40 @@ class UserPlanService(
                     notes = templateEx.notes
                 )
                 userPlanDayExerciseRepository.save(planExercise)
+            }
+
+            // 부상 때문에 비어버린 날을 안전한 운동으로 다시 채운다.
+            //
+            // 2026-09-15 실사용: 무릎·고관절·허리 부상 사용자(118)의 diet_circuit 플랜이
+            // 하루 2·3·4개로 줄었고, 손목 부상(115)은 2개짜리 날이 생겼다.
+            // 걸러내기만 하고 채우지 않으면 "운동이 거의 없는 플랜"을 받는다.
+            val removedInDay = templateExercises.size - keptInDay
+            if (removedInDay > 0 && keptInDay < TARGET_EXERCISES_PER_DAY) {
+                val refill = pickRefillExercises(
+                    workoutType = templateDay.workoutType.name,
+                    injuries = injuries,
+                    exclude = keptExerciseIds,
+                    needed = TARGET_EXERCISES_PER_DAY - keptInDay,
+                )
+                refill.forEachIndexed { i, ex ->
+                    userPlanDayExerciseRepository.save(
+                        UserPlanDayExercise(
+                            planDay = savedDay,
+                            exercise = ex,
+                            orderInDay = lastOrder + i + 1,
+                            sets = 3,
+                            minReps = 10,
+                            maxReps = 15,
+                            restSeconds = 60,
+                            isCompound = false,
+                            targetRPE = 7.0,
+                            notes = null,
+                        )
+                    )
+                }
+                if (refill.isNotEmpty()) {
+                    log.info("Refilled day {} of plan {} with {} injury-safe exercises", templateDay.dayNumber, savedPlan.id, refill.size)
+                }
             }
         }
 

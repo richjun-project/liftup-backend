@@ -38,6 +38,15 @@ class PTScheduledMessageService(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     /**
+     * 호출자 트랜잭션과 분리해서 재생성한다. 여기서 실패해도 호출자의 커밋(예: 언어 설정 저장)이
+     * rollback-only 로 오염되지 않는다.
+     */
+    @org.springframework.transaction.annotation.Transactional(
+        propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW
+    )
+    fun recreatePTSchedulesInNewTransaction(userId: Long) = createPTSchedulesForUser(userId)
+
+    /**
      * 사용자의 PT 스타일에 맞는 스케줄 메시지 생성
      */
     fun createPTSchedulesForUser(userId: Long) {
