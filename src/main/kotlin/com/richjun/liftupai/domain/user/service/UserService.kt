@@ -19,17 +19,8 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-private fun parseFitnessGoal(value: String): FitnessGoal? {
-    return when (value.uppercase()) {
-        "MUSCLE_GAIN" -> FitnessGoal.MUSCLE_GAIN
-        "FAT_LOSS", "WEIGHT_LOSS" -> FitnessGoal.WEIGHT_LOSS
-        "STRENGTH", "STRENGTH_GAIN" -> FitnessGoal.STRENGTH
-        "ENDURANCE" -> FitnessGoal.ENDURANCE
-        "GENERAL_FITNESS", "BODY_CORRECTION", "HEALTH_MAINTENANCE" -> FitnessGoal.GENERAL_FITNESS
-        "ATHLETIC_PERFORMANCE" -> FitnessGoal.ATHLETIC_PERFORMANCE
-        else -> null
-    }
-}
+private fun parseFitnessGoal(value: String): FitnessGoal? =
+    com.richjun.liftupai.domain.user.util.FitnessGoalMapper.parse(value)
 
 @Service
 @Transactional

@@ -282,21 +282,9 @@ class AuthService(
         }
 
         // Goals 설정
-        request.goals.forEach { goal ->
-            try {
-                when (goal.uppercase()) {
-                    "MUSCLE_GAIN" -> profile.goals.add(FitnessGoal.MUSCLE_GAIN)
-                    "FAT_LOSS", "WEIGHT_LOSS" -> profile.goals.add(FitnessGoal.WEIGHT_LOSS)
-                    "STRENGTH", "STRENGTH_GAIN" -> profile.goals.add(FitnessGoal.STRENGTH)
-                    "ENDURANCE" -> profile.goals.add(FitnessGoal.ENDURANCE)
-                    "GENERAL_FITNESS", "BODY_CORRECTION", "HEALTH_MAINTENANCE" -> profile.goals.add(FitnessGoal.GENERAL_FITNESS)
-                    "ATHLETIC_PERFORMANCE" -> profile.goals.add(FitnessGoal.ATHLETIC_PERFORMANCE)
-                    else -> profile.goals.add(FitnessGoal.GENERAL_FITNESS)
-                }
-            } catch (e: Exception) {
-                profile.goals.add(FitnessGoal.GENERAL_FITNESS)
-            }
-        }
+        // 앱의 세부 목표(굵은 팔·식스팩 등)도 가까운 서버 목표로 — 예전엔 전부 GENERAL_FITNESS 로 뭉개졌다
+        val parsedGoals = com.richjun.liftupai.domain.user.util.FitnessGoalMapper.parseAll(request.goals)
+        profile.goals.addAll(parsedGoals.ifEmpty { if (request.goals.isNotEmpty()) setOf(FitnessGoal.GENERAL_FITNESS) else emptySet() })
 
         // Body info 추가 설정
         request.bodyInfo?.let { bodyInfo ->
