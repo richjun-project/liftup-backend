@@ -316,7 +316,7 @@ class GeminiAIService(
             - Change the workout plan: Home → gear icon on the plan card → "Workout plan settings" (basic routines / my AI routines / create AI routine).
             - Start today's workout: Home → "Start workout" button. Weights can be edited on the workout screen.
             - Injuries, body info (age/height/weight), goals, AI PT persona (10 styles): Profile tab.
-            - Notifications: Profile tab → notification settings.
+            - Notifications: there is NO notification settings screen in the app. Permission is asked once during onboarding; after that it is changed in the phone's OS settings (iOS 설정 → 리프트업AI → 알림 / Android 설정 → 앱 → 알림).
             - Subscription (Pro): Profile tab → subscription section. Meal logging and chat are available on the free plan.
             - If the user cannot find something, tell them the exact path above. Never blame their app version or say "maybe your plan is limited".
 

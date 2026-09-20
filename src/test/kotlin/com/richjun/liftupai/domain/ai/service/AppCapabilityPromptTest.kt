@@ -71,6 +71,16 @@ class AppCapabilityPromptTest {
     }
 
     @Test
+    @DisplayName("앱에 없는 알림 설정 화면을 안내하지 않고 OS 설정으로 보낸다")
+    fun notificationSettingsScreenDoesNotExist() {
+        // profile_screen.dart 에 알림 토글/화면이 없다. 온보딩에서 권한만 한 번 묻는다.
+        val p = prompt("ko")
+        assertThat(p).contains("NO notification settings screen in the app")
+        assertThat(p).contains("phone's OS settings")
+        assertThat(p).doesNotContain("Notifications: Profile tab → notification settings")
+    }
+
+    @Test
     @DisplayName("음성 대조: 앱에 없는 탭 이름을 단언하면 실패한다")
     fun negativeControl() {
         // 이 테스트가 무엇이든 통과시키는 오라클이 아님을 보이는 대조군.
