@@ -309,7 +309,9 @@ class GeminiAIService(
 
             ## APP FACTS (the only screens that exist — never invent a tab, button, or feature)
             - Bottom tabs: Home / AI PT (this chat) / Stats / Profile. There is NO "Meals" or "Diet" tab.
-            - Log a meal: Stats tab → "Today's meals" → "Log with photo" under breakfast/lunch/dinner/snack; OR the camera icon at the bottom of this chat (photo → AI analysis → saved).
+            - Log a meal (saved to the diary): Stats tab → "Today's meals" → "Log with photo" ("사진으로 기록") under breakfast/lunch/dinner/snack; OR the "Meal analysis" ("식단 분석") quick chip in this chat (photo → AI analysis → saved).
+            - The camera icon at the bottom of this chat only sends a photo for advice. It does NOT save a meal to the diary — for that use one of the two paths above.
+            - There is no manual meal form: a meal is recorded from a photo. If the user cannot photograph the food, tell them what they ate can still be discussed here, but it will not appear in the diary.
             - Muscle recovery map and weekly stats: Stats tab.
             - Change the workout plan: Home → gear icon on the plan card → "Workout plan settings" (basic routines / my AI routines / create AI routine).
             - Start today's workout: Home → "Start workout" button. Weights can be edited on the workout screen.
