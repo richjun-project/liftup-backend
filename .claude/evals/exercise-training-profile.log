@@ -1,0 +1,93 @@
+EVAL REPORT: exercise-training-profile
+======================================
+Date: 2026-03-28
+Run: 1 (pass@1)
+
+## Capability Evals
+
+| ID    | Description                                      | Result | Method       |
+|-------|--------------------------------------------------|--------|--------------|
+| CAP-1 | 7가지 프로필 분류 정확성                             | PASS   | Code grader  |
+| CAP-2 | 28셀 매트릭스 완전성 + 올바른 값                      | PASS   | Code grader  |
+| CAP-3 | 같은 phase에서 운동별 분화된 sets/reps/rest           | PASS   | Code grader  |
+| CAP-4 | calculateProgressiveOverload 분화 처방 사용          | PASS   | Code grader  |
+| CAP-5 | AI 프롬프트에 운동별 처방 가이드 포함                   | PASS   | Code grader  |
+
+Capability: 5/5 passed
+
+## Regression Evals
+
+| ID    | Description                                      | Result | Method       |
+|-------|--------------------------------------------------|--------|--------------|
+| REG-1 | WorkoutServiceV2PTTest 전체 통과                    | PASS   | Code grader  |
+| REG-2 | 전체 테스트 스위트 (./gradlew test)                  | PASS   | Code grader  |
+| REG-3 | Kotlin 컴파일 에러 없음                              | PASS   | Code grader  |
+| REG-4 | PTRecommendation/ProgressionPlan 구조 변경 없음      | PASS   | Code grader  |
+| REG-5 | API 응답 JSON 형식 변경 없음                         | PASS   | Rule grader  |
+
+Regression: 5/5 passed
+
+## Metrics
+
+pass@1: 100% (10/10)
+pass@3: 100% (not needed — all passed on first attempt)
+pass^3: pending (single run)
+
+## Grading Details
+
+### CAP-1: Profile Resolution (Code Grader)
+ExerciseTrainingProfileResolverTest.ProfileResolution:
+- bench press → PRIMARY_COMPOUND: PASS
+- squat → PRIMARY_COMPOUND: PASS
+- deadlift → PRIMARY_COMPOUND: PASS
+- incline dumbbell press → SECONDARY_COMPOUND: PASS
+- barbell row → SECONDARY_COMPOUND: PASS
+- pullup → SECONDARY_COMPOUND: PASS
+- dips → SECONDARY_COMPOUND: PASS
+- barbell curl → ISOLATION: PASS
+- lateral raise → ISOLATION: PASS
+- leg extension → ISOLATION: PASS
+- tricep pushdown → ISOLATION: PASS
+- plank → CORE_STABILITY: PASS
+- crunch → CORE_STABILITY: PASS
+- dead bug (OTHER pattern, CORE category) → CORE_STABILITY: PASS
+- clean → OLYMPIC_LIFT: PASS
+- snatch → OLYMPIC_LIFT: PASS
+- box jump → PLYOMETRIC: PASS
+- treadmill → CARDIO: PASS
+- rowing machine (OTHER pattern, CARDIO category) → CARDIO: PASS
+
+### CAP-2: Config Matrix (Code Grader)
+ExerciseTrainingProfileResolverTest.ConfigMatrix:
+- PRIMARY_COMPOUND x ACCUMULATION: 4x"6-8", 180s → PASS
+- PRIMARY_COMPOUND x REALIZATION: 5x"1-3", 240s → PASS
+- ISOLATION x ACCUMULATION: 3x"12-15", 60s → PASS
+- ISOLATION x DELOAD: 2x"15-20", 45s → PASS
+- CORE_STABILITY x ACCUMULATION: 3x"30-60s", 45s → PASS
+- OLYMPIC_LIFT x REALIZATION: 6x"1", 240s → PASS
+- PLYOMETRIC x INTENSIFICATION: 3x"3-5", 120s → PASS
+- CARDIO all phases: 1x"time-based", 0s → PASS
+- All 28 cells defined: PASS
+
+### CAP-3: Differentiation (Code Grader)
+ExerciseTrainingProfileResolverTest.Differentiation:
+- Squat vs Bicep Curl different reps: PASS ("6-8" vs "12-15")
+- Bench vs Plank different reps: PASS ("8-10" vs "20-30s")
+- Primary > Isolation rest in every phase: PASS
+
+### CAP-4: WorkoutServiceV2 Integration (Code Grader)
+WorkoutServiceV2PTTest: BUILD SUCCESSFUL (all 19 tests passed)
+
+### CAP-5: AI Prompt (Rule Grader)
+grep "Training prescription guide by exercise type" → 1 match found: PASS
+
+### REG-1~3: Build & Tests (Code Grader)
+./gradlew test → BUILD SUCCESSFUL in 2m 38s
+
+### REG-4: Data Class Structure (Code Grader)
+PTRecommendation fields unchanged: weight, sets, reps, restSeconds, intensity, reason, coachingTip, focus
+
+### REG-5: API Response (Rule Grader)
+AIExerciseDetail, QuickExerciseDetail DTO unchanged — same JSON field names
+
+## Status: SHIP IT

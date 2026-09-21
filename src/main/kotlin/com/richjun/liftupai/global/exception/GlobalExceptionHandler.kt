@@ -12,6 +12,7 @@ import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.servlet.resource.NoResourceFoundException
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -108,6 +109,16 @@ class GlobalExceptionHandler {
         val locale = resolveLocale(request)
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .body(ApiResponse.error("AUTH001", ErrorLocalization.message("error.invalid_credentials", locale)))
+    }
+
+    // 존재하지 않는 정적 경로(.env 같은 스캐너 요청 포함)는 404 다.
+    // 아래 일반 핸들러로 떨어지면 500 + 스택트레이스가 남아 진짜 에러를 가린다.
+    @ExceptionHandler(NoResourceFoundException::class)
+    fun handleNoResourceFound(ex: NoResourceFoundException, request: HttpServletRequest): ResponseEntity<ApiResponse<Nothing>> {
+        val locale = resolveLocale(request)
+        log.warn("No static resource at {} {}", request.method, request.requestURI)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error("NOT_FOUND", ErrorLocalization.message("error.resource_not_found", locale)))
     }
 
     @ExceptionHandler(Exception::class)
