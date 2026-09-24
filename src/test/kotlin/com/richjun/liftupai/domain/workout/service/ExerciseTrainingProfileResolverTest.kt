@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.user.entity.FitnessGoal
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.service.ExerciseTrainingProfileResolver.ExerciseTrainingProfile
 import io.mockk.every
@@ -469,6 +470,55 @@ class ExerciseTrainingProfileResolverTest {
                 assertTrue(primaryConfig.restSeconds > isolationConfig.restSeconds,
                     "$phase: Primary rest (${primaryConfig.restSeconds}s) should exceed Isolation rest (${isolationConfig.restSeconds}s)")
             }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // 목표 창 — 골든셋 2026-09-25: 근력 목표에 벤치 10-12, 지구력 목표에 벤치 8-10
+    // ─────────────────────────────────────────────────────────────────
+
+    @Nested
+    inner class GoalWindow {
+        private val accumulation = PTRecommendationEngine.PeriodizationPhase.ACCUMULATION
+
+        @Test
+        fun `strength goal keeps compounds in low reps`() {
+            val base = resolver.getConfig(accumulation, ExerciseTrainingProfile.SECONDARY_COMPOUND) // 8-10
+            val cfg = resolver.applyGoal(base, ExerciseTrainingProfile.SECONDARY_COMPOUND, setOf(FitnessGoal.STRENGTH))
+            assertEquals("6-8", cfg.reps)
+            // 근력 목표의 복합 종목 휴식은 줄이지 않는다
+            assertEquals(base.restSeconds, cfg.restSeconds)
+        }
+
+        @Test
+        fun `endurance goal raises reps and shortens rest`() {
+            val base = resolver.getConfig(accumulation, ExerciseTrainingProfile.PRIMARY_COMPOUND) // 6-8, 180s
+            val cfg = resolver.applyGoal(base, ExerciseTrainingProfile.PRIMARY_COMPOUND, setOf(FitnessGoal.ENDURANCE))
+            assertEquals("12-15", cfg.reps)
+            assertEquals(90, cfg.restSeconds)
+            assertTrue(cfg.minRestSeconds <= cfg.restSeconds)
+        }
+
+        @Test
+        fun `reps already inside the window are kept`() {
+            val base = resolver.getConfig(accumulation, ExerciseTrainingProfile.ISOLATION) // 12-15
+            val cfg = resolver.applyGoal(base, ExerciseTrainingProfile.ISOLATION, setOf(FitnessGoal.MUSCLE_GAIN))
+            assertEquals("12-15", cfg.reps)
+        }
+
+        @Test
+        fun `strength wins over muscle gain when both are chosen`() {
+            val w = resolver.goalWindow(ExerciseTrainingProfile.PRIMARY_COMPOUND, setOf(FitnessGoal.MUSCLE_GAIN, FitnessGoal.STRENGTH))
+            assertEquals("4-6", w?.canonical)
+        }
+
+        @Test
+        fun `timed core sets and goal-less users are untouched`() {
+            val core = resolver.getConfig(accumulation, ExerciseTrainingProfile.CORE_STABILITY)
+            assertEquals(core, resolver.applyGoal(core, ExerciseTrainingProfile.CORE_STABILITY, setOf(FitnessGoal.STRENGTH)))
+            val iso = resolver.getConfig(accumulation, ExerciseTrainingProfile.ISOLATION)
+            assertEquals(iso, resolver.applyGoal(iso, ExerciseTrainingProfile.ISOLATION, emptySet()))
+            assertEquals("30-60s", resolver.fitReps("30-60s", resolver.goalWindow(ExerciseTrainingProfile.ISOLATION, setOf(FitnessGoal.STRENGTH))!!))
         }
     }
 }

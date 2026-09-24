@@ -24,9 +24,11 @@ class InjuryRuleTest {
         mock(com.richjun.liftupai.domain.workout.repository.ExerciseRepository::class.java),
     )
 
-    private fun ex(pattern: String?, vararg muscles: MuscleGroup) = Exercise(
+    private fun ex(pattern: String?, vararg muscles: MuscleGroup) = exSlug("t", pattern, *muscles)
+
+    private fun exSlug(slug: String, pattern: String?, vararg muscles: MuscleGroup) = Exercise(
         id = 1L,
-        slug = "t",
+        slug = slug,
         name = "t",
         category = com.richjun.liftupai.domain.workout.entity.ExerciseCategory.LEGS,
         movementPattern = pattern,
@@ -88,5 +90,17 @@ class InjuryRuleTest {
     @DisplayName("양성 대조 — 부상이 없으면 어떤 종목도 제한되지 않는다")
     fun noInjuryNoRestriction() {
         assertThat(service.isRestrictedByRule(ex("SQUAT", MuscleGroup.QUADRICEPS), emptySet())).isFalse()
+    }
+
+    @Test
+    @DisplayName("허리 부상이면 가슴 지지 없는 덤벨·케이블 벤트오버 로우도 제한되고, 원암·지지 로우는 통과한다")
+    fun lowerBackBlocksUnsupportedBentOverRows() {
+        val injuries = setOf("lower_back")
+        assertThat(service.isRestrictedByRule(exSlug("dumbbell-bent-over-row", "DUMBBELL_ROW", MuscleGroup.BACK), injuries)).isTrue()
+        assertThat(service.isRestrictedByRule(exSlug("cable-bent-over-row", "CABLE_ROW", MuscleGroup.BACK), injuries)).isTrue()
+        assertThat(service.isRestrictedByRule(exSlug("dumbbell-one-arm-row", "DUMBBELL_ROW", MuscleGroup.BACK), injuries)).isFalse()
+        assertThat(service.isRestrictedByRule(exSlug("bent-over-rear-delt-fly-dumbbell", "REAR_DELT", MuscleGroup.BACK), injuries)).isFalse()
+        // 허리 부상이 아니면 벤트오버 로우는 그대로 허용
+        assertThat(service.isRestrictedByRule(exSlug("dumbbell-bent-over-row", "DUMBBELL_ROW", MuscleGroup.BACK), setOf("knee"))).isFalse()
     }
 }

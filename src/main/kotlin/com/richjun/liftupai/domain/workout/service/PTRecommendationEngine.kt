@@ -199,6 +199,7 @@ class PTRecommendationEngine(
             age = age,
             estimated1RM = estimated1RM,
             declaredWorkingWeight = declaredWorkingWeight,
+            goals = profile?.goals.orEmpty(),
         )
 
         // 6. 최종 추천 생성
@@ -416,10 +417,16 @@ class PTRecommendationEngine(
         age: Int? = null,
         estimated1RM: Double? = null,
         declaredWorkingWeight: Double? = null,
+        goals: Set<com.richjun.liftupai.domain.user.entity.FitnessGoal> = emptySet(),
     ): ProgressionPlan {
 
-        // 운동 특성별 분화된 세트/횟수/휴식 처방 (시작 무게를 목표 반복수에 맞추기 위해 먼저 푼다)
-        val config = exerciseTrainingProfileResolver.resolveConfig(exercise, periodizationPhase)
+        // 운동 특성별 분화된 세트/횟수/휴식 처방 (시작 무게를 목표 반복수에 맞추기 위해 먼저 푼다).
+        // 주기화 매트릭스 위에 사용자 목표 창을 씌운다 — 근력 목표면 복합 4-6, 지구력 목표면 12-15.
+        val trainingProfile = exerciseTrainingProfileResolver.resolveProfile(exercise)
+        val goalWindow = exerciseTrainingProfileResolver.goalWindow(trainingProfile, goals)
+        val config = exerciseTrainingProfileResolver.applyGoal(
+            exerciseTrainingProfileResolver.getConfig(periodizationPhase, trainingProfile), trainingProfile, goals
+        )
         val targetRepsForStart = parseUpperReps(config.reps) ?: 10
 
         // 시작 무게: 최근 이력 → 직접 입력 작업 무게 → 추정 1RM 의 목표 반복수 작업 무게 → 프로필 기본값
@@ -541,6 +548,9 @@ class PTRecommendationEngine(
             }
         }
 
+        // 렙 증가 전략이 목표 창을 벗어나게 밀면(근력 목표 4-6 → 6-8) 창으로 되돌린다
+        val goalReps = goalWindow?.let { exerciseTrainingProfileResolver.fitReps(reps, it) } ?: reps
+
         // 미성년·고령 볼륨 상한
         val cappedSets = sets.coerceAtMost(RecommendationConstants.getAgeMaxSets(age)).coerceAtLeast(1)
 
@@ -554,8 +564,9 @@ class PTRecommendationEngine(
         return ProgressionPlan(
             weight = roundToPlate(targetWeight),
             sets = cappedSets,
-            reps = reps,
+            reps = goalReps,
             restSeconds = config.restSeconds,
+            minRestSeconds = config.minRestSeconds,
             intensity = intensity,
             focus = determineFocus(performanceAnalysis, periodizationPhase, strategy, locale)
         )
@@ -568,18 +579,14 @@ class PTRecommendationEngine(
     }
 
     /**
-     * 렙 범위를 +2씩 올리는 헬퍼
-     * 예: "6-8" → "8-10", "10" → "12"
+     * 렙 범위를 한 단계 올리는 헬퍼. 표준 구간으로 올린다: "6-8" → "8-10", "12-15" → "15-20".
+     * 예전의 +2 방식은 "14-17", "16-19" 같은 어색한 처방을 만들었다(골든셋 2026-09-25).
      * 시간 기반("30s", "30-60s", "time-based")은 변경하지 않음
      */
     private fun increaseRepRange(reps: String): String {
         if (reps.contains("s") || reps == "time-based") return reps
-        val parts = reps.split("-")
-        return when (parts.size) {
-            2 -> "${parts[0].trim().toIntOrNull()?.plus(2) ?: parts[0]}-${parts[1].trim().toIntOrNull()?.plus(2) ?: parts[1]}"
-            1 -> parts[0].trim().toIntOrNull()?.plus(2)?.toString() ?: reps
-            else -> reps
-        }
+        val low = reps.split("-").firstOrNull()?.trim()?.toIntOrNull() ?: return reps
+        return STANDARD_REP_BRACKETS.firstOrNull { it.first > low }?.let { "${it.first}-${it.second}" } ?: reps
     }
 
     /**
@@ -627,6 +634,7 @@ class PTRecommendationEngine(
             sets = progressionPlan.sets,
             reps = progressionPlan.reps,
             restSeconds = progressionPlan.restSeconds,
+            minRestSeconds = progressionPlan.minRestSeconds,
             intensity = progressionPlan.intensity,
             reason = reason,
             coachingTip = coachingTip,
@@ -872,6 +880,10 @@ class PTRecommendationEngine(
         else "$baseTip ${additionalTips.joinToString(" ")}"
     }
 
+    private companion object {
+        val STANDARD_REP_BRACKETS = listOf(1 to 3, 3 to 5, 4 to 6, 6 to 8, 8 to 10, 10 to 12, 12 to 15, 15 to 20, 20 to 25)
+    }
+
     // 데이터 클래스들
     data class PTRecommendation(
         val weight: Double,
@@ -881,7 +893,9 @@ class PTRecommendationEngine(
         val intensity: Int,  // % of 1RM
         val reason: String,
         val coachingTip: String,
-        val focus: String
+        val focus: String,
+        /** 세션 시간에 맞출 때 줄일 수 있는 휴식 하한 */
+        val minRestSeconds: Int = restSeconds,
     )
 
     data class WorkoutData(
@@ -905,7 +919,8 @@ class PTRecommendationEngine(
         val reps: String,
         val restSeconds: Int,
         val intensity: Int,
-        val focus: String
+        val focus: String,
+        val minRestSeconds: Int = restSeconds,
     )
 
     enum class PerformanceTrend {

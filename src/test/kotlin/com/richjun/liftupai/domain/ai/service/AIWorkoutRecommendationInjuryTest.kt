@@ -152,7 +152,8 @@ class AIWorkoutRecommendationInjuryTest {
         val clean = UserProfile(id = 1L, user = user, bodyInfo = BodyInfo(weight = 78.0), gender = "male", age = 34, experienceLevel = ExperienceLevel.INTERMEDIATE)
         every { userProfileRepository.findByUser_Id(1L) } returns Optional.of(clean)
 
-        val result = service.getAIWorkoutRecommendation(userId = 1L, duration = 45)
+        // 8종목 × 3세트 × (8-10회 + 휴식 90초) ≈ 56분 — 시간 맞춤이 종목을 줄이지 않는 60분으로 요청한다
+        val result = service.getAIWorkoutRecommendation(userId = 1L, duration = 60)
 
         assertEquals(8, result.recommendation.exercises.size)
     }
@@ -193,5 +194,20 @@ class AIWorkoutRecommendationInjuryTest {
         assertEquals("호흡", s.keyPoint)
         assertNull(s.nextStep, "닫히지 않은 값은 건지지 않는다")
         assertNull(service.salvageInsightsFromText("garbage"), "아무 필드도 없으면 null")
+    }
+
+    @Test
+    @DisplayName("시간 맞춤: 45분 요청에 8종목 × 3세트 × 휴식 90초(약 56분)가 오면 45분 안으로 줄인다")
+    fun fitsAIPicksIntoRequestedDuration() {
+        stubKneeUser(aiPicks = listOf(squat, lunge, deadlift, rdl, bench, row, ohp, pulldown))
+        val clean = UserProfile(id = 1L, user = user, bodyInfo = BodyInfo(weight = 78.0), gender = "male", age = 34, experienceLevel = ExperienceLevel.INTERMEDIATE)
+        every { userProfileRepository.findByUser_Id(1L) } returns Optional.of(clean)
+
+        val exercises = service.getAIWorkoutRecommendation(userId = 1L, duration = 45).recommendation.exercises
+        val slots = exercises.map { com.richjun.liftupai.domain.workout.util.SessionDurationFitter.Slot(it.sets, it.reps, it.rest, it.rest) }
+
+        assertTrue(com.richjun.liftupai.domain.workout.util.SessionDurationFitter.estimateMinutes(slots) <= 47, "추정 ${slots}")
+        assertTrue(exercises.size >= 3)
+        assertEquals((1..exercises.size).toList(), exercises.map { it.order })
     }
 }

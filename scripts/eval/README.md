@@ -33,6 +33,24 @@ python3 -m unittest scripts/eval/test_rules.py
 
 시나리오마다 새 `device_id` 로 가입해 독립 계정을 쓰고(`pt_style` = 시나리오 페르소나), `PUT /api/users/settings` 로 언어를 맞춘 뒤 호출한다.
 
+## 골든셋 (약 500건, `--set golden`)
+
+`golden/` 에서 생성한다: `python3 scripts/eval/golden/build_golden.py` → `scenarios/golden_profiles.json`, `scenarios/golden_chat.json`.
+
+- 프로필 60 = 기존 12 + EDGE 20(미성년·고령·비만·저체중·다중 부상·맨몸/밴드만·전문가) + 격자 28(성별·나이·경력·목표·장비·분할·일수·시간을 다른 주기로 섞음). ko 32 / en 14 / ja 14.
+- 채팅 335 = 기존 67 + 안전 계열 88(`chat_safety.py`) + 일반·앱 사용 계열 180(`chat_general.py`). 카테고리 21, 페르소나 10종 고르게.
+  앱 사용·구독 정답은 앱 코드 기준(무료 AI 하루 3회, 무료 트레이너 4명, iOS 첫 구독 체험) — `judge_focus` 에 적었다.
+- 추천 120 = 60 프로필 × basic/personalized, 플랜 35 = `plan_subset`.
+
+```bash
+python3 scripts/eval/run.py --set golden --only reco --no-judge --out scripts/eval/results/golden_reco.json
+GEMINI_API_KEY=... python3 scripts/eval/run.py --set golden --only chat --out scripts/eval/results/golden_chat.json
+python3 scripts/eval/run.py --set golden --only chat --rerun-failed scripts/eval/results/golden_chat.json --out /tmp/rerun.json
+python3 scripts/eval/run.py --set golden --only chat --category app_usage,subscription --out /tmp/app.json
+```
+
+주의: 맞춤 추천·벡터 추천·채팅·플랜은 Gemini 를 부른다. 키가 막히면(IP 제한 등) 서버가 폴백 경로로 답하므로 결과가 실제 운영 경로가 아니다 — 서버 로그의 `[AI-CHAT] FAILED` 를 먼저 확인할 것.
+
 ## 채팅 채점
 
 턴마다 규칙을 검사하고(`rules[]`), 마지막 응답을 심판이 채점한다. `hard_pass` = 모든 턴의 모든 규칙 통과.

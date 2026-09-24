@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.user.entity.FitnessGoal
 import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.Exercise
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
@@ -260,7 +261,78 @@ class ExerciseTrainingProfileResolver(
         return getConfig(phase, resolveProfile(exercise))
     }
 
+    /**
+     * 목표별 반복 창. 주기화 매트릭스는 목표를 모른다 — 근력 목표 사용자에게 벤치 10-12,
+     * 지구력 목표 사용자에게 벤치 8-10 이 나갔다(골든셋 2026-09-25, 60 프로필 중 13).
+     * 여러 목표면 우선순위(근력 > 운동수행 > 근비대 > 감량 > 전반 > 지구력)가 높은 하나를 쓴다.
+     */
+    data class RepWindow(val min: Int, val max: Int, val canonical: String, val maxRestSeconds: Int?)
+
+    fun goalWindow(profile: ExerciseTrainingProfile, goals: Collection<FitnessGoal>): RepWindow? {
+        val goal = goalPriority.firstOrNull { it in goals } ?: return null
+        return goalWindows[goal]?.get(profile)
+    }
+
+    /** 처방 반복수를 목표 창 안으로. 창 안이면 그대로, 벗어나면 창의 대표 범위로 바꾸고 휴식 상한을 적용한다. */
+    fun applyGoal(config: PhaseExerciseConfig, profile: ExerciseTrainingProfile, goals: Collection<FitnessGoal>): PhaseExerciseConfig {
+        val window = goalWindow(profile, goals) ?: return config
+        val reps = fitReps(config.reps, window)
+        val rest = window.maxRestSeconds?.let { config.restSeconds.coerceAtMost(it) } ?: config.restSeconds
+        return config.copy(reps = reps, restSeconds = rest, minRestSeconds = config.minRestSeconds.coerceAtMost(rest))
+    }
+
+    fun fitReps(reps: String, window: RepWindow): String {
+        val m = repRange.matchEntire(reps.trim()) ?: return reps  // 시간 기반("30-60s", "time-based")은 건드리지 않는다
+        val lo = m.groupValues[1].toInt()
+        val hi = m.groupValues[2].ifEmpty { m.groupValues[1] }.toInt()
+        return if (lo >= window.min && hi <= window.max) reps else window.canonical
+    }
+
     // ── Private helpers ─────────────────────────────────────────────
+
+    private val repRange = Regex("""(\d+)\s*(?:-\s*(\d+))?""")
+
+    private val goalPriority = listOf(
+        FitnessGoal.STRENGTH, FitnessGoal.ATHLETIC_PERFORMANCE, FitnessGoal.MUSCLE_GAIN,
+        FitnessGoal.WEIGHT_LOSS, FitnessGoal.GENERAL_FITNESS, FitnessGoal.ENDURANCE,
+    )
+
+    // NSCA 목표별 처방(근력 ≤6, 근비대 6-12, 근지구력 ≥12)을 운동 특성별로 나눈 창. 코어·유산소는 목표와 무관하게 두고, 올림픽 리프트는 감량·전반·지구력 목표에서만 창을 씌운다.
+    private val goalWindows: Map<FitnessGoal, Map<ExerciseTrainingProfile, RepWindow>> = run {
+        val strength = mapOf(
+            ExerciseTrainingProfile.PRIMARY_COMPOUND to RepWindow(1, 6, "4-6", null),
+            ExerciseTrainingProfile.SECONDARY_COMPOUND to RepWindow(3, 8, "6-8", null),
+            ExerciseTrainingProfile.ISOLATION to RepWindow(6, 10, "8-10", 90),
+            ExerciseTrainingProfile.PLYOMETRIC to RepWindow(3, 6, "3-5", null),
+        )
+        val hypertrophy = mapOf(
+            ExerciseTrainingProfile.PRIMARY_COMPOUND to RepWindow(5, 10, "6-8", 180),
+            ExerciseTrainingProfile.SECONDARY_COMPOUND to RepWindow(6, 12, "8-10", 120),
+            ExerciseTrainingProfile.ISOLATION to RepWindow(8, 15, "10-12", 75),
+            ExerciseTrainingProfile.PLYOMETRIC to RepWindow(5, 10, "6-8", 90),
+        )
+        val general = mapOf(
+            ExerciseTrainingProfile.PRIMARY_COMPOUND to RepWindow(6, 12, "8-10", 120),
+            ExerciseTrainingProfile.SECONDARY_COMPOUND to RepWindow(8, 15, "10-12", 90),
+            ExerciseTrainingProfile.ISOLATION to RepWindow(10, 15, "12-15", 60),
+            ExerciseTrainingProfile.PLYOMETRIC to RepWindow(6, 12, "8-10", 60),
+            // 감량·전반 목표의 덤벨 스내치·클린은 대사성 서킷으로 쓴다 — 3회 폭발력 처방이 아니다
+            ExerciseTrainingProfile.OLYMPIC_LIFT to RepWindow(6, 10, "6-8", 90),
+        )
+        val endurance = mapOf(
+            ExerciseTrainingProfile.PRIMARY_COMPOUND to RepWindow(12, 15, "12-15", 90),
+            ExerciseTrainingProfile.SECONDARY_COMPOUND to RepWindow(12, 20, "12-15", 60),
+            ExerciseTrainingProfile.ISOLATION to RepWindow(15, 20, "15-20", 45),
+            ExerciseTrainingProfile.PLYOMETRIC to RepWindow(10, 20, "12-15", 45),
+            ExerciseTrainingProfile.OLYMPIC_LIFT to RepWindow(8, 12, "8-10", 60),
+        )
+        mapOf(
+            FitnessGoal.STRENGTH to strength, FitnessGoal.ATHLETIC_PERFORMANCE to strength,
+            FitnessGoal.MUSCLE_GAIN to hypertrophy,
+            FitnessGoal.WEIGHT_LOSS to general, FitnessGoal.GENERAL_FITNESS to general,
+            FitnessGoal.ENDURANCE to endurance,
+        )
+    }
 
     private fun isCompoundByKeyword(exercise: Exercise): Boolean {
         val name = exercise.name.lowercase()

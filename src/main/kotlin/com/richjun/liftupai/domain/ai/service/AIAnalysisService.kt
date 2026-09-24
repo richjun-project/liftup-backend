@@ -17,6 +17,8 @@ import com.richjun.liftupai.domain.workout.repository.UserProgramEnrollmentRepos
 import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.util.ExerciseNameNormalizer
+import com.richjun.liftupai.domain.workout.util.ExerciseSuitability
+import com.richjun.liftupai.domain.workout.util.SessionDurationFitter
 import com.richjun.liftupai.domain.workout.util.WorkoutFocus
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
@@ -372,7 +374,10 @@ class AIAnalysisService(
         } else {
             rawCandidates
         }
+        // 실제로 할 수 있는 운동만 — 홈트 사용자의 철봉 동작, 초보·고령·미성년의 맨몸 풀업·평행봉 딥스·점프
+        val suitable = { ex: Exercise -> ExerciseSuitability.suitable(ex, availableEquipment, profile?.experienceLevel, profile?.age) }
         val candidateExercises = applyExerciseOverrides(user, injuryFilteredCandidates, userInjuries)
+            .let { list -> list.filter(suitable).ifEmpty { list } }
 
         println("Loaded ${rawCandidates.size} candidates, ${rawCandidates.size - injuryFilteredCandidates.size} filtered by injuries, ${candidateExercises.size} remaining after overrides")
 
@@ -397,7 +402,7 @@ class AIAnalysisService(
         val aiResponse = geminiAIService.generateRecommendations(prompt)
 
         // AI 응답을 WorkoutRecommendationDetail로 파싱
-        val recommendation = parseAIWorkoutResponse(user, aiResponse, duration, equipment, adjustedTargetMuscle, locale, userInjuries, availableEquipment)
+        val recommendation = parseAIWorkoutResponse(user, aiResponse, duration, equipment, adjustedTargetMuscle, locale, userInjuries, availableEquipment, suitable)
 
         // 대체 운동 생성
         val alternatives = generateAIAlternatives(duration, equipment, adjustedTargetMuscle, locale)
@@ -487,10 +492,11 @@ class AIAnalysisService(
         availableEquipment: Set<String>,
         injuries: Set<String>,
         recovering: Set<com.richjun.liftupai.domain.workout.entity.MuscleGroup> = emptySet(),
+        suitable: (Exercise) -> Boolean = { true },
     ): Pair<Map<Long, Exercise>, List<Exercise>> {
         val available = normalizeAvailableEquipment(availableEquipment)
-        if (available.isEmpty()) return byId to emptyList()
-        fun ok(ex: Exercise) = equipmentUsable(ex, available)
+        // 장비 제한이 없어도(헬스장) 초보·고령자에게 맞지 않는 동작은 같은 부위의 다른 운동으로 바꾼다
+        fun ok(ex: Exercise) = equipmentUsable(ex, available) && suitable(ex)
         val kept = byId.filterValues { ok(it) }
         val removed = byId.values.filter { !ok(it) }
         if (removed.isEmpty()) return byId to emptyList()
@@ -514,7 +520,7 @@ class AIAnalysisService(
             for (cat in fillers) { if (replacements.size >= removed.size) break; pickFrom(cat)?.let { replacements += it } }
             if (replacements.size == before) break
         }
-        log.info("[AIAnalysisService] equipment filter: dropped ${removed.map { it.name }} → replaced with ${replacements.map { it.name }} (available=$available)")
+        log.info("[AIAnalysisService] equipment/suitability filter: dropped ${removed.map { it.name }} → replaced with ${replacements.map { it.name }} (available=$available)")
         return (kept + replacements.associateBy { it.id }) to replacements
     }
 
@@ -952,6 +958,7 @@ class AIAnalysisService(
         locale: String,
         injuries: Set<String> = emptySet(),
         availableEquipment: Set<String> = emptySet(),
+        suitable: (Exercise) -> Boolean = { true },
     ): AIWorkoutDetail {
         return try {
             val cleanedResponse = aiResponse
@@ -979,10 +986,11 @@ class AIAnalysisService(
             val injurySafeById = dropInjuryRestricted(loadedById, injuries)
             // 보유 장비로 못 하는 운동도 차단하고, 빠진 만큼 같은 부위의 가능한 운동으로 채운다
             // (2026-09-16 운영: 덤벨만 있는 사용자에게 바벨 벤치·케이블 풀다운·어시스트 풀업이 그대로 나갔다)
-            val (exerciseById, replacements) = replaceEquipmentMismatch(injurySafeById, availableEquipment, injuries, recoveringMuscles(user))
+            val (exerciseById, replacements) = replaceEquipmentMismatch(injurySafeById, availableEquipment, injuries, recoveringMuscles(user), suitable)
             val exercisesList = aiExercisesList + replacements.map { mapOf<String, Any>("id" to it.id, "sets" to 3) }
             val translations = translationMap(exerciseById.values, locale)
             val usedExerciseIds = mutableSetOf<Long>()
+            val minRestById = mutableMapOf<String, Int>()
 
             val exercises = exercisesList.mapIndexedNotNull { index, exerciseMap ->
                 val exerciseId = extractExerciseId(exerciseMap["id"])
@@ -1034,6 +1042,7 @@ class AIAnalysisService(
                 val finalSets = if (aiSets != null && aiSets in (ptSets - 1)..(ptSets + 1)) aiSets else ptSets
                 val finalReps = mergeReps(aiReps, ptReps)
                 val finalRest = if (aiRest != null && aiRest in (ptRest - 30)..(ptRest + 30)) aiRest else ptRest
+                minRestById[matchedExercise.id.toString()] = ptRec?.minRestSeconds ?: minOf(finalRest, 45)
 
                 AIExerciseDetail(
                     exerciseId = matchedExercise.id.toString(),
@@ -1077,7 +1086,8 @@ class AIAnalysisService(
                 throw IllegalStateException("AI returned insufficient exercises: ${exercises.size} < $minExercises")
             }
 
-            println("AI workout recommendation completed with ${exercises.size} exercises")
+            val fittedExercises = fitToDuration(exercises, minRestById, workoutDuration)
+            println("AI workout recommendation completed with ${exercises.size} exercises (${fittedExercises.size} after fitting ${workoutDuration}min)")
 
             val workoutName = (jsonResponse["workout_name"] as? String)
                 ?.takeIf { it.isNotBlank() }
@@ -1104,7 +1114,7 @@ class AIAnalysisService(
                 name = workoutName,
                 duration = duration ?: 30,
                 difficulty = difficulty,
-                exercises = exercises,
+                exercises = fittedExercises,
                 estimatedCalories = estimatedCalories,
                 targetMuscles = musclesList,
                 equipment = equipmentList,
@@ -1266,6 +1276,7 @@ class AIAnalysisService(
                     .sortedWith(RecommendationExerciseRanking.displayOrderComparator())
             }
             .let { if (fallbackInjuries.isEmpty()) it else injuryFilterService.filterExercises(it, fallbackInjuries) }
+            .let { list -> list.filter { ExerciseSuitability.suitable(it, fallbackEquipment, fbProfile?.experienceLevel, fbProfile?.age) }.ifEmpty { list } }
             // 폴백도 보유 장비를 지킨다 — AI 경로가 실패했다고 바벨을 덤벨 사용자에게 주면 안 된다
             .let { list ->
                 if (fallbackEquipment.isEmpty()) list else list.filter { equipmentUsable(it, fallbackEquipment) }.ifEmpty {
@@ -1293,10 +1304,12 @@ class AIAnalysisService(
         }
 
         val translations = translationMap(selectedExercises, locale)
-        return selectedExercises.take(exerciseCount).mapIndexed { index, exercise ->
+        val minRestById = mutableMapOf<String, Int>()
+        val prescribed = selectedExercises.take(exerciseCount).mapIndexed { index, exercise ->
             val ptRec = try {
                 ptRecommendationEngine.calculateFullPTRecommendation(user, exercise)
             } catch (e: Exception) { null }
+            minRestById[exercise.id.toString()] = ptRec?.minRestSeconds ?: 45
 
             AIExerciseDetail(
                 exerciseId = exercise.id.toString(),
@@ -1310,6 +1323,21 @@ class AIAnalysisService(
                 equipmentNeeded = localizeEquipment(exercise.equipment?.name, locale).ifBlank { null },
                 difficultyLevel = localizeDifficulty(null, locale)
             )
+        }
+        return fitToDuration(prescribed, minRestById, duration)
+    }
+
+    /**
+     * 세트·휴식을 요청한 세션 시간에 맞춘다(SessionDurationFitter). 종목은 뒤(고립·코어)부터 빠진다.
+     * 골든셋 2026-09-25: 맞춤 추천 60건 중 51건이 요청 시간을 20% 넘게 벗어났다(30분 요청에 56~62분).
+     */
+    internal fun fitToDuration(exercises: List<AIExerciseDetail>, minRestById: Map<String, Int>, durationMinutes: Int): List<AIExerciseDetail> {
+        val slots = exercises.map {
+            SessionDurationFitter.Slot(it.sets, it.reps, it.rest, minRestById[it.exerciseId] ?: minOf(it.rest, 45))
+        }
+        val fitted = SessionDurationFitter.fit(slots, durationMinutes)
+        return exercises.take(fitted.size).zip(fitted).mapIndexed { idx, (e, slot) ->
+            e.copy(sets = slot.sets, rest = slot.restSeconds, order = idx + 1)
         }
     }
 

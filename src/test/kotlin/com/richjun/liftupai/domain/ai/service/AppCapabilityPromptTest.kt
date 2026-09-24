@@ -67,7 +67,18 @@ class AppCapabilityPromptTest {
     fun neverBlameVersionOrPlan() {
         val p = prompt("ko")
         assertThat(p).contains("Never blame their app version")
-        assertThat(p).contains("Meal logging and chat are available on the free plan")
+        assertThat(p).contains("Free plan: AI chat (including meal analysis in chat) 3 times a day")
+    }
+
+    @Test
+    @DisplayName("구독 질문: 가격을 지어내지 않고, 체험을 모두에게 약속하지 않고, 해지·환불은 스토어로 보낸다")
+    fun subscriptionFactsAreGrounded() {
+        // ai_usage_tracker 무료 3회, 무료 트레이너 4명, iOS 첫 구독자만 7일 체험(2026-09-25 앱 코드 기준)
+        val p = prompt("ko")
+        assertThat(p).contains("Never state a price")
+        assertThat(p).contains("do not promise a trial to everyone")
+        assertThat(p).contains("the app cannot cancel or refund")
+        assertThat(p).contains("There is NO Apple Watch")
     }
 
     @Test

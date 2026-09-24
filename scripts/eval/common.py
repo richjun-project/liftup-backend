@@ -161,7 +161,8 @@ def wait_for_server(base_url: str, max_wait_sec: int = 600, interval: int = 20) 
             "POST", "/api/version/check",
             {"current_version": "1.1.15", "version_code": 31, "platform": "ios"}, retry=0,
         )
-        if st == 200:
+        # 404 = 앱은 떴지만 app_versions 가 빈 DB(로컬). 서버가 요청을 처리한다는 뜻이면 충분하다.
+        if st in (200, 404):
             return True
         time.sleep(interval)
     return False

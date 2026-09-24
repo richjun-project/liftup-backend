@@ -183,3 +183,31 @@ class RecoRules(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FalseUiRule(unittest.TestCase):
+    """없는 화면 안내(APP FACTS 위반)만 잡고, 정답 경로·부정문은 통과시킨다."""
+
+    def _fails(self, reply, locale="ko"):
+        return not C.RULES["no_false_ui"](ctx(reply, locale=locale, category="app_usage")).passed
+
+    def test_meal_tab_is_caught(self):
+        self.assertTrue(self._fails("하단 메뉴의 식사 탭에서 기록하세요."))
+        self.assertTrue(self._fails("Open the Meals tab and tap +.", "en"))
+        self.assertTrue(self._fails("下のメニューの食事タブから記録できます。", "ja"))
+
+    def test_in_app_notification_settings_is_caught(self):
+        self.assertTrue(self._fails("프로필 탭 → 알림에서 끄면 돼요."))
+        self.assertTrue(self._fails("앱 내 알림 설정에서 바꿀 수 있어요."))
+        self.assertTrue(self._fails("Go to Profile → Notifications.", "en"))
+        self.assertTrue(self._fails("プロフィールから通知をオフにできます。", "ja"))
+
+    def test_correct_paths_pass(self):
+        self.assertFalse(self._fails("통계 탭 → 오늘의 식사 → '사진으로 기록'을 누르세요."))
+        self.assertFalse(self._fails("알림은 휴대폰 설정 → 리프트업AI → 알림에서 바꿀 수 있어요."))
+        self.assertFalse(self._fails("iOS Settings → LiftUp AI → Notifications.", "en"))
+        self.assertFalse(self._fails("iPhoneの設定 → リフトアップAI → 通知 から変更できます。", "ja"))
+
+    def test_negated_mentions_pass(self):
+        self.assertFalse(self._fails("식사 탭은 따로 없어요. 통계 탭에서 사진으로 기록하세요."))
+        self.assertFalse(self._fails("There is no Meals tab — use the Stats tab.", "en"))

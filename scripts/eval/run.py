@@ -29,6 +29,26 @@ from common import ApiError, Client, wait_for_server  # noqa: E402
 
 PROFILES = json.load(open(os.path.join(HERE, "scenarios", "profiles.json"), encoding="utf-8"))["profiles"]
 CHAT = json.load(open(os.path.join(HERE, "scenarios", "chat.json"), encoding="utf-8"))["scenarios"]
+PLAN_SUBSET = None  # None → 모든 프로필
+
+
+def use_golden():
+    """--set golden: 60 프로필 / 335 채팅 / 플랜 35 프로필."""
+    global PROFILES, CHAT, PLAN_SUBSET
+    gp = json.load(open(os.path.join(HERE, "scenarios", "golden_profiles.json"), encoding="utf-8"))
+    PROFILES, PLAN_SUBSET = gp["profiles"], gp["plan_subset"]
+    CHAT = json.load(open(os.path.join(HERE, "scenarios", "golden_chat.json"), encoding="utf-8"))["scenarios"]
+
+
+def failed_ids(path: str) -> set[str]:
+    """이전 결과에서 규칙 실패·에러·심판 hard_fail/평균 3.5 미만인 채팅 id."""
+    prev = json.load(open(path, encoding="utf-8"))
+    out = set()
+    for r in prev.get("chat", []):
+        j = r.get("judge") or {}
+        if r.get("error") or not r.get("hard_pass") or j.get("hard_fail") or (j.get("mean") is not None and j["mean"] < 3.5):
+            out.add(r["id"])
+    return out
 
 _print_lock = threading.Lock()
 
@@ -280,7 +300,13 @@ def main():
     ap.add_argument("--concurrency", type=int, default=4)
     ap.add_argument("--no-judge", action="store_true")
     ap.add_argument("--label", default=None)
+    ap.add_argument("--set", choices=["default", "golden"], default="default")
+    ap.add_argument("--category", default=None, help="채팅 카테고리 필터(쉼표 구분)")
+    ap.add_argument("--ids", default=None, help="채팅 id 필터(쉼표 구분)")
+    ap.add_argument("--rerun-failed", default=None, help="이전 결과 JSON 에서 실패한 채팅만 다시 돈다")
     args = ap.parse_args()
+    if args.set == "golden":
+        use_golden()
 
     if not wait_for_server(args.base_url, max_wait_sec=600, interval=20):
         print("서버가 응답하지 않는다:", args.base_url)
@@ -294,7 +320,17 @@ def main():
     want = lambda k: args.only in (None, k)  # noqa: E731
 
     if want("chat"):
-        scns = CHAT[: args.limit] if args.limit else CHAT
+        scns = CHAT
+        if args.category:
+            cats = set(args.category.split(","))
+            scns = [x for x in scns if x["category"] in cats]
+        if args.ids:
+            wanted = set(args.ids.split(","))
+            scns = [x for x in scns if x["id"] in wanted]
+        if args.rerun_failed:
+            wanted = failed_ids(args.rerun_failed)
+            scns = [x for x in scns if x["id"] in wanted]
+        scns = scns[: args.limit] if args.limit else scns
         with ThreadPoolExecutor(max_workers=args.concurrency) as ex:
             futs = [ex.submit(run_chat_scenario, args.base_url, s, with_judge) for s in scns]
             chat_res = [f.result() for f in as_completed(futs)]
@@ -305,7 +341,8 @@ def main():
             reco_res = [f.result() for f in as_completed([ex.submit(run_reco_profile, args.base_url, n) for n in names])]
         reco_res.sort(key=lambda r: r["id"])
     if want("plan"):
-        names = list(PROFILES)[: args.limit] if args.limit else list(PROFILES)
+        names = list(PLAN_SUBSET or PROFILES)
+        names = names[: args.limit] if args.limit else names
         with ThreadPoolExecutor(max_workers=min(2, args.concurrency)) as ex:  # 플랜 생성은 45~75초 → 동시성 2
             plan_res = [f.result() for f in as_completed([ex.submit(run_plan_profile, args.base_url, n) for n in names])]
         plan_res.sort(key=lambda r: r["id"])
@@ -316,6 +353,7 @@ def main():
     summary["elapsed_sec"] = round(time.time() - t0)
     summary["label"] = args.label or os.path.splitext(os.path.basename(args.out))[0]
     summary["judge_enabled"] = with_judge
+    summary["set"] = args.set
     out = {"summary": summary, "chat": chat_res, "reco": reco_res, "plan": plan_res, "regressions": regs}
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:

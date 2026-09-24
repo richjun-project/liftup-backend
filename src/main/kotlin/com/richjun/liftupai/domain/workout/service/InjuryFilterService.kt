@@ -258,7 +258,7 @@ class InjuryFilterService(
                         "DEADLIFT", "HIP_HINGE", "BARBELL_ROW", "SQUAT", "LUNGE",
                         "CLEAN", "SNATCH", "ROTATION", "CARRY", "COMPOUND_COMPLEX",
                         "VERTICAL_PRESS_BARBELL"
-                    )
+                    ) || isUnsupportedBentOverRow(exercise, pattern)
                 "shoulder" -> hitsPattern(
                     "VERTICAL_PRESS_BARBELL", "VERTICAL_PRESS_DUMBBELL", "VERTICAL_PRESS_MACHINE",
                     "INCLINE_PRESS_BARBELL", "INCLINE_PRESS_DUMBBELL", "HORIZONTAL_PRESS_BARBELL",
@@ -279,6 +279,15 @@ class InjuryFilterService(
         }
         return false
     }
+
+    /**
+     * 가슴 지지 없이 상체를 숙여 버티는 로우(덤벨·케이블 벤트오버 로우)도 허리에 바벨 로우와 같은 부하가 걸린다.
+     * 패턴이 DUMBBELL_ROW/CABLE_ROW 라 위 목록에 안 걸려 허리 부상자에게 추천됐다(골든셋 2026-09-25).
+     * 벤치에 손·무릎을 대는 원암 로우, 체스트 서포티드 로우는 그대로 허용한다.
+     */
+    private fun isUnsupportedBentOverRow(exercise: Exercise, pattern: String): Boolean =
+        pattern.endsWith("_ROW") && exercise.slug.contains("bent-over") &&
+            !exercise.slug.contains("rear-delt") && !exercise.slug.contains("supported")
 
     // ─── 자동 대체 운동 적용 ─────────────────────────────────────────
 

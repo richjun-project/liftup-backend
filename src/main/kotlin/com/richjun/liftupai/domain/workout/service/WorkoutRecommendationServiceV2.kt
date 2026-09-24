@@ -13,6 +13,8 @@ import com.richjun.liftupai.domain.workout.repository.*
 import com.richjun.liftupai.domain.workout.service.vector.VectorWorkoutRecommendationService
 import com.richjun.liftupai.domain.workout.util.WorkoutFocus
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
+import com.richjun.liftupai.domain.workout.util.ExerciseSuitability
+import com.richjun.liftupai.domain.workout.util.SessionDurationFitter
 import com.richjun.liftupai.domain.workout.util.WorkoutTargetResolver
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
@@ -268,13 +270,13 @@ class WorkoutRecommendationServiceV2(
             limit = targetExerciseCount
         )
         // 추천 출처(벡터/규칙)와 무관하게 마지막에 한 번 더 거른다 — 부상·장비·회복·중복
-        val exercises = applySafetyFilters(user, userProfile, rawExercises, minAcceptableCount)
+        val exercises = applySafetyFilters(user, userProfile, rawExercises, minAcceptableCount, targetExerciseCount)
         val translations = sharedSupport.translationMap(exercises, locale)
 
         logger.info("Workout recommendation completed: ${exercises.size} exercises (target: $targetExerciseCount)")
 
         // Create quick exercise details
-        val quickExercises = exercises.take(targetExerciseCount).mapIndexed { index, exercise ->
+        val prescribed = exercises.take(targetExerciseCount).mapIndexed { index, exercise ->
             // PT 시스템으로 세트/렙/무게/휴식 전부 계산
             val ptRec = try {
                 ptEngine.calculateFullPTRecommendation(user, exercise)
@@ -282,7 +284,7 @@ class WorkoutRecommendationServiceV2(
                 null
             }
 
-            QuickExerciseDetail(
+            (ptRec?.minRestSeconds ?: 45) to QuickExerciseDetail(
                 exerciseId = exercise.id.toString(),
                 name = sharedSupport.localizedName(exercise, locale, translations),
                 category = exercise.category.name,
@@ -298,6 +300,7 @@ class WorkoutRecommendationServiceV2(
                 targetMuscles = exercise.muscleGroups.map { WorkoutTargetResolver.displayName(it, locale) }
             )
         }
+        val quickExercises = fitToDuration(prescribed, workoutDuration)
 
         val targetMuscles = exercises
             .flatMap { exercise -> exercise.muscleGroups.map { muscle -> WorkoutTargetResolver.displayName(muscle, locale) } }
@@ -354,6 +357,15 @@ class WorkoutRecommendationServiceV2(
         }
 
         return alternatives.take(2)
+    }
+
+    /** 세트·휴식을 요청한 세션 시간에 맞춘다. 종목이 빠지면 뒤에서부터 빠진다. */
+    internal fun fitToDuration(prescribed: List<Pair<Int, QuickExerciseDetail>>, durationMinutes: Int): List<QuickExerciseDetail> {
+        val slots = prescribed.map { (minRest, e) -> SessionDurationFitter.Slot(e.sets, e.reps, e.rest, minRest) }
+        val fitted = SessionDurationFitter.fit(slots, durationMinutes)
+        return prescribed.take(fitted.size).zip(fitted).map { (pair, slot) ->
+            pair.second.copy(sets = slot.sets, rest = slot.restSeconds)
+        }
     }
 
     /**
@@ -535,6 +547,7 @@ class WorkoutRecommendationServiceV2(
     companion object {
         /** "헬스장 전부" 를 뜻하는 장비 토큰 — 이게 있으면 장비 필터를 걸지 않는다 */
         private val FULL_GYM_TOKENS = setOf("GYM", "FULL_GYM", "ALL", "FULL", "COMMERCIAL_GYM", "EVERYTHING")
+        private const val MIN_SESSION_EXERCISES = 3
 
         private val knownRecommendationEquipmentTokens = listOf(
             "resistance_band",
@@ -573,6 +586,7 @@ class WorkoutRecommendationServiceV2(
         profile: UserProfile?,
         exercises: List<Exercise>,
         minAcceptableCount: Int,
+        targetCount: Int = minAcceptableCount,
     ): List<Exercise> {
         val settings = try { userSettingsRepository.findByUser_Id(user.id).orElse(null) } catch (e: Exception) { null }
 
@@ -595,6 +609,16 @@ class WorkoutRecommendationServiceV2(
         val available = normalizeEquipmentTokens(
             settings?.availableEquipment?.takeIf { it.isNotEmpty() } ?: profile?.availableEquipment.orEmpty()
         )
+
+        // 2-a. 실제로 할 수 있는가 — 철봉이 필요한 맨몸 동작(홈트), 초보·고령·미성년에게 맨몸 풀업·평행봉 딥스·점프
+        val level = profile?.experienceLevel
+        val age = profile?.age
+        fun suitable(ex: Exercise) = ExerciseSuitability.suitable(ex, available, level, age)
+        val feasible = result.filter(::suitable)
+        if (feasible.size < result.size) {
+            logger.info("Safety filter(suitability): ${result.size} -> ${feasible.size} (level=$level, age=$age, available=$available) for user ${user.id}")
+            result = feasible
+        }
         if (available.isNotEmpty() && available.none { it in FULL_GYM_TOKENS }) {
             val byEquipment = result.filter { allowedByEquipment(it, available) }
             if (byEquipment.size < result.size) {
@@ -607,7 +631,13 @@ class WorkoutRecommendationServiceV2(
                         .filter { it.recoveryPercentage < RecommendationConstants.RECOVERY_THRESHOLD_PERCENT }
                         .flatMap { WorkoutTargetResolver.muscleGroupsFor(it.muscleGroup) }.toSet()
                 } catch (e: Exception) { emptySet() }
-                val topped = topUpByEquipment(byEquipment, removed, available, injuries, result.size, recoveringNow)
+                // 같은 부위 대체로도 모자라면, 장비 필터를 풀기 전에 다른 부위의 할 수 있는 운동으로 먼저 채운다
+                // (골든셋 2026-09-25: 맨몸 사용자에게 바벨 스쿼트·벤치가 "완화"로 나갔다)
+                val topped = topUpByEquipment(byEquipment, removed, available, injuries, result.size, recoveringNow, ::suitable)
+                    .let { kept ->
+                        if (kept.size >= minAcceptableCount) kept
+                        else fillWithSafeExercises(kept, result.map { it.category }.distinct(), minAcceptableCount, available, injuries, recoveringNow, ::suitable)
+                    }
                 if (topped.size >= minAcceptableCount) {
                     logger.info("Safety filter(equipment): ${result.size} -> ${byEquipment.size} + topped up to ${topped.size} (available=$available) for user ${user.id}")
                     result = topped
@@ -638,7 +668,49 @@ class WorkoutRecommendationServiceV2(
             }
         }
 
+        // 4. 부상·장비로 줄어 목표 개수(최소 3)에 못 미치면 안전한 다른 종목으로 채운다.
+        //    골든셋 2026-09-25: 무릎 부상 + 밴드만 있는 72세 사용자에게 전신 추천이 2종목만 나갔고,
+        //    맨몸 사용자 45~60분 요청에 3~4종목만 나가 시간의 70% 도 못 채웠다.
+        val floor = maxOf(MIN_SESSION_EXERCISES, minAcceptableCount, targetCount)
+        if (result.size < floor) {
+            val filled = fillWithSafeExercises(result, exercises.map { it.category }.distinct(), floor, available, injuries, recovering, ::suitable)
+            if (filled.size > result.size) {
+                logger.info("Safety filter(fill): ${result.size} -> ${filled.size} for user ${user.id}")
+                result = filled
+            }
+        }
+
         return result
+    }
+
+    /** 원래 부위 → 코어·상체 순으로, 보유 장비·부상·회복 조건을 지키는 plan-eligible 종목을 인기순으로 채운다. */
+    private fun fillWithSafeExercises(
+        kept: List<Exercise>,
+        preferred: List<ExerciseCategory>,
+        target: Int,
+        available: Set<String>,
+        injuries: Set<String>,
+        recovering: Set<MuscleGroup>,
+        suitable: (Exercise) -> Boolean = { true },
+    ): List<Exercise> {
+        val repo = exerciseRepository ?: return kept
+        val out = kept.toMutableList()
+        val usedIds = out.map { it.id }.toMutableSet()
+        val usedNames = out.map { it.name.trim().lowercase() }.toMutableSet()
+        val anyEquipment = available.isEmpty() || available.any { it in FULL_GYM_TOKENS }
+        val order = (preferred + listOf(ExerciseCategory.CORE, ExerciseCategory.BACK, ExerciseCategory.CHEST,
+            ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS, ExerciseCategory.LEGS)).distinct()
+        for (category in order) {
+            if (out.size >= target) break
+            val candidates = try { repo.findPlanEligibleByCategoryOrderByPopularity(category) } catch (e: Exception) { emptyList() }
+            candidates.firstOrNull { c ->
+                c.id !in usedIds && c.name.trim().lowercase() !in usedNames &&
+                    (anyEquipment || allowedByEquipment(c, available)) && suitable(c) &&
+                    c.muscleGroups.none { it in recovering } &&
+                    (injuries.isEmpty() || injuryFilterService.filterExercises(listOf(c), injuries).isNotEmpty())
+            }?.let { out += it; usedIds += it.id; usedNames += it.name.trim().lowercase() }
+        }
+        return out
     }
 
     private fun normalizeEquipmentTokens(raw: Collection<String>): Set<String> = raw
@@ -666,6 +738,7 @@ class WorkoutRecommendationServiceV2(
         injuries: Set<String>,
         target: Int,
         recovering: Set<MuscleGroup> = emptySet(),
+        suitable: (Exercise) -> Boolean = { true },
     ): List<Exercise> {
         val repo = exerciseRepository ?: return kept
         val out = kept.toMutableList()
@@ -676,7 +749,7 @@ class WorkoutRecommendationServiceV2(
             val candidates = try { repo.findPlanEligibleByCategoryOrderByPopularity(gone.category) } catch (e: Exception) { emptyList() }
             val pick = candidates.firstOrNull { c ->
                 c.id !in usedIds && c.name.trim().lowercase() !in usedNames &&
-                    allowedByEquipment(c, available) &&
+                    allowedByEquipment(c, available) && suitable(c) &&
                     c.muscleGroups.none { it in recovering } &&
                     (injuries.isEmpty() || injuryFilterService.filterExercises(listOf(c), injuries).isNotEmpty())
             } ?: continue

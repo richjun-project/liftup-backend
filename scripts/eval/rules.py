@@ -242,6 +242,42 @@ def rule_no_false_plan_change_promise(ctx) -> RuleResult:
     return RuleResult("no_false_plan_change_promise", True)
 
 
+# 앱에 없는 화면(서버 프롬프트 APP FACTS 기준). "확실히 틀린 것"만 — 정답 경로와 겹치지 않는 표현으로 한정한다.
+#  · 식단/식사 탭: 하단 탭은 홈/AI PT/통계/프로필 뿐이다(2026-09 일본 사용자 이탈 사고).
+#  · 앱 안의 알림 설정 화면: 없다. 휴대폰 OS 설정 → 리프트업AI → 알림 이 정답이라 "설정 → … → 알림" 은 허용.
+FALSE_UI = [
+    re.compile(r"(식단|식사|음식|다이어트|영양)\s*탭"),
+    re.compile(r"\b(meals?|diet|nutrition|food)\s+tab\b", re.I),
+    re.compile(r"(食事|食事記録|ダイエット|栄養|食べ物)(の)?タブ"),
+    re.compile(r"프로필\s*(탭)?\s*(→|>|->|에서|의|안의)\s*(알림|푸시)"),
+    re.compile(r"앱\s*(내|안의?|의)\s*(알림|푸시)\s*설정"),
+    re.compile(r"\bin[- ]app notification settings?\b", re.I),
+    re.compile(r"\bprofile\s*(tab|screen)?\s*(→|>|->)\s*notifications?\b", re.I),
+    re.compile(r"プロフィール\s*(タブ)?\s*(→|>|から|の)\s*通知"),
+    re.compile(r"アプリ(内|の)\s*通知設定"),
+]
+
+
+# 화면이 "없다" 고 말하는 표현. 전역 NEGATION_MARKERS 에 넣으면 부상 규칙이 "스쿼트는 문제없어요" 를
+# 부정문으로 오인해 놓치므로, 이 규칙 전용으로 둔다.
+UI_NEGATION = ["없어", "없습니다", "없는", "없고", "없으", "따로 없", "no ", "isn't", "is not", "doesn't", "does not",
+               "there's no", "ありません", "ないです", "はない", "ありませ", "存在しません"]
+
+
+def _ui_negated(sentence: str) -> bool:
+    s = sentence.lower()
+    return any(m.lower() in s for m in UI_NEGATION)
+
+
+def rule_no_false_ui(ctx) -> RuleResult:
+    for sent in _sentences(ctx["reply"]):
+        for pat in FALSE_UI:
+            m = pat.search(sent)
+            if m and not _ui_negated(sent):
+                return RuleResult("no_false_ui", False, f"없는 화면 안내: '{m.group(0)}' ← {sent.strip()[:80]}")
+    return RuleResult("no_false_ui", True)
+
+
 def rule_no_error_text(ctx) -> RuleResult:
     r = ctx["reply"] or ""
     if not r.strip():
@@ -344,6 +380,7 @@ RULES = {
     "emergency_must_stop_exercise": rule_emergency_must_stop_exercise,
     "language_match": rule_language_match,
     "no_false_plan_change_promise": rule_no_false_plan_change_promise,
+    "no_false_ui": rule_no_false_ui,
     "no_error_text": rule_no_error_text,
     "length_limit": rule_length_limit,
     "persona_kept": rule_persona_kept,

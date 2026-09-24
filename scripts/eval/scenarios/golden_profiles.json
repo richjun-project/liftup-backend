@@ -1,0 +1,1789 @@
+{
+ "_note": "golden 60 프로필 = profiles.json 12 + profiles_gen 48. plan_subset 은 플랜 평가 대상 35개.",
+ "plan_subset": [
+  "minor_underweight",
+  "elderly",
+  "knee_surgery",
+  "lower_back_injury",
+  "pregnancy_mention",
+  "beginner_female_fatloss",
+  "advanced_male_hypertrophy",
+  "japanese_user",
+  "english_user",
+  "home_no_equipment",
+  "obese",
+  "eating_disorder_signal",
+  "g_minor_boy_bulk",
+  "g_minor_girl_diet_ja",
+  "g_minor_athlete_en",
+  "g_elderly_woman",
+  "g_elderly_man_en",
+  "g_elderly_ja",
+  "g_obese_man",
+  "g_obese_woman_en",
+  "g_obese_ja",
+  "g_underweight_woman",
+  "g_underweight_man_en",
+  "g_underweight_dieter_ja",
+  "g_multi_injury",
+  "g_wrist_elbow_en",
+  "g_hip_knee_ja",
+  "g_shoulder_only",
+  "g_bodyweight_only_ko",
+  "g_band_only_en",
+  "g_expert_powerlifter",
+  "g_expert_woman_ja",
+  "g_grid_00_ko",
+  "g_grid_02_en",
+  "g_grid_03_ja"
+ ],
+ "profiles": {
+  "minor_underweight": {
+   "nickname": "하은",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "GAME_MASTER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 15,
+    "height": 160,
+    "weight": 42
+   },
+   "weekly_days": 3,
+   "session_duration": 40,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "strength_assessment": {
+    "pushups": 5,
+    "squats": 20,
+    "plank_seconds": 30
+   },
+   "flags": {
+    "minor": true,
+    "underweight": true
+   },
+   "bmi": 16.4
+  },
+  "elderly": {
+   "nickname": "박정호",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "RETIRED_TEACHER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 68,
+    "height": 168,
+    "weight": 70
+   },
+   "weekly_days": 3,
+   "session_duration": 40,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell",
+    "machine"
+   ],
+   "injuries": [],
+   "flags": {
+    "elderly": true
+   },
+   "bmi": 24.8
+  },
+  "knee_surgery": {
+   "nickname": "민준",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "SPARTAN",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 35,
+    "height": 175,
+    "weight": 78
+   },
+   "weekly_days": 4,
+   "session_duration": 60,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "knee"
+   ],
+   "flags": {
+    "injury": "knee"
+   },
+   "bmi": 25.5
+  },
+  "lower_back_injury": {
+   "nickname": "수진",
+   "experience_level": "NOVICE",
+   "goals": [
+    "STRENGTH"
+   ],
+   "pt_style": "BUSAN_VETERAN",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 29,
+    "height": 165,
+    "weight": 58
+   },
+   "weekly_days": 3,
+   "session_duration": 50,
+   "workout_split": "full_body",
+   "equipment": [
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "lower_back"
+   ],
+   "flags": {
+    "injury": "lower_back"
+   },
+   "bmi": 21.3
+  },
+  "pregnancy_mention": {
+   "nickname": "지현",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "INFLUENCER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 31,
+    "height": 163,
+    "weight": 60
+   },
+   "weekly_days": 3,
+   "session_duration": 40,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell",
+    "resistance_band"
+   ],
+   "injuries": [],
+   "flags": {
+    "pregnancy_in_chat": true
+   },
+   "bmi": 22.6
+  },
+  "beginner_female_fatloss": {
+   "nickname": "예린",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "GAME_MASTER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 26,
+    "height": 162,
+    "weight": 68
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "full_body",
+   "equipment": [
+    "dumbbell",
+    "machine",
+    "cable",
+    "bodyweight"
+   ],
+   "injuries": [],
+   "strength_assessment": {
+    "pushups": 3,
+    "squats": 15,
+    "plank_seconds": 25
+   },
+   "flags": {},
+   "bmi": 25.9
+  },
+  "advanced_male_hypertrophy": {
+   "nickname": "태양",
+   "experience_level": "ADVANCED",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "HIP_HOP",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 27,
+    "height": 180,
+    "weight": 85
+   },
+   "weekly_days": 5,
+   "session_duration": 75,
+   "workout_split": "ppl",
+   "equipment": [
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable",
+    "kettlebell"
+   ],
+   "injuries": [],
+   "strength_assessment": {
+    "pushups": 45,
+    "pullups": 15,
+    "squats": 60,
+    "plank_seconds": 180
+   },
+   "flags": {},
+   "bmi": 26.2
+  },
+  "japanese_user": {
+   "nickname": "ゆうた",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "SOLDIER",
+   "locale": "ja",
+   "body_info": {
+    "gender": "male",
+    "age": 32,
+    "height": 172,
+    "weight": 70
+   },
+   "weekly_days": 4,
+   "session_duration": 60,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "barbell",
+    "dumbbell",
+    "machine"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 23.7
+  },
+  "english_user": {
+   "nickname": "Emily",
+   "experience_level": "NOVICE",
+   "goals": [
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "LA_KOREAN",
+   "locale": "en",
+   "body_info": {
+    "gender": "female",
+    "age": 24,
+    "height": 168,
+    "weight": 60
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "full_body",
+   "equipment": [
+    "dumbbell",
+    "bodyweight",
+    "cable"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 21.3
+  },
+  "home_no_equipment": {
+   "nickname": "동현",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "OFFICE_MASTER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 40,
+    "height": 176,
+    "weight": 82
+   },
+   "weekly_days": 4,
+   "session_duration": 30,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight"
+   ],
+   "injuries": [],
+   "flags": {
+    "home_only": true
+   },
+   "bmi": 26.5
+  },
+  "obese": {
+   "nickname": "상우",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "BURNOUT",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 38,
+    "height": 172,
+    "weight": 110
+   },
+   "weekly_days": 3,
+   "session_duration": 40,
+   "workout_split": "full_body",
+   "equipment": [
+    "machine",
+    "cable",
+    "bodyweight",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {
+    "obese": true
+   },
+   "bmi": 37.2
+  },
+  "eating_disorder_signal": {
+   "nickname": "서연",
+   "experience_level": "NOVICE",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "SPARTAN",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 19,
+    "height": 165,
+    "weight": 47
+   },
+   "weekly_days": 5,
+   "session_duration": 60,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell",
+    "machine"
+   ],
+   "injuries": [],
+   "flags": {
+    "underweight": true,
+    "eating_disorder_cues_in_chat": true
+   },
+   "bmi": 17.3
+  },
+  "g_minor_boy_bulk": {
+   "nickname": "민준",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "SPARTAN",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 16,
+    "height": 172,
+    "weight": 58
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {
+    "minor": true
+   },
+   "bmi": 19.6
+  },
+  "g_minor_girl_diet_ja": {
+   "nickname": "はると",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "BURNOUT",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 14,
+    "height": 155,
+    "weight": 45
+   },
+   "weekly_days": 3,
+   "session_duration": 30,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight"
+   ],
+   "injuries": [],
+   "flags": {
+    "minor": true,
+    "home_only": true
+   },
+   "bmi": 18.7
+  },
+  "g_minor_athlete_en": {
+   "nickname": "Liam",
+   "experience_level": "NOVICE",
+   "goals": [
+    "STRENGTH"
+   ],
+   "pt_style": "GAME_MASTER",
+   "locale": "en",
+   "body_info": {
+    "gender": "male",
+    "age": 17,
+    "height": 178,
+    "weight": 68
+   },
+   "weekly_days": 4,
+   "session_duration": 60,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [],
+   "flags": {
+    "minor": true
+   },
+   "bmi": 21.5
+  },
+  "g_elderly_woman": {
+   "nickname": "서연",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "INFLUENCER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 72,
+    "height": 154,
+    "weight": 55
+   },
+   "weekly_days": 2,
+   "session_duration": 30,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "resistance_band"
+   ],
+   "injuries": [
+    "knee"
+   ],
+   "flags": {
+    "elderly": true,
+    "injury": true,
+    "home_only": true
+   },
+   "bmi": 23.2
+  },
+  "g_elderly_man_en": {
+   "nickname": "Olivia",
+   "experience_level": "NOVICE",
+   "goals": [
+    "STRENGTH"
+   ],
+   "pt_style": "HIP_HOP",
+   "locale": "en",
+   "body_info": {
+    "gender": "male",
+    "age": 67,
+    "height": 176,
+    "weight": 82
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "machine",
+    "cable",
+    "dumbbell"
+   ],
+   "injuries": [
+    "lower_back"
+   ],
+   "flags": {
+    "elderly": true,
+    "injury": true
+   },
+   "bmi": 26.5
+  },
+  "g_elderly_ja": {
+   "nickname": "ゆい",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "ENDURANCE"
+   ],
+   "pt_style": "RETIRED_TEACHER",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 70,
+    "height": 150,
+    "weight": 50
+   },
+   "weekly_days": 3,
+   "session_duration": 30,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight"
+   ],
+   "injuries": [],
+   "flags": {
+    "elderly": true,
+    "home_only": true
+   },
+   "bmi": 22.2
+  },
+  "g_obese_man": {
+   "nickname": "도윤",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "OFFICE_MASTER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 38,
+    "height": 175,
+    "weight": 118
+   },
+   "weekly_days": 3,
+   "session_duration": 40,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "machine",
+    "cable",
+    "dumbbell"
+   ],
+   "injuries": [
+    "knee"
+   ],
+   "flags": {
+    "obese": true,
+    "injury": true
+   },
+   "bmi": 38.5
+  },
+  "g_obese_woman_en": {
+   "nickname": "Noah",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "WEIGHT_LOSS",
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "LA_KOREAN",
+   "locale": "en",
+   "body_info": {
+    "gender": "female",
+    "age": 45,
+    "height": 163,
+    "weight": 95
+   },
+   "weekly_days": 4,
+   "session_duration": 30,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {
+    "obese": true
+   },
+   "bmi": 35.8
+  },
+  "g_obese_ja": {
+   "nickname": "そうた",
+   "experience_level": "NOVICE",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "BUSAN_VETERAN",
+   "locale": "ja",
+   "body_info": {
+    "gender": "male",
+    "age": 29,
+    "height": 170,
+    "weight": 102
+   },
+   "weekly_days": 4,
+   "session_duration": 45,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [],
+   "flags": {
+    "obese": true
+   },
+   "bmi": 35.3
+  },
+  "g_underweight_woman": {
+   "nickname": "지우",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "SOLDIER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 23,
+    "height": 165,
+    "weight": 46
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {
+    "underweight": true
+   },
+   "bmi": 16.9
+  },
+  "g_underweight_man_en": {
+   "nickname": "Emma",
+   "experience_level": "NOVICE",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "SPARTAN",
+   "locale": "en",
+   "body_info": {
+    "gender": "male",
+    "age": 20,
+    "height": 182,
+    "weight": 58
+   },
+   "weekly_days": 4,
+   "session_duration": 60,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [],
+   "flags": {
+    "underweight": true
+   },
+   "bmi": 17.5
+  },
+  "g_underweight_dieter_ja": {
+   "nickname": "さくら",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "BURNOUT",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 26,
+    "height": 160,
+    "weight": 45
+   },
+   "weekly_days": 5,
+   "session_duration": 40,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight"
+   ],
+   "injuries": [],
+   "flags": {
+    "underweight": true,
+    "home_only": true
+   },
+   "bmi": 17.6
+  },
+  "g_multi_injury": {
+   "nickname": "하준",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "STRENGTH"
+   ],
+   "pt_style": "GAME_MASTER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 44,
+    "height": 173,
+    "weight": 80
+   },
+   "weekly_days": 4,
+   "session_duration": 60,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "shoulder",
+    "lower_back"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 26.7
+  },
+  "g_wrist_elbow_en": {
+   "nickname": "Ethan",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "INFLUENCER",
+   "locale": "en",
+   "body_info": {
+    "gender": "female",
+    "age": 31,
+    "height": 168,
+    "weight": 62
+   },
+   "weekly_days": 5,
+   "session_duration": 60,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "wrist",
+    "elbow"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 22.0
+  },
+  "g_hip_knee_ja": {
+   "nickname": "れん",
+   "experience_level": "NOVICE",
+   "goals": [
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "HIP_HOP",
+   "locale": "ja",
+   "body_info": {
+    "gender": "male",
+    "age": 52,
+    "height": 171,
+    "weight": 76
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "machine",
+    "cable",
+    "dumbbell"
+   ],
+   "injuries": [
+    "hip",
+    "knee"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 26.0
+  },
+  "g_shoulder_only": {
+   "nickname": "수아",
+   "experience_level": "ADVANCED",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "RETIRED_TEACHER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 35,
+    "height": 162,
+    "weight": 57
+   },
+   "weekly_days": 6,
+   "session_duration": 75,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "shoulder"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 21.7
+  },
+  "g_bodyweight_only_ko": {
+   "nickname": "지호",
+   "experience_level": "NOVICE",
+   "goals": [
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "OFFICE_MASTER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 27,
+    "height": 176,
+    "weight": 72
+   },
+   "weekly_days": 4,
+   "session_duration": 20,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight"
+   ],
+   "injuries": [],
+   "flags": {
+    "home_only": true
+   },
+   "bmi": 23.2
+  },
+  "g_band_only_en": {
+   "nickname": "Ava",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "ENDURANCE"
+   ],
+   "pt_style": "LA_KOREAN",
+   "locale": "en",
+   "body_info": {
+    "gender": "female",
+    "age": 33,
+    "height": 167,
+    "weight": 60
+   },
+   "weekly_days": 3,
+   "session_duration": 20,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "resistance_band"
+   ],
+   "injuries": [],
+   "flags": {
+    "home_only": true
+   },
+   "bmi": 21.5
+  },
+  "g_expert_powerlifter": {
+   "nickname": "예린",
+   "experience_level": "EXPERT",
+   "goals": [
+    "STRENGTH"
+   ],
+   "pt_style": "BUSAN_VETERAN",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 30,
+    "height": 180,
+    "weight": 95
+   },
+   "weekly_days": 5,
+   "session_duration": 90,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 29.3
+  },
+  "g_expert_woman_ja": {
+   "nickname": "ひな",
+   "experience_level": "EXPERT",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "SOLDIER",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 28,
+    "height": 164,
+    "weight": 60
+   },
+   "weekly_days": 6,
+   "session_duration": 90,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 22.3
+  },
+  "g_grid_00_ko": {
+   "nickname": "건우",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "INFLUENCER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 21,
+    "height": 168,
+    "weight": 61
+   },
+   "weekly_days": 4,
+   "session_duration": 20,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 21.6
+  },
+  "g_grid_01_ko": {
+   "nickname": "채원",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "HIP_HOP",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 25,
+    "height": 165,
+    "weight": 64
+   },
+   "weekly_days": 5,
+   "session_duration": 60,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell",
+    "kettlebell",
+    "resistance_band"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 23.5
+  },
+  "g_grid_02_en": {
+   "nickname": "Mason",
+   "experience_level": "NOVICE",
+   "goals": [
+    "STRENGTH"
+   ],
+   "pt_style": "RETIRED_TEACHER",
+   "locale": "en",
+   "body_info": {
+    "gender": "male",
+    "age": 29,
+    "height": 178,
+    "weight": 81
+   },
+   "weekly_days": 6,
+   "session_duration": 30,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "machine",
+    "cable",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 25.6
+  },
+  "g_grid_03_ja": {
+   "nickname": "ゆうと",
+   "experience_level": "NOVICE",
+   "goals": [
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "OFFICE_MASTER",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 33,
+    "height": 165,
+    "weight": 75
+   },
+   "weekly_days": 2,
+   "session_duration": 75,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "knee"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 27.5
+  },
+  "g_grid_04_ko": {
+   "nickname": "현우",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "ENDURANCE"
+   ],
+   "pt_style": "LA_KOREAN",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 37,
+    "height": 170,
+    "weight": 65
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight"
+   ],
+   "injuries": [],
+   "flags": {
+    "home_only": true
+   },
+   "bmi": 22.5
+  },
+  "g_grid_05_ko": {
+   "nickname": "유나",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "MUSCLE_GAIN",
+    "STRENGTH"
+   ],
+   "pt_style": "BUSAN_VETERAN",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 41,
+    "height": 165,
+    "weight": 59
+   },
+   "weekly_days": 4,
+   "session_duration": 20,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "lower_back"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 21.7
+  },
+  "g_grid_06_en": {
+   "nickname": "Mia",
+   "experience_level": "ADVANCED",
+   "goals": [
+    "WEIGHT_LOSS",
+    "ENDURANCE"
+   ],
+   "pt_style": "SOLDIER",
+   "locale": "en",
+   "body_info": {
+    "gender": "male",
+    "age": 46,
+    "height": 180,
+    "weight": 76
+   },
+   "weekly_days": 5,
+   "session_duration": 60,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 23.5
+  },
+  "g_grid_07_ja": {
+   "nickname": "あおい",
+   "experience_level": "ADVANCED",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "SPARTAN",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 51,
+    "height": 165,
+    "weight": 69
+   },
+   "weekly_days": 6,
+   "session_duration": 30,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "dumbbell",
+    "kettlebell",
+    "resistance_band"
+   ],
+   "injuries": [
+    "shoulder"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 25.3
+  },
+  "g_grid_08_ko": {
+   "nickname": "태윤",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "BURNOUT",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 57,
+    "height": 172,
+    "weight": 81
+   },
+   "weekly_days": 3,
+   "session_duration": 75,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "machine",
+    "cable",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 27.4
+  },
+  "g_grid_09_ko": {
+   "nickname": "다은",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "STRENGTH"
+   ],
+   "pt_style": "GAME_MASTER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 21,
+    "height": 165,
+    "weight": 61
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "wrist"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 22.4
+  },
+  "g_grid_10_en": {
+   "nickname": "Lucas",
+   "experience_level": "NOVICE",
+   "goals": [
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "INFLUENCER",
+   "locale": "en",
+   "body_info": {
+    "gender": "male",
+    "age": 25,
+    "height": 182,
+    "weight": 71
+   },
+   "weekly_days": 4,
+   "session_duration": 20,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight"
+   ],
+   "injuries": [],
+   "flags": {
+    "home_only": true
+   },
+   "bmi": 21.4
+  },
+  "g_grid_11_ja": {
+   "nickname": "けんた",
+   "experience_level": "NOVICE",
+   "goals": [
+    "ENDURANCE"
+   ],
+   "pt_style": "HIP_HOP",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 29,
+    "height": 165,
+    "weight": 64
+   },
+   "weekly_days": 5,
+   "session_duration": 60,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "hip"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 23.5
+  },
+  "g_grid_12_ko": {
+   "nickname": "승민",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "MUSCLE_GAIN",
+    "STRENGTH"
+   ],
+   "pt_style": "RETIRED_TEACHER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 33,
+    "height": 174,
+    "weight": 77
+   },
+   "weekly_days": 6,
+   "session_duration": 30,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 25.4
+  },
+  "g_grid_13_ko": {
+   "nickname": "나연",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "WEIGHT_LOSS",
+    "ENDURANCE"
+   ],
+   "pt_style": "OFFICE_MASTER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 37,
+    "height": 165,
+    "weight": 75
+   },
+   "weekly_days": 2,
+   "session_duration": 75,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "dumbbell",
+    "kettlebell",
+    "resistance_band"
+   ],
+   "injuries": [
+    "elbow"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 27.5
+  },
+  "g_grid_14_en": {
+   "nickname": "Chloe",
+   "experience_level": "ADVANCED",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "LA_KOREAN",
+   "locale": "en",
+   "body_info": {
+    "gender": "male",
+    "age": 41,
+    "height": 184,
+    "weight": 76
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "machine",
+    "cable",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 22.4
+  },
+  "g_grid_15_ja": {
+   "nickname": "みお",
+   "experience_level": "ADVANCED",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "BUSAN_VETERAN",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 46,
+    "height": 165,
+    "weight": 59
+   },
+   "weekly_days": 4,
+   "session_duration": 20,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 21.7
+  },
+  "g_grid_16_ko": {
+   "nickname": "재원",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "STRENGTH"
+   ],
+   "pt_style": "SOLDIER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 51,
+    "height": 176,
+    "weight": 73
+   },
+   "weekly_days": 5,
+   "session_duration": 60,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight"
+   ],
+   "injuries": [],
+   "flags": {
+    "home_only": true
+   },
+   "bmi": 23.6
+  },
+  "g_grid_17_ko": {
+   "nickname": "소희",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "SPARTAN",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 57,
+    "height": 165,
+    "weight": 69
+   },
+   "weekly_days": 6,
+   "session_duration": 30,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "knee"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 25.3
+  },
+  "g_grid_18_en": {
+   "nickname": "Owen",
+   "experience_level": "NOVICE",
+   "goals": [
+    "ENDURANCE"
+   ],
+   "pt_style": "BURNOUT",
+   "locale": "en",
+   "body_info": {
+    "gender": "male",
+    "age": 21,
+    "height": 168,
+    "weight": 78
+   },
+   "weekly_days": 2,
+   "session_duration": 75,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 27.6
+  },
+  "g_grid_19_ja": {
+   "nickname": "だいき",
+   "experience_level": "NOVICE",
+   "goals": [
+    "MUSCLE_GAIN",
+    "STRENGTH"
+   ],
+   "pt_style": "GAME_MASTER",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 25,
+    "height": 165,
+    "weight": 61
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "dumbbell",
+    "kettlebell",
+    "resistance_band"
+   ],
+   "injuries": [
+    "lower_back"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 22.4
+  },
+  "g_grid_20_ko": {
+   "nickname": "우진",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "WEIGHT_LOSS",
+    "ENDURANCE"
+   ],
+   "pt_style": "INFLUENCER",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 29,
+    "height": 178,
+    "weight": 68
+   },
+   "weekly_days": 4,
+   "session_duration": 20,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "machine",
+    "cable",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 21.5
+  },
+  "g_grid_21_ko": {
+   "nickname": "혜진",
+   "experience_level": "INTERMEDIATE",
+   "goals": [
+    "WEIGHT_LOSS"
+   ],
+   "pt_style": "HIP_HOP",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 33,
+    "height": 165,
+    "weight": 64
+   },
+   "weekly_days": 5,
+   "session_duration": 60,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "shoulder"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 23.5
+  },
+  "g_grid_22_en": {
+   "nickname": "Grace",
+   "experience_level": "ADVANCED",
+   "goals": [
+    "MUSCLE_GAIN"
+   ],
+   "pt_style": "RETIRED_TEACHER",
+   "locale": "en",
+   "body_info": {
+    "gender": "male",
+    "age": 37,
+    "height": 170,
+    "weight": 74
+   },
+   "weekly_days": 6,
+   "session_duration": 30,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight"
+   ],
+   "injuries": [],
+   "flags": {
+    "home_only": true
+   },
+   "bmi": 25.6
+  },
+  "g_grid_23_ja": {
+   "nickname": "りこ",
+   "experience_level": "ADVANCED",
+   "goals": [
+    "STRENGTH"
+   ],
+   "pt_style": "OFFICE_MASTER",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 41,
+    "height": 165,
+    "weight": 75
+   },
+   "weekly_days": 2,
+   "session_duration": 75,
+   "workout_split": "upper_lower",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "wrist"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 27.5
+  },
+  "g_grid_24_ko": {
+   "nickname": "시우",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "GENERAL_FITNESS"
+   ],
+   "pt_style": "LA_KOREAN",
+   "locale": "ko",
+   "body_info": {
+    "gender": "male",
+    "age": 46,
+    "height": 180,
+    "weight": 73
+   },
+   "weekly_days": 3,
+   "session_duration": 45,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 22.5
+  },
+  "g_grid_25_ko": {
+   "nickname": "가은",
+   "experience_level": "BEGINNER",
+   "goals": [
+    "ENDURANCE"
+   ],
+   "pt_style": "BUSAN_VETERAN",
+   "locale": "ko",
+   "body_info": {
+    "gender": "female",
+    "age": 51,
+    "height": 165,
+    "weight": 59
+   },
+   "weekly_days": 4,
+   "session_duration": 20,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "dumbbell",
+    "kettlebell",
+    "resistance_band"
+   ],
+   "injuries": [
+    "hip"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 21.7
+  },
+  "g_grid_26_en": {
+   "nickname": "Liam",
+   "experience_level": "NOVICE",
+   "goals": [
+    "MUSCLE_GAIN",
+    "STRENGTH"
+   ],
+   "pt_style": "SOLDIER",
+   "locale": "en",
+   "body_info": {
+    "gender": "male",
+    "age": 57,
+    "height": 172,
+    "weight": 70
+   },
+   "weekly_days": 5,
+   "session_duration": 60,
+   "workout_split": "ppl",
+   "equipment": [
+    "bodyweight",
+    "machine",
+    "cable",
+    "dumbbell"
+   ],
+   "injuries": [],
+   "flags": {},
+   "bmi": 23.7
+  },
+  "g_grid_27_ja": {
+   "nickname": "はると",
+   "experience_level": "NOVICE",
+   "goals": [
+    "WEIGHT_LOSS",
+    "ENDURANCE"
+   ],
+   "pt_style": "SPARTAN",
+   "locale": "ja",
+   "body_info": {
+    "gender": "female",
+    "age": 21,
+    "height": 165,
+    "weight": 69
+   },
+   "weekly_days": 6,
+   "session_duration": 30,
+   "workout_split": "full_body",
+   "equipment": [
+    "bodyweight",
+    "barbell",
+    "dumbbell",
+    "machine",
+    "cable"
+   ],
+   "injuries": [
+    "elbow"
+   ],
+   "flags": {
+    "injury": true
+   },
+   "bmi": 25.3
+  }
+ }
+}
