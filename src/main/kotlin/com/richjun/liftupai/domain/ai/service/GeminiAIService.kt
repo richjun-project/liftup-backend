@@ -309,17 +309,17 @@ class GeminiAIService(
 
             ## APP FACTS (the only screens that exist — never invent a tab, button, or feature)
             - Bottom tabs: Home / AI PT (this chat) / Stats / Profile. There is NO "Meals" or "Diet" tab.
-            - Log a meal (saved to the diary): Stats tab → "Today's meals" → "Log with photo" ("사진으로 기록") under breakfast/lunch/dinner/snack; OR the "Meal analysis" ("식단 분석") quick chip in this chat (photo → AI analysis → saved).
+            - Log a meal (saved to the diary): the "Meal analysis" ("식단 분석") quick chip in this chat (photo → AI analysis → saved) — works on the free plan (counts toward the 3 daily AI uses). Pro users can also use Stats tab → "Today's meals" → "Log with photo" ("사진으로 기록").
             - The camera icon at the bottom of this chat only sends a photo for advice. It does NOT save a meal to the diary — for that use one of the two paths above.
             - There is no manual meal form: a meal is recorded from a photo. If the user cannot photograph the food, tell them what they ate can still be discussed here, but it will not appear in the diary.
-            - Muscle recovery map and weekly stats: Stats tab.
+            - Muscle recovery map, weekly stats, workout calendar and the meal diary: Stats tab — the whole Stats tab is Pro-only (free users see it locked).
             - Change the workout plan: Home → gear icon on the plan card → "Workout plan settings" (basic routines / my AI routines / create AI routine).
             - Start today's workout: Home → "Start workout" button. On the workout screen: tap a set to complete it, or press "Complete set" on the "Next set" bar at the bottom (it completes the next set and starts the rest timer). Weights and reps are editable there; "Add exercise" adds one; "Swap" on an exercise card replaces that exercise.
             - After finishing a workout, the completion screen has "Share workout record" (image).
             - Injuries, body info (age/height/weight), goals, AI PT persona: Profile tab → My info / AI PT settings. Language, contact us: Profile tab → Other. Delete account: bottom of the Profile tab.
             - Notifications: there is NO notification settings screen in the app. Permission is asked once during onboarding; after that it is changed in the phone's OS settings (iOS 설정 → 리프트업AI → 알림 / Android 설정 → 앱 → 알림).
             - The app is dark-mode only (no theme setting). There is NO Apple Watch, Apple Health, Google Fit or wearable integration.
-            - Free plan: AI chat (including meal analysis in chat) 3 times a day, 4 basic trainers, workout logging, meal photo logging. Pro: unlimited AI chat, AI routine creation, all 10 trainers, muscle recovery and advanced stats.
+            - Free plan: AI chat (including meal analysis in chat) 3 times a day, 4 basic trainers, workout plans and logging. Pro: unlimited AI chat, AI routine creation, all 10 trainers, and the Stats tab (recovery map, stats, calendar, meal diary).
             - Subscribe / see prices: Profile tab → subscription card (opens the Pro screen). Never state a price — prices are shown on that screen. Eligible first-time subscribers may see a free trial there; do not promise a trial to everyone.
             - Restore a purchase (new phone): "Restore purchases" on the Pro screen with the same App Store / Google Play account. Cancelling or refunds are handled by the store (iPhone Settings → Apple ID → Subscriptions / Google Play → Payments & subscriptions); the app cannot cancel or refund.
             - If the user cannot find something, tell them the exact path above. Never blame their app version or say "maybe your plan is limited".

@@ -46,9 +46,9 @@ class AppCapabilityPromptTest {
         // 앱 하단 탭은 홈/AI PT/통계/프로필 4개뿐이다(home_screen.dart IndexedStack).
         assertThat(p).contains("Bottom tabs: Home / AI PT (this chat) / Stats / Profile")
         assertThat(p).contains("There is NO \"Meals\" or \"Diet\" tab")
-        // 실제로 저장까지 되는 경로 두 가지: 통계 탭 CTA, 채팅의 "식단 분석" 칩.
-        assertThat(p).contains("Log a meal (saved to the diary): Stats tab")
-        assertThat(p).contains("\"Meal analysis\" (\"식단 분석\") quick chip")
+        // 실제로 저장까지 되는 경로: 채팅의 "식단 분석" 칩(무료), 통계 탭 CTA(통계 탭 전체가 Pro).
+        assertThat(p).contains("Log a meal (saved to the diary): the \"Meal analysis\" (\"식단 분석\") quick chip")
+        assertThat(p).contains("Pro users can also use Stats tab")
     }
 
     @Test
@@ -68,6 +68,8 @@ class AppCapabilityPromptTest {
         val p = prompt("ko")
         assertThat(p).contains("Never blame their app version")
         assertThat(p).contains("Free plan: AI chat (including meal analysis in chat) 3 times a day")
+        // 통계 탭은 전체 Pro — 무료 사용자에게 "통계 탭에서 식단 기록"을 안내하면 누를 수 없는 곳으로 보내는 셈이다
+        assertThat(p).contains("the whole Stats tab is Pro-only")
     }
 
     @Test
