@@ -204,6 +204,16 @@ class ChatSafetyServiceTest {
         }
 
         @Test
+        @DisplayName("'살찔까봐 무서워서 밥을 못 먹겠어요' 는 정상 체중 성인이어도 섭식장애 신호다 — 숫자를 주지 않는다")
+        fun fearOfEatingIsACue() {
+            for ((msg, loc) in listOf("살찔까봐 무서워서 밥을 못 먹겠어요" to "ko", "I'm scared to eat because I might gain weight" to "en", "太るのが怖くて食べられません" to "ja")) {
+                val r = svc.assess(profile(age = 28, weight = 62.0, height = 165.0), emptyList(), msg, emptyList(), loc)
+                assertThat(r.eatingDisorderCues).`as`(msg).isTrue()
+                assertThat(r.noIntakeNumbers).isTrue()
+            }
+        }
+
+        @Test
         @DisplayName("활동 소모 칼로리 정보와 숫자 없는 식사 안내는 통과, 일반 성인에게는 숫자 허용")
         fun burnInfoAndAdultsAllowed() {
             assertThat(svc.validate("42kg 기준으로 1시간에 약 336kcal 소모돼요. 밥은 세 끼 잘 챙겨 먹어요.", teen)).isEmpty()

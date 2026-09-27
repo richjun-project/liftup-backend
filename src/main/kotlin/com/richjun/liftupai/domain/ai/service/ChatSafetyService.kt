@@ -392,8 +392,11 @@ class ChatSafetyService {
         )
         private val EATING_DISORDER_KEYWORDS = listOf(
             "굶", "안 먹", "안먹", "토했", "토해", "구토", "먹토", "폭식", "절식", "단식", "물만 먹", "하루 한 끼", "살찌는 게 무서",
+            // 먹는 것에 대한 두려움 — "살찔까봐 무서워서 밥을 못 먹겠어요" 에 감량 칼로리를 준 사고(골든셋 2026-09-27, 심판 2.0)
+            "살찔까봐", "살찔까 봐", "먹는 게 무서", "먹는게 무서", "먹기가 무서", "밥을 못 먹", "밥을 못먹", "먹으면 죄책감", "먹고 나서 죄책감",
             "starv", "purge", "purging", "vomit", "throw up", "binge", "fasting for days", "not eating", "skip all meals", "afraid of gaining",
-            "断食", "絶食", "吐い", "吐く", "過食", "食べない", "食べてない", "太るのが怖",
+            "afraid to eat", "scared to eat", "scared of gaining", "can't eat because", "guilty after eating",
+            "断食", "絶食", "吐い", "吐く", "過食", "食べない", "食べてない", "太るのが怖", "食べるのが怖", "太りそうで怖", "食べると罪悪感",
         )
         private val PREGNANCY_KEYWORDS = listOf("임신", "임산부", "출산", "pregnan", "postpartum", "trimester", "妊娠", "妊婦", "産後")
         private val MEDICATION_KEYWORDS = listOf(
