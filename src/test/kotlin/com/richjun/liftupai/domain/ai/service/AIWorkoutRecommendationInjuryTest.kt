@@ -210,4 +210,20 @@ class AIWorkoutRecommendationInjuryTest {
         assertTrue(exercises.size >= 3)
         assertEquals((1..exercises.size).toList(), exercises.map { it.order })
     }
+
+    @Test
+    @DisplayName("AI 가 목표보다 적게 고르면(코어 위주) 코어가 아닌, 덜 쓴 부위의 안전 후보로 채운다")
+    fun topsUpShortAIPicksWithNonCoreExercises() {
+        val plank = ex(30, "plank", "PLANK", ExerciseCategory.CORE, Equipment.BODYWEIGHT, MuscleGroup.CORE)
+        val crunch = ex(31, "crunch", "CRUNCH", ExerciseCategory.CORE, Equipment.BODYWEIGHT, MuscleGroup.ABS)
+        val chosen = mapOf(bench.id to bench, plank.id to plank)
+        val pool = listOf(crunch, bench, row, squat)
+        val picks = service.topUpPicks(chosen, pool, target = 4, availableEquipment = emptySet(), suitable = { true })
+        assertEquals(listOf(row, squat).map { it.id }.toSet(), picks.map { it.id }.toSet())
+        assertTrue(picks.none { it.category == ExerciseCategory.CORE })
+        // 이미 충분하면 채우지 않는다
+        assertTrue(service.topUpPicks(chosen, pool, target = 2, availableEquipment = emptySet(), suitable = { true }).isEmpty())
+        // 보유 장비 밖 후보는 쓰지 않는다
+        assertTrue(service.topUpPicks(chosen, listOf(row, squat), target = 4, availableEquipment = setOf("dumbbell"), suitable = { true }).isEmpty())
+    }
 }

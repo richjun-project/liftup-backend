@@ -38,6 +38,9 @@ import com.richjun.liftupai.global.time.AppTime
 import java.time.LocalDateTime
 import java.util.UUID
 
+/** AI 에게 줄 후보가 이보다 적으면 기준을 한 단계 낮춘다 */
+private const val MIN_AI_CANDIDATES = 8
+
 @Service
 @Transactional
 class AIAnalysisService(
@@ -376,8 +379,22 @@ class AIAnalysisService(
         }
         // 실제로 할 수 있는 운동만 — 홈트 사용자의 철봉 동작, 초보·고령·미성년의 맨몸 풀업·평행봉 딥스·점프
         val suitable = { ex: Exercise -> ExerciseSuitability.suitable(ex, availableEquipment, profile?.experienceLevel, profile?.age) }
-        val candidateExercises = applyExerciseOverrides(user, injuryFilteredCandidates, userInjuries)
+        // 벡터 후보만으로는 추천 가능(plan-eligible) 종목이 모자랄 때가 많다 — 카탈로그 698개가 같은 등급·인기도(STANDARD 55)라
+        // 동점이 이름순으로 갈려 "alternate-…" 류 특수 동작이 앞에 몰렸다(골든셋 2026-09-28). 목표 부위의 추천 가능 종목을 인기순으로 보탠다.
+        val normalizedEquipment = normalizeAvailableEquipment(availableEquipment)
+        val planEligibleExtra = categoriesForTarget(adjustedTargetMuscle)
+            .flatMap { cat -> try { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(cat).take(12) } catch (e: Exception) { emptyList() } }
+            .let { if (userInjuries.isEmpty()) it else injuryFilterService.filterExercises(it, userInjuries) }
+            .filter { equipmentUsable(it, normalizedEquipment) }
+        val candidateExercises = applyExerciseOverrides(user, (injuryFilteredCandidates + planEligibleExtra).distinctBy { it.id }, userInjuries)
             .let { list -> list.filter(suitable).ifEmpty { list } }
+            // 벡터 후보에는 "햄스트링 컬 펀치", "사이드 킥 스쿼트" 같은 특수·킥복싱 동작이 섞인다 — 전문 파워리프터의
+            // 첫 종목으로 나갔다(골든셋 2026-09-28). 추천 가능(plan-eligible) 종목이 충분하면 그것만, 아니면 SPECIALIZED 만 뺀다.
+            .let { list ->
+                list.filter { it.isPlanEligible }.takeIf { it.size >= MIN_AI_CANDIDATES }
+                    ?: list.filter { it.recommendationTier != com.richjun.liftupai.domain.workout.entity.RecommendationTier.SPECIALIZED }.takeIf { it.size >= MIN_AI_CANDIDATES }
+                    ?: list
+            }
 
         println("Loaded ${rawCandidates.size} candidates, ${rawCandidates.size - injuryFilteredCandidates.size} filtered by injuries, ${candidateExercises.size} remaining after overrides")
 
@@ -402,7 +419,7 @@ class AIAnalysisService(
         val aiResponse = geminiAIService.generateRecommendations(prompt)
 
         // AI 응답을 WorkoutRecommendationDetail로 파싱
-        val recommendation = parseAIWorkoutResponse(user, aiResponse, duration, equipment, adjustedTargetMuscle, locale, userInjuries, availableEquipment, suitable)
+        val recommendation = parseAIWorkoutResponse(user, aiResponse, duration, equipment, adjustedTargetMuscle, locale, userInjuries, availableEquipment, suitable, candidateExercises)
 
         // 대체 운동 생성
         val alternatives = generateAIAlternatives(duration, equipment, adjustedTargetMuscle, locale)
@@ -959,6 +976,7 @@ class AIAnalysisService(
         injuries: Set<String> = emptySet(),
         availableEquipment: Set<String> = emptySet(),
         suitable: (Exercise) -> Boolean = { true },
+        topUpPool: List<Exercise> = emptyList(),
     ): AIWorkoutDetail {
         return try {
             val cleanedResponse = aiResponse
@@ -984,10 +1002,23 @@ class AIAnalysisService(
             }.filterValues { it != null }.mapValues { it.value!! }
             // AI 가 후보 밖 id 를 골라도 부상 부위 운동은 여기서 최종 차단한다
             val injurySafeById = dropInjuryRestricted(loadedById, injuries)
+                .filterValues { it.recommendationTier != com.richjun.liftupai.domain.workout.entity.RecommendationTier.SPECIALIZED || it.isPlanEligible }
             // 보유 장비로 못 하는 운동도 차단하고, 빠진 만큼 같은 부위의 가능한 운동으로 채운다
             // (2026-09-16 운영: 덤벨만 있는 사용자에게 바벨 벤치·케이블 풀다운·어시스트 풀업이 그대로 나갔다)
-            val (exerciseById, replacements) = replaceEquipmentMismatch(injurySafeById, availableEquipment, injuries, recoveringMuscles(user), suitable)
-            val exercisesList = aiExercisesList + replacements.map { mapOf<String, Any>("id" to it.id, "sets" to 3) }
+            val (equipmentSafeById, replacements) = replaceEquipmentMismatch(injurySafeById, availableEquipment, injuries, recoveringMuscles(user), suitable)
+            // AI 가 목표 개수보다 적게(흔히 3종목 중 2개가 코어) 고르면 이미 안전 필터를 통과한 후보에서 코어가 아닌 종목으로 채운다.
+            // 골든셋 2026-09-28: 75분 요청에 3종목(플랭크 2개) → 세트를 5로 늘려도 33분 분량이었다.
+            val target = targetExerciseCount(duration ?: 30)
+            val firstPass = topUpPicks(equipmentSafeById, topUpPool, target, availableEquipment, suitable)
+            // 벡터 후보가 작으면(부상·맨몸 사용자) 추천 가능 종목 전체에서 더 채운다 — 부상 필터 통과분만
+            val topUps = if (equipmentSafeById.size + firstPass.size >= target) firstPass else {
+                val wider = listOf(ExerciseCategory.LEGS, ExerciseCategory.BACK, ExerciseCategory.CHEST, ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS)
+                    .flatMap { cat -> try { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(cat).take(15) } catch (e: Exception) { emptyList() } }
+                    .let { if (injuries.isEmpty()) it else injuryFilterService.filterExercises(it, injuries) }
+                firstPass + topUpPicks(equipmentSafeById + firstPass.associateBy { it.id }, wider, target, availableEquipment, suitable)
+            }
+            val exerciseById = equipmentSafeById + topUps.associateBy { it.id }
+            val exercisesList = aiExercisesList + (replacements + topUps).map { mapOf<String, Any>("id" to it.id, "sets" to 3) }
             val translations = translationMap(exerciseById.values, locale)
             val usedExerciseIds = mutableSetOf<Long>()
             val minRestById = mutableMapOf<String, Int>()
@@ -1040,7 +1071,9 @@ class AIAnalysisService(
 
                 // 하이브리드: AI 값이 PT 허용 범위 내면 AI 값 존중, 범위 밖이면 PT 값으로 보정
                 val finalSets = if (aiSets != null && aiSets in (ptSets - 1)..(ptSets + 1)) aiSets else ptSets
-                val finalReps = mergeReps(aiReps, ptReps)
+                // PT 엔진 반복수에는 목표별 창(근력 4-8·지구력 12-20 등)이 이미 적용돼 있다. AI 값은 ±3 이면 받아 주던 탓에
+                // 근력 목표 보조 종목이 10-12회로 나갔다(골든셋 2026-09-28) — PT 값을 쓴다. AI 값은 PT 값이 없을 때만.
+                val finalReps = if (ptRec != null) ptReps else mergeReps(aiReps, ptReps)
                 val finalRest = if (aiRest != null && aiRest in (ptRest - 30)..(ptRest + 30)) aiRest else ptRest
                 minRestById[matchedExercise.id.toString()] = ptRec?.minRestSeconds ?: minOf(finalRest, 45)
 
@@ -1322,6 +1355,54 @@ class AIAnalysisService(
             )
         }
         return fitToDuration(prescribed, minRestById, duration)
+    }
+
+    /** 추천 목표 부위 → AI 후보를 보탤 카테고리 */
+    internal fun categoriesForTarget(target: String?): List<ExerciseCategory> = when (target?.lowercase()) {
+        "chest", "push" -> listOf(ExerciseCategory.CHEST, ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS)
+        "back", "pull" -> listOf(ExerciseCategory.BACK, ExerciseCategory.ARMS)
+        "legs", "lower" -> listOf(ExerciseCategory.LEGS, ExerciseCategory.CORE)
+        "upper" -> listOf(ExerciseCategory.CHEST, ExerciseCategory.BACK, ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS)
+        "shoulders" -> listOf(ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS)
+        "arms" -> listOf(ExerciseCategory.ARMS, ExerciseCategory.SHOULDERS)
+        "core" -> listOf(ExerciseCategory.CORE)
+        else -> listOf(ExerciseCategory.LEGS, ExerciseCategory.CHEST, ExerciseCategory.BACK, ExerciseCategory.SHOULDERS, ExerciseCategory.CORE)
+    }
+
+    /** 세션 시간별 목표 종목 수 — 기본 추천(WorkoutRecommendationServiceV2)과 같은 표. */
+    internal fun targetExerciseCount(durationMinutes: Int): Int = when {
+        durationMinutes <= 30 -> 4
+        durationMinutes <= 45 -> 5
+        durationMinutes <= 60 -> 6
+        durationMinutes <= 75 -> 7
+        else -> 8
+    }
+
+    /** 이미 고른 종목이 target 보다 적으면 후보 풀에서 코어가 아닌, 아직 안 쓴 카테고리부터 채운다. */
+    internal fun topUpPicks(
+        chosen: Map<Long, Exercise>,
+        pool: List<Exercise>,
+        target: Int,
+        availableEquipment: Set<String>,
+        suitable: (Exercise) -> Boolean,
+    ): List<Exercise> {
+        val need = target - chosen.size
+        if (need <= 0 || pool.isEmpty()) return emptyList()
+        val available = normalizeAvailableEquipment(availableEquipment)
+        val usedNames = chosen.values.map { it.name.trim().lowercase() }.toMutableSet()
+        val usedCategories = chosen.values.map { it.category }.toMutableList()
+        val candidates = pool.filter { c ->
+            c.id !in chosen.keys && c.name.trim().lowercase() !in usedNames && c.category != ExerciseCategory.CORE &&
+                c.category != ExerciseCategory.CARDIO && equipmentUsable(c, available) && suitable(c)
+        }.distinctBy { it.id }
+        val out = mutableListOf<Exercise>()
+        // 덜 쓴 카테고리 우선, 같으면 후보 순서(벡터 유사도순)
+        repeat(need) {
+            val pick = candidates.filter { it !in out }
+                .minByOrNull { c -> usedCategories.count { it == c.category } } ?: return out
+            out += pick; usedCategories += pick.category; usedNames += pick.name.trim().lowercase()
+        }
+        return out
     }
 
     /**

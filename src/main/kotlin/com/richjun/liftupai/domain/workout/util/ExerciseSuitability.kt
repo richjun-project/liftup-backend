@@ -16,6 +16,8 @@ object ExerciseSuitability {
     private val GYM_TOKENS = setOf("BARBELL", "MACHINE", "CABLE", "SMITH_MACHINE", "GYM", "FULL_GYM", "ALL", "FULL", "COMMERCIAL_GYM", "EVERYTHING",
         "OTHER", "BAR", "PULL_UP_BAR", "PULLUP_BAR")
     private val EXPLOSIVE_PATTERNS = setOf("PLYOMETRIC", "CLEAN", "SNATCH", "COMPOUND_COMPLEX")
+    /** 카탈로그 난이도(30~45)가 실제보다 낮게 매겨진 고급 변형 — 72세 초보에게 아처 푸시업이 나갔다(골든셋 2026-09-28) */
+    private val ADVANCED_SLUG_MARKERS = listOf("archer", "planche", "clap", "explosive", "one-arm-push", "single-arm-push", "pistol", "handstand", "muscle-up", "dragon-flag", "l-sit")
 
     /** 철봉·평행봉이 있어야 하는 맨몸 동작. 벤치·의자 딥스와 머신 보조 풀업은 아니다. */
     fun needsBar(ex: Exercise): Boolean {
@@ -46,6 +48,7 @@ object ExerciseSuitability {
         if (!beginner && !isVulnerable(age)) return false
         val pattern = ex.movementPattern?.uppercase().orEmpty()
         if (pattern == "PULLUP_CHINUP" && ex.equipment == Equipment.BODYWEIGHT) return true
+        if (ADVANCED_SLUG_MARKERS.any { ex.slug.contains(it) }) return true
         if (pattern == "DIPS" && needsBar(ex)) return true
         if (isVulnerable(age) && (pattern in EXPLOSIVE_PATTERNS || pattern == "DIPS")) return true
         return ex.difficulty > 55

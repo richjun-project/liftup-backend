@@ -37,6 +37,14 @@ class ExerciseSuitabilityTest {
     }
 
     @Test
+    fun `advanced variants with understated catalog difficulty are kept from beginners and elderly`() {
+        val archer = ex("archer-push-up", "PUSHUP", Equipment.BODYWEIGHT, 45)
+        assertFalse(ExerciseSuitability.suitable(archer, emptyList(), ExperienceLevel.BEGINNER, 72))
+        assertFalse(ExerciseSuitability.suitable(archer, emptyList(), ExperienceLevel.BEGINNER, 30))
+        assertTrue(ExerciseSuitability.suitable(archer, emptyList(), ExperienceLevel.ADVANCED, 30))
+    }
+
+    @Test
     fun `gym user keeps pull-ups when experienced`() {
         assertTrue(ExerciseSuitability.suitable(pullUp, listOf("bodyweight", "barbell", "machine"), ExperienceLevel.INTERMEDIATE, 30))
     }
