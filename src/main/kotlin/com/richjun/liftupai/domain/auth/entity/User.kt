@@ -36,7 +36,8 @@ class User(
     @Column
     var lastLoginAt: LocalDateTime? = null,
 
-    @Column
+    // HS512 JWT + 이메일 클레임 — 긴 이메일이면 255자를 넘는다(V20260927001)
+    @Column(length = 1024)
     var refreshToken: String? = null,
 
     @Column(name = "device_id", unique = true)
