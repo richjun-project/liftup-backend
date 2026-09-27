@@ -37,6 +37,8 @@ class ChatSafetyService {
         val locale: String = "en",
     ) {
         val injuries: Set<String> get() = storedInjuries + mentionedInjuries
+        /** 칼로리·단백질 목표 숫자를 주지 않는 사용자(미성년·저체중·섭식장애 신호). */
+        val noIntakeNumbers: Boolean get() = minor || underweight || eatingDisorderCues
         val hasAnyRisk: Boolean
             get() = minor || senior || underweight || injuries.isNotEmpty() ||
                 redFlagSymptoms || eatingDisorderCues || pregnancy || medicationOrSupplement
@@ -44,6 +46,7 @@ class ChatSafetyService {
 
     enum class Violation {
         DEFICIT_ADVICE_TO_MINOR_OR_UNDERWEIGHT,
+        INTAKE_NUMBER_TO_VULNERABLE_USER,
         RESTRICTED_EXERCISE_FOR_INJURY,
         RED_FLAG_WITHOUT_MEDICAL_REFERRAL,
         LANGUAGE_MISMATCH,
@@ -127,6 +130,8 @@ class ChatSafetyService {
               "cut", or body-fat percentage goal. Do not present any "eat X kcal to lose weight" number.
               Explain that growth needs full nutrition, redirect to strength/skill/enjoyment goals, and suggest involving a parent,
               school nurse, or pediatrician for any weight change. Calories BURNED by activity may be stated as information only.
+              Do not recommend supplements (creatine, protein powder amounts, pre-workout, fat burners) to a minor — food first,
+              and any supplement question goes to a parent and a doctor.
         """.trimIndent()
         if (risk.underweight) rules += """
             - The user is UNDERWEIGHT (BMI ${"%.1f".format(risk.bmi ?: 0.0)}). Do not help them lose weight or restrict calories.
@@ -152,6 +157,11 @@ class ChatSafetyService {
             - The user is ${risk.age} years old. Prioritize joint-friendly loading, balance, gradual progression and longer warm-ups.
               Avoid max-effort or ballistic prescriptions; suggest a doctor's clearance before intense programs.
         """.trimIndent()
+        if (risk.noIntakeNumbers) rules += """
+            - Do NOT state any daily calorie or protein/macro target to this user — not a deficit, not maintenance, not a surplus
+              (numbers fuel weight obsession at this age / BMI / eating pattern). Describe eating in plain food terms instead:
+              regular meals plus snacks, protein at every meal, not skipping meals. You may mention their BMI category.
+        """.trimIndent()
         if (risk.medicationOrSupplement) rules += """
             - The user asks about medication, steroids, or supplements. Never recommend anabolic steroids or prescription drugs.
               For supplements, give general evidence-based information only and defer dosing to a doctor or pharmacist.
@@ -170,6 +180,7 @@ class ChatSafetyService {
         violations.forEach { v ->
             appendLine("- " + when (v) {
                 Violation.DEFICIT_ADVICE_TO_MINOR_OR_UNDERWEIGHT -> "You gave a calorie-restriction / weight-loss intake number to a minor or underweight user. Remove every intake target and explain why weight loss is not appropriate."
+                Violation.INTAKE_NUMBER_TO_VULNERABLE_USER -> "You gave a daily calorie or protein target to a minor / underweight / disordered-eating user. Remove every kcal and gram target and describe eating in plain food terms (regular meals, snacks, protein at each meal)."
                 Violation.RESTRICTED_EXERCISE_FOR_INJURY -> "You suggested an exercise that loads an injured area (${risk.injuries.joinToString(", ")}). Remove it and give a safe alternative."
                 Violation.RED_FLAG_WITHOUT_MEDICAL_REFERRAL -> "The user reported an emergency-type symptom but you did not tell them to stop and seek medical care first."
                 Violation.LANGUAGE_MISMATCH -> "You answered in the wrong language. Respond ONLY in ${AILocalization.responseLanguage(risk.locale)}."
@@ -191,6 +202,7 @@ class ChatSafetyService {
         if (languageMismatch(reply, risk.locale)) out += Violation.LANGUAGE_MISMATCH
         if (FALSE_PROMISE_PATTERNS.any { it.containsMatchIn(reply) }) out += Violation.FALSE_PROMISE_OF_PLAN_CHANGE
         if ((risk.minor || risk.underweight) && containsDeficitIntakeAdvice(reply)) out += Violation.DEFICIT_ADVICE_TO_MINOR_OR_UNDERWEIGHT
+        else if (risk.noIntakeNumbers && containsIntakeTarget(reply)) out += Violation.INTAKE_NUMBER_TO_VULNERABLE_USER
         if (risk.injuries.isNotEmpty() && recommendsRestrictedExercise(reply, risk.injuries)) out += Violation.RESTRICTED_EXERCISE_FOR_INJURY
         if (risk.redFlagSymptoms && !containsAny(lower, MEDICAL_REFERRAL_KEYWORDS)) out += Violation.RED_FLAG_WITHOUT_MEDICAL_REFERRAL
         return out
@@ -208,6 +220,16 @@ class ChatSafetyService {
             risk.minor || risk.underweight -> "safety.fallback.minor_underweight"
             risk.injuries.isNotEmpty() -> "safety.fallback.injury"
             else -> "safety.fallback.generic"
+        }
+        if (key == "safety.fallback.injury") {
+            // "그 부상이 있으면…" 처럼 어느 부위인지 말하지 않으면 사용자는 무엇이 문제인지 모른다(골든셋 2026-09-27, 심판 2.5점)
+            val parts = risk.injuries.toList().sorted()
+            val partNames = parts.joinToString(AILocalization.message("safety.part.join", risk.locale)) { part ->
+                AILocalization.maybeMessage("safety.part.$part", risk.locale) ?: AILocalization.message("safety.part.other", risk.locale)
+            }
+            val alt = parts.singleOrNull()?.let { AILocalization.maybeMessage("safety.alt.$it", risk.locale) }
+                ?: AILocalization.message("safety.alt.generic", risk.locale)
+            return AILocalization.message(key, risk.locale, nickname, partNames, alt)
         }
         val base = AILocalization.message(key, risk.locale, nickname)
         if (key != "safety.fallback.eating" && key != "safety.fallback.minor_underweight") return base
@@ -249,6 +271,21 @@ class ChatSafetyService {
             val floorPhrase = containsAny(lower, FLOOR_KEYWORDS)
             if (floorPhrase && containsAny(lower, NEGATION_KEYWORDS) && !explicitDeficit) return@any false
             containsAny(lower, DEFICIT_KEYWORDS)
+        }
+    }
+
+    /**
+     * 하루 섭취 칼로리·단백질 목표 숫자("하루 1963kcal", "단백질 94g", "2,819 kcal target")가 있는가.
+     * 활동 소모 칼로리("1시간에 336kcal 소모")는 섭취 목표가 아니다.
+     */
+    internal fun containsIntakeTarget(reply: String): Boolean {
+        val sentences = reply.split(Regex("(?<=[.!?。！？\\n])"))
+        return sentences.any { s ->
+            val lower = s.lowercase()
+            val kcal = KCAL_NUMBER.containsMatchIn(lower)
+            val protein = PROTEIN_GRAMS.containsMatchIn(lower)
+            if (!kcal && !protein) return@any false
+            !(containsAny(lower, BURN_KEYWORDS) && !containsAny(lower, INTAKE_KEYWORDS) && !protein)
         }
     }
 
@@ -314,6 +351,7 @@ class ChatSafetyService {
         const val MINOR_AGE_LIMIT = 19
         const val SENIOR_AGE = 65
 
+        private val PROTEIN_GRAMS = Regex("(단백질|protein|タンパク質|たんぱく質)[^.!?。\\n]{0,12}?\\d{2,3}\\s*(g|그램|グラム)(?![a-z])|\\d{2,3}\\s*(g|그램|グラム)[^.!?。\\n]{0,6}(의\\s*)?(단백질|of protein|protein|タンパク質)", RegexOption.IGNORE_CASE)
         private val KCAL_NUMBER = Regex("(\\d{1,2},?\\d{3}|\\d{3,4})\\s*(kcal|칼로리|칼|cal\\b|calories|キロカロリー|カロリー)")
 
         val BODY_PART_ALIASES: Map<String, List<String>> = linkedMapOf(

@@ -276,7 +276,8 @@ class GeminiAIService(
             Use this when the conversation is about training, nutrition, recovery, or body composition. For casual talk you need not cite it.
             Values marked "unknown" are unknown — never guess them.
         """.trimIndent()
-        val nutritionSection = nutritionContext?.let { buildNutritionContextSection(it) } ?: ""
+        // 취약 사용자(미성년·저체중·섭식장애 신호)에게는 목표·섭취 칼로리 숫자를 빼고 먹은 음식만 준다(모델이 숫자를 그대로 인용한다)
+        val nutritionSection = nutritionContext?.let { buildNutritionContextSection(it, withNumbers = !risk.noIntakeNumbers) } ?: ""
         val historySection = ChatHistoryCondenser.promptBlock(ChatHistoryCondenser.condense(history))
         val personaSection = """
             ## Character & Speaking Style
@@ -345,7 +346,18 @@ class GeminiAIService(
             "\n\nIMPORTANT: The \"Example lines\" above are written in Korean purely to illustrate the persona's TONE and ATTITUDE. " +
                 "Do NOT reuse their Korean words, phrases, or sentence endings. Translate the tone into $responseLanguage and respond ONLY in $responseLanguage."
 
-    private fun buildNutritionContextSection(ctx: DailyNutritionContext): String {
+    private fun buildNutritionContextSection(ctx: DailyNutritionContext, withNumbers: Boolean = true): String {
+        if (!withNumbers) {
+            val meals = MealType.values().joinToString("\n") { type ->
+                val foods = ctx.mealsByType[type].orEmpty().joinToString(", ") { summarizeFoods(it) }.take(200)
+                val label = type.name.lowercase().replaceFirstChar { it.uppercase() }
+                "- $label: " + foods.ifEmpty { "not logged" }
+            }
+            return """
+                ## Today's Meals (User's local time, ${ctx.date}) — no calorie numbers for this user
+                $meals
+            """.trimIndent()
+        }
         val workoutAdjustment = if (ctx.workoutBurnedKcal > 0) " (adjusted +${ctx.workoutBurnedKcal} for today's workout)" else ""
         val pct = ctx.progressPercent
         val mealsByTypeSummary = MealType.values().joinToString("\n") { type ->

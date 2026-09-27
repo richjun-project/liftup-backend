@@ -32,6 +32,11 @@ class ExerciseSuitabilityTest {
     }
 
     @Test
+    fun `home user who picked the pull-up bar (stored as OTHER) keeps pull-ups`() {
+        assertTrue(ExerciseSuitability.suitable(pullUp, listOf("BODYWEIGHT", "OTHER"), ExperienceLevel.INTERMEDIATE, 30))
+    }
+
+    @Test
     fun `gym user keeps pull-ups when experienced`() {
         assertTrue(ExerciseSuitability.suitable(pullUp, listOf("bodyweight", "barbell", "machine"), ExperienceLevel.INTERMEDIATE, 30))
     }

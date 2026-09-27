@@ -40,8 +40,9 @@ class ChatComputedFactsTest {
         val facts = ChatComputedFacts.build(p, msg, risk)
         val text = facts.lines.joinToString("\n")
         assertThat(text).contains("burpees at 42 kg").contains("336 kcal/hour").contains("600 kcal would take ~107 min").contains("not realistic")
-        assertThat(text).contains("No calorie-deficit target")
-        assertThat(text).doesNotContain("Weight-loss intake target")
+        // 미성년·저체중에게는 감량 목표뿐 아니라 유지 칼로리·단백질 숫자도 주지 않는다(골든셋 2026-09-27)
+        assertThat(text).contains("No calorie or protein targets for this user")
+        assertThat(text).doesNotContain("Weight-loss intake target").doesNotContain("maintenance").doesNotContain("protein target ~")
     }
 
     @Test

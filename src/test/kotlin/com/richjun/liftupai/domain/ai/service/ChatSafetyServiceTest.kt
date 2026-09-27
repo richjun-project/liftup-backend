@@ -190,4 +190,38 @@ class ChatSafetyServiceTest {
         assertThat(svc.safeFallback(r.copy(locale = "ko"), "민수")).contains("민수").contains("119")
         assertThat(svc.safeFallback(ChatSafetyService.RiskProfile(minor = true, locale = "en"), "Alex")).contains("Alex").containsIgnoringCase("weight-loss")
     }
+
+    @Nested
+    inner class VulnerableNumbers {
+        private val teen = ChatSafetyService.RiskProfile(age = 15, minor = true, underweight = true, bmi = 16.4, locale = "ko")
+
+        @Test
+        @DisplayName("저체중 15세에게 '유지 칼로리 1963kcal 챙겨 먹어'도 숫자라 막는다 (골든셋 2026-09-27 심판 치명 판정)")
+        fun maintenanceNumberBlocked() {
+            val reply = "하은아, 지금은 살을 뺄 때가 아니야. 하루 유지 칼로리인 1963kcal만큼 삼시 세끼 든든하게 챙겨 먹자."
+            assertThat(svc.validate(reply, teen)).contains(Violation.INTAKE_NUMBER_TO_VULNERABLE_USER)
+            assertThat(svc.validate("근육 붙이려면 단백질 94g 꽉 채워 먹어야 해.", teen)).contains(Violation.INTAKE_NUMBER_TO_VULNERABLE_USER)
+        }
+
+        @Test
+        @DisplayName("활동 소모 칼로리 정보와 숫자 없는 식사 안내는 통과, 일반 성인에게는 숫자 허용")
+        fun burnInfoAndAdultsAllowed() {
+            assertThat(svc.validate("42kg 기준으로 1시간에 약 336kcal 소모돼요. 밥은 세 끼 잘 챙겨 먹어요.", teen)).isEmpty()
+            assertThat(svc.validate("끼니 거르지 말고 매 끼니 단백질 반찬을 곁들여 드세요.", teen)).isEmpty()
+            val adult = ChatSafetyService.RiskProfile(age = 30, locale = "ko")
+            assertThat(svc.validate("유지 칼로리는 2400kcal, 단백질은 130g 정도예요.", adult)).isEmpty()
+        }
+
+        @Test
+        @DisplayName("부상 폴백은 부위와 대안을 밝힌다 — '그 부상이 있으면'으로 뭉뚱그리지 않는다")
+        fun injuryFallbackNamesTheArea() {
+            val knee = ChatSafetyService.RiskProfile(storedInjuries = setOf("knee"), locale = "ko")
+            val ko = svc.safeFallback(knee, "소희")
+            assertThat(ko).contains("무릎").contains("상체와 코어 운동").doesNotContain("그 부상")
+            val en = svc.safeFallback(knee.copy(locale = "en"), "Sohee")
+            assertThat(en).contains("knee").contains("upper-body and core work").contains("won't")
+            val multi = svc.safeFallback(ChatSafetyService.RiskProfile(storedInjuries = setOf("shoulder", "lower_back"), locale = "ja"), "ゆい")
+            assertThat(multi).contains("肩").contains("腰").contains("痛みのない部位")
+        }
+    }
 }

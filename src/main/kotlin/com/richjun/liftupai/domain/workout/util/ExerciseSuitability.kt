@@ -12,7 +12,9 @@ import com.richjun.liftupai.domain.workout.entity.Exercise
  * 맨몸 풀업은 초보·고령자가 한 개도 못 하는 경우가 대부분이다.
  */
 object ExerciseSuitability {
-    private val GYM_TOKENS = setOf("BARBELL", "MACHINE", "CABLE", "SMITH_MACHINE", "GYM", "FULL_GYM", "ALL", "FULL", "COMMERCIAL_GYM", "EVERYTHING")
+    // 앱의 장비 선택지 "철봉(Bar)"은 OTHER 로 저장된다(workout_preference_page.dart / workout_plan_settings_screen.dart)
+    private val GYM_TOKENS = setOf("BARBELL", "MACHINE", "CABLE", "SMITH_MACHINE", "GYM", "FULL_GYM", "ALL", "FULL", "COMMERCIAL_GYM", "EVERYTHING",
+        "OTHER", "BAR", "PULL_UP_BAR", "PULLUP_BAR")
     private val EXPLOSIVE_PATTERNS = setOf("PLYOMETRIC", "CLEAN", "SNATCH", "COMPOUND_COMPLEX")
 
     /** 철봉·평행봉이 있어야 하는 맨몸 동작. 벤치·의자 딥스와 머신 보조 풀업은 아니다. */
@@ -27,7 +29,7 @@ object ExerciseSuitability {
         }
     }
 
-    /** 헬스장(바벨·머신·케이블 중 하나) 이용자면 철봉이 있다고 본다. 장비 정보가 비어 있으면 제한하지 않는다. */
+    /** 헬스장(바벨·머신·케이블 중 하나) 이용자나 철봉(OTHER)을 고른 사용자는 철봉이 있다고 본다. 장비 정보가 비어 있으면 제한하지 않는다. */
     fun hasBarAccess(availableEquipment: Collection<String>): Boolean {
         if (availableEquipment.isEmpty()) return true
         return availableEquipment.any { it.trim().uppercase().replace(Regex("[^A-Z0-9]+"), "_") in GYM_TOKENS }

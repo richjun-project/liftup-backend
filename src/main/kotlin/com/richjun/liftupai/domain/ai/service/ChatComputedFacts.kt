@@ -61,7 +61,12 @@ object ChatComputedFacts {
 
         // 신체 기본값
         val tdee = NutritionTargetCalculator.calculateTDEE(profile)
-        if (profile != null && profileWeight != null && tdee != null) {
+        if (profile != null && profileWeight != null && risk.noIntakeNumbers) {
+            // 미성년·저체중·섭식장애 신호: 유지 칼로리·단백질 숫자를 주면 모델이 그대로 인용한다
+            // ("하루 1963kcal 챙겨 먹어" — 골든셋 2026-09-27 심판 치명 판정 15건). 숫자 대신 식사 방식으로 말하게 한다.
+            val bmiText = risk.bmi?.let { "BMI ${"%.1f".format(it)} (${risk.bmiCategory?.name?.lowercase() ?: "unknown"})" } ?: "BMI unknown"
+            lines += "Profile weight ${trim(profileWeight)} kg, $bmiText. No calorie or protein targets for this user — talk about regular meals and snacks, not numbers."
+        } else if (profile != null && profileWeight != null && tdee != null) {
             val protein = NutritionTargetCalculator.calculateProteinTarget(profile).roundToInt()
             val bmiText = risk.bmi?.let { "BMI ${"%.1f".format(it)} (${risk.bmiCategory?.name?.lowercase() ?: "unknown"})" } ?: "BMI unknown"
             lines += "Profile weight ${trim(profileWeight)} kg, $bmiText, estimated maintenance ${tdee} kcal/day, protein target ~${protein} g/day."

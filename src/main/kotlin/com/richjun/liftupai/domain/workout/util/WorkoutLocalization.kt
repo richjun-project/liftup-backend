@@ -180,8 +180,13 @@ object WorkoutLocalization {
         return bundle(locale).containsKey(key) || bundle("en").containsKey(key)
     }
 
+    // JVM 기본 로케일로 떨어지지 않게 한다 — 기본 로케일이 ko 인 JVM 에서 영어 요청에 한국어 플랜 이름이 나갔다
+    // (영어 번들이 기본 파일 workout_messages.properties 라 "en" 번들을 못 찾으면 ko 로 폴백). AILocalization 과 같은 방식.
+    private val noFallback: ResourceBundle.Control =
+        ResourceBundle.Control.getNoFallbackControl(ResourceBundle.Control.FORMAT_PROPERTIES)
+
     private fun bundle(locale: String): ResourceBundle {
-        return ResourceBundle.getBundle(BASENAME, toLocale(locale))
+        return ResourceBundle.getBundle(BASENAME, toLocale(locale), noFallback)
     }
 
     private fun humanize(normalized: String): String {
