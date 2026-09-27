@@ -30,6 +30,15 @@ class GeminiChatRequestTest {
     }
 
     @Test
+    fun `채팅 외 호출은 thinking 수준을 보내고 출력 한도를 8192 이상으로 둔다 (맞춤 추천 JSON 잘림)`() {
+        val cfg = nonChatGenerationConfig(0.7, null, 2048, "low")
+        assertEquals(NON_CHAT_MIN_OUTPUT_TOKENS, cfg.maxOutputTokens)
+        val json = prodMapper.writeValueAsString(GeminiRequest(contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = "x")))), generationConfig = cfg))
+        assertTrue(json.contains("\"thinkingConfig\":{\"thinkingLevel\":\"low\"}"), json)
+        assertEquals(16384, nonChatGenerationConfig(0.7, 16384, 2048, null).maxOutputTokens)
+    }
+
+    @Test
     fun `thinking 수준이 없으면 thinkingConfig 자체를 보내지 않는다`() {
         val json = prodMapper.writeValueAsString(buildChatRequest("hi", 0.7, 2048, null))
         assertFalse(json.contains("thinking", ignoreCase = true), json)

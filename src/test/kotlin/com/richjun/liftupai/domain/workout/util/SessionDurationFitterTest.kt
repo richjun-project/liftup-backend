@@ -56,4 +56,12 @@ class SessionDurationFitterTest {
         val fitted = SessionDurationFitter.fit(slots, 20)
         fitted.zip(slots).forEach { (f, s) -> assertTrue(f.restSeconds >= s.minRestSeconds) }
     }
+
+    @Test
+    fun `plan days keep every exercise when allowDrop is false`() {
+        val slots = List(6) { Slot(4, "8-10", 120, 90) }
+        val fitted = SessionDurationFitter.fit(slots, 20, allowDrop = false)
+        assertEquals(6, fitted.size)
+        assertTrue(fitted.all { it.sets >= 2 && it.restSeconds >= 90 })
+    }
 }

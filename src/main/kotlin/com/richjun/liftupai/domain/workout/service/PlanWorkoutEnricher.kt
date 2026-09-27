@@ -16,7 +16,10 @@ class PlanWorkoutEnricher(
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val workoutExerciseRepository: WorkoutExerciseRepository,
     private val exerciseSetRepository: ExerciseSetRepository,
-    private val exerciseSubstitutionService: ExerciseSubstitutionService
+    private val exerciseSubstitutionService: ExerciseSubstitutionService,
+    private val exerciseTrainingProfileResolver: ExerciseTrainingProfileResolver,
+    private val userProfileRepository: com.richjun.liftupai.domain.user.repository.UserProfileRepository,
+    private val userSettingsRepository: com.richjun.liftupai.domain.user.repository.UserSettingsRepository,
 ) {
     private val log = LoggerFactory.getLogger(PlanWorkoutEnricher::class.java)
 
@@ -71,17 +74,57 @@ class PlanWorkoutEnricher(
             enrichExercise(ex, readiness, ageMultiplier, ageRestMultiplier, phaseAdj, isDeloadWeek, userAge, exerciseMap[ex.exerciseId])
         }
 
+        // 7-b. 목표별 반복 범위 + 세션 시간 — 추천 경로와 같은 규칙(골든셋 2026-09-27: AI 플랜 35건 중
+        //      근력 목표 6건이 보조 종목 10-12회, 10건이 요청 시간의 50~80% 분량)
+        val profile = try { userProfileRepository.findByUser_Id(plan.user.id).orElse(null) } catch (e: Exception) { null }
+        val settings = try { userSettingsRepository.findByUser_Id(plan.user.id).orElse(null) } catch (e: Exception) { null }
+        val goalAdjusted = if (isDeloadWeek) enrichedExercises
+            else applyGoalWindows(enrichedExercises, profile?.goals.orEmpty(), exerciseMap)
+        val targetMinutes = settings?.workoutDuration ?: profile?.workoutDuration
+        val (finalExercises, estimated) = fitToSessionDuration(goalAdjusted, targetMinutes)
+
         // 8. Weekly volume estimate
-        val volumeStatus = estimateWeeklyVolume(plan.user, enrichedExercises)
+        val volumeStatus = estimateWeeklyVolume(plan.user, finalExercises)
 
         return response.copy(
+            estimatedDuration = estimated ?: response.estimatedDuration,
             weekNumber = weekNumber,
             isDeloadWeek = isDeloadWeek,
             periodizationPhase = periodizationPhase,
             readinessScore = readiness,
             weeklyVolume = volumeStatus,
-            exercises = enrichedExercises
+            exercises = finalExercises
         )
+    }
+
+    private fun applyGoalWindows(
+        exercises: List<DayExerciseDetail>,
+        goals: Set<com.richjun.liftupai.domain.user.entity.FitnessGoal>,
+        exerciseMap: Map<Long, Exercise>,
+    ): List<DayExerciseDetail> {
+        if (goals.isEmpty()) return exercises
+        return exercises.map { ex ->
+            val entity = exerciseMap[ex.exerciseId] ?: return@map ex
+            val window = exerciseTrainingProfileResolver.goalWindow(exerciseTrainingProfileResolver.resolveProfile(entity), goals)
+                ?: return@map ex
+            val fitted = exerciseTrainingProfileResolver.fitReps("${ex.minReps}-${ex.maxReps}", window)
+            val parts = fitted.split("-").mapNotNull { it.trim().toIntOrNull() }
+            val rest = window.maxRestSeconds?.let { ex.restSeconds.coerceAtMost(it) } ?: ex.restSeconds
+            if (parts.size != 2) ex.copy(restSeconds = rest) else ex.copy(minReps = parts[0], maxReps = parts[1], restSeconds = rest)
+        }
+    }
+
+    /** 종목은 그대로 두고 세트·휴식만 세션 시간에 맞춘다. @return (조정된 종목, 추정 분) */
+    private fun fitToSessionDuration(exercises: List<DayExerciseDetail>, targetMinutes: Int?): Pair<List<DayExerciseDetail>, Int?> {
+        if (targetMinutes == null || targetMinutes <= 0 || exercises.isEmpty()) return exercises to null
+        val slots = exercises.map {
+            com.richjun.liftupai.domain.workout.util.SessionDurationFitter.Slot(
+                it.sets, "${it.minReps}-${it.maxReps}", it.restSeconds, (it.restSeconds * 0.75).roundToInt().coerceAtLeast(30).coerceAtMost(it.restSeconds)
+            )
+        }
+        val fitted = com.richjun.liftupai.domain.workout.util.SessionDurationFitter.fit(slots, targetMinutes, allowDrop = false)
+        val adjusted = exercises.zip(fitted).map { (ex, slot) -> ex.copy(sets = slot.sets, restSeconds = slot.restSeconds) }
+        return adjusted to com.richjun.liftupai.domain.workout.util.SessionDurationFitter.estimateMinutes(fitted)
     }
 
     private fun resolvePeriodizationPhase(

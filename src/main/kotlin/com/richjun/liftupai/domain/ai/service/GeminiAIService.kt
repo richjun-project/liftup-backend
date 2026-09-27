@@ -940,12 +940,7 @@ class GeminiAIService(
                         )
                     )
                 ),
-                generationConfig = GenerationConfig(
-                    temperature = 0.5,
-                    maxOutputTokens = maxTokens,
-                    topP = 0.95,
-                    topK = 40
-                )
+                generationConfig = nonChatGenerationConfig(0.5, null, maxTokens, chatThinkingLevel.ifBlank { null })
             )
 
             val jsonBody = objectMapper.writeValueAsString(requestBody)
@@ -1047,6 +1042,7 @@ class GeminiAIService(
         targetModel: String? = null,
         targetMaxTokens: Int? = null,
         targetTemperature: Double? = null,
+        thinkingLevel: String? = chatThinkingLevel.ifBlank { null },
     ): String {
         return try {
             val useModel = targetModel ?: model
@@ -1059,12 +1055,7 @@ class GeminiAIService(
                         )
                     )
                 ),
-                generationConfig = GenerationConfig(
-                    temperature = targetTemperature ?: temperature,
-                    maxOutputTokens = targetMaxTokens ?: maxTokens,
-                    topP = 0.95,
-                    topK = 40
-                )
+                generationConfig = nonChatGenerationConfig(targetTemperature ?: temperature, targetMaxTokens, maxTokens, thinkingLevel)
             )
 
             val jsonBody = objectMapper.writeValueAsString(requestBody)
@@ -1076,6 +1067,9 @@ class GeminiAIService(
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     val errorBody = response.body?.string()
+                    if (shouldRetryWithoutThinking(response.code, errorBody.orEmpty(), thinkingLevel)) {
+                        return callGeminiAPI(prompt, locale, targetModel, targetMaxTokens, targetTemperature, thinkingLevel = null)
+                    }
                     println("Gemini API Error (${targetModel ?: model}): $errorBody")
                     return AILocalization.message("ai.error.analysis_failed", locale)
                 }
@@ -1185,6 +1179,23 @@ internal sealed class ChatCallResult {
 }
 
 /** 채팅 요청 본문. thinkingLevel 이 null 이면 thinkingConfig 를 보내지 않는다. */
+/**
+ * 채팅 외 호출(맞춤 추천·식단 분석·식단 계획)의 생성 설정.
+ * gemini-flash-latest 는 기본으로 thinking 을 하고 그 토큰이 maxOutputTokens 에서 빠진다. 2048 한도에서
+ * thinking 이 ~1965 토큰을 먹어 JSON 이 80 토큰에서 잘렸다(finish=MAX_TOKENS, 골든셋 2026-09-27:
+ * 맞춤 추천 60건 중 55건 파싱 실패 → 규칙 폴백). 채팅과 같은 thinking 수준을 주고 한도를 8192 이상으로 둔다.
+ */
+internal fun nonChatGenerationConfig(temperature: Double, requestedMaxTokens: Int?, defaultMaxTokens: Int, thinkingLevel: String?) = GenerationConfig(
+    temperature = temperature,
+    maxOutputTokens = maxOf(requestedMaxTokens ?: defaultMaxTokens, NON_CHAT_MIN_OUTPUT_TOKENS),
+    topP = 0.95,
+    topK = 40,
+    thinkingConfig = thinkingLevel?.let { ThinkingConfig(it) },
+)
+
+/** 채팅 외 호출의 최소 출력 한도 — thinking 토큰이 한도에서 빠지므로 JSON 응답이 잘리지 않게 넉넉히 */
+internal const val NON_CHAT_MIN_OUTPUT_TOKENS = 8192
+
 internal fun buildChatRequest(prompt: String, temperature: Double, maxTokens: Int, thinkingLevel: String?) = GeminiRequest(
     contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
     generationConfig = GenerationConfig(

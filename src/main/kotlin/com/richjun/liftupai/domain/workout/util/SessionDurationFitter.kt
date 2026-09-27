@@ -50,7 +50,8 @@ object SessionDurationFitter {
 
     fun estimateMinutes(slots: List<Slot>): Int = (estimateSeconds(slots) / 60.0).roundToInt()
 
-    fun fit(slots: List<Slot>, targetMinutes: Int): List<Slot> {
+    /** @param allowDrop false 면 종목 수는 그대로 두고 휴식·세트만 맞춘다(저장된 플랜의 종목을 화면에서 지우지 않는다). */
+    fun fit(slots: List<Slot>, targetMinutes: Int, allowDrop: Boolean = true): List<Slot> {
         if (slots.isEmpty() || targetMinutes <= 0) return slots
         val upper = targetMinutes * 60 * UPPER
         val lower = targetMinutes * 60 * LOWER
@@ -65,7 +66,7 @@ object SessionDurationFitter {
         // 2. 뒤 종목부터 세트를 3까지
         reduceSets(cur, COMFORT_SETS, ::over)
         // 3. 종목 수를 줄인다 (최소 3)
-        while (over() && cur.size > MIN_EXERCISES) cur.removeAt(cur.lastIndex)
+        while (allowDrop && over() && cur.size > MIN_EXERCISES) cur.removeAt(cur.lastIndex)
         // 4. 그래도 넘치면 세트 2까지
         reduceSets(cur, MIN_SETS, ::over)
 
