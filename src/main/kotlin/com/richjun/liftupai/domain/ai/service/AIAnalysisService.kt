@@ -1074,12 +1074,9 @@ class AIAnalysisService(
             }
 
             val workoutDuration = duration ?: 30
-            val minExercises = when {
-                workoutDuration <= 20 -> 3
-                workoutDuration <= 30 -> 5
-                workoutDuration <= 45 -> 6
-                else -> 7
-            }
+            // AI 가 3~5종목을 고르면 세트 수로 시간을 채운다(fitToDuration). 예전 하한(30분 5·45분 6·그 이상 7종목)은
+            // 정상적인 AI 선택을 버리고 규칙 폴백으로 보냈다 — 골든셋 2026-09-28 맞춤 추천 60건 중 38건.
+            val minExercises = 3
 
             if (exercises.size < minExercises) {
                 println("AI returned too few exercises (${exercises.size} < $minExercises); using fallback")
