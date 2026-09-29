@@ -8,6 +8,7 @@ import com.richjun.liftupai.domain.notification.service.NotificationService
 import com.richjun.liftupai.domain.notification.service.PTScheduledMessageService
 import com.richjun.liftupai.domain.user.dto.BodyInfoUpdateDto
 import com.richjun.liftupai.domain.user.dto.OnboardingRequest
+import com.richjun.liftupai.domain.user.entity.ExperienceLevel
 import com.richjun.liftupai.domain.user.entity.UserProfile
 import com.richjun.liftupai.domain.user.entity.UserSettings
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
@@ -93,5 +94,39 @@ class UserServiceOnboardingTest {
         assertEquals(120.0, maxes["leg-press"]!!, 0.001)
         assertEquals(setOf("DUMBBELL"), savedProfile.captured.availableEquipment)
         assertEquals(setOf("knee"), savedProfile.captured.injuries)
+    }
+
+    @Test
+    fun `complete onboarding keeps the experience level the app sends in lowercase`() {
+        val user = User(id = 8L, email = "adv@example.com", nickname = "before")
+        val savedProfile = slot<UserProfile>()
+
+        every { userRepository.findById(8L) } returns Optional.of(user)
+        every { userProfileRepository.findByUser_Id(8L) } returns Optional.empty()
+        every { userSettingsRepository.findByUser_Id(8L) } returns Optional.empty()
+        every { userRepository.save(any()) } answers { firstArg() }
+        every { userProfileRepository.save(capture(savedProfile)) } answers { firstArg() }
+        every { userSettingsRepository.save(any()) } answers { firstArg<UserSettings>() }
+
+        service.completeOnboarding(
+            userId = 8L,
+            request = OnboardingRequest(
+                nickname = "adv",
+                experienceLevel = "advanced",
+                goals = listOf("bulk_up"),
+                bodyInfo = null,
+                ptStyle = "GAME_MASTER",
+                notificationEnabled = true,
+                weeklyWorkoutDays = 5,
+                workoutSplit = "auto",
+                availableEquipment = null,
+                preferredWorkoutTime = "evening",
+                workoutDuration = 60,
+                timeZone = null,
+                injuries = null
+            )
+        )
+
+        assertEquals(ExperienceLevel.ADVANCED, savedProfile.captured.experienceLevel)
     }
 }

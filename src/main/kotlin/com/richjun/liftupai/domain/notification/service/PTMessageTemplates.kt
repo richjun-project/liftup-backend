@@ -19,6 +19,10 @@ class PTMessageTemplates {
     fun getWorkoutReminderMessage(locale: String = "en"): String =
         NotificationLocalization.ptTemplate("workout_reminder", locale)
 
+    /** 완료한 운동이 하나도 없는 사용자용 운동 알림 — 첫 세트까지의 문턱을 낮춘다. */
+    fun getFirstWorkoutMessage(locale: String = "en"): String =
+        NotificationLocalization.ptTemplate("first_workout", locale)
+
     fun getDinnerMealMessage(locale: String = "en"): String =
         NotificationLocalization.ptTemplate("dinner_meal", locale)
 

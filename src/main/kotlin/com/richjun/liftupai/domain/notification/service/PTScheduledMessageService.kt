@@ -15,6 +15,7 @@ import com.richjun.liftupai.domain.notification.repository.NotificationScheduleR
 import com.richjun.liftupai.domain.user.entity.PTStyle
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
+import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
@@ -220,7 +221,14 @@ class PTScheduledMessageService(
         return when (schedule.scheduleName) {
             "morning_meal_check" -> ptMessageTemplates.getMorningMealMessage(locale)
             "lunch_meal_check" -> ptMessageTemplates.getLunchMealMessage(locale)
-            "workout_reminder" -> ptMessageTemplates.getWorkoutReminderMessage(locale)
+            "workout_reminder" ->
+                // 2026-09 실측: 최근 30일 실가입 23명 중 세트를 하나라도 완료한 사람이 0명이었다.
+                // 첫 운동 전인 사용자에게는 "한 세트만" 으로 문턱을 낮춘 문구를 보낸다.
+                if (workoutSessionRepository.countByUserAndStatus(schedule.user, SessionStatus.COMPLETED) == 0L) {
+                    ptMessageTemplates.getFirstWorkoutMessage(locale)
+                } else {
+                    ptMessageTemplates.getWorkoutReminderMessage(locale)
+                }
             "dinner_meal_check" -> ptMessageTemplates.getDinnerMealMessage(locale)
             "sleep_prep" -> ptMessageTemplates.getSleepPrepMessage(locale)
             else -> schedule.message

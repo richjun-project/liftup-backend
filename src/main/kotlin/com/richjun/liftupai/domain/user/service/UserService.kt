@@ -111,9 +111,10 @@ class UserService(
             )
         )
 
-        // Update experience level
+        // Update experience level — 앱은 소문자("advanced")를 보낸다. 대문자로 바꾸지 않으면 valueOf 가 실패해
+        // 2026-09 까지 소셜 로그인 온보딩 사용자가 전부 BEGINNER 로 저장됐다(추천 무게 상한·AI 프롬프트까지 초보 기준).
         try {
-            profile.experienceLevel = ExperienceLevel.valueOf(request.experienceLevel)
+            profile.experienceLevel = ExperienceLevel.valueOf(request.experienceLevel.trim().uppercase())
         } catch (e: Exception) {
             profile.experienceLevel = ExperienceLevel.BEGINNER
         }
