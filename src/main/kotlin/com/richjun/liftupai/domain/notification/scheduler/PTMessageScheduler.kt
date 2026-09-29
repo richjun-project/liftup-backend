@@ -42,7 +42,7 @@ class PTMessageScheduler(
         scheduleIds.forEach { scheduleId ->
             try {
                 ptScheduledMessageService.sendScheduledPTMessage(scheduleId)
-                logger.info("[PTScheduler] PT message sent for schedule $scheduleId")
+                logger.debug("[PTScheduler] PT schedule $scheduleId processed")
             } catch (e: Exception) {
                 logger.error("[PTScheduler] Failed to process PT schedule $scheduleId: ${e.message}", e)
             }

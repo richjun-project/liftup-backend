@@ -176,12 +176,13 @@ class AuthService(
     fun refreshToken(request: RefreshTokenRequest): AuthResponse {
         val locale = resolveLocale()
 
+        // 응답 본문은 GlobalExceptionHandler 가 공통 인증 실패 문구로 내보낸다. 여기 메시지는 로그 구분용.
         if (!jwtTokenProvider.validateToken(request.refreshToken)) {
-            throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale))
+            throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_refresh_token", locale))
         }
 
         val user = userRepository.findByRefreshToken(request.refreshToken)
-            .orElseThrow { InvalidCredentialsException(ErrorLocalization.message("error.invalid_credentials", locale)) }
+            .orElseThrow { InvalidCredentialsException(ErrorLocalization.message("error.refresh_token_mismatch", locale)) }
 
         val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.email ?: user.deviceId ?: user.id.toString())
         val newRefreshToken = jwtTokenProvider.generateRefreshToken(user.id, user.email ?: user.deviceId ?: user.id.toString())

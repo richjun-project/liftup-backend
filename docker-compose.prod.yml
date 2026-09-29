@@ -50,7 +50,7 @@ services:
       dockerfile: Dockerfile
     container_name: liftupai-app-prod
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"  # 외부는 Caddy(443)로만 — 앱 포트를 인터넷에 직접 열지 않는다
     environment:
       SERVER_PORT: 8081
       SPRING_PROFILES_ACTIVE: prod

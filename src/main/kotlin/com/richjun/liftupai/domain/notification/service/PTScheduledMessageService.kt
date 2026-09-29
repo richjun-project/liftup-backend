@@ -9,6 +9,7 @@ import com.richjun.liftupai.domain.chat.repository.ChatMessageRepository
 import com.richjun.liftupai.domain.notification.entity.*
 import com.richjun.liftupai.domain.notification.util.NotificationLocalization
 import com.richjun.liftupai.domain.notification.util.NotificationScheduleTimeCalculator
+import com.richjun.liftupai.domain.notification.util.PtMessagePolicy
 import com.richjun.liftupai.domain.notification.repository.NotificationHistoryRepository
 import com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository
 import com.richjun.liftupai.domain.user.entity.PTStyle
@@ -161,6 +162,14 @@ class PTScheduledMessageService(
             return
         }
 
+        val daysInactive = daysSinceLastActivity(schedule.user, now)
+        if (!PtMessagePolicy.shouldSend(schedule.scheduleName, daysInactive)) {
+            schedule.nextTriggerAt = notificationService.recalculateNextTrigger(schedule)
+            notificationScheduleRepository.save(schedule)
+            logger.debug("[PTMessage] Skipped schedule $scheduleId (${schedule.scheduleName}) for user ${schedule.user.id}, inactive ${daysInactive}d")
+            return
+        }
+
         try {
             // 발송 시점에 템플릿을 다시 읽는다.
             // schedule.message는 스케줄 생성 시점의 스냅샷이라, 템플릿 문구를 고쳐도
@@ -191,6 +200,15 @@ class PTScheduledMessageService(
         } catch (e: Exception) {
             logger.error("[PTMessage] Failed to send PT message for schedule ${schedule.id}: ${e.message}", e)
         }
+    }
+
+    /**
+     * 마지막 활동(로그인·토큰 갱신) 이후 지난 일수. 로그인 기록이 없으면 가입일 기준.
+     * 액세스 토큰이 1시간짜리라 앱을 열 때마다 리프레시가 일어나고, 리프레시가 lastLoginAt 을 갱신한다.
+     */
+    private fun daysSinceLastActivity(user: User, now: java.time.LocalDateTime): Long {
+        val lastActivity = user.lastLoginAt ?: user.joinDate
+        return java.time.Duration.between(lastActivity, now).toDays().coerceAtLeast(0)
     }
 
     /**
