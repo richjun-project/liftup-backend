@@ -15,9 +15,11 @@ data class RegisterRequest(
     @field:Size(min = 6, message = "{validation.password_min_length}")
     val password: String,
 
-    @field:NotBlank(message = "{validation.nickname_required}")
-    @field:Size(min = 2, max = 20, message = "{validation.nickname_max_length}")
-    val nickname: String,
+    // 앱은 2026-04(1070f92)부터 가입 화면에서 닉네임을 받지 않고 빈 값을 보낸다 — 닉네임은 온보딩에서 정한다.
+    // 예전처럼 필수로 두면 이메일 가입이 전부 400 으로 실패한다(2026-10 로그: 일본어 사용자가 6번 연속 실패).
+    // 비어 있으면 AuthService 가 이메일 앞부분으로 채운다.
+    @field:Size(max = 20, message = "{validation.nickname_max_length}")
+    val nickname: String? = null,
 
     @JsonProperty("device_info")
     val deviceInfo: DeviceInfo? = null

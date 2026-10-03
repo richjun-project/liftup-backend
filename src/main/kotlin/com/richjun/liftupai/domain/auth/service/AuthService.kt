@@ -75,11 +75,14 @@ class AuthService(
             throw DuplicateResourceException(ErrorLocalization.message("error.email_already_in_use", locale))
         }
 
-        // 새 사용자 생성
+        // 새 사용자 생성 — 닉네임이 없으면 소셜 가입과 같이 이메일 앞부분을 임시로 쓰고, 온보딩에서 바뀐다
+        val nickname = request.nickname?.trim()?.takeIf { it.isNotEmpty() }
+            ?: request.email.substringBefore("@").take(20).takeIf { it.isNotBlank() }
+            ?: ErrorLocalization.message("user.default_nickname", locale)
         val user = User(
             email = request.email,
             password = passwordEncoder.encode(request.password),
-            nickname = request.nickname,
+            nickname = nickname,
             isDeviceAccount = isDeviceAccount,
             emailVerified = isDeviceAccount // 디바이스 계정은 자동 인증
         )

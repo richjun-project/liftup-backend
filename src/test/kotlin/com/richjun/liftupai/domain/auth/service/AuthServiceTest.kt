@@ -3,6 +3,7 @@ package com.richjun.liftupai.domain.auth.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.richjun.liftupai.domain.auth.dto.LoginRequest
 import com.richjun.liftupai.domain.auth.dto.RefreshTokenRequest
+import com.richjun.liftupai.domain.auth.dto.RegisterRequest
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.auth.repository.DeviceSessionRepository
 import com.richjun.liftupai.domain.auth.repository.UserRepository
@@ -13,6 +14,8 @@ import com.richjun.liftupai.global.security.JwtTokenProvider
 import com.richjun.liftupai.global.util.ValidationUtil
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -97,5 +100,19 @@ class AuthServiceTest {
         assertThrows(InvalidCredentialsException::class.java) {
             service.refreshToken(request)
         }
+    }
+
+    @Test
+    fun `닉네임 없이 이메일 가입하면 이메일 앞부분을 닉네임으로 쓴다`() {
+        val saved = mutableListOf<User>()
+        every { userRepository.existsByEmail("hana.sato@example.jp") } returns false
+        every { passwordEncoder.encode("secret1") } returns "encoded"
+        every { userRepository.save(capture(saved)) } answers { firstArg() }
+        every { jwtTokenProvider.generateAccessToken(any(), any()) } returns "access"
+        every { jwtTokenProvider.generateRefreshToken(any(), any()) } returns "refresh"
+
+        service.register(RegisterRequest(email = "hana.sato@example.jp", password = "secret1", nickname = ""))
+
+        assertEquals("hana.sato", saved.first().nickname)
     }
 }
