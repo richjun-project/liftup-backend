@@ -27,10 +27,11 @@ class PTFirstWorkoutReminderTest {
     private val userSettingsRepository = mockk<UserSettingsRepository>()
     private val workoutSessionRepository = mockk<WorkoutSessionRepository>()
     private val chatMessageRepository = mockk<ChatMessageRepository>()
+    private val userProfileRepository = mockk<com.richjun.liftupai.domain.user.repository.UserProfileRepository>()
 
     private val service = PTScheduledMessageService(
         userRepository = mockk(relaxed = true),
-        userProfileRepository = mockk(relaxed = true),
+        userProfileRepository = userProfileRepository,
         userSettingsRepository = userSettingsRepository,
         notificationScheduleRepository = scheduleRepository,
         notificationHistoryRepository = mockk(relaxed = true),
@@ -56,6 +57,7 @@ class PTFirstWorkoutReminderTest {
         every { userSettingsRepository.findByUser_Id(5L) } returns Optional.of(UserSettings(user = user, language = "ko"))
         every { workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED) } returns completedWorkouts
         every { chatMessageRepository.save(capture(saved)) } answers { firstArg() }
+        every { userProfileRepository.findByUser(user) } returns Optional.empty()
 
         service.sendScheduledPTMessage(1L)
         return saved.captured.aiResponse!!

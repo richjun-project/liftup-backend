@@ -14,7 +14,9 @@ data class ChatResponse(
     val reply: String,
     val timestamp: String,
     val messageId: String,
-    val suggestions: List<String>? = null
+    val suggestions: List<String>? = null,
+    /** 답 아래에 보일 버튼(ChatAction 이름). 모르는 이름은 앱이 무시한다. */
+    val actions: List<String> = emptyList()
 )
 
 data class ChatContext(

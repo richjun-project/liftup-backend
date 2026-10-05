@@ -69,6 +69,7 @@ class AIWorkoutRecommendationInjuryTest {
         mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), vector,
         mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true),
         localization, injuryFilterService, enrollmentRepository, mockk(relaxed = true),
+        mockk(relaxed = true),
     )
 
     /** 로컬 e2e 와 같은 사용자: settings 행 존재(부상 비어 있음), 부상은 profile 에 "knee:moderate" */

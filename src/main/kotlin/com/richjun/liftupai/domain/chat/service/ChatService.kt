@@ -29,7 +29,8 @@ class ChatService(
     private val geminiAIService: GeminiAIService,
     private val aiAnalysisService: AIAnalysisService,
     private val objectMapper: ObjectMapper,
-    private val transactionTemplate: TransactionTemplate
+    private val transactionTemplate: TransactionTemplate,
+    private val trainerMessageService: TrainerMessageService
 ) {
 
     fun sendMessage(userId: Long, request: ChatMessageRequest): ChatMessageResponse {
@@ -100,6 +101,15 @@ class ChatService(
     ): ChatHistoryResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
+
+        // 처음 채팅을 여는 사용자에게는 고른 트레이너가 먼저 오늘 운동을 소개한다
+        if (page == 1 && date == null) {
+            try {
+                trainerMessageService.ensureWelcome(user)
+            } catch (e: Exception) {
+                println("[ChatService] trainer welcome failed for user $userId: ${e.message}")
+            }
+        }
 
         val pageable = PageRequest.of(page - 1, limit, Sort.by(Sort.Direction.DESC, "timestamp"))
 
@@ -336,7 +346,8 @@ class ChatService(
             messageType = message.messageType.name,
             attachmentUrl = message.attachmentUrl,
             timestamp = AppTime.formatUtcRequired(message.timestamp),
-            status = message.status.name
+            status = message.status.name,
+            actions = com.richjun.liftupai.domain.chat.entity.ChatAction.parseList(message.actions).map { it.name }
         )
     }
 }

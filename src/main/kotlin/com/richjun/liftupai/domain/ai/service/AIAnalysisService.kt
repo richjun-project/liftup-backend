@@ -2,6 +2,7 @@ package com.richjun.liftupai.domain.ai.service
 
 import com.richjun.liftupai.domain.ai.dto.*
 import com.richjun.liftupai.domain.auth.repository.UserRepository
+import com.richjun.liftupai.domain.chat.entity.ChatAction
 import com.richjun.liftupai.domain.chat.entity.ChatMessage
 import com.richjun.liftupai.domain.chat.entity.MessageStatus
 import com.richjun.liftupai.domain.chat.entity.MessageType
@@ -63,7 +64,8 @@ class AIAnalysisService(
     private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService,
     private val injuryFilterService: com.richjun.liftupai.domain.workout.service.InjuryFilterService,
     private val userProgramEnrollmentRepository: UserProgramEnrollmentRepository,
-    private val userExerciseOverrideRepository: UserExerciseOverrideRepository
+    private val userExerciseOverrideRepository: UserExerciseOverrideRepository,
+    private val trainerContextBuilder: TrainerContextBuilder
 ) {
 
     private val log = org.slf4j.LoggerFactory.getLogger(AIAnalysisService::class.java)
@@ -220,10 +222,18 @@ class AIAnalysisService(
             emptyList()
         }
 
+        // 트레이너가 오늘 플랜·최근 운동을 알고 말하게 한다(실패해도 채팅은 계속).
+        val trainer = try {
+            trainerContextBuilder.build(user, locale)
+        } catch (e: Exception) {
+            println("[AIAnalysisService] trainer context unavailable for user $userId: ${e.message}")
+            null
+        }
+
         // Gemini AI에게 응답 요청
         val startTime = System.currentTimeMillis()
-        val aiReply = try {
-            geminiAIService.generateResponse(enhancedMessage, user, history)
+        val reply = try {
+            geminiAIService.generateReply(enhancedMessage, user, history, trainer?.block)
         } catch (e: Exception) {
             // 에러 발생 시 실패 메시지 저장
             val errorMessage = ChatMessage(
@@ -239,6 +249,8 @@ class AIAnalysisService(
         }
 
         val responseTime = System.currentTimeMillis() - startTime
+        val aiReply = reply.text
+        val actions = ChatActionRules.finalize(reply.actions, request.message, hasActivePlan = trainer?.hasActivePlan == true)
 
         // 성공한 경우 ChatMessage 저장
         val chatMessage = ChatMessage(
@@ -247,7 +259,8 @@ class AIAnalysisService(
             aiResponse = aiReply,
             messageType = MessageType.TEXT,
             status = MessageStatus.COMPLETED,
-            responseTime = responseTime
+            responseTime = responseTime,
+            actions = ChatAction.join(actions)
         )
 
         val savedMessage = chatMessageRepository.save(chatMessage)
@@ -259,7 +272,8 @@ class AIAnalysisService(
             reply = aiReply,
             timestamp = AppTime.formatUtcRequired(savedMessage.timestamp),
             messageId = savedMessage.id.toString(),
-            suggestions = suggestions
+            suggestions = suggestions,
+            actions = actions.map { it.name }
         )
     }
 

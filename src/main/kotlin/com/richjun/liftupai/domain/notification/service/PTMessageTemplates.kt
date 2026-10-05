@@ -10,28 +10,28 @@ import org.springframework.stereotype.Component
 @Component
 class PTMessageTemplates {
 
-    fun getMorningMealMessage(locale: String = "en"): String =
-        NotificationLocalization.ptTemplate("morning_meal", locale)
+    fun getMorningMealMessage(locale: String = "en", style: String? = null): String =
+        NotificationLocalization.ptTemplate("morning_meal", locale, style)
 
-    fun getLunchMealMessage(locale: String = "en"): String =
-        NotificationLocalization.ptTemplate("lunch_meal", locale)
+    fun getLunchMealMessage(locale: String = "en", style: String? = null): String =
+        NotificationLocalization.ptTemplate("lunch_meal", locale, style)
 
-    fun getWorkoutReminderMessage(locale: String = "en"): String =
-        NotificationLocalization.ptTemplate("workout_reminder", locale)
+    fun getWorkoutReminderMessage(locale: String = "en", style: String? = null): String =
+        NotificationLocalization.ptTemplate("workout_reminder", locale, style)
 
     /** 완료한 운동이 하나도 없는 사용자용 운동 알림 — 첫 세트까지의 문턱을 낮춘다. */
-    fun getFirstWorkoutMessage(locale: String = "en"): String =
-        NotificationLocalization.ptTemplate("first_workout", locale)
+    fun getFirstWorkoutMessage(locale: String = "en", style: String? = null): String =
+        NotificationLocalization.ptTemplate("first_workout", locale, style)
 
-    fun getDinnerMealMessage(locale: String = "en"): String =
-        NotificationLocalization.ptTemplate("dinner_meal", locale)
+    fun getDinnerMealMessage(locale: String = "en", style: String? = null): String =
+        NotificationLocalization.ptTemplate("dinner_meal", locale, style)
 
-    fun getSleepPrepMessage(locale: String = "en"): String =
-        NotificationLocalization.ptTemplate("sleep_prep", locale)
+    fun getSleepPrepMessage(locale: String = "en", style: String? = null): String =
+        NotificationLocalization.ptTemplate("sleep_prep", locale, style)
 
-    fun getWorkoutCompleteMessage(locale: String = "en"): String =
-        NotificationLocalization.ptTemplate("workout_complete", locale)
+    fun getWorkoutCompleteMessage(locale: String = "en", style: String? = null): String =
+        NotificationLocalization.ptTemplate("workout_complete", locale, style)
 
-    fun getRestDayMessage(locale: String = "en"): String =
-        NotificationLocalization.ptTemplate("rest_day", locale)
+    fun getRestDayMessage(locale: String = "en", style: String? = null): String =
+        NotificationLocalization.ptTemplate("rest_day", locale, style)
 }

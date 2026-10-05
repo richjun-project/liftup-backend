@@ -54,7 +54,8 @@ class WorkoutSessionService(
     private val notificationService: NotificationService?,
     private val sharedSupport: WorkoutV2SharedSupport,
     private val workoutRecommendationServiceV2: WorkoutRecommendationServiceV2,
-    private val workoutStatsService: WorkoutStatsService
+    private val workoutStatsService: WorkoutStatsService,
+    private val trainerMessageService: com.richjun.liftupai.domain.chat.service.TrainerMessageService? = null
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -552,6 +553,13 @@ class WorkoutSessionService(
 
         // 업적 확인
         val milestones = checkMilestones(session.user, session)
+
+        // 트레이너가 채팅에서 오늘 결과에 반응한다(실패해도 완료 처리는 계속)
+        try {
+            trainerMessageService?.onWorkoutCompleted(session.user, totalSets, totalVolume, normalizedDuration)
+        } catch (e: Exception) {
+            logger.warn("Trainer feedback failed for user ${session.user.id}: ${e.message}")
+        }
 
         // Update program enrollment if active
         try {

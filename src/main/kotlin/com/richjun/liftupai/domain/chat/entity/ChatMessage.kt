@@ -37,5 +37,9 @@ data class ChatMessage(
     var status: MessageStatus = MessageStatus.PROCESSING,
 
     @Column
-    var error: String? = null
+    var error: String? = null,
+
+    /** 이 메시지 아래에 보일 버튼(ChatAction 이름, 쉼표 구분) */
+    @Column(length = 255)
+    var actions: String? = null
 )

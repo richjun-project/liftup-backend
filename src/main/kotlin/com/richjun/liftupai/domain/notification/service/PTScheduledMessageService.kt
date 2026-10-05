@@ -2,6 +2,7 @@ package com.richjun.liftupai.domain.notification.service
 
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.auth.repository.UserRepository
+import com.richjun.liftupai.domain.chat.entity.ChatAction
 import com.richjun.liftupai.domain.chat.entity.ChatMessage
 import com.richjun.liftupai.domain.chat.entity.MessageStatus
 import com.richjun.liftupai.domain.chat.entity.MessageType
@@ -178,12 +179,14 @@ class PTScheduledMessageService(
             val body = resolveTemplateMessage(schedule)
 
             // 1. ChatMessage에 저장 (채팅 히스토리에 표시)
+            val actions = actionsFor(schedule.scheduleName)
             val chatMessage = ChatMessage(
                 user = schedule.user,
                 userMessage = "",
                 aiResponse = body,
                 messageType = MessageType.SYSTEM,
-                status = MessageStatus.COMPLETED
+                status = MessageStatus.COMPLETED,
+                actions = ChatAction.join(actions)
             )
             chatMessageRepository.save(chatMessage)
             logger.info("[PTMessage] ChatMessage saved for user ${schedule.user.id}, schedule $scheduleId")
@@ -195,7 +198,10 @@ class PTScheduledMessageService(
             }
 
             // 3. FCM 전송 및 NotificationHistory 저장 (nextTriggerAt 선갱신 포함)
-            notificationService.sendScheduledNotificationWithFcm(schedule, body)
+            notificationService.sendScheduledNotificationWithFcm(
+                schedule, body,
+                extraData = actions.firstOrNull()?.let { mapOf("action" to it.name) } ?: emptyMap()
+            )
 
             logger.info("[PTMessage] PT message sent and saved to chat for user ${schedule.user.id}")
         } catch (e: Exception) {
@@ -218,21 +224,30 @@ class PTScheduledMessageService(
      */
     private fun resolveTemplateMessage(schedule: NotificationSchedule): String {
         val locale = resolveLocale(schedule.user.id)
+        // 사용자가 고른 트레이너 말투로 보낸다(예전엔 모두 기본 문구였다).
+        val style = userProfileRepository.findByUser(schedule.user).orElse(null)?.ptStyle?.name
         return when (schedule.scheduleName) {
-            "morning_meal_check" -> ptMessageTemplates.getMorningMealMessage(locale)
-            "lunch_meal_check" -> ptMessageTemplates.getLunchMealMessage(locale)
+            "morning_meal_check" -> ptMessageTemplates.getMorningMealMessage(locale, style)
+            "lunch_meal_check" -> ptMessageTemplates.getLunchMealMessage(locale, style)
             "workout_reminder" ->
                 // 2026-09 실측: 최근 30일 실가입 23명 중 세트를 하나라도 완료한 사람이 0명이었다.
                 // 첫 운동 전인 사용자에게는 "한 세트만" 으로 문턱을 낮춘 문구를 보낸다.
                 if (workoutSessionRepository.countByUserAndStatus(schedule.user, SessionStatus.COMPLETED) == 0L) {
-                    ptMessageTemplates.getFirstWorkoutMessage(locale)
+                    ptMessageTemplates.getFirstWorkoutMessage(locale, style)
                 } else {
-                    ptMessageTemplates.getWorkoutReminderMessage(locale)
+                    ptMessageTemplates.getWorkoutReminderMessage(locale, style)
                 }
-            "dinner_meal_check" -> ptMessageTemplates.getDinnerMealMessage(locale)
-            "sleep_prep" -> ptMessageTemplates.getSleepPrepMessage(locale)
+            "dinner_meal_check" -> ptMessageTemplates.getDinnerMealMessage(locale, style)
+            "sleep_prep" -> ptMessageTemplates.getSleepPrepMessage(locale, style)
             else -> schedule.message
         }
+    }
+
+    /** 알림·채팅 메시지 아래 버튼: 운동 알림은 오늘 운동, 식사 체크는 식단 기록으로 바로 간다. */
+    private fun actionsFor(scheduleName: String): List<ChatAction> = when (scheduleName) {
+        "workout_reminder" -> listOf(ChatAction.START_TODAY_WORKOUT)
+        "morning_meal_check", "lunch_meal_check", "dinner_meal_check" -> listOf(ChatAction.OPEN_MEAL_LOG)
+        else -> emptyList()
     }
 
     /**

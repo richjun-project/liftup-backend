@@ -50,7 +50,10 @@ data class ChatMessageDto(
 
     val timestamp: String,
 
-    val status: String
+    val status: String,
+
+    /** 메시지 아래 버튼(ChatAction 이름) */
+    val actions: List<String> = emptyList()
 )
 
 data class ChatWorkoutRecommendationRequest(

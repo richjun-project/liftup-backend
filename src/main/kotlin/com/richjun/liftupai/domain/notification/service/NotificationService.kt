@@ -481,7 +481,11 @@ class NotificationService(
      * nextTriggerAt을 먼저 갱신하여 중복 발송 방지 (다음 스케줄러 주기에서 재조회 차단)
      * FCM은 외부 호출이므로 실패해도 nextTriggerAt 롤백하지 않음 (중복보다 누락이 안전)
      */
-    fun sendScheduledNotificationWithFcm(schedule: NotificationSchedule, bodyOverride: String? = null) {
+    fun sendScheduledNotificationWithFcm(
+        schedule: NotificationSchedule,
+        bodyOverride: String? = null,
+        extraData: Map<String, String> = emptyMap(),
+    ) {
         val locale = resolveLocale(schedule.user.id)
         val notificationId = UUID.randomUUID().toString()
 
@@ -496,7 +500,7 @@ class NotificationService(
             "scheduleId" to schedule.id.toString(),
             "scheduleName" to schedule.scheduleName,
             "type" to schedule.notificationType.name.lowercase()
-        )
+        ).apply { putAll(extraData) }
         val fcmTitle = NotificationLocalization.message(NotificationLocalization.titleKey(schedule.notificationType), locale)
         // bodyOverride를 사용하면 schedule.message 정적 템플릿을 DB에 덮어쓰지 않고 일회성 메시지 전송 가능
         val fcmBody = bodyOverride ?: schedule.message

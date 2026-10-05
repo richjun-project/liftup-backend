@@ -74,7 +74,21 @@ class GeminiAIService(
      * @param history 직전 대화 (오래된 것부터). 없으면 AI가 자기 직전 답변조차 못 봐서
      *                "이거 하면 몇 칼로리야?" 같은 후속 질문에 되묻게 된다(2026-09 실사용 로그).
      */
-    fun generateResponse(message: String, user: User, history: List<Pair<String, String>>): String {
+    fun generateResponse(message: String, user: User, history: List<Pair<String, String>>): String =
+        generateReply(message, user, history).text
+
+    /** 트레이너 답변 + 답 아래에 붙일 버튼. */
+    data class ChatReply(val text: String, val actions: List<com.richjun.liftupai.domain.chat.entity.ChatAction> = emptyList())
+
+    /**
+     * @param trainerContext 오늘 플랜·최근 운동(TrainerContextBuilder). 없으면 일반 코칭만 한다.
+     */
+    fun generateReply(
+        message: String,
+        user: User,
+        history: List<Pair<String, String>>,
+        trainerContext: String? = null,
+    ): ChatReply {
         return try {
             // 저장된 설정보다 "사용자가 실제로 쓴 언어"를 우선한다.
             //
@@ -114,13 +128,14 @@ class GeminiAIService(
                 )
             }
 
-            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history, risk, facts)
-            val first = callChatModel(prompt, user.id)
+            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history, risk, facts, trainerContext = trainerContext)
+            // 버튼 태그는 사용자에게 보이면 안 되고 언어 검사도 흐리므로 먼저 떼고 검사한다.
+            val first = callChatModel(prompt, user.id)?.let(ChatActionParser::extract)
             // 닉네임은 어떤 문자든 올 수 있다(한글 닉네임의 일본어 사용자). 언어 검사에서 뺀다.
             // 2026-09-16 운영: 한글 닉네임 때문에 일본어 답변이 LANGUAGE_MISMATCH 로 두 번 거부돼 폴백만 나갔다.
-            val firstViolations = chatSafety.validate(maskNickname(first, user.nickname), risk)
+            val firstViolations = chatSafety.validate(maskNickname(first?.text, user.nickname), risk)
             if (firstViolations.isEmpty()) {
-                return first!!
+                return ChatReply(first!!.text, safeActions(first.actions, risk, message))
             }
 
             // 1회 재생성: 위반 사유를 명시해서 고치게 한다.
@@ -128,24 +143,38 @@ class GeminiAIService(
             val retryPrompt = buildChatPrompt(
                 message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history, risk, facts,
                 rejection = chatSafety.rejectionBlock(firstViolations, risk),
+                trainerContext = trainerContext,
             )
-            val second = callChatModel(retryPrompt, user.id)
-            val secondViolations = chatSafety.validate(maskNickname(second, user.nickname), risk)
+            val second = callChatModel(retryPrompt, user.id)?.let(ChatActionParser::extract)
+            val secondViolations = chatSafety.validate(maskNickname(second?.text, user.nickname), risk)
             if (secondViolations.isEmpty()) {
-                return second!!
+                return ChatReply(second!!.text, safeActions(second.actions, risk, message))
             }
             if (secondViolations == listOf(ChatSafetyService.Violation.EMPTY_REPLY)) {
                 // 모델 호출 자체가 실패한 것 — "안녕?" 에 부상 안내 폴백을 내면 안 되니 키워드 폴백
                 log.error("[AI-CHAT] model returned nothing twice user={} — keyword fallback", user.id)
-                return getFallbackResponse(message, user, locale)
+                return ChatReply(getFallbackResponse(message, user, locale))
             }
             log.error("[AI-CHAT] reply rejected twice user={} violations={} — safe fallback", user.id, secondViolations)
-            chatSafety.safeFallback(risk, user.nickname)
+            ChatReply(chatSafety.safeFallback(risk, user.nickname))
         } catch (e: Exception) {
             log.error("[AI-CHAT] generateResponse failed for user {}: {}", user.id, e.message, e)
-            getFallbackResponse(message, user, resolveLocale(user))
+            ChatReply(getFallbackResponse(message, user, resolveLocale(user)))
         }
     }
+
+    /**
+     * 위험 신호(진료가 먼저인 증상)나 지금 아프다는 말이 있으면 "오늘 운동 시작" 버튼은 붙이지 않는다.
+     * 오늘 플랜에는 아픈 부위를 쓰는 종목이 섞여 있을 수 있다(2026-10 점검: 무릎 통증 질문에 시작 버튼이 붙었다).
+     */
+    internal fun safeActions(
+        actions: List<com.richjun.liftupai.domain.chat.entity.ChatAction>,
+        risk: ChatSafetyService.RiskProfile,
+        message: String,
+    ): List<com.richjun.liftupai.domain.chat.entity.ChatAction> =
+        if (risk.redFlagSymptoms || PAIN_MENTION.containsMatchIn(message)) {
+            actions.filterNot { it == com.richjun.liftupai.domain.chat.entity.ChatAction.START_TODAY_WORKOUT }
+        } else actions
 
     fun analyzeContent(prompt: String): String = callGeminiAPI(prompt)
 
@@ -265,6 +294,7 @@ class GeminiAIService(
         risk: ChatSafetyService.RiskProfile = chatSafety.assess(userProfile, emptyList(), message, history, locale),
         facts: ChatComputedFacts.Facts = ChatComputedFacts.build(userProfile, message, risk),
         rejection: String? = null,
+        trainerContext: String? = null,
     ): String {
         val responseLanguage = AILocalization.responseLanguage(locale)
         val hardRules = chatSafety.hardRulesBlock(risk)
@@ -304,6 +334,8 @@ class GeminiAIService(
 
             $nutritionSection
 
+            ${trainerContext ?: ""}
+
             $historySection
 
             $personaSection
@@ -315,7 +347,7 @@ class GeminiAIService(
             - There is no manual meal form: a meal is recorded from a photo. If the user cannot photograph the food, tell them what they ate can still be discussed here, but it will not appear in the diary.
             - Muscle recovery map, weekly stats, workout calendar and the meal diary: Stats tab — the whole Stats tab is Pro-only (free users see it locked).
             - Change the workout plan: Home → gear icon on the plan card → "Workout plan settings" (basic routines / my AI routines / create AI routine).
-            - Start today's workout: Home → "Start workout" button. On the workout screen: tap a set to complete it, or press "Complete set" on the "Next set" bar at the bottom (it completes the next set and starts the rest timer). Weights and reps are editable there; "Add exercise" adds one; "Swap" on an exercise card replaces that exercise.
+            - Start today's workout: the [[START_TODAY_WORKOUT]] button under your reply, or Home → "Start workout". On the workout screen: tap a set to complete it, or press "Complete set" on the "Next set" bar at the bottom (it completes the next set and starts the rest timer). Weights and reps are editable there; "Add exercise" adds one; "Swap" on an exercise card replaces that exercise.
             - After finishing a workout, the completion screen has "Share workout record" (image).
             - Injuries, body info (age/height/weight), goals, AI PT persona: Profile tab → My info / AI PT settings. Language, contact us: Profile tab → Other. Delete account: bottom of the Profile tab.
             - Notifications: there is NO notification settings screen in the app. Permission is asked once during onboarding; after that it is changed in the phone's OS settings (iOS 설정 → 리프트업AI → 알림 / Android 설정 → 앱 → 알림).
@@ -325,6 +357,15 @@ class GeminiAIService(
             - Restore a purchase (new phone): "Restore purchases" on the Pro screen with the same App Store / Google Play account. Cancelling or refunds are handled by the store (iPhone Settings → Apple ID → Subscriptions / Google Play → Payments & subscriptions); the app cannot cancel or refund.
             - If the user cannot find something, tell them the exact path above. Never blame their app version or say "maybe your plan is limited".
 
+            ## ACTION BUTTONS (the app turns these tags into tappable buttons under your reply)
+            - When the user should do something in the app right now, put at most TWO of these tags on the last line of your reply, written exactly:
+              [[START_TODAY_WORKOUT]] — opens today's workout from their plan, ready to start. Use when they ask what to do today, want to train now, or you just encouraged today's session.
+              [[OPEN_MEAL_LOG]] — records a meal from a photo. Use when they want to log or check what they ate.
+              [[OPEN_PLAN]] — opens their workout plan, where it can be viewed or changed.
+              [[OPEN_STATS]] — opens stats and the muscle recovery map (Pro-only tab).
+            - Never mention the tags or "buttons" in your sentences — the user simply sees a button below your message.
+            - No tag for casual chat, or when a HARD RULE says they should rest or see a doctor first.
+
             ## Guidelines
             - Answer the exact question first. Give clear, practical guidance on training, nutrition, recovery, and healthy habits.
             - Keep answers concise (2-4 sentences) unless the user asks for a routine, a plan, or more detail — then give the full structure.
@@ -332,7 +373,8 @@ class GeminiAIService(
             - Address the user as "$nickname" naturally (not every sentence).
             - Use the profile (age, sex, BMI category, goals, experience) and COMPUTED FACTS for any number you state.
             - When the user asks about today's diet, calories, or progress, use the "Today's Nutrition" section with concrete numbers.
-            - Never claim the app changed anything. You can only advise in chat.
+            - Never claim the app changed or started anything. The buttons let the user do it themselves.
+            - You are their personal trainer, not a search engine: when TRAINING CONTEXT shows today's session, talk about THOSE exercises and weights.
 
             $rejectionSection
 
@@ -659,9 +701,9 @@ class GeminiAIService(
         - So never say you "will change / have changed / am switching" their plan, menu, weights or settings.
           A user who is told their menu was changed and then sees the old one loses trust and leaves
           (2026-09-10 real session: the plan was never changed).
-        - Instead: give the concrete answer or routine in the chat, then point them to where the change
-          actually happens — the plan screen ("플랜 변경" / Change plan) for the program, and the weight
-          field on the workout screen for load. Say it in one short sentence, not as a disclaimer wall.
+        - Instead: give the concrete answer or routine in the chat, then attach the matching button
+          (see ACTION BUTTONS) so they can do it in one tap — [[OPEN_PLAN]] to change the program;
+          load is edited in the weight field on the workout screen. One short sentence, not a disclaimer wall.
 
         INJURY, PAIN AND PUSHBACK (this overrides the persona's bluntness):
         - If the user reports an injury, surgery, pain, or a body part they cannot train:
@@ -1210,3 +1252,8 @@ internal fun buildChatRequest(prompt: String, temperature: Double, maxTokens: In
 /** thinking 설정을 보냈는데 모델이 그 설정을 이해하지 못해 400 을 준 경우만 재시도한다. */
 internal fun shouldRetryWithoutThinking(code: Int, body: String, sentThinkingLevel: String?): Boolean =
     !sentThinkingLevel.isNullOrBlank() && code == 400 && body.contains("thinking", ignoreCase = true)
+
+/** "아파요/다쳤어요/pain/痛い" 같은 지금의 통증·부상 언급. 오늘 운동 시작 버튼을 막는 데만 쓴다. */
+private val PAIN_MENTION = Regex(
+    "(아프|아파|통증|다쳤|부상|삐었|결려|저려|쑤셔|(?i:\\bpain|hurts?\\b|injur|sprain|sore\\b)|痛|ケガ|怪我|捻挫)"
+)
