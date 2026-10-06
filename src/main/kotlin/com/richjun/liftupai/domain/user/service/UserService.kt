@@ -443,7 +443,7 @@ class UserService(
         var previousPreferredTime: String? = null
         val touchesSettings = request.preferredWorkoutTime != null || request.weeklyWorkoutDays != null ||
             request.workoutSplit != null || request.workoutDuration != null || request.availableEquipment != null ||
-            request.goals != null
+            request.goals != null || request.injuries != null
         if (touchesSettings) {
             val settings = userSettingsRepository.findByUser_Id(userId).orElse(
                 UserSettings(user = profile.user)
@@ -456,10 +456,16 @@ class UserService(
             request.weeklyWorkoutDays?.let { settings.weeklyWorkoutDays = it }
             request.workoutSplit?.let { settings.workoutSplit = it }
             request.workoutDuration?.let { settings.workoutDuration = it }
-            request.goals?.let { storeFocusGoals(settings, it) }
+            // 프로필 수정에서 온 goals 는 굵은 목표(weight_loss 등)만 있을 수 있다 — 집중 목표가 없으면 저장값을 지우지 않는다
+            request.goals?.let { storeFocusGoals(settings, it, keepWhenNoFocus = true) }
             request.availableEquipment?.let {
                 settings.availableEquipment.clear()
                 settings.availableEquipment.addAll(it)
+            }
+            // 부상도 장비처럼 설정과 함께 동기화 — 안 하면 프로필에서 지운 부상이 설정에 남아 추천을 계속 걸러낸다
+            request.injuries?.let {
+                settings.injuries.clear()
+                settings.injuries.addAll(it)
             }
             settings.updatedAt = AppTime.utcNow()
             userSettingsRepository.save(settings)
@@ -570,11 +576,12 @@ class UserService(
     }
 
     /** 세부 집중 목표만 골라 설정에 보존한다 (FitnessGoal 로는 사라지는 정보) */
-    private fun storeFocusGoals(settings: UserSettings, goals: Collection<String>?) {
+    private fun storeFocusGoals(settings: UserSettings, goals: Collection<String>?, keepWhenNoFocus: Boolean = false) {
         val focus = goals.orEmpty()
             .map { it.trim().lowercase().replace('-', '_').replace(' ', '_') }
             .filter { com.richjun.liftupai.domain.workout.service.FocusArea.isFocusGoal(it) }
             .toSet()
+        if (keepWhenNoFocus && focus.isEmpty()) return
         settings.focusGoals.clear()
         settings.focusGoals.addAll(focus)
     }

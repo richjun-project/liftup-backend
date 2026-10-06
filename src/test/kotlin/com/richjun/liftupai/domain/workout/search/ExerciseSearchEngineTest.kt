@@ -150,4 +150,47 @@ class ExerciseSearchEngineTest {
         assertTrue("ankle-circles" in legs) // 뒤로 밀릴 뿐 빠지지는 않는다
         assertTrue(legs.indexOf("ankle-circles") > legs.indexOf("barbell-full-squat"))
     }
+
+    private val variantEngine = ExerciseSearchEngine(
+        listOf(
+            doc("assisted-pull-up", "Assisted pull up", "어시스트 풀업", "アシステッド プルアップ", ExerciseCategory.BACK, Equipment.MACHINE, setOf(MuscleGroup.LATS), RecommendationTier.ESSENTIAL, 98),
+            doc("pull-up-normal-grip", "Pull up normal grip", "풀업 노멀 그립", "プルアップ（ノーマルグリップ）", ExerciseCategory.BACK, Equipment.BODYWEIGHT, setOf(MuscleGroup.LATS), RecommendationTier.ESSENTIAL, 92),
+            doc("cable-one-arm-lat-pulldown", "Cable one arm lat pulldown", "케이블 원 암 랫풀다운", "ケーブル・ワンハンド・ラットプルダウン", ExerciseCategory.BACK, Equipment.CABLE, setOf(MuscleGroup.LATS), RecommendationTier.STANDARD, 80),
+            doc("lat-pulldown", "Lat pulldown", "랫풀다운", "ラットプルダウン", ExerciseCategory.BACK, Equipment.CABLE, setOf(MuscleGroup.LATS), RecommendationTier.STANDARD, 70),
+            doc("dumbbell-single-arm-row", "Dumbbell single arm row", "덤벨 싱글 암 로우", "ワンハンド・ダンベルローイング", ExerciseCategory.BACK, Equipment.DUMBBELL, setOf(MuscleGroup.LATS), RecommendationTier.STANDARD, 80),
+            doc("barbell-one-arm-single-deadlift", "Barbell one arm single deadlift", "바벨 원 암 데드리프트", "バーベル・ワンハンド・デッドリフト", ExerciseCategory.BACK, Equipment.BARBELL, setOf(MuscleGroup.BACK), RecommendationTier.STANDARD, 80),
+            doc("cable-fly", "Cable fly", "케이블 플라이", "ケーブルフライ", ExerciseCategory.CHEST, Equipment.CABLE, setOf(MuscleGroup.CHEST), RecommendationTier.STANDARD, 70),
+            doc("biceps-curl-crossover-machine", "Biceps curl cable crossover machine", "머신 이두 컬 케이블 크로스오버", "ケーブル バイセップスカール（クロスオーバーマシン）", ExerciseCategory.ARMS, Equipment.CABLE, setOf(MuscleGroup.BICEPS), RecommendationTier.STANDARD, 70),
+            doc("barbell-biceps-curl", "Barbell biceps curl", "바벨 이두 컬", "バーベル・バイセップスカール", ExerciseCategory.ARMS, Equipment.BARBELL, setOf(MuscleGroup.BICEPS), RecommendationTier.ESSENTIAL, 92),
+            doc("cable-pushdown", "Cable pushdown", "케이블 푸시다운", "ケーブル・プッシュダウン", ExerciseCategory.ARMS, Equipment.CABLE, setOf(MuscleGroup.TRICEPS), RecommendationTier.ESSENTIAL, 92)
+        )
+    )
+
+    private fun top(query: String) = variantEngine.search(query).map { it.doc.slug }
+
+    @Test
+    fun `일본어 한자 약칭 근육명도 부위 의도로 읽는다`() {
+        assertEquals("barbell-biceps-curl", top("二頭筋").first())
+        assertEquals("cable-pushdown", top("三頭筋").first())
+    }
+
+    @Test
+    fun `질의에 없는 어시스트와 한 팔 변형은 기본 동작 뒤로 간다`() {
+        assertEquals("pull-up-normal-grip", top("턱걸이").first())
+        assertEquals("pull-up-normal-grip", top("懸垂").first())
+        assertEquals("lat-pulldown", top("랫 풀 다운").first())
+        assertEquals("lat-pulldown", top("렛풀다운").first())
+        assertEquals("assisted-pull-up", top("assisted pull up").first())
+    }
+
+    @Test
+    fun `붙여 쓴 가타카나 복합어는 사전 단어로 쪼개 한 팔 로우를 찾는다`() {
+        assertEquals("dumbbell-single-arm-row", top("ワンハンドロー").first())
+        assertEquals("dumbbell-single-arm-row", top("원핸드로우").first())
+    }
+
+    @Test
+    fun `케이블 크로스오버는 크로스오버 머신 변형보다 케이블 플라이를 앞세운다`() {
+        assertEquals("cable-fly", top("cable crossover").first())
+    }
 }

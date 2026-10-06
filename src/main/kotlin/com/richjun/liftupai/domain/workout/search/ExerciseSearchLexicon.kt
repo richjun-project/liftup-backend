@@ -17,7 +17,8 @@ internal object ExerciseSearchLexicon {
 
     class MuscleTerm(val muscles: Set<MuscleGroup>, val categories: Set<ExerciseCategory>)
 
-    class Synonym(val triggers: Set<String>, val expansions: List<List<String>>)
+    /** strong 이면 확장 표현이 원 질의보다 우선한다(카탈로그가 다른 이름으로 부르는 운동 — 별칭이 정답 이름을 가리키는 경우) */
+    class Synonym(val triggers: Set<String>, val expansions: List<List<String>>, val strong: Boolean = false)
 
     private fun key(raw: String) = SearchText.strictKey(raw)
 
@@ -25,8 +26,9 @@ internal object ExerciseSearchLexicon {
     private val SYNONYM_RULES = listOf(
         "벤치|밴치|벤치프레스|밴치프레스|bench|ベンチ => 벤치프레스|bench press|ベンチプレス",
         "인클라인|incline|インクライン => 인클라인|incline|インクライン",
-        "풀업|턱걸이|치닝|친닝|친업|chin up|chinning|pull up|懸垂|チンニング|チンアップ|プルアップ => 풀업|pull up|プルアップ",
-        "랫풀다운|랫풀|랫 풀다운|lat pulldown|lat pull|풀다운|pulldown|ラットプルダウン|ラットプル|プルダウン => 풀다운|pulldown|ラットプルダウン",
+        "풀업|턱걸이|철봉|치닝|친닝|친업|chin up|chinning|pull up|懸垂|鉄棒|チンニング|チンアップ|プルアップ => 풀업|pull up|プルアップ",
+        "랫풀다운|랫풀|랫 풀다운|래트풀다운|래트 풀다운|랫트풀다운|렛풀다운|lat pulldown|lat pull down|lat pull|latpulldown|lats pulldown|ラットプルダウン|ラットプル => 랫풀다운|lat pulldown|ラットプルダウン",
+        "풀다운|pulldown|pull down|プルダウン => 풀다운|pulldown|プルダウン",
         "푸시업|푸쉬업|팔굽혀펴기|팔굽혀|腕立て伏せ|腕立て|プッシュアップ|push up|pushup|press up => 푸시업|push up|プッシュアップ",
         "딥스|딥|dips|dip|ディップス|ディップ => 딥|dip|ディップ",
         "힙쓰러스트|힙스러스트|힙트러스트|힙 쓰러스트|hip thrust|ヒップスラスト => 힙 쓰러스트|hip thrust|ヒップスラスト",
@@ -50,8 +52,11 @@ internal object ExerciseSearchLexicon {
         "플랭크|플랭크|plank|プランク => 플랭크|plank|プランク",
         "버피|burpee|バーピー => 버피|burpee|バーピー",
         "런지|lunge|ランジ => 런지|lunge|ランジ",
+        "케이블 크로스오버|케이블 크로스 오버|cable crossover|cable cross over|crossover|크로스오버|ケーブルクロスオーバー|クロスオーバー =>> 케이블 플라이|cable fly|ケーブルフライ|케이블 미들 플라이",
         "펙덱|펙 덱|pec deck|ペックデック|버터플라이|butterfly|machine fly|머신 플라이|ペックフライ => 펙 덱 플라이|pec deck fly|ペックフライ",
         "시티드로우|시티드 로우|seated row|シーテッドロー|케이블 로우|cable row => 시티드 로우|seated row|シーテッドロー",
+        "로우|row|ロー|ロウ|ローイング => 로우|row|ロー|ロウ|ローイング",
+        "원암|원 암|싱글암|싱글 암|원핸드|원 핸드|한팔|한 팔|one arm|single arm|one hand|single hand|ワンアーム|ワンハンド|シングルアーム|片手|片腕 => 싱글 암|원 암|single arm|one arm|シングルアーム|ワンアーム|ワンハンド",
         "바벨로우|바벨 로우|barbell row|bent over row|벤트오버로우|벤트 오버 로우|ベントオーバーロー => 벤트 오버 로우|bent over row|ベントオーバーロー",
         "이두컬|이두 컬|바이셉스 컬|바이셉 컬|bicep curl|biceps curl|バイセップスカール => 컬|curl|カール",
         "해머컬|해머 컬|hammer curl|ハンマーカール => 해머 컬|hammer curl|ハンマーカール",
@@ -67,7 +72,7 @@ internal object ExerciseSearchLexicon {
         "마운틴클라이머|mountain climber|マウンテンクライマー => 마운틴 클라이머|mountain climber|マウンテンクライマー",
         "플라이|fly|flye|フライ => 플라이|fly|フライ",
         "프레스|press|プレス => 프레스|press|プレス",
-        "로잉|로잉머신|rowing|rowing machine|ローイング => 로우 머신|rowing machine|ローイングマシン|ローイング",
+        "로잉|로잉머신|rowing|rowing machine|ローイングマシン => 로우 머신|rowing machine|ローイングマシン",
         "점핑잭|점프잭|jumping jack|jumpingjack|ジャンピングジャック => 점프 잭|jumping jack|ジャンピングジャック",
         "윗몸일으키기|윗몸 일으키기|sit up|situp|シットアップ|腹筋運動 => 싯업|sit up|シットアップ",
         "브이업|v up|vup|Vアップ => v 업|v up|Vアップ",
@@ -85,12 +90,14 @@ internal object ExerciseSearchLexicon {
     )
 
     val synonyms: List<Synonym> = SYNONYM_RULES.map { rule ->
-        val (left, right) = rule.split("=>").map { it.trim() }
+        val strong = rule.contains("=>>")
+        val (left, right) = rule.split(Regex("=>>?")).map { it.trim() }
         val l = left.split("|").map { it.trim() }.filter { it.isNotEmpty() }
         val r = right.split("|").map { it.trim() }.filter { it.isNotEmpty() }
         Synonym(
             triggers = (l + r).map { key(it) }.filter { it.isNotEmpty() }.toSet(),
-            expansions = r.map { SearchText.words(it) }.filter { it.isNotEmpty() }
+            expansions = r.map { SearchText.words(it) }.filter { it.isNotEmpty() },
+            strong = strong
         )
     }
 
@@ -98,6 +105,20 @@ internal object ExerciseSearchLexicon {
     val synonymIndex: Map<String, List<Synonym>> = buildMap<String, MutableList<Synonym>> {
         synonyms.forEach { s -> s.triggers.forEach { getOrPut(it) { mutableListOf() }.add(s) } }
     }
+
+    /** 표기 변이(ㅐ/ㅔ, 쌍자음, 장음·촉음)를 접은 키 → 동의어 그룹. 외래어 철자가 달라도 같은 그룹으로 찾는다. */
+    val synonymLooseIndex: Map<String, List<Synonym>> = buildMap<String, MutableList<Synonym>> {
+        synonyms.forEach { s ->
+            s.triggers.map { SearchText.looseKey(it) }.toSet().forEach { getOrPut(it) { mutableListOf() }.add(s) }
+        }
+    }
+
+    // ── 질의에 없을 때 뒤로 미루는 수식어(보조/한 팔) ──────────────────────────────────────────
+    /** 이 표기가 이름에 있으면 변형 운동이다. 질의에 같은 종류의 표기가 없으면 기본 동작을 우선한다. */
+    val modifierGroups: List<Set<String>> = listOf(
+        "assisted|assist|어시스트|보조|アシスト|アシステッド",
+        "one arm|single arm|one hand|single hand|원 암|싱글 암|원 핸드|ワンアーム|ワンハンド|シングルアーム|片手|片腕|한팔"
+    ).map { g -> g.split("|").map { key(it) }.filter { it.isNotEmpty() }.toSet() }
 
     // ── 부위(근육) 의도 ────────────────────────────────────────────────────────────────────────
     private fun muscle(
@@ -109,17 +130,17 @@ internal object ExerciseSearchLexicon {
 
     val muscleTerms: Map<String, MuscleTerm> = buildList {
         addAll(muscle("하체|다리|下半身|脚|足|레그|legs|leg|lower body|lowerbody|하체운동", setOf(G.LEGS, G.QUADRICEPS, G.HAMSTRINGS, G.GLUTES, G.CALVES), setOf(C.LEGS)))
-        addAll(muscle("허벅지|대퇴사두|대퇴사두근|太もも|ふともも|大腿四頭筋|quads|quad|quadriceps|thigh|thighs", setOf(G.QUADRICEPS, G.LEGS), setOf(C.LEGS)))
-        addAll(muscle("햄스트링|ハムストリング|裏もも|大腿二頭筋|hamstrings|hamstring|대퇴이두", setOf(G.HAMSTRINGS), setOf(C.LEGS)))
+        addAll(muscle("허벅지|대퇴사두|대퇴사두근|太もも|ふともも|大腿四頭筋|四頭筋|大腿四頭|quads|quad|quadriceps|thigh|thighs", setOf(G.QUADRICEPS, G.LEGS), setOf(C.LEGS)))
+        addAll(muscle("햄스트링|ハムストリング|裏もも|大腿二頭筋|ハム|hamstrings|hamstring|대퇴이두", setOf(G.HAMSTRINGS), setOf(C.LEGS)))
         addAll(muscle("엉덩이|둔근|힙|お尻|おしり|尻|ヒップ|臀筋|大臀筋|殿筋|glutes|glute|butt|booty|hip|hips", setOf(G.GLUTES), emptySet()))
-        addAll(muscle("등|등운동|광배|광배근|背中|広背筋|背筋|back|lats|lat|upper back", setOf(G.BACK, G.LATS, G.TRAPS), setOf(C.BACK)))
-        addAll(muscle("가슴|대흉근|胸|大胸筋|chest|pecs|pec|pectorals", setOf(G.CHEST), setOf(C.CHEST)))
+        addAll(muscle("등|등운동|광배|광배근|背中|広背筋|広背|背筋|back|lats|lat|upper back", setOf(G.BACK, G.LATS, G.TRAPS), setOf(C.BACK)))
+        addAll(muscle("가슴|대흉근|胸|大胸筋|大胸|chest|pecs|pec|pectorals", setOf(G.CHEST), setOf(C.CHEST)))
         addAll(muscle("어깨|삼각근|肩|三角筋|shoulders|shoulder|delts|delt|deltoids", setOf(G.SHOULDERS), setOf(C.SHOULDERS)))
         addAll(muscle("팔|腕|arms|arm|상완", setOf(G.BICEPS, G.TRICEPS, G.FOREARMS), setOf(C.ARMS)))
-        addAll(muscle("이두|이두근|上腕二頭筋|力こぶ|biceps|bicep", setOf(G.BICEPS), setOf(C.ARMS)))
-        addAll(muscle("삼두|삼두근|上腕三頭筋|二の腕|triceps|tricep", setOf(G.TRICEPS), setOf(C.ARMS)))
+        addAll(muscle("이두|이두근|上腕二頭筋|二頭筋|二頭|上腕二頭|力こぶ|biceps|bicep", setOf(G.BICEPS), setOf(C.ARMS)))
+        addAll(muscle("삼두|삼두근|上腕三頭筋|三頭筋|三頭|上腕三頭|二の腕|triceps|tricep", setOf(G.TRICEPS), setOf(C.ARMS)))
         addAll(muscle("전완|전완근|前腕|forearms|forearm", setOf(G.FOREARMS), setOf(C.ARMS)))
-        addAll(muscle("복근|코어|배|복부|식스팩|6팩|腹筋|体幹|お腹|腹|abs|ab|core|abdominals|abdominal|stomach|belly|six pack|sixpack", setOf(G.ABS, G.CORE), setOf(C.CORE)))
+        addAll(muscle("복근|코어|배|복부|식스팩|6팩|腹筋|腹直筋|体幹|お腹|腹|abs|ab|core|abdominals|abdominal|stomach|belly|six pack|sixpack", setOf(G.ABS, G.CORE), setOf(C.CORE)))
         addAll(muscle("종아리|ふくらはぎ|カーフ|calves|calve|calf", setOf(G.CALVES), setOf(C.LEGS)))
         addAll(muscle("승모근|僧帽筋|traps|trap|trapezius", setOf(G.TRAPS), setOf(C.SHOULDERS, C.BACK)))
         addAll(muscle("목|首|neck", setOf(G.NECK), emptySet()))

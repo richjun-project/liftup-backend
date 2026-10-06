@@ -238,11 +238,15 @@ class ExerciseSearchEngine(docs: Collection<ExerciseSearchDoc>) {
     private fun searchName(words: List<String>, pool: List<IDoc>): List<ExerciseSearchHit> {
         val (variants, equipPref) = buildVariants(words)
         val muscleHints = muscleHintsOf(words)
+        val queryStrict = SearchText.strictKey(words)
+        val unwantedModifiers = ExerciseSearchLexicon.modifierGroups.filter { g -> g.none { queryStrict.contains(it) } }
         val results = HashMap<Long, Double>()
         val docById = HashMap<Long, IDoc>()
 
         fun consider(d: IDoc, base: Double) {
             var s = base + d.rank - SIMPLICITY_WEIGHT * d.wordCount
+            // 질의에 없는 수식어(어시스트, 한 팔)가 붙은 변형은 기본 동작 뒤로 미룬다
+            if (unwantedModifiers.any { g -> d.names.any { n -> g.any { n.strict.contains(it) } } }) s -= MODIFIER_PENALTY
             if (equipPref.isNotEmpty() && d.doc.equipment in equipPref) s += EQUIP_PREF_BOOST
             val cur = results[d.doc.id]
             if (cur == null || s > cur) { results[d.doc.id] = s; docById[d.doc.id] = d }
@@ -398,26 +402,69 @@ class ExerciseSearchEngine(docs: Collection<ExerciseSearchDoc>) {
         return MuscleHint(m, c)
     }
 
-    private fun buildVariants(words: List<String>): Pair<List<Variant>, Set<Equipment>> {
+    /** 사전 단어(동의어 트리거·장비)로만 이루어진 붙여 쓴 CJK 복합어("ワンハンドロー")를 사전 단어 단위로 쪼갠다. 못 쪼개면 null. */
+    private fun splitCompounds(words: List<String>): List<String>? {
+        val lex = ExerciseSearchLexicon
+        fun known(k: String) = k in lex.synonymIndex || k in lex.equipmentTerms || SearchText.looseKey(k) in lex.synonymLooseIndex
+        fun split(w: String, depth: Int): List<String>? {
+            if (depth > 3 || w.length < 4) return null
+            for (len in w.length - 2 downTo 2) {
+                val head = w.substring(0, len)
+                val tail = w.substring(len)
+                if (!known(head)) continue
+                if (known(tail)) return listOf(head, tail)
+                split(tail, depth + 1)?.let { return listOf(head) + it }
+            }
+            return null
+        }
+        var changed = false
+        val out = ArrayList<String>()
+        for (w in words) {
+            val parts = if (!isLatin(w) && !known(w)) split(w, 0) else null
+            if (parts != null) { out.addAll(parts); changed = true } else out.add(w)
+        }
+        return if (changed) out else null
+    }
+
+    private fun synonymGroups(key: String): List<ExerciseSearchLexicon.Synonym>? =
+        ExerciseSearchLexicon.synonymIndex[key]
+            ?: ExerciseSearchLexicon.synonymLooseIndex[SearchText.looseKey(key)]
+
+    private fun buildVariants(rawWords: List<String>): Pair<List<Variant>, Set<Equipment>> {
+        val words = rawWords
         val base = Variant(words, 0.0, BAND_EXACT)
         val all = LinkedHashMap<String, Variant>()
         all[base.strict + "|" + base.words.size] = base
 
+        // 0) 붙여 쓴 복합어 분해 — 이후 단계는 분해된 단어열도 기준으로 삼는다
+        val seeds = ArrayList<Variant>()
+        seeds.add(base)
+        splitCompounds(words)?.let { parts ->
+            val v = Variant(parts, SYN_PENALTY, BAND_EXACT_VARIANT)
+            if (all.putIfAbsent(v.strict + "|" + v.words.size, v) == null) seeds.add(v)
+        }
+
         // 1) 동의어 확장 (단어 run 단위 치환)
         val syn = ArrayList<Variant>()
-        for (i in words.indices) {
-            val sb = StringBuilder()
-            for (j in i until minOf(words.size, i + MAX_SYN_RUN)) {
-                sb.append(words[j])
-                val groups = ExerciseSearchLexicon.synonymIndex[sb.toString()] ?: continue
-                for (g in groups) for (exp in g.expansions) {
-                    if (SearchText.strictKey(exp) == sb.toString()) continue
-                    syn.add(Variant(words.subList(0, i) + exp + words.subList(j + 1, words.size), SYN_PENALTY, BAND_EXACT_VARIANT))
+        for (seed in seeds) {
+            val sw = seed.words
+            for (i in sw.indices) {
+                val sb = StringBuilder()
+                for (j in i until minOf(sw.size, i + MAX_SYN_RUN)) {
+                    sb.append(sw[j])
+                    val groups = synonymGroups(sb.toString()) ?: continue
+                    for (g in groups) for (exp in g.expansions) {
+                        if (SearchText.strictKey(exp) == sb.toString()) continue
+                        val pen = seed.penalty + SYN_PENALTY - (if (g.strong) STRONG_SYN_BONUS + SYN_PENALTY else 0.0)
+                        syn.add(Variant(sw.subList(0, i) + exp + sw.subList(j + 1, sw.size), pen, BAND_EXACT_VARIANT))
+                    }
                 }
             }
         }
         // 동의어는 부위 단어가 없는 질의에서도 바로 쓰이도록 그대로 등록
         syn.take(MAX_VARIANTS).forEach { all.putIfAbsent(it.strict + "|" + it.words.size, it) }
+        // 서로 다른 자리의 동의어가 둘 이상 겹치는 질의("원핸드 로우")는 조합까지 만든다
+        for (seed in seeds) combineSynonyms(seed).forEach { all.putIfAbsent(it.strict + "|" + it.words.size, it) }
 
         // 2) 장비 단어 분리 (이름에 장비가 안 들어 있는 운동도 장비로 우선 정렬)
         val equipPref = HashSet<Equipment>()
@@ -430,6 +477,36 @@ class ExerciseSearchEngine(docs: Collection<ExerciseSearchDoc>) {
         }
         extra.forEach { all.putIfAbsent(it.strict + "|" + it.words.size, it) }
         return all.values.toList() to equipPref
+    }
+
+    /** 단어열을 가장 긴 동의어 run 으로 나눠 각 자리의 대안을 곱한다 (2개 자리 이상에 동의어가 있을 때만) */
+    private fun combineSynonyms(seed: Variant): List<Variant> {
+        val w = seed.words
+        val slots = ArrayList<List<List<String>>>()
+        var i = 0
+        var synSlots = 0
+        while (i < w.size) {
+            var hit: List<ExerciseSearchLexicon.Synonym>? = null
+            var len = 0
+            for (l in minOf(MAX_SYN_RUN, w.size - i) downTo 1) {
+                val g = synonymGroups(w.subList(i, i + l).joinToString("")) ?: continue
+                hit = g; len = l; break
+            }
+            if (hit == null) { slots.add(listOf(listOf(w[i]))); i++; continue }
+            val orig = w.subList(i, i + len).toList()
+            val alts = LinkedHashMap<String, List<String>>()
+            alts[SearchText.strictKey(orig)] = orig
+            hit.flatMap { it.expansions }.forEach { alts.putIfAbsent(SearchText.strictKey(it), it) }
+            slots.add(alts.values.toList())
+            if (alts.size > 1) synSlots++
+            i += len
+        }
+        if (synSlots < 2) return emptyList()
+        var combos: List<List<String>> = listOf(emptyList())
+        for (slot in slots) {
+            combos = combos.flatMap { c -> slot.map { c + it } }.take(MAX_COMBOS)
+        }
+        return combos.filter { it != w }.map { Variant(it, seed.penalty + SYN_PENALTY, BAND_EXACT_VARIANT) }
     }
 
     /** 장비 단어(덤벨, DB, ダンベル...)를 떼어 낸 단어 목록. 장비를 못 찾으면 null. */
@@ -498,11 +575,14 @@ class ExerciseSearchEngine(docs: Collection<ExerciseSearchDoc>) {
         private const val OCC_WORD = 2
 
         private const val SYN_PENALTY = 2.0
+        private const val STRONG_SYN_BONUS = 6.0
+        private const val MODIFIER_PENALTY = 6.0
         private const val EQUIP_STRIP_PENALTY = 2.0
         private const val EQUIP_PREF_BOOST = 15.0
         private const val FUZZY_TRIGGER = 10
         private const val PARTIAL_MIN_FRACTION = 0.4
         private const val MAX_VARIANTS = 24
+        private const val MAX_COMBOS = 40
         private const val MAX_SYN_RUN = 3
         private const val MAX_TERM_LEN = 16
     }
