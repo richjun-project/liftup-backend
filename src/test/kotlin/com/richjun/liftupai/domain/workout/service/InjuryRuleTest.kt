@@ -108,12 +108,31 @@ class InjuryRuleTest {
     @DisplayName("무릎 부상이어도 힙쓰러스트·글루트 브릿지는 허용하지만 대퇴사두를 쓰는 변형은 막는다")
     fun kneeAllowsGluteBridgeNotQuadVariants() {
         val injuries = setOf("knee")
-        assertThat(service.isRestrictedByRule(ex("GLUTE_FOCUSED", MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS), injuries)).isFalse()
+        assertThat(service.isRestrictedByRule(exSlug("barbell-hip-thrust", "GLUTE_FOCUSED", MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS), injuries)).isFalse()
+        assertThat(service.isRestrictedByRule(exSlug("dumbbell-glute-bridge", "GLUTE_FOCUSED", MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS), injuries)).isFalse()
+        // 패턴 태그만으로는 풀리지 않는다(종목명 확인 불가 시 제한)
+        assertThat(service.isRestrictedByRule(ex("GLUTE_FOCUSED", MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS), injuries)).isTrue()
         assertThat(service.isRestrictedByRule(ex("GLUTE_FOCUSED", MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS, MuscleGroup.QUADRICEPS), injuries)).isTrue()
         // 고관절 부상이면 둔근 운동은 그대로 제한
         assertThat(service.isRestrictedByRule(ex("GLUTE_FOCUSED", MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS), setOf("hip"))).isTrue()
         // 스쿼트·레그컬은 여전히 제한
         assertThat(service.isRestrictedByRule(ex("SQUAT", MuscleGroup.GLUTES, MuscleGroup.QUADRICEPS), injuries)).isTrue()
         assertThat(service.isRestrictedByRule(ex("LEG_CURL", MuscleGroup.HAMSTRINGS), injuries)).isTrue()
+    }
+
+    @Test
+    @DisplayName("무릎 부상이면 무릎 꿇기·네발 자세·킥백 둔근 변형은 제한된다")
+    fun kneeBlocksKneelingGluteVariants() {
+        val injuries = setOf("knee")
+        listOf(
+            "resistance-band-hip-thrusts-on-knees",
+            "resistance-band-bent-leg-kickback-kneeling",
+            "donkey-kicks-bodyweight",
+            "resistance-band-leg-kickback",
+            "dumbbell-kickback",
+        ).forEach { slug ->
+            assertThat(service.isRestrictedByRule(exSlug(slug, "GLUTE_FOCUSED", MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS), injuries))
+                .describedAs(slug).isTrue()
+        }
     }
 }

@@ -248,10 +248,11 @@ class InjuryFilterService(
         for (part in parts) {
             val restricted = when (part) {
                 // 힙쓰러스트·글루트 브릿지는 무릎 굽힘 하중이 거의 없어 무릎 재활에서도 쓰는 둔근 운동이다.
-                // 햄스트링 보조 동원 때문에 통째로 막히던 것을 풀되, 대퇴사두·종아리를 쓰는 변형(싱글 레그·의자 발 올리기)은 그대로 막는다.
+                // 햄스트링 보조 동원 때문에 통째로 막히던 것을 풀되, 패턴 태그만 믿지 않고 종목명(슬러그) 허용 목록으로만 푼다.
+                // 무릎 꿇기·네발 자세(킥백·힙쓰러스트 온 니즈)는 무릎 관절에 하중이 실리고, 일부는 트라이셉스 킥백이 잘못 태깅된 것이다.
                 "knee" -> (hitsPattern("SQUAT", "LUNGE", "LEG_PRESS", "LEG_EXTENSION", "LEG_CURL", "PLYOMETRIC") ||
                     hitsMuscle("QUADRICEPS", "HAMSTRINGS", "CALVES")) &&
-                    !(pattern == "GLUTE_FOCUSED" && !hitsMuscle("QUADRICEPS", "CALVES"))
+                    !isKneeSafeGluteBridge(exercise, pattern, muscles)
                 "hip" -> hitsPattern("SQUAT", "LUNGE", "HIP_HINGE", "DEADLIFT", "GLUTE_FOCUSED", "LEG_PRESS", "PLYOMETRIC") ||
                     hitsMuscle("GLUTES", "HAMSTRINGS")
                 // 허리는 "선 자세로 척추에 하중이 실리는" 동작 전반이 문제다.
@@ -281,6 +282,18 @@ class InjuryFilterService(
             if (restricted) return true
         }
         return false
+    }
+
+    /**
+     * 무릎 재활에서도 쓰는 둔근 운동(힙쓰러스트·글루트 브릿지)만 허용한다. 애매하면 제한하는 쪽이다.
+     * 대퇴사두·종아리를 함께 쓰는 변형과, 무릎 꿇기·네발 자세·킥백류는 허용하지 않는다.
+     */
+    private fun isKneeSafeGluteBridge(exercise: Exercise, pattern: String, muscles: Set<String>): Boolean {
+        if (pattern != "GLUTE_FOCUSED") return false
+        if ("QUADRICEPS" in muscles || "CALVES" in muscles) return false
+        val slug = exercise.slug.lowercase()
+        if (!(slug.contains("hip-thrust") || slug.contains("glute-bridge"))) return false
+        return listOf("kneel", "on-knees", "knee", "kickback", "donkey", "quadruped").none { slug.contains(it) }
     }
 
     /**
