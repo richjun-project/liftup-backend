@@ -10,7 +10,9 @@ import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.PersonalRecordRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
+import com.richjun.liftupai.domain.workout.search.ExerciseSearchIndexService
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
+import com.richjun.liftupai.global.exception.BadRequestException
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -31,11 +33,18 @@ class ExerciseCatalogDetailService(
     private val workoutExerciseRepository: WorkoutExerciseRepository,
     private val exercisePatternClassifier: ExercisePatternClassifier,
     private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService,
-    private val sharedSupport: WorkoutV2SharedSupport
+    private val sharedSupport: WorkoutV2SharedSupport,
+    private val exerciseSearchIndexService: ExerciseSearchIndexService
 ) {
     @Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
     private var exerciseMediaBaseUrl: String = "https://liftup-cdn.com"
 
+    /**
+     * 운동 목록(페이징).
+     * - 검색어 없음: 추천 티어(ESSENTIAL > STANDARD > SPECIALIZED) → 인기도 → 로컬라이즈 이름 순
+     * - 검색어 있음: 다국어 검색 엔진의 관련도 순 (카테고리/장비 필터는 그대로 적용)
+     * equipment 는 쉼표로 구분한 enum 이름 목록(DUMBBELL,BODYWEIGHT)도 받는다.
+     */
     @Transactional(readOnly = true)
     fun getExercisesV2Paged(
         category: String?,
@@ -46,85 +55,94 @@ class ExerciseCatalogDetailService(
         pageable: org.springframework.data.domain.Pageable
     ): Map<String, Any> {
         val locale = sharedSupport.resolveLocale(null, localeOverride)
+        val cat = category?.takeIf { it.isNotBlank() }?.let { parseCategory(it) }
+        val equipments = parseEquipments(equipment)
 
-        val page = when {
-            search != null && search.isNotBlank() && category != null -> {
-                val cat = ExerciseCategory.valueOf(category.uppercase())
-                exerciseRepository.searchByCategory(cat, search, pageable)
-            }
-            search != null && search.isNotBlank() -> {
-                exerciseRepository.searchPaged(search, pageable)
-            }
-            category != null && equipment != null -> {
-                val cat = ExerciseCategory.valueOf(category.uppercase())
-                val eq = Equipment.valueOf(equipment.uppercase())
-                exerciseRepository.findByCategoryAndEquipment(cat, eq, pageable)
-            }
-            category != null -> {
-                val cat = ExerciseCategory.valueOf(category.uppercase())
-                exerciseRepository.findByCategory(cat, pageable)
-            }
-            else -> exerciseRepository.findAll(pageable)
-        }
+        val rankedIds = exerciseSearchIndexService.searchIds(search, cat, equipments, locale)
+        val totalElements = rankedIds.size.toLong()
+        val pageSize = pageable.pageSize
+        val totalPages = if (rankedIds.isEmpty()) 0 else (rankedIds.size + pageSize - 1) / pageSize
+        val from = pageable.offset.coerceAtMost(rankedIds.size.toLong()).toInt()
+        val to = (from + pageSize).coerceAtMost(rankedIds.size)
+        val pageIds = rankedIds.subList(from, to)
 
-        val translations = sharedSupport.translationMap(page.content, locale)
-
-        val content = page.content.map { exercise ->
-            ExerciseDetailV2(
-                id = exercise.id,
-                name = sharedSupport.localizedName(exercise, locale, translations),
-                category = exercise.category.name,
-                muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
-                equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
-                imageUrl = if (hasGif) generateGifUrl(exercise) else null,
-                thumbnailUrl = generateThumbnailUrl(exercise),
-                videoUrl = generateVideoUrl(exercise),
-                difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale),
-                description = sharedSupport.localizedInstructions(exercise, locale, translations)
-            )
-        }
+        val byId = exerciseRepository.findAllById(pageIds).associateBy { it.id }
+        val exercises = pageIds.mapNotNull { byId[it] }
+        val translations = sharedSupport.translationMap(exercises, locale)
+        val content = exercises.map { toExerciseDetail(it, locale, translations, hasGif) }
 
         return mapOf(
             "content" to content,
-            "totalElements" to page.totalElements,
-            "totalPages" to page.totalPages,
-            "number" to page.number,
-            "last" to page.isLast,
-            "size" to page.size
+            "totalElements" to totalElements,
+            "totalPages" to totalPages,
+            "number" to pageable.pageNumber,
+            "last" to (pageable.pageNumber >= totalPages - 1),
+            "size" to pageSize
         )
     }
 
     @Transactional(readOnly = true)
     fun getExercisesV2(category: String?, equipment: String?, hasGif: Boolean, localeOverride: String?): List<ExerciseDetailV2> {
         val locale = sharedSupport.resolveLocale(null, localeOverride)
-        val exercises = when {
-            category != null && equipment != null -> {
-                val cat = ExerciseCategory.valueOf(category.uppercase())
-                val eq = Equipment.valueOf(equipment.uppercase())
-                exerciseRepository.findByCategoryAndEquipment(cat, eq)
-            }
-            category != null -> {
-                val cat = ExerciseCategory.valueOf(category.uppercase())
-                exerciseRepository.findByCategory(cat)
-            }
-            else -> exerciseRepository.findAll()
-        }
+        val cat = category?.takeIf { it.isNotBlank() }?.let { parseCategory(it) }
+        val equipments = parseEquipments(equipment)
+        val base = if (cat != null) exerciseRepository.findByCategory(cat) else exerciseRepository.findAll()
+        val exercises = if (equipments.isNullOrEmpty()) base else base.filter { it.equipment in equipments }
         val translations = sharedSupport.translationMap(exercises, locale)
 
-        return exercises.map { exercise ->
-            ExerciseDetailV2(
-                id = exercise.id,
-                name = sharedSupport.localizedName(exercise, locale, translations),
-                category = exercise.category.name,
-                muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
-                equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
-                imageUrl = if (hasGif) generateGifUrl(exercise) else null,
-                thumbnailUrl = generateThumbnailUrl(exercise),
-                videoUrl = generateVideoUrl(exercise),
-                difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale),
-                description = sharedSupport.localizedInstructions(exercise, locale, translations)
-            )
+        return exercises.map { toExerciseDetail(it, locale, translations, hasGif) }
+    }
+
+    private fun parseCategory(raw: String): ExerciseCategory {
+        return try {
+            ExerciseCategory.valueOf(raw.trim().uppercase())
+        } catch (e: IllegalArgumentException) {
+            throw BadRequestException("Invalid category: $raw")
         }
+    }
+
+    /** "DUMBBELL,BODYWEIGHT" 처럼 쉼표로 구분된 장비 목록 (단일 값도 허용). 비어 있으면 null = 필터 없음 */
+    private fun parseEquipments(raw: String?): Set<Equipment>? {
+        val tokens = raw?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+        if (tokens.isEmpty()) return null
+        return tokens.map {
+            try {
+                Equipment.valueOf(it.uppercase())
+            } catch (e: IllegalArgumentException) {
+                throw BadRequestException("Invalid equipment: $it")
+            }
+        }.toSet()
+    }
+
+    /** Exercise.difficulty(1-100) → beginner/intermediate/advanced (1-30 / 31-60 / 61+) */
+    private fun difficultyKey(score: Int): String = when {
+        score <= 30 -> "beginner"
+        score <= 60 -> "intermediate"
+        else -> "advanced"
+    }
+
+    private fun toExerciseDetail(
+        exercise: Exercise,
+        locale: String,
+        translations: Map<Long, ExerciseTranslation>,
+        hasGif: Boolean
+    ): ExerciseDetailV2 {
+        return ExerciseDetailV2(
+            id = exercise.id,
+            name = sharedSupport.localizedName(exercise, locale, translations),
+            category = exercise.category.name,
+            muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
+            equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
+            imageUrl = if (hasGif) generateGifUrl(exercise) else null,
+            thumbnailUrl = generateThumbnailUrl(exercise),
+            videoUrl = generateVideoUrl(exercise),
+            difficulty = WorkoutLocalization.difficultyDisplayName(difficultyKey(exercise.difficulty), locale),
+            description = sharedSupport.localizedInstructions(exercise, locale, translations),
+            tier = exercise.recommendationTier.name,
+            equipmentCode = exercise.equipment?.name,
+            muscleGroupCodes = exercise.muscleGroups.map { it.name }.sorted(),
+            popularity = exercise.popularity
+        )
     }
 
     @Transactional(readOnly = true)
@@ -159,8 +177,12 @@ class ExerciseCatalogDetailService(
             imageUrl = generateGifUrl(exercise),
             thumbnailUrl = generateThumbnailUrl(exercise),
             videoUrl = generateVideoUrl(exercise),
-            difficulty = WorkoutLocalization.difficultyDisplayName("intermediate", locale),
+            difficulty = WorkoutLocalization.difficultyDisplayName(difficultyKey(exercise.difficulty), locale),
             description = sharedSupport.localizedInstructions(exercise, locale, translations),
+            tier = exercise.recommendationTier.name,
+            equipmentCode = exercise.equipment?.name,
+            muscleGroupCodes = exercise.muscleGroups.map { it.name }.sorted(),
+            popularity = exercise.popularity,
             instructions = localizedLines(sharedSupport.localizedInstructions(exercise, locale, translations)) ?: generateInstructions(exercise, locale),
             tips = localizedLines(localizedTips(exercise, locale, translations)) ?: generateTips(exercise, locale),
             commonMistakes = generateCommonMistakes(exercise, locale),

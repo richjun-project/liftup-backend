@@ -16,6 +16,12 @@ import org.springframework.stereotype.Repository
 interface ExerciseRepository : JpaRepository<Exercise, Long> {
     fun findBySlug(slug: String): Exercise?
 
+    /** 검색 인덱스 빌드용 — EAGER 인 muscleGroups 를 한 번에 로드해 N+1 을 피한다 */
+    @Query("SELECT DISTINCT e FROM Exercise e LEFT JOIN FETCH e.muscleGroups")
+    fun findAllWithMuscleGroups(): List<Exercise>
+
+    /** 브라우즈 정렬(티어 → 인기도) 용 id 목록은 엔진이 메모리에서 처리하므로 별도 쿼리가 필요 없다 */
+
     fun findAllByIsPlanEligibleTrue(): List<Exercise>
 
     fun findByIsPlanEligibleTrueAndCategory(category: ExerciseCategory): List<Exercise>

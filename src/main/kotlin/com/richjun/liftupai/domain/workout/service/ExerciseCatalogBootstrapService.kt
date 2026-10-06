@@ -11,6 +11,7 @@ import com.richjun.liftupai.domain.workout.entity.MuscleGroup
 import com.richjun.liftupai.domain.workout.entity.RecommendationTier
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseTranslationRepository
+import com.richjun.liftupai.domain.workout.search.ExerciseCatalogChangedEvent
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.SpringApplication
@@ -130,6 +131,7 @@ class ExerciseCatalogBootstrapService(
 
         exerciseTranslationRepository.saveAllAndFlush(translations)
         logger.info("Exercise catalog imported: {} exercises, {} translations", savedExercises.size, translations.size)
+        applicationContext.publishEvent(ExerciseCatalogChangedEvent())
     }
 
     /**
@@ -223,6 +225,10 @@ class ExerciseCatalogBootstrapService(
                     )
                 }
             }
+        }
+        if (updated > 0 || created > 0 || curationUpdated > 0) {
+            // 이름/큐레이션 필드가 바뀌었으니 검색 인덱스를 다시 만들게 한다
+            applicationContext.publishEvent(ExerciseCatalogChangedEvent())
         }
         if (updated > 0 || created > 0 || curationUpdated > 0 || failed > 0) {
             logger.info(

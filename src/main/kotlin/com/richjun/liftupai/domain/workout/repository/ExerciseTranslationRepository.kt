@@ -15,6 +15,10 @@ interface ExerciseTranslationRepository : JpaRepository<ExerciseTranslation, Lon
 
     fun findByExerciseIdInAndLocale(exerciseIds: Collection<Long>, locale: String): List<ExerciseTranslation>
 
+    /** 검색 인덱스 빌드용 (exercise_id, locale, display_name) 투영 — LAZY exercise 프록시를 건드리지 않는다 */
+    @Query("SELECT et.exercise.id, et.locale, et.displayName FROM ExerciseTranslation et")
+    fun findAllNameRows(): List<Array<Any>>
+
     fun deleteByExerciseIdIn(exerciseIds: Collection<Long>)
 
     @Query(

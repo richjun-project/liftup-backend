@@ -218,7 +218,18 @@ data class ExerciseDetailV2(
     @JsonProperty("common_mistakes")
     val commonMistakes: List<String> = emptyList(),
 
-    val breathing: String? = null
+    val breathing: String? = null,
+
+    // 목록 정렬/필터에 쓰는 원본 코드 (표시용 문자열이 아닌 enum 이름)
+    val tier: String = "STANDARD",
+
+    @JsonProperty("equipment_code")
+    val equipmentCode: String? = null,
+
+    @JsonProperty("muscle_group_codes")
+    val muscleGroupCodes: List<String> = emptyList(),
+
+    val popularity: Int = 0
 )
 
 data class ExerciseDetailResponseV2(

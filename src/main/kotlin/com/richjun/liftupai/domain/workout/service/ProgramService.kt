@@ -5,12 +5,12 @@ import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.dto.*
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.repository.*
+import com.richjun.liftupai.domain.workout.search.ExerciseSearchIndexService
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.domain.workout.util.WorkoutTranslations
 import com.richjun.liftupai.global.exception.BadRequestException
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.i18n.ErrorLocalization
-import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import com.richjun.liftupai.global.time.AppTime
@@ -33,7 +33,8 @@ class ProgramService(
     private val userSettingsRepository: UserSettingsRepository,
     private val localizationService: ExerciseCatalogLocalizationService,
     private val exerciseSubstitutionService: ExerciseSubstitutionService,
-    private val userPlanService: UserPlanService
+    private val userPlanService: UserPlanService,
+    private val exerciseSearchIndexService: ExerciseSearchIndexService
 ) {
     private val log = org.slf4j.LoggerFactory.getLogger(ProgramService::class.java)
 
@@ -354,20 +355,27 @@ class ProgramService(
         }
         val safePage = page.coerceAtLeast(0)
         val safeSize = size.coerceIn(1, 50)
-        val pageable = PageRequest.of(safePage, safeSize)
         val cat = category?.let { parseCategory(it) }
-        val result = if (cat != null) {
-            exerciseRepository.searchByCategory(cat, trimmed, pageable)
-        } else {
-            exerciseRepository.searchPaged(trimmed, pageable)
-        }
         val normalizedLocale = localizationService.normalizeLocale(locale)
-        val translations = localizationService.translationMap(result.content, normalizedLocale)
+        // 다국어 검색 엔진의 관련도 순 (표기 변이/별칭/오타/부위·장비 의도 포함)
+        val rankedIds = exerciseSearchIndexService.searchIds(trimmed, cat, null, normalizedLocale)
+        return pageOfRankedIds(rankedIds, safePage, safeSize, normalizedLocale)
+    }
+
+    /** 랭킹된 id 목록에서 한 페이지를 잘라 검색 응답으로 만든다 */
+    private fun pageOfRankedIds(rankedIds: List<Long>, page: Int, size: Int, locale: String): ExerciseSearchResponse {
+        val totalPages = if (rankedIds.isEmpty()) 0 else (rankedIds.size + size - 1) / size
+        val from = (page.toLong() * size).coerceAtMost(rankedIds.size.toLong()).toInt()
+        val to = (from + size).coerceAtMost(rankedIds.size)
+        val pageIds = rankedIds.subList(from, to)
+        val byId = exerciseRepository.findAllById(pageIds).associateBy { it.id }
+        val pageContent = pageIds.mapNotNull { byId[it] }
+        val translations = localizationService.translationMap(pageContent, locale)
         return ExerciseSearchResponse(
-            exercises = result.content.map { it.toSearchItem(normalizedLocale, translations) },
-            totalElements = result.totalElements,
-            totalPages = result.totalPages,
-            currentPage = safePage
+            exercises = pageContent.map { it.toSearchItem(locale, translations) },
+            totalElements = rankedIds.size.toLong(),
+            totalPages = totalPages,
+            currentPage = page
         )
     }
 
@@ -410,20 +418,9 @@ class ProgramService(
             )
         }
 
-        val pageable = PageRequest.of(safePage, safeSize)
-        val result = if (cat != null) {
-            exerciseRepository.findListableByCategory(cat, pageable)
-        } else {
-            exerciseRepository.findListable(pageable)
-        }
+        // 기준 운동이 없으면: ESSENTIAL/STANDARD 만, 티어 → 인기도 → 이름 순 (이름순 정렬로 희귀 운동이 앞서던 문제 방지)
         val normalizedLocale = localizationService.normalizeLocale(locale)
-        val translations = localizationService.translationMap(result.content, normalizedLocale)
-        return ExerciseSearchResponse(
-            exercises = result.content.map { it.toSearchItem(normalizedLocale, translations) },
-            totalElements = result.totalElements,
-            totalPages = result.totalPages,
-            currentPage = safePage
-        )
+        return pageOfRankedIds(exerciseSearchIndexService.listableIds(cat, normalizedLocale), safePage, safeSize, normalizedLocale)
     }
 
     private fun parseCategory(raw: String): ExerciseCategory {

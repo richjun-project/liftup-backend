@@ -63,6 +63,16 @@ allOpen {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// 검색 평가셋 파일 오버라이드(-DsearchEval.file=...)를 테스트 JVM 으로 전달
+	['searchEval.file'].each { key ->
+		def value = System.getProperty(key)
+		if (value != null) {
+			systemProperty key, value
+		}
+	}
+	testLogging {
+		showStandardStreams = project.hasProperty('showTestOutput') || System.getProperty('searchEval.show') != null
+	}
 }
 
 // JWT 및 보안 관련 의존성 추가

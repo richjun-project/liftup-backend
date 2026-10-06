@@ -5,7 +5,6 @@ import com.richjun.liftupai.domain.workout.service.ExerciseCatalogDetailService
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.security.CustomUserDetails
 import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -19,7 +18,7 @@ class ExerciseControllerV2(
     @GetMapping
     fun getExercisesV2(
         @RequestParam(required = false) category: String?,
-        @RequestParam(required = false) equipment: String?,
+        @RequestParam(required = false) equipment: String?, // 쉼표 구분 목록 허용 (DUMBBELL,BODYWEIGHT)
         @RequestParam(defaultValue = "false") hasGif: Boolean,
         @RequestParam(required = false) locale: String?,
         @RequestParam(required = false) page: Int?,
@@ -29,7 +28,8 @@ class ExerciseControllerV2(
         // page/size 파라미터가 있으면 페이징 응답
         if (page != null) {
             val pageSize = (size ?: 20).coerceIn(1, 100)
-            val pageable = PageRequest.of(page, pageSize, Sort.by("name"))
+            // 정렬은 서비스(검색 엔진/브라우즈 순서)가 결정한다 — 이름순 정렬을 강제하지 않는다
+            val pageable = PageRequest.of(page.coerceAtLeast(0), pageSize)
             val pagedResult = exerciseCatalogDetailService.getExercisesV2Paged(
                 category, equipment, hasGif, locale, search, pageable
             )
