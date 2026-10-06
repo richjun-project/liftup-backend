@@ -35,13 +35,13 @@ class UserTrainingContextResolverTest {
     }
 
     @Test
-    fun `프로필에서 지운 부상이 설정에 남아 있어도 걸러내지 않는다`() {
-        assertEquals(emptySet<String>(), resolve(profileInjuries = emptySet(), settingsInjuries = setOf("knee")))
+    fun `설정에만 남은 부상도 거른다 — 2026-08-26 무릎 사고 형태`() {
+        assertEquals(setOf("knee"), resolve(profileInjuries = emptySet(), settingsInjuries = setOf("knee")))
     }
 
     @Test
-    fun `프로필의 부상은 그대로 읽는다`() {
-        assertEquals(setOf("shoulder"), resolve(profileInjuries = setOf("Shoulder"), settingsInjuries = setOf("knee")))
+    fun `프로필과 설정의 부상을 합쳐 읽는다`() {
+        assertEquals(setOf("shoulder", "knee"), resolve(profileInjuries = setOf("Shoulder"), settingsInjuries = setOf("knee")))
     }
 
     @Test

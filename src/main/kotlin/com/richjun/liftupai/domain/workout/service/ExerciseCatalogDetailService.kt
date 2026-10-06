@@ -81,13 +81,21 @@ class ExerciseCatalogDetailService(
         )
     }
 
+    /** 운동 목록(전체, 하위 호환) — 순서·검색 규칙은 페이징 경로와 같다 */
     @Transactional(readOnly = true)
-    fun getExercisesV2(category: String?, equipment: String?, hasGif: Boolean, localeOverride: String?): List<ExerciseDetailV2> {
+    fun getExercisesV2(
+        category: String?,
+        equipment: String?,
+        hasGif: Boolean,
+        localeOverride: String?,
+        search: String? = null
+    ): List<ExerciseDetailV2> {
         val locale = sharedSupport.resolveLocale(null, localeOverride)
         val cat = category?.takeIf { it.isNotBlank() }?.let { parseCategory(it) }
         val equipments = parseEquipments(equipment)
-        val base = if (cat != null) exerciseRepository.findByCategory(cat) else exerciseRepository.findAll()
-        val exercises = if (equipments.isNullOrEmpty()) base else base.filter { it.equipment in equipments }
+        val rankedIds = exerciseSearchIndexService.searchIds(search, cat, equipments, locale)
+        val byId = exerciseRepository.findAllById(rankedIds).associateBy { it.id }
+        val exercises = rankedIds.mapNotNull { byId[it] }
         val translations = sharedSupport.translationMap(exercises, locale)
 
         return exercises.map { toExerciseDetail(it, locale, translations, hasGif) }

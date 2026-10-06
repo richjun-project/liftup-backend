@@ -39,7 +39,7 @@ class ExerciseControllerV2(
         }
 
         // 기존 전체 조회 (하위 호환)
-        val response = exerciseCatalogDetailService.getExercisesV2(category, equipment, hasGif, locale)
+        val response = exerciseCatalogDetailService.getExercisesV2(category, equipment, hasGif, locale, search)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

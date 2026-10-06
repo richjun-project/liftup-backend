@@ -209,7 +209,11 @@ class ExerciseSearchEngine(docs: Collection<ExerciseSearchDoc>) {
         }
         val signature = intent.muscles.flatMap { ExerciseSearchLexicon.signatureTerms[it].orEmpty() }.toSet()
         var cands = if (allowed != null) pool.filter { it.doc.equipment in allowed } else pool
-        if (cands.isEmpty()) cands = pool
+        if (cands.isEmpty()) {
+            // 장비만 물은 질의("kettlebell")인데 필터 안에 그 장비가 없으면 결과 없음 — 전체를 돌려주면 무관한 운동이 쏟아진다
+            if (!intent.hasMuscle) return emptyList()
+            cands = pool
+        }
         val out = ArrayList<ExerciseSearchHit>()
         for (d in cands) {
             val doc = d.doc
