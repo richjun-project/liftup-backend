@@ -149,6 +149,7 @@ class UserService(
         )
 
         settings.workoutReminder = request.notificationEnabled
+        storeFocusGoals(settings, request.goals)
         settings.weeklyWorkoutDays = request.weeklyWorkoutDays
         settings.workoutSplit = request.workoutSplit
         settings.preferredWorkoutTime = request.preferredWorkoutTime
@@ -441,7 +442,8 @@ class UserService(
         // 바꿔도 UI만 바뀌고 실제 추천은 온보딩 당시 값 그대로였다. 아래에서 함께 동기화한다.
         var previousPreferredTime: String? = null
         val touchesSettings = request.preferredWorkoutTime != null || request.weeklyWorkoutDays != null ||
-            request.workoutSplit != null || request.workoutDuration != null || request.availableEquipment != null
+            request.workoutSplit != null || request.workoutDuration != null || request.availableEquipment != null ||
+            request.goals != null
         if (touchesSettings) {
             val settings = userSettingsRepository.findByUser_Id(userId).orElse(
                 UserSettings(user = profile.user)
@@ -454,6 +456,7 @@ class UserService(
             request.weeklyWorkoutDays?.let { settings.weeklyWorkoutDays = it }
             request.workoutSplit?.let { settings.workoutSplit = it }
             request.workoutDuration?.let { settings.workoutDuration = it }
+            request.goals?.let { storeFocusGoals(settings, it) }
             request.availableEquipment?.let {
                 settings.availableEquipment.clear()
                 settings.availableEquipment.addAll(it)
@@ -566,6 +569,16 @@ class UserService(
         )
     }
 
+    /** 세부 집중 목표만 골라 설정에 보존한다 (FitnessGoal 로는 사라지는 정보) */
+    private fun storeFocusGoals(settings: UserSettings, goals: Collection<String>?) {
+        val focus = goals.orEmpty()
+            .map { it.trim().lowercase().replace('-', '_').replace(' ', '_') }
+            .filter { com.richjun.liftupai.domain.workout.service.FocusArea.isFocusGoal(it) }
+            .toSet()
+        settings.focusGoals.clear()
+        settings.focusGoals.addAll(focus)
+    }
+
     private fun deleteAllUserData(userId: Long) {
         // ElementCollection 테이블 (최하위 leaf 노드)
         executeDelete("DELETE FROM notification_data WHERE notification_history_id IN (SELECT id FROM notification_history WHERE user_id = :userId)", userId)
@@ -574,6 +587,7 @@ class UserService(
         executeDelete("DELETE FROM user_equipment WHERE profile_id IN (SELECT id FROM user_profiles WHERE user_id = :userId)", userId)
         executeDelete("DELETE FROM user_profile_injuries WHERE profile_id IN (SELECT id FROM user_profiles WHERE user_id = :userId)", userId)
         executeDelete("DELETE FROM user_available_equipment WHERE settings_id IN (SELECT id FROM user_settings WHERE user_id = :userId)", userId)
+        executeDelete("DELETE FROM user_focus_goals WHERE settings_id IN (SELECT id FROM user_settings WHERE user_id = :userId)", userId)
         executeDelete("DELETE FROM user_settings_injuries WHERE settings_id IN (SELECT id FROM user_settings WHERE user_id = :userId)", userId)
         executeDelete("DELETE FROM recovery_activity_body_parts WHERE activity_id IN (SELECT id FROM recovery_activities WHERE user_id = :userId)", userId)
 

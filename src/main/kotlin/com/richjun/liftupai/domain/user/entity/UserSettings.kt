@@ -78,6 +78,18 @@ data class UserSettings(
     @Column(name = "injury")
     var injuries: MutableSet<String> = mutableSetOf(),
 
+    /**
+     * 온보딩에서 고른 집중 부위 목표(thick_legs·glutes·big_arms …, 소문자 앱 표기).
+     * FitnessGoal(6종)로는 세부 목표가 사라져서 따로 저장한다 — 플랜 집중 볼륨·추천이 읽는다.
+     */
+    @ElementCollection
+    @CollectionTable(
+        name = "user_focus_goals",
+        joinColumns = [JoinColumn(name = "settings_id")]
+    )
+    @Column(name = "focus_goal")
+    var focusGoals: MutableSet<String> = mutableSetOf(),
+
     @Column(name = "created_at")
     val createdAt: LocalDateTime = AppTime.utcNow(),
 

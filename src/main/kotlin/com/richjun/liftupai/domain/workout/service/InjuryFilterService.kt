@@ -247,8 +247,11 @@ class InjuryFilterService(
 
         for (part in parts) {
             val restricted = when (part) {
-                "knee" -> hitsPattern("SQUAT", "LUNGE", "LEG_PRESS", "LEG_EXTENSION", "LEG_CURL", "PLYOMETRIC") ||
-                    hitsMuscle("QUADRICEPS", "HAMSTRINGS", "CALVES")
+                // 힙쓰러스트·글루트 브릿지는 무릎 굽힘 하중이 거의 없어 무릎 재활에서도 쓰는 둔근 운동이다.
+                // 햄스트링 보조 동원 때문에 통째로 막히던 것을 풀되, 대퇴사두·종아리를 쓰는 변형(싱글 레그·의자 발 올리기)은 그대로 막는다.
+                "knee" -> (hitsPattern("SQUAT", "LUNGE", "LEG_PRESS", "LEG_EXTENSION", "LEG_CURL", "PLYOMETRIC") ||
+                    hitsMuscle("QUADRICEPS", "HAMSTRINGS", "CALVES")) &&
+                    !(pattern == "GLUTE_FOCUSED" && !hitsMuscle("QUADRICEPS", "CALVES"))
                 "hip" -> hitsPattern("SQUAT", "LUNGE", "HIP_HINGE", "DEADLIFT", "GLUTE_FOCUSED", "LEG_PRESS", "PLYOMETRIC") ||
                     hitsMuscle("GLUTES", "HAMSTRINGS")
                 // 허리는 "선 자세로 척추에 하중이 실리는" 동작 전반이 문제다.

@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.workout.dto
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import jakarta.validation.Valid
 import jakarta.validation.constraints.Max
@@ -229,7 +230,11 @@ data class ExerciseDetailV2(
     @JsonProperty("muscle_group_codes")
     val muscleGroupCodes: List<String> = emptyList(),
 
-    val popularity: Int = 0
+    val popularity: Int = 0,
+
+    // 추천(GET /api/v2/exercises/suggestions)에서만 채우는 "왜 이 운동인가" 한 줄. 목록·상세 응답에는 나가지 않는다.
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    val reason: String? = null
 )
 
 data class ExerciseDetailResponseV2(

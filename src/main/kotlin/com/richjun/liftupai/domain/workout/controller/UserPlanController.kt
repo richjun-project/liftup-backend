@@ -3,6 +3,10 @@ package com.richjun.liftupai.domain.workout.controller
 import com.richjun.liftupai.domain.workout.dto.request.ApplyTemplateRequest
 import com.richjun.liftupai.domain.workout.dto.request.CreateCustomPlanRequest
 import com.richjun.liftupai.domain.workout.dto.request.GenerateAIPlanRequest
+import com.richjun.liftupai.domain.workout.dto.request.RecommendTemplateRequest
+import com.richjun.liftupai.domain.workout.dto.response.TemplateRecommendationResponse
+import com.richjun.liftupai.domain.workout.service.TemplateRecommendationService
+import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.domain.workout.dto.request.SetCurrentDayRequest
 import com.richjun.liftupai.domain.workout.service.AIPlanGenerationService
 import com.richjun.liftupai.domain.workout.service.TemplateService
@@ -17,7 +21,8 @@ import org.springframework.web.bind.annotation.*
 class UserPlanController(
     private val userPlanService: UserPlanService,
     private val templateService: TemplateService,
-    private val aiPlanGenerationService: AIPlanGenerationService
+    private val aiPlanGenerationService: AIPlanGenerationService,
+    private val templateRecommendationService: TemplateRecommendationService
 ) {
     // --- Templates ---
     @GetMapping("/templates")
@@ -36,6 +41,17 @@ class UserPlanController(
     ): ResponseEntity<Map<String, Any>> {
         val detail = templateService.getTemplateDetail(code, locale)
         return ResponseEntity.ok(mapOf("success" to true, "data" to detail))
+    }
+
+    /** 온보딩 답변(경험·목표·일수·시간·장비·부상·집중 부위)으로 가장 맞는 프리셋 템플릿을 고른다 */
+    @PostMapping("/templates/recommend")
+    fun recommendTemplate(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestBody request: RecommendTemplateRequest,
+        @RequestParam(required = false) locale: String?
+    ): ResponseEntity<ApiResponse<TemplateRecommendationResponse>> {
+        val response = templateRecommendationService.recommend(userDetails.getUser(), request, locale)
+        return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     @PostMapping("/templates/{code}/apply")

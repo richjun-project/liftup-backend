@@ -103,4 +103,17 @@ class InjuryRuleTest {
         // 허리 부상이 아니면 벤트오버 로우는 그대로 허용
         assertThat(service.isRestrictedByRule(exSlug("dumbbell-bent-over-row", "DUMBBELL_ROW", MuscleGroup.BACK), setOf("knee"))).isFalse()
     }
+
+    @Test
+    @DisplayName("무릎 부상이어도 힙쓰러스트·글루트 브릿지는 허용하지만 대퇴사두를 쓰는 변형은 막는다")
+    fun kneeAllowsGluteBridgeNotQuadVariants() {
+        val injuries = setOf("knee")
+        assertThat(service.isRestrictedByRule(ex("GLUTE_FOCUSED", MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS), injuries)).isFalse()
+        assertThat(service.isRestrictedByRule(ex("GLUTE_FOCUSED", MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS, MuscleGroup.QUADRICEPS), injuries)).isTrue()
+        // 고관절 부상이면 둔근 운동은 그대로 제한
+        assertThat(service.isRestrictedByRule(ex("GLUTE_FOCUSED", MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS), setOf("hip"))).isTrue()
+        // 스쿼트·레그컬은 여전히 제한
+        assertThat(service.isRestrictedByRule(ex("SQUAT", MuscleGroup.GLUTES, MuscleGroup.QUADRICEPS), injuries)).isTrue()
+        assertThat(service.isRestrictedByRule(ex("LEG_CURL", MuscleGroup.HAMSTRINGS), injuries)).isTrue()
+    }
 }

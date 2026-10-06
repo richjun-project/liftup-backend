@@ -114,6 +114,13 @@ class ExerciseCatalogDetailService(
         }.toSet()
     }
 
+    /** 운동 목록 → 응답 DTO (추천·대체 운동 등 다른 서비스가 같은 목록 형식을 쓰도록 공개) */
+    @Transactional(readOnly = true)
+    fun toExerciseDetails(exercises: List<Exercise>, locale: String, hasGif: Boolean = false): List<ExerciseDetailV2> {
+        val translations = sharedSupport.translationMap(exercises, locale)
+        return exercises.map { toExerciseDetail(it, locale, translations, hasGif) }
+    }
+
     /** Exercise.difficulty(1-100) → beginner/intermediate/advanced (1-30 / 31-60 / 61+) */
     private fun difficultyKey(score: Int): String = when {
         score <= 30 -> "beginner"

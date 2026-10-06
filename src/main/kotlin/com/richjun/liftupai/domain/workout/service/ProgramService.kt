@@ -34,9 +34,16 @@ class ProgramService(
     private val localizationService: ExerciseCatalogLocalizationService,
     private val exerciseSubstitutionService: ExerciseSubstitutionService,
     private val userPlanService: UserPlanService,
-    private val exerciseSearchIndexService: ExerciseSearchIndexService
+    private val exerciseSearchIndexService: ExerciseSearchIndexService,
+    private val exerciseCatalogCache: ExerciseCatalogCache,
+    private val userTrainingContextResolver: UserTrainingContextResolver,
+    private val injuryFilterService: InjuryFilterService
 ) {
     private val log = org.slf4j.LoggerFactory.getLogger(ProgramService::class.java)
+
+    private companion object {
+        const val MAX_SUBSTITUTES = 10
+    }
 
     @org.springframework.beans.factory.annotation.Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
     private var exerciseMediaBaseUrl: String = "https://liftup-cdn.com"
@@ -260,81 +267,56 @@ class ProgramService(
 
     // ── Substitutes ──────────────────────────────────────────────────────────
 
-    fun getExerciseSubstitutes(exerciseId: Long, locale: String? = null): SubstituteListResponse {
+    /**
+     * 대체 운동. 큐레이션 표(exercise_substitutions) + 카탈로그 전체에서 같은 동작 패턴·근육 겹침이 큰 운동을 뽑아
+     * 패턴/근육 → 티어·인기도 순으로 정렬한다. 로그인 사용자면 저장된 보유 장비와 부상 제한을 지킨다
+     * (집에 없는 장비·다친 부위를 쓰는 운동을 대체로 내밀지 않는다).
+     */
+    fun getExerciseSubstitutes(exerciseId: Long, locale: String? = null, userId: Long? = null): SubstituteListResponse {
         val exercise = exerciseRepository.findById(exerciseId)
             .orElseThrow { ResourceNotFoundException("Exercise not found: $exerciseId") }
 
         val normalizedLocale = localizationService.normalizeLocale(locale)
+        val ctx = userId?.let { userTrainingContextResolver.resolve(it) } ?: UserTrainingContextResolver.Context.EMPTY
+        val restricted = injuryFilterService.restrictionChecker(ctx.injuries)
+        val allowed: (Exercise) -> Boolean = { ex -> TemplatePlanAdapter.equipmentAllowed(ex, ctx.equipment) && !restricted(ex) }
 
-        // First try the static substitution table
-        val staticRaw = exerciseSubstitutionRepository
+        val staticByExerciseId = exerciseSubstitutionRepository
             .findByOriginalExerciseIdOrderByPriority(exerciseId)
+            .associateBy { it.substituteExercise.id }
 
-        // Collect all exercises (original + substitutes) for batch translation
-        val allExercises = staticRaw.map { it.substituteExercise } + listOf(exercise)
+        val ranked = SubstituteRanker.rank(
+            original = exercise,
+            pool = exerciseCatalogCache.get().all,
+            curatedIds = staticByExerciseId.keys,
+            isAllowed = allowed,
+            limit = MAX_SUBSTITUTES,
+        )
 
-        val originalMuscles = exercise.muscleGroups.toSet()
-        val originalEquipment = exercise.equipment
-
-        val dynamicRaw = if (staticRaw.isEmpty() && originalMuscles.isNotEmpty()) {
-            exerciseRepository.findAlternativeExercises(
-                exerciseId, exercise.category, originalMuscles.toList()
-            ).take(30) // 넉넉히 가져와서 스코어링 후 상위 10개 선택
-        } else emptyList()
-
-        // 스코어링: 근육 겹침도(0~1) * 60 + 장비 일치(0|1) * 30 + 인기도(0~1) * 10
-        val scoredDynamic = dynamicRaw.map { alt ->
-            val altMuscles = alt.muscleGroups.toSet()
-            val overlap = (originalMuscles intersect altMuscles).size
-            val union = (originalMuscles union altMuscles).size
-            val muscleScore = if (union > 0) overlap.toDouble() / union else 0.0
-            val equipMatch = if (alt.equipment == originalEquipment) 1.0 else 0.0
-            val popScore = alt.popularity.coerceIn(0, 100) / 100.0
-            val score = muscleScore * 60 + equipMatch * 30 + popScore * 10
-            alt to score
-        }.sortedByDescending { it.second }.take(10)
-
-        val allForTranslation = staticRaw.map { it.substituteExercise } + listOf(exercise) + scoredDynamic.map { it.first }
-        val translations = localizationService.translationMap(allForTranslation, normalizedLocale)
-
-        // static substitutes: EQUIVALENT 우선 정렬
-        val reasonOrder = mapOf("EQUIVALENT" to 0, "INJURY" to 1, "PREFERENCE" to 2, "EQUIPMENT" to 3)
-        val staticSubstitutes = staticRaw.map {
-            SubstituteResponse(
-                exerciseId = it.substituteExercise.id,
-                name = localizationService.displayName(it.substituteExercise, normalizedLocale, translations),
-                reason = it.reason.name,
-                category = it.substituteExercise.category.name,
-                equipment = it.substituteExercise.equipment?.name,
-                muscleGroups = it.substituteExercise.muscleGroups.map { mg -> mg.name },
-                imageUrl = thumbnailUrl(it.substituteExercise)
-            )
-        }.sortedBy { reasonOrder[it.reason] ?: 99 }
-
-        val substitutes = if (staticSubstitutes.isNotEmpty()) {
-            staticSubstitutes
-        } else {
-            scoredDynamic.map { (alt, _) ->
-                val altMuscles = alt.muscleGroups.toSet()
-                val overlap = (originalMuscles intersect altMuscles).size
-                val union = (originalMuscles union altMuscles).size
-                val similarity = if (union > 0) overlap.toDouble() / union else 0.0
-                val reason = when {
-                    similarity >= 0.5 && alt.equipment == originalEquipment -> "EQUIVALENT"
-                    similarity >= 0.5 -> "EQUIPMENT"
-                    alt.equipment == originalEquipment -> "PREFERENCE"
-                    else -> "EQUIPMENT"
-                }
-                SubstituteResponse(
-                    exerciseId = alt.id,
-                    name = localizationService.displayName(alt, normalizedLocale, translations),
-                    reason = reason,
-                    category = alt.category.name,
-                    equipment = alt.equipment?.name,
-                    muscleGroups = alt.muscleGroups.map { mg -> mg.name },
-                    imageUrl = thumbnailUrl(alt)
-                )
+        val translations = localizationService.translationMap(listOf(exercise) + ranked.map { it.exercise }, normalizedLocale)
+        // 사용자가 이 운동을 지금 못 하는 이유(부상·장비)가 있으면 사유를 그걸로 알려 준다
+        val originalBlocked = when {
+            userId != null && ctx.injuries.isNotEmpty() && restricted(exercise) -> "INJURY"
+            userId != null && !TemplatePlanAdapter.equipmentAllowed(exercise, ctx.equipment) -> "EQUIPMENT"
+            else -> null
+        }
+        val substitutes = ranked.map { r ->
+            val alt = r.exercise
+            val reason = staticByExerciseId[alt.id]?.reason?.name ?: originalBlocked ?: when {
+                r.similarity >= 0.5 && alt.equipment == exercise.equipment -> "EQUIVALENT"
+                r.similarity >= 0.5 -> "EQUIPMENT"
+                alt.equipment == exercise.equipment -> "PREFERENCE"
+                else -> "EQUIPMENT"
             }
+            SubstituteResponse(
+                exerciseId = alt.id,
+                name = localizationService.displayName(alt, normalizedLocale, translations),
+                reason = reason,
+                category = alt.category.name,
+                equipment = alt.equipment?.name,
+                muscleGroups = alt.muscleGroups.map { mg -> mg.name },
+                imageUrl = thumbnailUrl(alt)
+            )
         }
 
         return SubstituteListResponse(

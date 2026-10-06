@@ -27,26 +27,16 @@ class TemplateBootstrapService(
             return
         }
 
-        val definitions = listOf(
-            ::seedBeginnerFullBody,
-            ::seedHypertrophyBasic,
-            ::seedDietCircuit,
-            ::seedPPLClassic,
-            ::seedUpperLowerMuscle,
-            ::seedAdvancedFullBody,
-            ::seedAdvancedPPLUL,
-            ::seedBeginner2Day
-        )
-
         var seeded = 0
-        for (def in definitions) {
+        for (def in PresetTemplates.ALL) {
             try {
-                txTemplate.execute { def() }
+                // 이미 있는 코드는 건너뛴다 — 운영 DB 의 기존 템플릿·사용자 플랜은 그대로 두고 새 코드만 추가된다.
+                txTemplate.execute { seedTemplate(def) }
                 seeded++
             } catch (e: TemplateAlreadyExistsException) {
                 logger.debug("Template already exists: {}", e.code)
             } catch (e: Exception) {
-                logger.error("Failed to seed template: {}", e.message, e)
+                logger.error("Failed to seed template {}: {}", def.code, e.message, e)
             }
         }
 
@@ -57,465 +47,49 @@ class TemplateBootstrapService(
         }
     }
 
-    // ── 1. 초급자 전신 루틴 (3일/주) ──────────────────────────
-    private fun seedBeginnerFullBody() {
-        val template = saveTemplate(
-            code = "beginner_fullbody",
-            name = "초급자 전신 루틴",
-            description = "운동을 처음 시작하는 분을 위한 전신 프로그램입니다. 주 3일, 기본 복합 운동 중심으로 전신 근력을 키웁니다.",
-            targetGoal = "muscle_gain",
-            targetExperience = "beginner",
-            splitType = SplitType.FULL_BODY,
-            totalDays = 3,
-            iconName = "fitness_center",
-            sortOrder = 1
-        )
-
-        seedDay(template, 1, "전신 기초 (스쿼트·벤치)", WorkoutType.FULL_BODY, 50, listOf(
-            Ex("barbell-full-squat", 4, 8, 12, 90, true, 7.0),
-            Ex("barbell-bench-press", 4, 8, 12, 90, true, 7.0),
-            Ex("cable-bar-lateral-pulldown", 3, 10, 12, 60, true, 7.0),
-            Ex("dumbbell-seated-shoulder-press", 3, 10, 12, 60, true, 7.0),
-            Ex("high-plank", 3, 30, 60, 60, false, 6.0, "초 단위")
-        ))
-
-        seedDay(template, 2, "전신 기초 (데드리프트·인클라인)", WorkoutType.FULL_BODY, 50, listOf(
-            Ex("barbell-deadlift", 4, 6, 10, 120, true, 7.0),
-            Ex("barbell-incline-bench-press", 3, 8, 12, 90, true, 7.0),
-            Ex("cable-pulldown", 3, 10, 12, 60, true, 7.0),
-            Ex("barbell-lunge", 3, 10, 12, 60, true, 7.0),
-            Ex("lying-leg-raise", 3, 12, 15, 45, false, 6.0)
-        ))
-
-        seedDay(template, 3, "전신 기초 (레그프레스·로우)", WorkoutType.FULL_BODY, 50, listOf(
-            Ex("leg-press-machine-normal-stance", 4, 10, 12, 90, true, 7.0),
-            Ex("dumbbell-bench-press", 3, 10, 12, 60, true, 7.0),
-            Ex("barbell-bent-over-row-pronated-grip", 3, 8, 12, 90, true, 7.0),
-            Ex("lateral-raises-dumbbell", 3, 12, 15, 45, false, 6.0),
-            Ex("russian-twist", 3, 15, 20, 45, false, 6.0)
-        ))
-
-        logger.info("  -> beginner_fullbody seeded")
-    }
-
-    // ── 2. 근비대 기초 루틴 (4일/주, 상하체) ──────────────────
-    private fun seedHypertrophyBasic() {
-        val template = saveTemplate(
-            code = "hypertrophy_basic",
-            name = "근비대 기초 루틴",
-            description = "근육량 증가를 목표로 하는 상하체 분할 프로그램입니다. 주 4일, 복합+고립 운동을 조합합니다.",
-            targetGoal = "muscle_gain",
-            targetExperience = "beginner",
-            splitType = SplitType.UPPER_LOWER,
-            totalDays = 4,
-            iconName = "trending_up",
-            sortOrder = 2
-        )
-
-        seedDay(template, 1, "상체 가슴·어깨·삼두", WorkoutType.UPPER, 55, listOf(
-            Ex("barbell-bench-press", 4, 8, 12, 90, true, 7.0),
-            Ex("barbell-bent-over-row-pronated-grip", 4, 8, 12, 90, true, 7.0),
-            Ex("dumbbell-seated-shoulder-press", 3, 10, 12, 60, true, 7.0),
-            Ex("barbell-biceps-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("dumbbell-standing-triceps-extension", 3, 10, 12, 60, false, 7.0)
-        ))
-
-        seedDay(template, 2, "하체 스쿼트·레그프레스", WorkoutType.LOWER, 50, listOf(
-            Ex("barbell-full-squat", 4, 8, 12, 120, true, 7.0),
-            Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
-            Ex("lying-leg-curl-machine", 3, 10, 12, 60, false, 7.0),
-            Ex("bodyweight-standing-calf-raise", 3, 15, 20, 45, false, 6.0),
-            Ex("high-plank", 3, 30, 60, 60, false, 6.0, "초 단위")
-        ))
-
-        seedDay(template, 3, "상체 등·이두·측면", WorkoutType.UPPER, 55, listOf(
-            Ex("barbell-incline-bench-press", 4, 8, 12, 90, true, 7.0),
-            Ex("cable-bar-lateral-pulldown", 4, 10, 12, 60, true, 7.0),
-            Ex("lateral-raises-dumbbell", 3, 12, 15, 45, false, 6.0),
-            Ex("dumbbell-hammer-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("cable-pushdown", 3, 10, 12, 60, false, 7.0)
-        ))
-
-        seedDay(template, 4, "하체 데드리프트·런지", WorkoutType.LOWER, 50, listOf(
-            Ex("barbell-deadlift", 4, 6, 10, 120, true, 7.0),
-            Ex("barbell-lunge", 3, 10, 12, 60, true, 7.0),
-            Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
-            Ex("bodyweight-standing-calf-raise", 3, 15, 20, 45, false, 6.0),
-            Ex("abdominal-crunches", 3, 15, 20, 45, false, 6.0)
-        ))
-
-        logger.info("  -> hypertrophy_basic seeded")
-    }
-
-    // ── 3. 다이어트 서킷 (3일/주) ────────────────────────────
-    private fun seedDietCircuit() {
-        val template = saveTemplate(
-            code = "diet_circuit",
-            name = "다이어트 서킷",
-            description = "체지방 감량을 목표로 하는 서킷 트레이닝입니다. 복합 운동 위주로 높은 칼로리 소모를 유도합니다.",
-            targetGoal = "weight_loss",
-            targetExperience = "intermediate",
-            splitType = SplitType.FULL_BODY,
-            totalDays = 3,
-            iconName = "local_fire_department",
-            sortOrder = 3
-        )
-
-        seedDay(template, 1, "전신 연소 (스쿼트·벤치·로우)", WorkoutType.FULL_BODY, 45, listOf(
-            Ex("barbell-full-squat", 4, 10, 15, 60, true, 7.0),
-            Ex("barbell-bench-press", 4, 10, 15, 60, true, 7.0),
-            Ex("barbell-bent-over-row-pronated-grip", 3, 10, 15, 60, true, 7.0),
-            Ex("barbell-lunge", 3, 12, 15, 45, true, 7.0),
-            Ex("high-plank", 3, 30, 60, 45, false, 7.0, "초 단위")
-        ))
-
-        seedDay(template, 2, "전신 연소 (데드·푸시업·풀다운)", WorkoutType.FULL_BODY, 45, listOf(
-            Ex("barbell-deadlift", 4, 8, 12, 60, true, 7.0),
-            Ex("deep-push-up", 3, 12, 20, 45, true, 7.0),
-            Ex("cable-bar-lateral-pulldown", 3, 12, 15, 45, true, 7.0),
-            Ex("dumbbell-seated-shoulder-press", 3, 10, 15, 45, true, 7.0),
-            Ex("russian-twist", 3, 15, 20, 45, false, 7.0)
-        ))
-
-        seedDay(template, 3, "전신 연소 (레그프레스·인클라인)", WorkoutType.FULL_BODY, 45, listOf(
-            Ex("leg-press-machine-normal-stance", 4, 12, 15, 60, true, 7.0),
-            Ex("barbell-incline-bench-press", 3, 10, 15, 60, true, 7.0),
-            Ex("cable-pulldown", 3, 12, 15, 45, true, 7.0),
-            Ex("lateral-raises-dumbbell", 3, 12, 15, 45, false, 7.0),
-            Ex("abdominal-crunches", 3, 15, 20, 45, false, 7.0)
-        ))
-
-        logger.info("  -> diet_circuit seeded")
-    }
-
-    // ── 4. PPL 클래식 (6일/주) ────────────────────────────────
-    private fun seedPPLClassic() {
-        val template = saveTemplate(
-            code = "ppl_classic",
-            name = "PPL 클래식",
-            description = "Push/Pull/Legs 6일 분할 프로그램입니다. 각 근육군을 주 2회 자극하여 근비대를 극대화합니다.",
-            targetGoal = "muscle_gain",
-            targetExperience = "intermediate",
-            splitType = SplitType.PPL,
-            totalDays = 6,
-            iconName = "bolt",
-            sortOrder = 4
-        )
-
-        seedDay(template, 1, "밀기 가슴·어깨·삼두", WorkoutType.PUSH, 60, listOf(
-            Ex("barbell-bench-press", 4, 6, 10, 120, true, 8.0),
-            Ex("barbell-incline-bench-press", 3, 8, 12, 90, true, 7.0),
-            Ex("dumbbell-seated-shoulder-press", 3, 8, 12, 90, true, 7.0),
-            Ex("lateral-raises-dumbbell", 3, 12, 15, 45, false, 7.0),
-            Ex("dumbbell-standing-triceps-extension", 3, 10, 12, 60, false, 7.0),
-            Ex("cable-pushdown", 3, 10, 12, 60, false, 7.0)
-        ))
-
-        seedDay(template, 2, "당기기 등·이두·후면", WorkoutType.PULL, 60, listOf(
-            Ex("barbell-deadlift", 4, 5, 8, 150, true, 8.0),
-            Ex("barbell-bent-over-row-pronated-grip", 4, 8, 12, 90, true, 7.0),
-            Ex("cable-bar-lateral-pulldown", 3, 10, 12, 60, true, 7.0),
-            Ex("barbell-biceps-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("dumbbell-hammer-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("bent-over-rear-delt-fly-dumbbell", 3, 12, 15, 45, false, 7.0)
-        ))
-
-        seedDay(template, 3, "하체 스쿼트·런지·종아리", WorkoutType.LEGS, 60, listOf(
-            Ex("barbell-full-squat", 4, 6, 10, 120, true, 8.0),
-            Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
-            Ex("barbell-lunge", 3, 10, 12, 60, true, 7.0),
-            Ex("lying-leg-curl-machine", 3, 10, 12, 60, false, 7.0),
-            Ex("bodyweight-standing-calf-raise", 4, 15, 20, 45, false, 6.0),
-            Ex("abdominal-crunches", 3, 15, 20, 45, false, 6.0)
-        ))
-
-        seedDay(template, 4, "밀기 인클라인·어깨·코어", WorkoutType.PUSH, 60, listOf(
-            Ex("dumbbell-bench-press", 4, 8, 12, 90, true, 7.0),
-            Ex("barbell-incline-bench-press", 3, 8, 12, 90, true, 7.0),
-            Ex("dumbbell-seated-shoulder-press", 3, 10, 12, 60, true, 7.0),
-            Ex("dumbbell-front-raise", 3, 12, 15, 45, false, 6.0),
-            Ex("cable-pushdown", 3, 10, 12, 60, false, 7.0),
-            Ex("high-plank", 3, 30, 60, 60, false, 6.0, "초 단위")
-        ))
-
-        seedDay(template, 5, "당기기 풀다운·로우·이두", WorkoutType.PULL, 60, listOf(
-            Ex("cable-bar-lateral-pulldown", 4, 8, 12, 90, true, 7.0),
-            Ex("barbell-bent-over-row-pronated-grip", 3, 8, 12, 90, true, 7.0),
-            Ex("cable-rear-pulldown", 3, 10, 12, 60, true, 7.0),
-            Ex("barbell-biceps-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("dumbbell-hammer-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("bent-over-rear-delt-fly-dumbbell", 3, 12, 15, 45, false, 7.0)
-        ))
-
-        seedDay(template, 6, "하체 스쿼트·루마니안·햄스트링", WorkoutType.LEGS, 60, listOf(
-            Ex("barbell-full-squat", 4, 8, 12, 120, true, 7.0),
-            Ex("barbell-romanian-deadlift", 3, 8, 12, 90, true, 7.0),
-            Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
-            Ex("lying-leg-curl-machine", 3, 10, 12, 60, false, 7.0),
-            Ex("bodyweight-standing-calf-raise", 4, 15, 20, 45, false, 6.0),
-            Ex("lying-leg-raise", 3, 12, 15, 45, false, 6.0)
-        ))
-
-        logger.info("  -> ppl_classic seeded")
-    }
-
-    // ── 5. 상하체 분할 (4일/주) ───────────────────────────────
-    private fun seedUpperLowerMuscle() {
-        val template = saveTemplate(
-            code = "upper_lower_muscle",
-            name = "상하체 분할",
-            description = "상체·하체를 각각 주 2회씩 훈련하는 4일 분할 프로그램입니다. 근력과 근비대를 균형 있게 발전시킵니다.",
-            targetGoal = "muscle_gain",
-            targetExperience = "intermediate",
-            splitType = SplitType.UPPER_LOWER,
-            totalDays = 4,
-            iconName = "swap_vert",
-            sortOrder = 5
-        )
-
-        seedDay(template, 1, "상체 벤치·로우·어깨", WorkoutType.UPPER, 60, listOf(
-            Ex("barbell-bench-press", 4, 6, 10, 120, true, 8.0),
-            Ex("barbell-bent-over-row-pronated-grip", 4, 8, 12, 90, true, 7.0),
-            Ex("dumbbell-seated-shoulder-press", 3, 8, 12, 60, true, 7.0),
-            Ex("barbell-biceps-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("dumbbell-standing-triceps-extension", 3, 10, 12, 60, false, 7.0),
-            Ex("lateral-raises-dumbbell", 3, 12, 15, 45, false, 6.0)
-        ))
-
-        seedDay(template, 2, "하체 스쿼트·레그프레스·코어", WorkoutType.LOWER, 55, listOf(
-            Ex("barbell-full-squat", 4, 6, 10, 120, true, 8.0),
-            Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
-            Ex("lying-leg-curl-machine", 3, 10, 12, 60, false, 7.0),
-            Ex("barbell-lunge", 3, 10, 12, 60, true, 7.0),
-            Ex("bodyweight-standing-calf-raise", 3, 15, 20, 45, false, 6.0),
-            Ex("high-plank", 3, 30, 60, 60, false, 6.0, "초 단위")
-        ))
-
-        seedDay(template, 3, "상체 인클라인·풀다운·후면", WorkoutType.UPPER, 60, listOf(
-            Ex("barbell-incline-bench-press", 4, 8, 12, 90, true, 7.0),
-            Ex("cable-bar-lateral-pulldown", 4, 10, 12, 60, true, 7.0),
-            Ex("cable-pulldown", 3, 10, 12, 60, true, 7.0),
-            Ex("dumbbell-hammer-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("cable-pushdown", 3, 10, 12, 60, false, 7.0),
-            Ex("bent-over-rear-delt-fly-dumbbell", 3, 12, 15, 45, false, 7.0)
-        ))
-
-        seedDay(template, 4, "하체 데드리프트·런지·종아리", WorkoutType.LOWER, 55, listOf(
-            Ex("barbell-deadlift", 4, 5, 8, 150, true, 8.0),
-            Ex("barbell-lunge", 3, 10, 12, 60, true, 7.0),
-            Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.0),
-            Ex("lying-leg-curl-machine", 3, 10, 12, 60, false, 7.0),
-            Ex("bodyweight-standing-calf-raise", 3, 15, 20, 45, false, 6.0),
-            Ex("abdominal-crunches", 3, 15, 20, 45, false, 6.0)
-        ))
-
-        logger.info("  -> upper_lower_muscle seeded")
-    }
-
-    // ── 6. 고급자 전신 (3일/주) ───────────────────────────────
-    private fun seedAdvancedFullBody() {
-        val template = saveTemplate(
-            code = "advanced_fullbody",
-            name = "고급자 전신 루틴",
-            description = "높은 강도의 전신 프로그램. 복합 운동 중심 + 고중량 세트로 근력과 근비대를 동시에.",
-            targetGoal = "strength",
-            targetExperience = "advanced",
-            splitType = SplitType.FULL_BODY,
-            totalDays = 3,
-            iconName = "bolt",
-            sortOrder = 6
-        )
-
-        seedDay(template, 1, "전신 고중량 (스쿼트·벤치·로우)", WorkoutType.FULL_BODY, 65, listOf(
-            Ex("barbell-full-squat", 5, 5, 8, 150, true, 8.5),
-            Ex("barbell-bench-press", 5, 5, 8, 120, true, 8.5),
-            Ex("barbell-bent-over-row-pronated-grip", 4, 6, 10, 90, true, 8.0),
-            Ex("dumbbell-seated-shoulder-press", 3, 8, 12, 60, true, 7.5),
-            Ex("barbell-biceps-curl", 3, 8, 12, 60, false, 7.0),
-            Ex("lying-leg-raise", 3, 12, 15, 45, false, 7.0)
-        ))
-
-        seedDay(template, 2, "전신 고중량 (데드·인클라인·풀다운)", WorkoutType.FULL_BODY, 65, listOf(
-            Ex("barbell-deadlift", 5, 3, 6, 180, true, 9.0),
-            Ex("barbell-incline-bench-press", 4, 6, 10, 90, true, 8.0),
-            Ex("cable-bar-lateral-pulldown", 4, 8, 12, 60, true, 7.5),
-            Ex("barbell-lunge", 3, 8, 12, 90, true, 7.5),
-            Ex("lateral-raises-dumbbell", 3, 12, 15, 45, false, 7.0),
-            Ex("high-plank", 3, 30, 60, 60, false, 7.0, "초 단위")
-        ))
-
-        seedDay(template, 3, "전신 고중량 (프론트스쿼트·오버헤드)", WorkoutType.FULL_BODY, 65, listOf(
-            Ex("barbell-full-squat", 4, 6, 10, 120, true, 8.0),
-            Ex("dumbbell-bench-press", 4, 8, 12, 90, true, 7.5),
-            Ex("barbell-bent-over-row-pronated-grip", 4, 8, 12, 90, true, 8.0),
-            Ex("barbell-seated-overhead-press", 3, 6, 10, 90, true, 8.0),
-            Ex("dumbbell-hammer-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("russian-twist", 3, 15, 20, 45, false, 7.0)
-        ))
-
-        logger.info("  -> advanced_fullbody seeded")
-    }
-
-    // ── 7. 고급자 5일 PPL+상하체 (5일/주) ─────────────────────
-    private fun seedAdvancedPPLUL() {
-        val template = saveTemplate(
-            code = "advanced_pplul",
-            name = "고급자 5일 분할",
-            description = "PPL + 상하체 하이브리드 5일 프로그램. 각 근육군 주 2회 + 고강도 훈련.",
-            targetGoal = "muscle_gain",
-            targetExperience = "advanced",
-            splitType = SplitType.PPL,
-            totalDays = 5,
-            iconName = "whatshot",
-            sortOrder = 7
-        )
-
-        seedDay(template, 1, "밀기 가슴·어깨·삼두 (고중량)", WorkoutType.PUSH, 65, listOf(
-            Ex("barbell-bench-press", 5, 5, 8, 150, true, 8.5),
-            Ex("barbell-incline-bench-press", 4, 6, 10, 90, true, 8.0),
-            Ex("dumbbell-seated-shoulder-press", 3, 8, 12, 60, true, 7.5),
-            Ex("lateral-raises-dumbbell", 4, 12, 15, 45, false, 7.0),
-            Ex("cable-pushdown", 3, 10, 12, 60, false, 7.0),
-            Ex("dumbbell-standing-triceps-extension", 3, 10, 12, 60, false, 7.0)
-        ))
-
-        seedDay(template, 2, "당기기 등·이두·후면 (고중량)", WorkoutType.PULL, 65, listOf(
-            Ex("barbell-deadlift", 4, 4, 6, 180, true, 9.0),
-            Ex("barbell-bent-over-row-pronated-grip", 4, 6, 10, 90, true, 8.0),
-            Ex("cable-bar-lateral-pulldown", 4, 8, 12, 60, true, 7.5),
-            Ex("barbell-biceps-curl", 3, 8, 12, 60, false, 7.5),
-            Ex("dumbbell-hammer-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("bent-over-rear-delt-fly-dumbbell", 3, 12, 15, 45, false, 7.0)
-        ))
-
-        seedDay(template, 3, "하체 스쿼트·런지·종아리", WorkoutType.LEGS, 60, listOf(
-            Ex("barbell-full-squat", 5, 5, 8, 150, true, 8.5),
-            Ex("leg-press-machine-normal-stance", 4, 8, 12, 90, true, 7.5),
-            Ex("barbell-lunge", 3, 10, 12, 60, true, 7.5),
-            Ex("lying-leg-curl-machine", 3, 10, 12, 60, false, 7.0),
-            Ex("bodyweight-standing-calf-raise", 4, 15, 20, 45, false, 7.0),
-            Ex("abdominal-crunches", 3, 15, 20, 45, false, 7.0)
-        ))
-
-        seedDay(template, 4, "상체 벤치·로우·어깨 (볼륨)", WorkoutType.UPPER, 60, listOf(
-            Ex("dumbbell-bench-press", 4, 8, 12, 90, true, 7.5),
-            Ex("cable-bar-lateral-pulldown", 4, 8, 12, 60, true, 7.5),
-            Ex("barbell-seated-overhead-press", 3, 8, 12, 90, true, 7.5),
-            Ex("barbell-biceps-curl", 3, 10, 12, 60, false, 7.0),
-            Ex("cable-pushdown", 3, 10, 12, 60, false, 7.0),
-            Ex("lateral-raises-dumbbell", 3, 12, 15, 45, false, 7.0)
-        ))
-
-        seedDay(template, 5, "하체 데드·루마니안·햄스트링", WorkoutType.LOWER, 55, listOf(
-            Ex("barbell-romanian-deadlift", 4, 6, 10, 120, true, 8.0),
-            Ex("leg-press-machine-normal-stance", 3, 10, 12, 90, true, 7.5),
-            Ex("lying-leg-curl-machine", 3, 10, 12, 60, false, 7.0),
-            Ex("barbell-lunge", 3, 10, 12, 60, true, 7.0),
-            Ex("bodyweight-standing-calf-raise", 4, 15, 20, 45, false, 7.0),
-            Ex("lying-leg-raise", 3, 12, 15, 45, false, 7.0)
-        ))
-
-        logger.info("  -> advanced_pplul seeded")
-    }
-
-    // ── 8. 초급자 2일 전신 (2일/주) ───────────────────────────
-    private fun seedBeginner2Day() {
-        val template = saveTemplate(
-            code = "beginner_2day",
-            name = "초급자 2일 전신",
-            description = "주 2일만으로 전신 운동. 시간이 부족한 초보자를 위한 최소 효과 프로그램.",
-            targetGoal = "general_fitness",
-            targetExperience = "beginner",
-            splitType = SplitType.FULL_BODY,
-            totalDays = 2,
-            iconName = "timer",
-            sortOrder = 8
-        )
-
-        seedDay(template, 1, "전신 기초 (스쿼트·벤치·풀다운)", WorkoutType.FULL_BODY, 45, listOf(
-            Ex("barbell-full-squat", 3, 8, 12, 90, true, 7.0),
-            Ex("barbell-bench-press", 3, 8, 12, 90, true, 7.0),
-            Ex("cable-bar-lateral-pulldown", 3, 10, 12, 60, true, 7.0),
-            Ex("dumbbell-seated-shoulder-press", 2, 10, 12, 60, true, 6.5),
-            Ex("high-plank", 2, 30, 45, 60, false, 6.0, "초 단위")
-        ))
-
-        seedDay(template, 2, "전신 기초 (데드·로우·런지)", WorkoutType.FULL_BODY, 45, listOf(
-            Ex("barbell-deadlift", 3, 6, 10, 120, true, 7.0),
-            Ex("barbell-bent-over-row-pronated-grip", 3, 8, 12, 90, true, 7.0),
-            Ex("barbell-lunge", 3, 10, 12, 60, true, 7.0),
-            Ex("lateral-raises-dumbbell", 2, 12, 15, 45, false, 6.5),
-            Ex("abdominal-crunches", 2, 15, 20, 45, false, 6.0)
-        ))
-
-        logger.info("  -> beginner_2day seeded")
+    private fun seedTemplate(def: PresetTemplate) {
+        val template = saveTemplate(def)
+        def.days.forEach { seedDay(template, it) }
+        logger.info("  -> {} seeded", def.code)
     }
 
     // ── helpers ───────────────────────────────────────────────
 
     private class TemplateAlreadyExistsException(val code: String) : RuntimeException()
 
-    private data class Ex(
-        val slug: String,
-        val sets: Int,
-        val minReps: Int,
-        val maxReps: Int,
-        val restSeconds: Int,
-        val isCompound: Boolean,
-        val targetRPE: Double,
-        val notes: String? = null
-    )
-
-    private fun saveTemplate(
-        code: String,
-        name: String,
-        description: String,
-        targetGoal: String,
-        targetExperience: String,
-        splitType: SplitType,
-        totalDays: Int,
-        iconName: String,
-        sortOrder: Int
-    ): WorkoutPlanTemplate {
-        if (templateRepository.findByCode(code) != null) {
-            throw TemplateAlreadyExistsException(code)
+    private fun saveTemplate(def: PresetTemplate): WorkoutPlanTemplate {
+        if (templateRepository.findByCode(def.code) != null) {
+            throw TemplateAlreadyExistsException(def.code)
         }
         return templateRepository.save(
             WorkoutPlanTemplate(
-                code = code,
-                name = name,
-                description = description,
-                targetGoal = targetGoal,
-                targetExperience = targetExperience,
-                splitType = splitType,
-                totalDays = totalDays,
+                code = def.code,
+                name = def.name,
+                description = def.description,
+                targetGoal = def.targetGoal,
+                targetExperience = def.targetExperience,
+                splitType = def.splitType,
+                totalDays = def.totalDays,
                 estimatedWeeks = 8,
-                iconName = iconName,
-                sortOrder = sortOrder,
+                iconName = def.iconName,
+                sortOrder = def.sortOrder,
                 sourceType = PlanSourceType.PRESET
             )
         )
     }
 
-    private fun seedDay(
-        template: WorkoutPlanTemplate,
-        dayNumber: Int,
-        dayName: String,
-        workoutType: WorkoutType,
-        durationMinutes: Int,
-        exercises: List<Ex>
-    ) {
+    private fun seedDay(template: WorkoutPlanTemplate, def: PresetDay) {
         val day = templateDayRepository.save(
             TemplateDay(
                 template = template,
-                dayNumber = dayNumber,
-                dayName = dayName,
-                workoutType = workoutType,
-                estimatedDurationMinutes = durationMinutes
+                dayNumber = def.dayNumber,
+                dayName = def.dayName,
+                workoutType = def.workoutType,
+                estimatedDurationMinutes = def.durationMinutes
             )
         )
 
-        exercises.forEachIndexed { index, ex ->
+        def.exercises.forEachIndexed { index, ex ->
             val exercise = exerciseRepository.findBySlug(ex.slug)
             if (exercise == null) {
                 logger.warn("Exercise not found: {} (skipped for template {})", ex.slug, template.code)

@@ -2,7 +2,11 @@ package com.richjun.liftupai.domain.workout.dto.request
 
 data class ApplyTemplateRequest(
     val injuries: List<String>? = null,
-    val equipment: List<String>? = null
+    val equipment: List<String>? = null,
+    // 선택: 보내면 집중 부위 볼륨과 채워 넣는 운동 난이도에 반영된다. 안 보내면 저장된 온보딩 값을 쓴다.
+    val experienceLevel: String? = null,
+    val goals: List<String>? = null,
+    val focusAreas: List<String>? = null
 )
 
 data class SetCurrentDayRequest(
@@ -47,5 +51,23 @@ data class GenerateAIPlanRequest(
     val estimatedMaxes: Map<String, Double>? = null,
     val workingWeights: Map<String, Double>? = null,
     val strengthLevel: String? = null,
+    val locale: String? = null
+)
+
+/**
+ * POST /api/v2/templates/recommend — 앱 온보딩의 toAIPlanRequest 와 같은 키.
+ * 모르는 키(pt_style, workout_split, height …)는 무시한다.
+ */
+data class RecommendTemplateRequest(
+    val experienceLevel: String? = null,
+    val goals: List<String>? = null,
+    val gender: String? = null,
+    val age: Int? = null,
+    val weeklyDays: Int? = null,
+    val sessionDuration: Int? = null,
+    val equipment: List<String>? = null,
+    val injuries: List<String>? = null,
+    val focusAreas: List<String>? = null,
+    val trainingStyle: String? = null,
     val locale: String? = null
 )

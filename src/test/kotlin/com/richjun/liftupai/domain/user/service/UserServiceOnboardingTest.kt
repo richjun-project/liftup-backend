@@ -129,4 +129,40 @@ class UserServiceOnboardingTest {
 
         assertEquals(ExperienceLevel.ADVANCED, savedProfile.captured.experienceLevel)
     }
+
+    @Test
+    fun `complete onboarding keeps detailed focus goals in settings while FitnessGoal collapses them`() {
+        // 2026-10-06: thick_legs·glutes 같은 세부 목표는 MUSCLE_GAIN 으로 뭉개져 어느 부위를 집중할지 사라졌다
+        val user = User(id = 9L, email = "focus@example.com", nickname = "before")
+        val savedSettings = slot<UserSettings>()
+
+        every { userRepository.findById(9L) } returns Optional.of(user)
+        every { userProfileRepository.findByUser_Id(9L) } returns Optional.empty()
+        every { userSettingsRepository.findByUser_Id(9L) } returns Optional.empty()
+        every { userRepository.save(any()) } answers { firstArg() }
+        every { userProfileRepository.save(any()) } answers { firstArg<UserProfile>() }
+        every { userSettingsRepository.save(capture(savedSettings)) } answers { firstArg<UserSettings>() }
+
+        service.completeOnboarding(
+            userId = 9L,
+            request = OnboardingRequest(
+                nickname = "focus",
+                experienceLevel = "beginner",
+                goals = listOf("weight_loss", "Thick-Legs", "glutes", "general_fitness"),
+                bodyInfo = null,
+                ptStyle = "GAME_MASTER",
+                notificationEnabled = true,
+                weeklyWorkoutDays = 3,
+                workoutSplit = "auto",
+                availableEquipment = null,
+                preferredWorkoutTime = "evening",
+                workoutDuration = 45,
+                timeZone = null,
+                injuries = null
+            )
+        )
+
+        // 집중 부위 목표만 소문자 표기로 보존(체중 감량·일반 체력 같은 일반 목표는 FitnessGoal 이 이미 담는다)
+        assertEquals(setOf("thick_legs", "glutes"), savedSettings.captured.focusGoals)
+    }
 }

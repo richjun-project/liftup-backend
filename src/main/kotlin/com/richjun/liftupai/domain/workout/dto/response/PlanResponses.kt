@@ -146,3 +146,11 @@ data class SubstituteExerciseDto(
     val imageUrl: String?,
     val reason: String  // EQUIPMENT, INJURY, PREFERENCE, EQUIVALENT
 )
+
+data class TemplateRecommendationResponse(
+    val templateCode: String,
+    /** 사용자 언어(ko/en/ja)로 쓴 추천 이유 */
+    val reason: String,
+    /** 차선 템플릿 코드(점수 순) */
+    val alternatives: List<String>
+)

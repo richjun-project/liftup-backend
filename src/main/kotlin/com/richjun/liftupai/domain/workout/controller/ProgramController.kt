@@ -131,10 +131,12 @@ class ProgramController(
 
     @GetMapping("/exercises/{id}/substitutes")
     fun getExerciseSubstitutes(
+        @AuthenticationPrincipal userDetails: CustomUserDetails?,
         @PathVariable id: Long,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<SubstituteListResponse>> {
-        val response = programService.getExerciseSubstitutes(id, locale)
+        // 로그인 사용자면 저장된 보유 장비·부상으로 걸러 개인화한다
+        val response = programService.getExerciseSubstitutes(id, locale, userDetails?.getId())
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

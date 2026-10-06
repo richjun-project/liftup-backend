@@ -38,7 +38,7 @@ class UserPlanService(
 
     companion object {
         /** 템플릿 하루 운동 수 목표. 부상으로 빠진 만큼 여기까지 채운다. */
-        const val TARGET_EXERCISES_PER_DAY = 5
+        const val TARGET_EXERCISES_PER_DAY = TemplatePlanAdapter.TARGET_EXERCISES_PER_DAY
     }
 
     @org.springframework.beans.factory.annotation.Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
@@ -77,8 +77,7 @@ class UserPlanService(
     }
 
     /**
-     * 부상 부위를 피하는 대체 운동. 그날의 부위 → 코어 → 상체 순으로, 인기순.
-     * 카탈로그에 후보가 없으면 빈 목록(그날은 있는 만큼만 간다).
+     * 부상 부위를 피하는 대체 운동. 실제 규칙은 TemplatePlanAdapter 에 있고(추천기와 공유), 여기는 기존 호출부용 얇은 위임이다.
      */
     internal fun pickRefillExercises(
         workoutType: String,
@@ -86,41 +85,15 @@ class UserPlanService(
         exclude: Set<Long>,
         needed: Int,
         allowedEquipment: Set<String> = emptySet(),
-    ): List<Exercise> {
-        if (needed <= 0) return emptyList()
-        fun equipmentOk(ex: Exercise) = equipmentAllowed(ex, allowedEquipment)
-        val categories = refillCategoriesFor(workoutType) + listOf(
-            ExerciseCategory.CORE, ExerciseCategory.CHEST, ExerciseCategory.BACK,
-            ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS,
-        )
-        val picked = mutableListOf<Exercise>()
-        val seen = exclude.toMutableSet()
-        // 카테고리별 후보 큐를 만들고 라운드로빈으로 뽑는다 — 한 부위(가슴)만 몰리지 않게
-        val queues = categories.distinct().map { category ->
-            exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category).filter { ex ->
-                ex.id !in seen && equipmentOk(ex) && (injuries.isEmpty() || !injuryFilterService.isExerciseRestricted(ex.id, injuries))
-            }.iterator()
-        }
-        var progressed = true
-        while (picked.size < needed && progressed) {
-            progressed = false
-            for (q in queues) {
-                if (picked.size >= needed) break
-                while (q.hasNext()) {
-                    val ex = q.next()
-                    if (ex.id in seen) continue
-                    seen += ex.id; picked += ex; progressed = true; break
-                }
-            }
-        }
-        return picked
-    }
+        maxDifficulty: Int? = null,
+    ): List<Exercise> = TemplatePlanAdapter(
+        poolByCategory = { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(it) },
+        isRestricted = { ex -> injuries.isNotEmpty() && injuryFilterService.isExerciseRestricted(ex.id, injuries) },
+    ).pickRefill(workoutType, injuries, exclude, needed, allowedEquipment, maxDifficulty)
 
     /** 보유 장비로 할 수 있는 종목인가. 장비 미지정·맨몸·기타는 항상 허용. */
-    internal fun equipmentAllowed(ex: Exercise, allowedEquipment: Set<String>): Boolean {
-        val eq = ex.equipment?.name ?: return true
-        return allowedEquipment.isEmpty() || eq == "BODYWEIGHT" || eq == "OTHER" || eq in allowedEquipment
-    }
+    internal fun equipmentAllowed(ex: Exercise, allowedEquipment: Set<String>): Boolean =
+        TemplatePlanAdapter.equipmentAllowed(ex, allowedEquipment)
 
     /** 요청 장비 → 설정 장비 순. 비어 있으면 제한 없음. 표기는 Equipment enum 이름(BARBELL 등)으로 정규화. */
     internal fun resolveAllowedEquipment(user: User, request: ApplyTemplateRequest?): Set<String> {
@@ -130,18 +103,6 @@ class UserPlanService(
             userSettingsRepository.findByUser_Id(user.id).orElse(null)?.availableEquipment?.takeIf { it.isNotEmpty() }?.toList()
                 ?: userProfileRepository.findByUser_Id(user.id).orElse(null)?.availableEquipment?.toList().orEmpty()
         return raw.map { it.trim().uppercase().replace(" ", "_").replace("-", "_") }.filter { it.isNotBlank() }.toSet()
-    }
-
-    private fun refillCategoriesFor(workoutType: String): List<ExerciseCategory> = when (workoutType.uppercase()) {
-        "PUSH", "CHEST" -> listOf(ExerciseCategory.CHEST, ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS)
-        "PULL", "BACK" -> listOf(ExerciseCategory.BACK, ExerciseCategory.ARMS)
-        "LEGS", "LOWER" -> listOf(ExerciseCategory.LEGS, ExerciseCategory.CORE)
-        "UPPER" -> listOf(ExerciseCategory.CHEST, ExerciseCategory.BACK, ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS)
-        "SHOULDERS" -> listOf(ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS)
-        "ARMS" -> listOf(ExerciseCategory.ARMS, ExerciseCategory.SHOULDERS)
-        "ABS", "CORE" -> listOf(ExerciseCategory.CORE)
-        "CARDIO" -> listOf(ExerciseCategory.CARDIO, ExerciseCategory.LEGS)
-        else -> listOf(ExerciseCategory.LEGS, ExerciseCategory.CHEST, ExerciseCategory.BACK, ExerciseCategory.CORE)
     }
 
     fun getPlanDashboard(userId: Long, locale: String = "en"): PlanDashboardResponse {
@@ -265,8 +226,9 @@ class UserPlanService(
         // 부상 정보는 요청값을 우선하되, 없으면 온보딩에서 저장된 설정값을 쓴다.
         // (앱이 요청에 injuries 를 안 실어 보내는 경로가 있어 설정값 폴백이 필요하다)
         val injuries = resolveInjuries(user, request)
-        var skippedForInjury = 0
-        var skippedForEquipment = 0
+        val allowedEquipment = resolveAllowedEquipment(user, request)
+        val focus = resolveFocusAreas(user, request)
+        val maxDifficulty = TemplatePlanAdapter.maxDifficultyFor(resolveExperience(user, request))
 
         // Abandon existing active plan
         abandonActivePlan(user.id)
@@ -286,100 +248,70 @@ class UserPlanService(
         )
         val savedPlan = userWorkoutPlanRepository.save(plan)
 
-        // Copy template days and exercises
+        // 템플릿을 이 사람에게 맞게 고친다(부상·장비 필터 → 빈 날 채우기 → 집중 부위 볼륨). 추천기와 같은 순수 규칙.
         val templateDays = templateDayRepository.findByTemplateIdOrderByDayNumber(template.id)
-        // 재구성으로 넣은 운동은 플랜 전체에서 한 번만(운영 계정 123: 3일 모두 같은 3개가 들어갔다)
-        val refillUsedAcrossPlan = mutableSetOf<Long>()
-        for (templateDay in templateDays) {
-            val planDay = UserPlanDay(
-                plan = savedPlan,
-                dayNumber = templateDay.dayNumber,
-                dayName = WorkoutLocalization.maybeMessage("template.${template.code}.day.${templateDay.dayNumber}.name", locale) ?: templateDay.dayName,
-                workoutType = templateDay.workoutType,
-                estimatedDurationMinutes = templateDay.estimatedDurationMinutes
-            )
-            val savedDay = userPlanDayRepository.save(planDay)
-
-            val templateExercises = templateDayExerciseRepository.findByTemplateDayIdOrderByOrderInDay(templateDay.id)
-            val allowedEquipment = resolveAllowedEquipment(user, request)
-            val keptExerciseIds = mutableSetOf<Long>()
-            var keptInDay = 0
-            var lastOrder = 0
-            for (templateEx in templateExercises) {
-                // 부상 부위를 건드리는 종목은 플랜에 넣지 않는다.
-                //
-                // 2026-08-26 실사용 사고: 무릎 수술을 신고한 사용자(user_settings_injuries='knee')의
-                // 템플릿 플랜에 하체 운동 6개가 그대로 들어갔다. 부상 필터는 AI 추천·프로그램 등록·
-                // 대체운동 경로에만 연결돼 있었고, 신규 사용자 대부분이 타는 템플릿 경로에는 없었다.
-                if (injuries.isNotEmpty() &&
-                    injuryFilterService.isExerciseRestricted(templateEx.exercise.id, injuries)
-                ) {
-                    skippedForInjury++
-                    continue
-                }
-                // 보유 장비로 못 하는 종목도 넣지 않는다(덤벨만 있는 사용자에게 바벨 벤치 — 2026-09-16 운영 검증).
-                if (!equipmentAllowed(templateEx.exercise, allowedEquipment)) {
-                    skippedForEquipment++
-                    continue
-                }
-                keptExerciseIds += templateEx.exercise.id
-                keptInDay++
-                lastOrder = templateEx.orderInDay
-                val planExercise = UserPlanDayExercise(
-                    planDay = savedDay,
-                    exercise = templateEx.exercise,
-                    orderInDay = templateEx.orderInDay,
-                    sets = templateEx.sets,
-                    minReps = templateEx.minReps,
-                    maxReps = templateEx.maxReps,
-                    restSeconds = templateEx.restSeconds,
-                    isCompound = templateEx.isCompound,
-                    targetRPE = templateEx.targetRPE,
-                    notes = templateEx.notes
-                )
-                userPlanDayExerciseRepository.save(planExercise)
-            }
-
-            // 부상 때문에 비어버린 날을 안전한 운동으로 다시 채운다.
-            //
-            // 2026-09-15 실사용: 무릎·고관절·허리 부상 사용자(118)의 diet_circuit 플랜이
-            // 하루 2·3·4개로 줄었고, 손목 부상(115)은 2개짜리 날이 생겼다.
-            // 걸러내기만 하고 채우지 않으면 "운동이 거의 없는 플랜"을 받는다.
-            val removedInDay = templateExercises.size - keptInDay
-            if (removedInDay > 0 && keptInDay < TARGET_EXERCISES_PER_DAY) {
-                val refill = pickRefillExercises(
-                    workoutType = templateDay.workoutType.name,
-                    injuries = injuries,
-                    exclude = keptExerciseIds + refillUsedAcrossPlan,
-                    needed = TARGET_EXERCISES_PER_DAY - keptInDay,
-                    allowedEquipment = allowedEquipment,
-                )
-                refillUsedAcrossPlan += refill.map { it.id }
-                refill.forEachIndexed { i, ex ->
-                    userPlanDayExerciseRepository.save(
-                        UserPlanDayExercise(
-                            planDay = savedDay,
-                            exercise = ex,
-                            orderInDay = lastOrder + i + 1,
-                            sets = 3,
-                            minReps = 10,
-                            maxReps = 15,
-                            restSeconds = 60,
-                            isCompound = false,
-                            targetRPE = 7.0,
-                            notes = null,
-                        )
+        val sourceDays = templateDays.map { td ->
+            TemplatePlanAdapter.SourceDay(
+                dayNumber = td.dayNumber,
+                workoutType = td.workoutType.name,
+                exercises = templateDayExerciseRepository.findByTemplateDayIdOrderByOrderInDay(td.id).map { te ->
+                    TemplatePlanAdapter.SourceExercise(
+                        exercise = te.exercise, sets = te.sets, minReps = te.minReps, maxReps = te.maxReps,
+                        restSeconds = te.restSeconds, isCompound = te.isCompound, targetRPE = te.targetRPE, notes = te.notes
                     )
                 }
-                if (refill.isNotEmpty()) {
-                    log.info("Refilled day {} of plan {} with {} injury-safe exercises", templateDay.dayNumber, savedPlan.id, refill.size)
-                }
+            )
+        }
+        val adapter = TemplatePlanAdapter(
+            poolByCategory = planPool(),
+            isRestricted = injuryFilterService.restrictionChecker(injuries),
+        )
+        val adaptedDays = adapter.adapt(
+            sourceDays,
+            TemplatePlanAdapter.Context(allowedEquipment, injuries, focus, maxDifficulty)
+        ).associateBy { it.dayNumber }
+
+        var skippedForInjury = 0
+        var skippedForEquipment = 0
+        for (templateDay in templateDays) {
+            val adapted = adaptedDays.getValue(templateDay.dayNumber)
+            skippedForInjury += adapted.skippedForInjury
+            skippedForEquipment += adapted.skippedForEquipment
+            val savedDay = userPlanDayRepository.save(
+                UserPlanDay(
+                    plan = savedPlan,
+                    dayNumber = templateDay.dayNumber,
+                    dayName = WorkoutLocalization.maybeMessage("template.${template.code}.day.${templateDay.dayNumber}.name", locale) ?: templateDay.dayName,
+                    workoutType = templateDay.workoutType,
+                    estimatedDurationMinutes = templateDay.estimatedDurationMinutes
+                )
+            )
+            adapted.exercises.forEachIndexed { i, planned ->
+                val src = planned.source
+                userPlanDayExerciseRepository.save(
+                    UserPlanDayExercise(
+                        planDay = savedDay,
+                        exercise = src.exercise,
+                        orderInDay = i + 1,
+                        sets = src.sets,
+                        minReps = src.minReps,
+                        maxReps = src.maxReps,
+                        restSeconds = src.restSeconds,
+                        isCompound = src.isCompound,
+                        targetRPE = src.targetRPE,
+                        notes = src.notes
+                    )
+                )
+            }
+            val added = adapted.exercises.count { it.origin != TemplatePlanAdapter.Origin.TEMPLATE }
+            if (added > 0) {
+                log.info("Adapted day {} of plan {}: {} exercises added/replaced (refill+focus)", templateDay.dayNumber, savedPlan.id, added)
             }
         }
 
         log.info(
-            "User {} applied template {} as new plan {} (injuries={}, exercisesSkipped={}, skippedForEquipment={})",
-            user.id, templateCode, savedPlan.id, injuries, skippedForInjury, skippedForEquipment
+            "User {} applied template {} as new plan {} (injuries={}, focus={}, exercisesSkipped={}, skippedForEquipment={})",
+            user.id, templateCode, savedPlan.id, injuries, focus, skippedForInjury, skippedForEquipment
         )
         return getPlanDashboard(user.id)
     }
@@ -406,6 +338,28 @@ class UserPlanService(
         return raw.map { it.substringBefore(':').trim().lowercase() }
             .filter { it.isNotEmpty() && it != "none" }
             .toSet()
+    }
+
+    /** 플랜 후보 풀(카테고리별 인기순). 한 번의 적용 안에서 같은 카테고리를 여러 번 읽지 않게 캐시한다. */
+    private fun planPool(): (ExerciseCategory) -> List<Exercise> {
+        val cache = mutableMapOf<ExerciseCategory, List<Exercise>>()
+        return { category -> cache.getOrPut(category) { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category) } }
+    }
+
+    /** 경험 수준: 요청값 → 프로필. 채워 넣는 운동의 난이도 상한에 쓴다. */
+    internal fun resolveExperience(user: User, request: ApplyTemplateRequest?): String? =
+        request?.experienceLevel?.takeIf { it.isNotBlank() }
+            ?: userProfileRepository.findByUser_Id(user.id).orElse(null)?.experienceLevel?.name
+
+    /**
+     * 집중 부위: 요청(goals·focus_areas) → 온보딩에서 저장한 세부 목표(UserSettings.focusGoals).
+     * FitnessGoal 은 6종뿐이라 thick_legs·glutes 같은 세부 목표는 별도로 저장해 둔 값을 읽는다.
+     */
+    internal fun resolveFocusAreas(user: User, request: ApplyTemplateRequest?): List<FocusArea> {
+        val fromRequest = FocusArea.resolve(request?.goals, request?.focusAreas)
+        if (fromRequest.isNotEmpty()) return fromRequest
+        val stored = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.focusGoals?.toList().orEmpty()
+        return FocusArea.resolve(stored)
     }
 
     @Transactional

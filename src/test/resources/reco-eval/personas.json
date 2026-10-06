@@ -1,0 +1,2032 @@
+{
+  "version": 1,
+  "personas": [
+    {
+      "id": "p01_ja_beginner",
+      "locale": "ja",
+      "experience_level": "beginner",
+      "goals": [
+        "weight_loss",
+        "thick_legs",
+        "slim_legs",
+        "glutes",
+        "general_fitness"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 24,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "운영 사고 재현: 다이어트+하체 포커스 다수. 하체 볼륨이 추가로 보여야 함",
+        "require_focus": [
+          "LEGS"
+        ]
+      }
+    },
+    {
+      "id": "p02_ja_novice",
+      "locale": "ja",
+      "experience_level": "novice",
+      "goals": [
+        "weight_loss",
+        "glutes",
+        "slim_legs",
+        "toned_arms"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 27,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "홈트 여성 다이어트: 바벨 템플릿 그대로 나가면 안 됨, 둔근 포커스",
+        "require_focus": [
+          "GLUTES",
+          "LEGS"
+        ]
+      }
+    },
+    {
+      "id": "p03_ja_beginner",
+      "locale": "ja",
+      "experience_level": "beginner",
+      "goals": [
+        "weight_loss",
+        "six_pack",
+        "endurance",
+        "general_fitness"
+      ],
+      "weekly_days": 3,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 31,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "맨몸 30분 다이어트",
+        "require_focus": [
+          "CORE"
+        ]
+      }
+    },
+    {
+      "id": "p04_ja_intermediate",
+      "locale": "ja",
+      "experience_level": "intermediate",
+      "goals": [
+        "bulk_up",
+        "thick_chest",
+        "big_arms",
+        "wide_shoulders"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 26,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "풀짐 중급 벌크, 상체 포커스",
+        "require_focus": [
+          "CHEST",
+          "ARMS"
+        ],
+        "acceptable_templates": [
+          "upper_lower_muscle",
+          "hypertrophy_basic",
+          "ppl_classic"
+        ]
+      }
+    },
+    {
+      "id": "p05_ja_beginner",
+      "locale": "ja",
+      "experience_level": "beginner",
+      "goals": [
+        "thick_legs",
+        "glutes",
+        "strength",
+        "weight_loss",
+        "posture"
+      ],
+      "weekly_days": 3,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "knee"
+      ],
+      "gender": "female",
+      "age": 29,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "무릎 부상+하체 포커스: 부상 제외 후에도 둔근 볼륨 유지",
+        "require_focus": [
+          "GLUTES"
+        ]
+      }
+    },
+    {
+      "id": "p06_ja_advanced",
+      "locale": "ja",
+      "experience_level": "advanced",
+      "goals": [
+        "strength",
+        "bulk_up",
+        "wide_back",
+        "thick_chest"
+      ],
+      "weekly_days": 5,
+      "session_duration": 90,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 33,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "고급 5일 근력",
+        "require_focus": [
+          "BACK",
+          "CHEST"
+        ],
+        "acceptable_templates": [
+          "advanced_pplul",
+          "ppl_classic"
+        ]
+      }
+    },
+    {
+      "id": "p07_ja_novice",
+      "locale": "ja",
+      "experience_level": "novice",
+      "goals": [
+        "lean_mass",
+        "toned_arms",
+        "flexibility",
+        "general_fitness"
+      ],
+      "weekly_days": 2,
+      "session_duration": 30,
+      "equipment": [
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 41,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "주2일 30분 홈",
+        "acceptable_templates": [
+          "beginner_2day"
+        ]
+      }
+    },
+    {
+      "id": "p08_ja_intermediate",
+      "locale": "ja",
+      "experience_level": "intermediate",
+      "goals": [
+        "weight_loss",
+        "glutes",
+        "thick_legs",
+        "big_arms",
+        "six_pack"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 23,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "바벨 없는 짐: 바벨 종목 없이 4일",
+        "require_focus": [
+          "GLUTES",
+          "LEGS"
+        ]
+      }
+    },
+    {
+      "id": "p09_ja_beginner",
+      "locale": "ja",
+      "experience_level": "beginner",
+      "goals": [
+        "rehabilitation",
+        "posture",
+        "flexibility"
+      ],
+      "weekly_days": 2,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "lower_back"
+      ],
+      "gender": "female",
+      "age": 58,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "재활/자세 고령, 허리 부상 맨몸",
+        "acceptable_templates": [
+          "beginner_2day"
+        ]
+      }
+    },
+    {
+      "id": "p10_ja_expert",
+      "locale": "ja",
+      "experience_level": "expert",
+      "goals": [
+        "strength",
+        "athletic_performance",
+        "bulk_up"
+      ],
+      "weekly_days": 6,
+      "session_duration": 120,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 35,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "전문가 6일",
+        "acceptable_templates": [
+          "ppl_classic",
+          "advanced_pplul"
+        ]
+      }
+    },
+    {
+      "id": "p11_ko_beginner",
+      "locale": "ko",
+      "experience_level": "beginner",
+      "goals": [
+        "weight_loss",
+        "thick_legs",
+        "glutes",
+        "six_pack",
+        "general_fitness"
+      ],
+      "weekly_days": 3,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 25,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "실제 가입자처럼 5개 목표, 하체 포커스",
+        "require_focus": [
+          "LEGS",
+          "GLUTES"
+        ]
+      }
+    },
+    {
+      "id": "p12_ko_beginner",
+      "locale": "ko",
+      "experience_level": "beginner",
+      "goals": [
+        "bulk_up",
+        "big_arms",
+        "thick_chest",
+        "wide_shoulders"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 20,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "초보 벌크 4일",
+        "require_focus": [
+          "ARMS",
+          "CHEST"
+        ],
+        "acceptable_templates": [
+          "hypertrophy_basic",
+          "beginner_fullbody"
+        ]
+      }
+    },
+    {
+      "id": "p13_ko_novice",
+      "locale": "ko",
+      "experience_level": "novice",
+      "goals": [
+        "weight_loss",
+        "endurance",
+        "general_fitness",
+        "six_pack"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 37,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "홈 덤벨 다이어트: 덤벨/맨몸만",
+        "require_focus": [
+          "CORE"
+        ]
+      }
+    },
+    {
+      "id": "p14_ko_novice",
+      "locale": "ko",
+      "experience_level": "novice",
+      "goals": [
+        "weight_loss",
+        "slim_legs",
+        "toned_arms",
+        "glutes"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "knee"
+      ],
+      "gender": "female",
+      "age": 32,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "홈+무릎 부상 여성 다이어트",
+        "require_focus": [
+          "GLUTES"
+        ]
+      }
+    },
+    {
+      "id": "p15_ko_intermediate",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "bulk_up",
+        "wide_back",
+        "thick_chest",
+        "big_arms",
+        "strength"
+      ],
+      "weekly_days": 5,
+      "session_duration": 90,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 28,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "중급 5일 벌크",
+        "require_focus": [
+          "BACK"
+        ],
+        "acceptable_templates": [
+          "ppl_classic",
+          "advanced_pplul",
+          "upper_lower_muscle"
+        ]
+      }
+    },
+    {
+      "id": "p16_ko_intermediate",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "lean_mass",
+        "weight_loss",
+        "glutes",
+        "thick_legs"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "lower_back"
+      ],
+      "gender": "female",
+      "age": 30,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "허리 부상+하체: 데드리프트류 제외",
+        "require_focus": [
+          "GLUTES",
+          "LEGS"
+        ]
+      }
+    },
+    {
+      "id": "p17_ko_advanced",
+      "locale": "ko",
+      "experience_level": "advanced",
+      "goals": [
+        "strength",
+        "bulk_up",
+        "wide_shoulders",
+        "thick_chest"
+      ],
+      "weekly_days": 4,
+      "session_duration": 90,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "shoulder"
+      ],
+      "gender": "male",
+      "age": 34,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "어깨 부상 고급: 오버헤드/프레스류 제외 후에도 4개 이상. [수정] 가슴 집중은 불가능(어깨 부상 규칙이 플랜 가능 가슴 운동 전부를 제한) — require_focus 제거, 부상 우선"
+      }
+    },
+    {
+      "id": "p18_ko_advanced",
+      "locale": "ko",
+      "experience_level": "advanced",
+      "goals": [
+        "bulk_up",
+        "thick_legs",
+        "glutes",
+        "strength"
+      ],
+      "weekly_days": 6,
+      "session_duration": 90,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 27,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "고급 6일 하체 포커스",
+        "require_focus": [
+          "LEGS"
+        ],
+        "acceptable_templates": [
+          "ppl_classic",
+          "advanced_pplul"
+        ]
+      }
+    },
+    {
+      "id": "p19_ko_beginner",
+      "locale": "ko",
+      "experience_level": "beginner",
+      "goals": [
+        "weight_loss",
+        "general_fitness",
+        "flexibility"
+      ],
+      "weekly_days": 2,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 45,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "주2일 맨몸",
+        "acceptable_templates": [
+          "beginner_2day"
+        ]
+      }
+    },
+    {
+      "id": "p20_ko_novice",
+      "locale": "ko",
+      "experience_level": "novice",
+      "goals": [
+        "posture",
+        "flexibility",
+        "rehabilitation",
+        "core_strength"
+      ],
+      "weekly_days": 3,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT",
+        "DUMBBELL"
+      ],
+      "injuries": [
+        "lower_back"
+      ],
+      "gender": "female",
+      "age": 52,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "허리 부상 자세교정",
+        "require_focus": [
+          "CORE"
+        ]
+      }
+    },
+    {
+      "id": "p21_ko_beginner",
+      "locale": "ko",
+      "experience_level": "beginner",
+      "goals": [
+        "strength",
+        "bulk_up",
+        "lean_mass"
+      ],
+      "weekly_days": 3,
+      "session_duration": 60,
+      "equipment": [
+        "DUMBBELL"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 22,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "덤벨만 있는 사용자(바벨/머신 금지)"
+      }
+    },
+    {
+      "id": "p22_ko_intermediate",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "big_arms",
+        "toned_arms",
+        "wide_shoulders",
+        "bulk_up"
+      ],
+      "weekly_days": 4,
+      "session_duration": 45,
+      "equipment": [
+        "CABLE"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 29,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "케이블만: 팔 포커스",
+        "require_focus": [
+          "ARMS"
+        ]
+      }
+    },
+    {
+      "id": "p23_ko_intermediate",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "thick_chest",
+        "wide_back",
+        "bulk_up"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "MACHINE",
+        "CABLE"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 31,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "머신+케이블 존",
+        "require_focus": [
+          "CHEST",
+          "BACK"
+        ]
+      }
+    },
+    {
+      "id": "p24_ko_expert",
+      "locale": "ko",
+      "experience_level": "expert",
+      "goals": [
+        "strength",
+        "bulk_up",
+        "wide_back",
+        "thick_legs",
+        "big_arms"
+      ],
+      "weekly_days": 5,
+      "session_duration": 120,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 38,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "전문가 5일 5개 목표",
+        "require_focus": [
+          "LEGS"
+        ],
+        "acceptable_templates": [
+          "advanced_pplul",
+          "ppl_classic"
+        ]
+      }
+    },
+    {
+      "id": "p25_ko_expert",
+      "locale": "ko",
+      "experience_level": "expert",
+      "goals": [
+        "athletic_performance",
+        "strength",
+        "endurance"
+      ],
+      "weekly_days": 3,
+      "session_duration": 90,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "knee"
+      ],
+      "gender": "male",
+      "age": 42,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "전문가 3일+무릎",
+        "acceptable_templates": [
+          "advanced_fullbody"
+        ]
+      }
+    },
+    {
+      "id": "p26_ko_advanced",
+      "locale": "ko",
+      "experience_level": "advanced",
+      "goals": [
+        "weight_loss",
+        "six_pack",
+        "endurance",
+        "lean_mass"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 36,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "고급 다이어트: diet_circuit(중급)도 허용",
+        "require_focus": [
+          "CORE"
+        ]
+      }
+    },
+    {
+      "id": "p27_ko_beginner",
+      "locale": "ko",
+      "experience_level": "beginner",
+      "goals": [
+        "weight_loss",
+        "slim_legs",
+        "glutes",
+        "toned_arms",
+        "posture"
+      ],
+      "weekly_days": 2,
+      "session_duration": 45,
+      "equipment": [
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 19,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "주2일 홈 여성 5개 목표",
+        "require_focus": [
+          "GLUTES"
+        ]
+      }
+    },
+    {
+      "id": "p28_ko_novice",
+      "locale": "ko",
+      "experience_level": "novice",
+      "goals": [
+        "bulk_up",
+        "thick_chest",
+        "wide_shoulders"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 24,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "바벨+덤벨 홈짐",
+        "require_focus": [
+          "CHEST",
+          "SHOULDERS"
+        ]
+      }
+    },
+    {
+      "id": "p29_ko_intermediate",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "weight_loss",
+        "general_fitness"
+      ],
+      "weekly_days": 5,
+      "session_duration": 30,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 39,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "주5일 30분 짧은 세션"
+      }
+    },
+    {
+      "id": "p30_ko_beginner",
+      "locale": "ko",
+      "experience_level": "beginner",
+      "goals": [
+        "rehabilitation",
+        "general_fitness"
+      ],
+      "weekly_days": 3,
+      "session_duration": 30,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "knee",
+        "lower_back"
+      ],
+      "gender": "male",
+      "age": 61,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "무릎+허리 복합 부상 고령"
+      }
+    },
+    {
+      "id": "p31_ko_novice",
+      "locale": "ko",
+      "experience_level": "novice",
+      "goals": [
+        "thick_legs",
+        "glutes",
+        "bulk_up"
+      ],
+      "weekly_days": 3,
+      "session_duration": 90,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 21,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "하체 집중 초보 90분",
+        "require_focus": [
+          "LEGS",
+          "GLUTES"
+        ]
+      }
+    },
+    {
+      "id": "p32_ko_intermediate",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "strength",
+        "bulk_up"
+      ],
+      "weekly_days": 6,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "shoulder"
+      ],
+      "gender": "male",
+      "age": 33,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "6일+어깨 부상"
+      }
+    },
+    {
+      "id": "p33_ko_beginner",
+      "locale": "ko",
+      "experience_level": "beginner",
+      "goals": [
+        "weight_loss",
+        "endurance",
+        "six_pack"
+      ],
+      "weekly_days": 3,
+      "session_duration": 60,
+      "equipment": [
+        "DUMBBELL",
+        "BODYWEIGHT",
+        "CABLE"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 34,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "덤벨+케이블+맨몸",
+        "require_focus": [
+          "CORE"
+        ]
+      }
+    },
+    {
+      "id": "p34_ko_advanced",
+      "locale": "ko",
+      "experience_level": "advanced",
+      "goals": [
+        "wide_back",
+        "big_arms",
+        "thick_chest"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "DUMBBELL",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "lower_back"
+      ],
+      "gender": "male",
+      "age": 40,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "허리 부상 고급 덤벨/케이블",
+        "require_focus": [
+          "BACK",
+          "ARMS"
+        ]
+      }
+    },
+    {
+      "id": "p35_ko_expert",
+      "locale": "ko",
+      "experience_level": "expert",
+      "goals": [
+        "bulk_up",
+        "wide_shoulders",
+        "thick_chest",
+        "big_arms"
+      ],
+      "weekly_days": 6,
+      "session_duration": 90,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "CABLE",
+        "MACHINE"
+      ],
+      "injuries": [
+        "shoulder",
+        "elbow"
+      ],
+      "gender": "male",
+      "age": 44,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "어깨+팔꿈치 부상 전문가 6일"
+      }
+    },
+    {
+      "id": "p36_ko_novice",
+      "locale": "ko",
+      "experience_level": "novice",
+      "goals": [
+        "weight_loss",
+        "glutes",
+        "thick_legs",
+        "slim_legs",
+        "toned_arms"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 26,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "실사용자형 5목표 4일 풀짐",
+        "require_focus": [
+          "GLUTES",
+          "LEGS"
+        ]
+      }
+    },
+    {
+      "id": "p37_ko_beginner",
+      "locale": "ko",
+      "experience_level": "beginner",
+      "goals": [
+        "lean_mass",
+        "six_pack",
+        "posture",
+        "general_fitness"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "MACHINE"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 65,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "머신만 고령"
+      }
+    },
+    {
+      "id": "p38_ko_intermediate",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "strength",
+        "athletic_performance"
+      ],
+      "weekly_days": 3,
+      "session_duration": 90,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 30,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "주3일 중급 근력",
+        "acceptable_templates": [
+          "upper_lower_muscle",
+          "hypertrophy_basic",
+          "diet_circuit",
+          "beginner_fullbody",
+          "advanced_fullbody"
+        ]
+      }
+    },
+    {
+      "id": "p39_ko_advanced",
+      "locale": "ko",
+      "experience_level": "advanced",
+      "goals": [
+        "thick_legs",
+        "strength"
+      ],
+      "weekly_days": 2,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 32,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "고급자 주2일: 일수 허용치 내(2~3일)",
+        "require_focus": [
+          "LEGS"
+        ]
+      }
+    },
+    {
+      "id": "p40_en_beginner",
+      "locale": "en",
+      "experience_level": "beginner",
+      "goals": [
+        "weight_loss",
+        "general_fitness",
+        "six_pack",
+        "endurance"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 35,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "EN 초보 다이어트",
+        "require_focus": [
+          "CORE"
+        ]
+      }
+    },
+    {
+      "id": "p41_en_beginner",
+      "locale": "en",
+      "experience_level": "beginner",
+      "goals": [
+        "bulk_up",
+        "big_arms",
+        "thick_chest"
+      ],
+      "weekly_days": 3,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 18,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "18세 초보",
+        "require_focus": [
+          "ARMS",
+          "CHEST"
+        ],
+        "acceptable_templates": [
+          "beginner_fullbody",
+          "hypertrophy_basic"
+        ]
+      }
+    },
+    {
+      "id": "p42_en_novice",
+      "locale": "en",
+      "experience_level": "novice",
+      "goals": [
+        "glutes",
+        "thick_legs",
+        "weight_loss",
+        "toned_arms"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 28,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "홈 둔근 포커스",
+        "require_focus": [
+          "GLUTES"
+        ]
+      }
+    },
+    {
+      "id": "p43_en_intermediate",
+      "locale": "en",
+      "experience_level": "intermediate",
+      "goals": [
+        "bulk_up",
+        "wide_back",
+        "big_arms",
+        "strength"
+      ],
+      "weekly_days": 4,
+      "session_duration": 75,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 27,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "중급 4일",
+        "require_focus": [
+          "BACK",
+          "ARMS"
+        ],
+        "acceptable_templates": [
+          "upper_lower_muscle",
+          "hypertrophy_basic",
+          "ppl_classic"
+        ]
+      }
+    },
+    {
+      "id": "p44_en_intermediate",
+      "locale": "en",
+      "experience_level": "intermediate",
+      "goals": [
+        "weight_loss",
+        "thick_legs",
+        "glutes"
+      ],
+      "weekly_days": 3,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "knee"
+      ],
+      "gender": "female",
+      "age": 36,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "무릎 부상 다이어트",
+        "require_focus": [
+          "GLUTES"
+        ]
+      }
+    },
+    {
+      "id": "p45_en_advanced",
+      "locale": "en",
+      "experience_level": "advanced",
+      "goals": [
+        "bulk_up",
+        "strength",
+        "wide_shoulders",
+        "thick_chest",
+        "wide_back"
+      ],
+      "weekly_days": 5,
+      "session_duration": 90,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 29,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "고급 5일 5목표",
+        "require_focus": [
+          "SHOULDERS"
+        ],
+        "acceptable_templates": [
+          "advanced_pplul",
+          "ppl_classic"
+        ]
+      }
+    },
+    {
+      "id": "p46_en_expert",
+      "locale": "en",
+      "experience_level": "expert",
+      "goals": [
+        "strength",
+        "athletic_performance"
+      ],
+      "weekly_days": 4,
+      "session_duration": 120,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "lower_back"
+      ],
+      "gender": "male",
+      "age": 50,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "전문가 허리 부상"
+      }
+    },
+    {
+      "id": "p47_en_beginner",
+      "locale": "en",
+      "experience_level": "beginner",
+      "goals": [
+        "flexibility",
+        "posture",
+        "rehabilitation"
+      ],
+      "weekly_days": 2,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "shoulder"
+      ],
+      "gender": "female",
+      "age": 55,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "어깨 부상 맨몸 주2일",
+        "acceptable_templates": [
+          "beginner_2day"
+        ]
+      }
+    },
+    {
+      "id": "p48_en_novice",
+      "locale": "en",
+      "experience_level": "novice",
+      "goals": [
+        "slim_legs",
+        "toned_arms",
+        "glutes",
+        "weight_loss"
+      ],
+      "weekly_days": 2,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 24,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "맨몸 30분 주2일",
+        "require_focus": [
+          "GLUTES"
+        ]
+      }
+    },
+    {
+      "id": "p49_en_intermediate",
+      "locale": "en",
+      "experience_level": "intermediate",
+      "goals": [
+        "big_arms",
+        "wide_shoulders"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "DUMBBELL"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 33,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "덤벨만 팔/어깨",
+        "require_focus": [
+          "ARMS",
+          "SHOULDERS"
+        ]
+      }
+    },
+    {
+      "id": "p50_en_advanced",
+      "locale": "en",
+      "experience_level": "advanced",
+      "goals": [
+        "weight_loss",
+        "lean_mass",
+        "six_pack"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 41,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "고급 홈 4일",
+        "require_focus": [
+          "CORE"
+        ]
+      }
+    },
+    {
+      "id": "p51_en_novice",
+      "locale": "en",
+      "experience_level": "novice",
+      "goals": [
+        "thick_chest",
+        "bulk_up"
+      ],
+      "weekly_days": 5,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 23,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "바벨+맨몸 5일",
+        "require_focus": [
+          "CHEST"
+        ]
+      }
+    },
+    {
+      "id": "p52_en_beginner",
+      "locale": "en",
+      "experience_level": "beginner",
+      "goals": [
+        "general_fitness",
+        "weight_loss"
+      ],
+      "weekly_days": 4,
+      "session_duration": 30,
+      "equipment": [
+        "CABLE"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 47,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "케이블만 4일 30분"
+      }
+    },
+    {
+      "id": "p53_en_intermediate",
+      "locale": "en",
+      "experience_level": "intermediate",
+      "goals": [
+        "thick_legs",
+        "glutes",
+        "strength"
+      ],
+      "weekly_days": 6,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "knee",
+        "lower_back"
+      ],
+      "gender": "female",
+      "age": 31,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "6일+무릎+허리 복합",
+        "require_focus": [
+          "GLUTES"
+        ]
+      }
+    },
+    {
+      "id": "p54_en_expert",
+      "locale": "en",
+      "experience_level": "expert",
+      "goals": [
+        "bulk_up",
+        "big_arms"
+      ],
+      "weekly_days": 3,
+      "session_duration": 60,
+      "equipment": [
+        "MACHINE",
+        "CABLE"
+      ],
+      "injuries": [
+        "elbow"
+      ],
+      "gender": "male",
+      "age": 37,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "팔꿈치 부상인데 팔 포커스: 부상 우선. [수정] 팔 집중은 불가능(팔꿈치 규칙이 이두·삼두 운동 전부를 제한) — require_focus 제거"
+      }
+    },
+    {
+      "id": "p55_ja_novice",
+      "locale": "ja",
+      "experience_level": "novice",
+      "goals": [
+        "bulk_up",
+        "thick_chest",
+        "big_arms",
+        "wide_back",
+        "wide_shoulders"
+      ],
+      "weekly_days": 4,
+      "session_duration": 75,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 22,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "일본 5목표 상체",
+        "require_focus": [
+          "CHEST",
+          "BACK"
+        ]
+      }
+    },
+    {
+      "id": "p56_ja_intermediate",
+      "locale": "ja",
+      "experience_level": "intermediate",
+      "goals": [
+        "weight_loss",
+        "toned_arms",
+        "six_pack",
+        "posture"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "shoulder"
+      ],
+      "gender": "female",
+      "age": 38,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "어깨 부상 여성 다이어트",
+        "require_focus": [
+          "CORE"
+        ]
+      }
+    },
+    {
+      "id": "p57_ja_beginner",
+      "locale": "ja",
+      "experience_level": "beginner",
+      "goals": [
+        "thick_legs",
+        "slim_legs",
+        "glutes",
+        "weight_loss",
+        "flexibility"
+      ],
+      "weekly_days": 3,
+      "session_duration": 60,
+      "equipment": [
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "knee"
+      ],
+      "gender": "female",
+      "age": 33,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "홈+무릎+하체 포커스 최난도",
+        "require_focus": [
+          "GLUTES"
+        ]
+      }
+    },
+    {
+      "id": "p58_ko_novice",
+      "locale": "ko",
+      "experience_level": "novice",
+      "goals": [
+        "wide_shoulders",
+        "thick_chest",
+        "big_arms",
+        "six_pack",
+        "weight_loss"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 27,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "남성 5목표 상체 위주 + 다이어트",
+        "require_focus": [
+          "SHOULDERS",
+          "CHEST",
+          "ARMS"
+        ]
+      }
+    },
+    {
+      "id": "p59_ko_beginner",
+      "locale": "ko",
+      "experience_level": "beginner",
+      "goals": [
+        "strength",
+        "general_fitness"
+      ],
+      "weekly_days": 2,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 55,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "주2일 55세",
+        "acceptable_templates": [
+          "beginner_2day"
+        ]
+      }
+    },
+    {
+      "id": "p60_ko_intermediate",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "weight_loss",
+        "thick_legs",
+        "slim_legs",
+        "glutes",
+        "six_pack"
+      ],
+      "weekly_days": 5,
+      "session_duration": 45,
+      "equipment": [
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 29,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "홈 5일 하체/둔근",
+        "require_focus": [
+          "GLUTES",
+          "LEGS"
+        ]
+      }
+    },
+    {
+      "id": "p61_ja_advanced",
+      "locale": "ja",
+      "experience_level": "advanced",
+      "goals": [
+        "weight_loss",
+        "athletic_performance",
+        "endurance"
+      ],
+      "weekly_days": 3,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "knee"
+      ],
+      "gender": "male",
+      "age": 39,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "고급 일본 무릎"
+      }
+    },
+    {
+      "id": "p62_ko_expert",
+      "locale": "ko",
+      "experience_level": "expert",
+      "goals": [
+        "posture",
+        "rehabilitation",
+        "flexibility"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "lower_back",
+        "hip"
+      ],
+      "gender": "female",
+      "age": 60,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "숙련자지만 재활: 허리+고관절"
+      }
+    },
+    {
+      "id": "p63_ko_beginner",
+      "locale": "ko",
+      "experience_level": "beginner",
+      "goals": [
+        "bulk_up",
+        "lean_mass"
+      ],
+      "weekly_days": 6,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 20,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "초보가 주6일 희망: 일수 허용 1"
+      }
+    },
+    {
+      "id": "p64_en_novice",
+      "locale": "en",
+      "experience_level": "novice",
+      "goals": [
+        "weight_loss",
+        "big_arms",
+        "six_pack"
+      ],
+      "weekly_days": 3,
+      "session_duration": 120,
+      "equipment": [
+        "BARBELL",
+        "DUMBBELL",
+        "MACHINE",
+        "CABLE",
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 45,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "120분 세션 초보",
+        "require_focus": [
+          "CORE"
+        ]
+      }
+    },
+    {
+      "id": "p65_ko_intermediate",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "thick_legs",
+        "strength",
+        "bulk_up"
+      ],
+      "weekly_days": 4,
+      "session_duration": 60,
+      "equipment": [
+        "BARBELL",
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "knee"
+      ],
+      "gender": "male",
+      "age": 25,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "바벨+맨몸 무릎 부상 하체 포커스",
+        "require_focus": [
+          "LEGS"
+        ]
+      }
+    }
+  ]
+}
