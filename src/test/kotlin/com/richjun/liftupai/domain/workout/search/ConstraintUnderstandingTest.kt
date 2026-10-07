@@ -124,6 +124,41 @@ class ConstraintUnderstandingTest {
     }
 
     @Test
+    fun `그것만 있다는 말은 운동 이름을 말한 이름 검색에서도 그 장비로 좁힌다`() {
+        for ((q, e) in listOf(
+            "케이블만 있는데 풀오버" to Equipment.CABLE,
+            "밴드만 있어 힙 쓰러스트" to Equipment.RESISTANCE_BAND,
+            "バーベルしかないのでベンチプレス" to Equipment.BARBELL,
+            "i only have dumbbells, squats" to Equipment.DUMBBELL,
+            "kettlebell only squats" to Equipment.KETTLEBELL
+        )) {
+            val out = top(q, 10)
+            assertTrue(out.isNotEmpty() && out.all { it.equipment == e }, "[$q] ${out.map { it.slug to it.equipment }}")
+        }
+        // "만 있는 게 아니라" 는 그것 말고도 있다는 말이다
+        assertFalse(plan("not only dumbbells, i have cables too, chest").onlyEquip, engine.explain("not only dumbbells, i have cables too, chest"))
+    }
+
+    @Test
+    fun `장비 뒤의 are not 은 그 장비의 부정이고 뒤따르는 부위를 지우지 않는다`() {
+        val q = "dumbbells are cool, cables are not, shoulders"
+        val p = plan(q)
+        assertTrue(Equipment.CABLE in p.excludeEquip && Equipment.DUMBBELL !in p.excludeEquip, engine.explain(q))
+        assertTrue(p.excludeConcepts.isEmpty() && p.concepts.isNotEmpty(), "어깨가 부정 대상이 되면 안 된다: ${engine.explain(q)}")
+        assertTrue(top(q, 8).none { it.equipment == Equipment.CABLE })
+    }
+
+    @Test
+    fun `장비 바로 뒤의 괜찮아 는 부상 단서가 아니다`() {
+        for (q in listOf("케이블은 괜찮아 등", "ケーブルは大丈夫 背中")) {
+            val p = plan(q)
+            assertTrue(p.injuries.isEmpty() && Equipment.CABLE in p.equipments, "[$q] ${engine.explain(q)}")
+        }
+        // 부상 부위 뒤의 괜찮은 운동은 여전히 안전한 운동을 묻는 말이다
+        assertTrue(QueryLexicon.Joint.KNEE in plan("무릎에 괜찮은 하체운동").injuries)
+    }
+
+    @Test
     fun `쓸 수 있는 것을 말하는 긍정 요청은 지우지 않는다`() {
         for ((q, e) in listOf("케이블로만 어깨" to Equipment.CABLE, "machines only back" to Equipment.MACHINE, "ダンベルのみで脚" to Equipment.DUMBBELL, "밴드로만 하체" to Equipment.RESISTANCE_BAND)) {
             val p = plan(q)

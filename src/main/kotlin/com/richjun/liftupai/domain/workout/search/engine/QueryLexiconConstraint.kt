@@ -18,9 +18,6 @@ internal object QueryLexiconConstraint {
         사용 안 함|사용안함|사용 안 해|사용안해|사용 안 해요|사용 안 합니다|사용 안 할래|사용 못 함|사용 못함|사용 못 해|사용 불가|사용불가|사용 금지|사용금지|사용 안 돼|사용 안돼|사용 안 됨|사용안됨
         |안 함|안함|안 해|안해|안 해요|안해요|안 할래|안할래|안 할 거|안 합니다|안 씀|안씀|안 써요|안써요|안 쓸래|안쓸래|안 쓸 거|안쓸거|안 쓴다|안 잡|안 잡음|안 잡아
         |못 씀|못씀|못 써|못써|못 써요|못써요|못 쓰|못쓰|못 쓴|못쓴|못 쓸|못쓸|못 쓰는데|못쓰는데|못 쓰겠|못쓰겠|못 쓰고|못쓰고|못 쓰니까|못쓰니까|못 쓰거든|못쓰거든|못 써서|못써서
-        |못 잡|못잡|못 잡음|못잡음|못 잡아|못잡아|못 잡고|못잡고|못 잡겠|못잡겠|못 잡는|못잡는|못 쥐|못쥐|못 쥠|못쥠|못 쥐어|못 쥐겠|못 쥐는
-        |못 들|못들|못 들어|못들어|못 들어요|못들어요|못 들고|못들고|못 들겠|못들겠|못 드는|못드는|못 듦|못듦
-        |못 밀|못밀|못 밀어|못밀어|못 밀겠|못밀겠|못 당겨|못당겨|못 당기|못당기|못 매달|못매달|못 올리|못올리|못 올려|못올려|못 올리겠|못올리겠
         |불가능|금지|금지야|금지예요|금지임|금지라|금지라서|금지돼서|금지되어|금지된|금지됨|금지고|금지인데|금지니까|금지인|금지인 날|금지된 날
         |쓰는 중|쓰는중|쓰는 중이라|쓰는중이라|쓰는 중이야|쓰는중이야|쓰는 중이어서|쓰는 중이네|쓰는 중이라서|쓰는 중인데|쓰는중인데|쓰는 중임|쓰는 중이에요|쓰는 중이예요
         |쓰고 있어|쓰고있어|쓰고 있어서|쓰고있어서|쓰고 있어요|쓰고있어요|쓰고 있는데|쓰고있는데|쓰고 있음|쓰고있음|쓰고 있네|쓰고있네|쓰고 있네요|쓰고 있고|쓰고있고|쓰고 있으니|쓰고있으니|쓰고 있다|쓰고있다|쓰고 있는 중|쓰고있는중|쓰고 있길래|쓰고 있거든|쓰고있거든|쓰고 있으니까
@@ -38,7 +35,6 @@ internal object QueryLexiconConstraint {
         |패스|패스할래|패스함|패스야|패스예요|패스하고 싶어|패스할게|패스하겠습니다|패스하고|패스할 거야|패스할거야|패스 할래
         |禁止|禁止で|禁止です|禁止だ|禁止なので|禁止なんで|禁止されてる|禁止されて|禁止されている|禁止になった|使用禁止|使用不可|利用禁止|利用不可
         |NG|NGで|NGです|NGなので|ダメで|ダメです|ダメなので|ダメだ|だめで|だめです|だめなので|駄目で|駄目です|はダメ|はだめ|は駄目|不可で|不可です|不可
-        |握れない|握れなくて|握れず|握れません|握れないので|握れないから|握れなくなった|握れなくなって|持てない|持てなくて|持てず|持てません|持てないので|持てないから|持てなくなった|掴めない|掴めなくて|つかめない|つかめなくて|握力がなくて|握力が弱くて|握力がない
         |使えない|使えなくて|使えず|使えません|使えないので|使えないから|使えなくなった|使えなくなって|つかえない|つかえなくて|使用できません|使用できないので|扱えない|扱えなくて|触れない|触れなくて|触りたくない|触りたくなくて|触れたくない
         |使われてる|使われている|使われてて|使われていて|使われてます|使われています|使われっぱなし|使われっぱ|使われちゃってる|使われちゃって|使われてしまって|使われまくり|使用されてる|使用されている|使用されてて|使用されていて|占領されてる|占領されている|占領されてて|占領されて|占拠されてる|占拠されて|独占されてる|独占されている|独占されてて|独占されて|独り占め|取られてる|取られている|取られてて|取られちゃって|取られっぱなし|押さえられてる|ふさがってる|ふさがっている|ふさがってて|塞がってる|塞がっている|塞がってて|埋まっちゃってる|埋まっちゃって|埋まりっぱなし
         |並んでる|並んでいる|並んでて|並んでいて|行列|行列で|行列ができてる|行列ができて|順番待ち|順番待ちで|順番待ちしてる|待ちで|待ちが長い|待ち時間が長い|待ち時間長い|待たされる|待たないと|待たなきゃ|待たなければ
@@ -96,7 +92,7 @@ internal object QueryLexiconConstraint {
     val NEG_BEFORE = """
         hard pass on|hard pass for|no to|nope to|nah to|say no to|saying no to|a no to|pass on|passing on|im good without|i'm good without|good without|never|never use|never using|never do|never doing|never touch|never ever|no longer use|no longer using|not using|not touching|not gonna use|not going to use|not planning to use|not interested in|no interest in|not into|not a fan of|no fan of|not keen on|not comfortable with|not comfortable using
         |dont want|don't want|do not want|dont wanna|don't wanna|dont like|don't like|do not like|dont feel like|don't feel like|dont want to use|don't want to use|dont wanna use|don't wanna use|didnt want|didn't want|wont use|won't use|wouldnt use|wouldn't use|shouldnt use|shouldn't use|should not use|must not use|refuse to use|refuse|refusing to use
-        |cant use|can't use|cannot use|can not use|cant grip|can't grip|cannot grip|cant hold|can't hold|cannot hold|cant lift|can't lift|cant hang|can't hang|cant press|can't press|cant handle|can't handle|cant stand|can't stand|couldnt use|couldn't use|unable to use|unable to grip|unable to hold|not able to use|not able to grip|not able to hold|not allowed to use|not permitted to use|not supposed to use|banned from|barred from|prohibited from
+        |cant use|can't use|cannot use|can not use|cant stand|can't stand|couldnt use|couldn't use|unable to use|not able to use|not allowed to use|not permitted to use|not supposed to use|banned from|barred from|prohibited from
         |hate|hates|hating|dislike|dislikes|disliking|despise|loathe|detest|allergic to|afraid of|scared of|terrified of
         |ran out of|run out of|running out of|out of stock|short of|short on|lacking|lack of|shortage of|no access to|without access to|dont have access to|don't have access to|do not have access to|no way to use|no room for|no space for|no spot for|no spots for|no slots for|no slot for
         |hogging|hogs|hogged|hog|monopolizing|monopolising|monopolizes|monopolised|occupying|occupies|occupied by|taking over|took over|taken over by|camping on|camps on|camped on|camping at|camped at|squatting on|sitting on|guarding|blocking|blocks|blocked by|clogging|clogged by|crowding|crowded with|packed with|using up|uses up|used up|using all|uses all|used all|using every|uses every|used every|using both|uses both|using everything|uses everything|using each|uses each|always using|always uses|always taking|always hogging|always on|always camping|always occupying|always blocking|constantly using|constantly uses|constantly taking|constantly hogging|constantly on|constantly occupying|constantly blocking|keeps using|kept using|keeps taking|keeps hogging|keep hogging|kept hogging|keeps occupying|keeps blocking|keeps camping
@@ -111,7 +107,7 @@ internal object QueryLexiconConstraint {
         |bored|boring|ideas|idea|variation|variations|variety|switch up|mix up
         |라서|이라서|라서요|이라서요|라니까|이라니까|이니까|이니까요|니까요|여서|이어서|인데|인데요|이라고|이라는|라는|이었|였는데|이었는데|였어|이었어|였고|이었고
         |있음|있네|있네요|있습니다|있어서|있지만|있으니|있으니까|있거든|있거든요|있는데요|있었어|있었는데|있는 거|있는거|있는 것|있는건|있는 건|あります|あるだけ|あるのは|あるのが|あるくらい|ありまして|ありますが|あるが|あるけど|あるけれど|あるので|あるから|あるんだ|あるんです|あるんだけど|持ってる|持ってます|持っている|持っていて|持ってて|持ってるのは|having|only have|only has|only got|i have|i got|ive got|i've got|we have|we got|weve got|we've got|just have|got a|have a|have an|have some|there is|there's
-        |전부|전부다|전부 다|모두|모조리|죄다|다들|누가|누군가|누군가가|누가 다|사람들이|다른 사람이|다른 사람|어떤 사람이|옆 사람이|회원들이|트레이너가|계속|계속해서|계속 계속|내내|하루종일|하루 종일|아까부터|항상|맨날|자꾸|자꾸만|줄곧|아까
+        |전부|전부다|전부 다|모두|모조리|죄다|다들|누가|누군가|누군가가|누가 다|사람들이|다른 사람이|다른 사람|어떤 사람이|옆 사람이|회원들이|트레이너가|계속|계속해서|계속 계속|내내|아까부터|항상|맨날|자꾸|자꾸만|줄곧|아까
         |全部|全て|すべて|ぜんぶ|みんな|みんなが|誰か|誰かが|だれか|だれかが|いつも|ずっと|ずーっと|常に|ひっきりなし|ひっきりなしに|さっきから|朝から|一日中|今日は|今日も|今は
         |yes|yeah|yep|yup|ok|okay|alright|all right|allowed|permitted|everyone|everybody|someone|somebody|some guy|some dude|a guy|a dude|the guy|the dude|always|constantly|currently|right now|these days|all day|all the time|all day long|every single|each of the|all of the|all of them|all of these|all of those|all the|all these|all those|both of the
     """.trimIndent()
@@ -126,6 +122,11 @@ internal object QueryLexiconConstraint {
         |무리야|무리예요|무리임|무리라서|무리여서|무리인데|무리니까|무리일 듯|무리일듯|무리 같아|무리같아|힘들어서|힘들 것 같|힘들것같|어려워서|어려울 것 같|버거워|버거워서|감당 못|감당이 안
         |不可能|不可能で|むり|ムリ|無理で|無理です|無理なので|無理だ|無理かも|無理そう|無理なんで|は無理|はムリ|ムリで|ムリです|できません|できなくて|できないので|できないから|やれません|やれなくて|難しい|難しくて|難しいので|つらい|つらくて|辛くて|きつくて|きついので
         |cant do|can't do|cannot do|can not do|cant|can't|cannot|not able to do|unable to do|unable to|not able to|couldnt do|couldn't do|could not do|too hard to do|too difficult to do|too painful to do|hurts to do|hurts too much to do
+        |못 잡|못잡|못 잡음|못잡음|못 잡아|못잡아|못 잡고|못잡고|못 잡겠|못잡겠|못 잡는|못잡는|못 쥐|못쥐|못 쥠|못쥠|못 쥐어|못 쥐겠|못 쥐는
+        |못 들|못들|못 들어|못들어|못 들어요|못들어요|못 들고|못들고|못 들겠|못들겠|못 드는|못드는|못 듦|못듦
+        |못 밀|못밀|못 밀어|못밀어|못 밀겠|못밀겠|못 당겨|못당겨|못 당기|못당기|못 매달|못매달|못 올리|못올리|못 올려|못올려|못 올리겠|못올리겠
+        |握れない|握れなくて|握れず|握れません|握れないので|握れないから|握れなくなった|握れなくなって|持てない|持てなくて|持てず|持てません|持てないので|持てないから|持てなくなった|掴めない|掴めなくて|つかめない|つかめなくて
+        |cant grip|can't grip|cannot grip|cant hold|can't hold|cannot hold|cant lift|can't lift|cannot lift|cant hang|can't hang|cant press|can't press|cannot press|cant push|can't push|cant pull|can't pull|unable to grip|unable to hold|unable to lift|not able to grip|not able to hold|not able to lift
     """.trimIndent()
 
     /** 부상 감각 표현 — 관절 가까이에서 그 관절을 피할 부위로 만든다(관절이 없으면 아무 일도 하지 않는다) */

@@ -232,7 +232,7 @@ class ExerciseSearchEngine(
         val ex = if (plan.hasExclusions) exclusionSet(plan) else null
         val soft = if (plan.injuries.isNotEmpty()) softBits(plan) else null
         var cands = pool.filter { ex == null || !isExcluded(it, plan, ex) }
-        if (plan.mode == Mode.INTENT) {
+        if (plan.mode == Mode.INTENT || (plan.mode == Mode.NAME && plan.onlyEquip && plan.equipments.isNotEmpty())) {
             val allowedEquip = if (forHints) hintIntentEquipment(plan, substituteObject) else intentEquipment(plan)
             // 스트레칭·모빌리티 의도에서 장비는 "있으면 좋은" 조건 — 그 장비의 스트레칭이 몇 개 없으면 의미 후보를 장비로 거르지 않는다
             if (allowedEquip != null) cands.filter { it.doc.equipment in allowedEquip }
@@ -328,10 +328,12 @@ class ExerciseSearchEngine(
             val out = searchIntent(g.plan, pool).map { h -> if (h.doc.id in g.liftIds) ExerciseSearchHit(h.doc, h.score - GOAL_LIFT_PENALTY) else h }
             if (out.isNotEmpty()) return rankSorted(out)
         }
+        // "케이블만 있는데 풀오버" — 그것만 있다는 말은 이름 검색에서도 그 장비의 운동으로 좁힌다(그 장비로 된 것이 하나도 없으면 좁히지 않는다)
+        val namePool = if (plan.onlyEquip && plan.mode == Mode.NAME && plan.equipments.isNotEmpty()) pool.filter { it.doc.equipment in plan.equipments }.ifEmpty { pool } else pool
         var result = when (plan.mode) {
             Mode.BROWSE -> browseSorted(excludeFrom(pool, plan), locale)
             Mode.INTENT -> searchIntent(plan, pool)
-            Mode.NAME -> searchName(plan, pool, budget)
+            Mode.NAME -> searchName(plan, namePool, budget)
         }
         // 이름으로는 못 찾았는데 부위·장비를 알아들었다면 그 의도로 보여 준다
         var weak = false

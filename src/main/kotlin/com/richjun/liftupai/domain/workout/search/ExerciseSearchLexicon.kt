@@ -128,7 +128,7 @@ internal object ExerciseSearchLexicon {
         "러닝|running|ランニング|조깅|jogging|jog|ジョギング => running|jogging|러닝|ランニング|ジョギング",
         "어깨|숄더|shoulder|ショルダー|肩 => 어깨|숄더|shoulder|ショルダー",
         "가슴|체스트|chest|チェスト|胸 => 가슴|체스트|chest|チェスト",
-        "삼두|삼두근|트라이셉스|트라이셉|triceps|tricep|トライセプス|上腕三頭筋 => 삼두|트라이셉스|triceps|トライセプス",
+        "삼두|삼두근|트라이셉스|triceps|tricep|トライセプス|上腕三頭筋 => 삼두|트라이셉스|triceps|トライセプス",
         "이두|이두근|바이셉스|biceps|bicep|バイセップス|上腕二頭筋 => 이두|바이셉스|biceps|バイセップス",
         "엉덩이|둔근|글루트|glute|glutes|グルート|お尻|臀筋 => 글루트|힙|glute|グルート|ヒップ",
         "복근|abs|abdominal|アブ|腹筋 => 복근|abdominal|アブドミナル|crunch",
