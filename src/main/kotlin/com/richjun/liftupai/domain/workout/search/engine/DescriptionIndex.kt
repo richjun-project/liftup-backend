@@ -99,7 +99,7 @@ internal class DescriptionIndex(docs: List<IDoc>) {
 
         /** 접어서 토큰으로 쪼갠다. tf 에 (토큰 → 횟수)를 더한다. */
         fun tokenize(raw: String, tf: MutableMap<String, Int>) {
-            val folded = DescriptionLexicon.canon(SearchText.fold(raw))
+            val folded = DescriptionLexicon.canon(SearchText.foldLong(raw))
             val concepts = HashSet<String>()
             DescriptionLexicon.conceptsIn(folded, concepts)
             for (c in concepts) tf.merge("@$c", 1, Int::plus)

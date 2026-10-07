@@ -334,7 +334,8 @@ class ExerciseSearchEngine(
         if (!motion && !descriptive(text)) return result
         // 필터가 걸린 채 이름으로 0건이면 "그 필터 안에는 그런 운동이 없다"는 뜻이다 — 묘사 질의가 아닌 한 설명문으로 채우지 않는다
         if (!motion && result.isEmpty() && pool.size < indexed.size) return result
-        val intentMotion = plan.mode == Mode.INTENT && motion
+        // 스트레칭 의도("二の腕を伸ばす")의 伸ばす 나 부정("ジャンプしない")의 대상은 동작 묘사가 아니다
+        val intentMotion = plan.mode == Mode.INTENT && motion && !plan.stretch && plan.excludeKeys.isEmpty() && plan.excludeConcepts.isEmpty()
         if (!nameWeak && !intentMotion) return result
         // 장비를 말한 질의("…マシン", "…머신")는 설명문 후보도 그 장비로 좁힌다(그 장비의 운동이 없으면 좁히지 않는다)
         val equipPool = if (plan.equipments.isEmpty()) pool else pool.filter { it.doc.equipment in plan.equipments }.ifEmpty { pool }
