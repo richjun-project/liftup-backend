@@ -26,6 +26,8 @@ spring:
 search:
   semantic:
     enabled: ${SEMANTIC_SEARCH_ENABLED:true}
+  rewrite:
+    enabled: ${QUERY_REWRITE_ENABLED:true}
 
 # Qdrant (production)
 qdrant:
