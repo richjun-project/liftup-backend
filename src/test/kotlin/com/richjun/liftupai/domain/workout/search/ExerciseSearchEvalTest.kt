@@ -147,4 +147,60 @@ class ExerciseSearchEvalTest {
             assertTrue(mrr >= MRR_MIN, "MRR $mrr < $MRR_MIN")
         }
     }
+
+    // ── 적대적 평가셋(dev2): 문장형·목표·자세·부정·부상·오타·별칭 — 카탈로그 공백(catalog-gap) 질의는 제외 ─────────────────
+
+    private val scoreboard: Map<String, Double> = mapOf(
+        "natural-phrase" to 0.85, "goal" to 0.85, "posture" to 0.85, "negation" to 0.8, "injury" to 0.8,
+        "muscle-intent" to 0.85, "equipment-intent" to 0.85, "home" to 0.85, "typo" to 0.9, "alias" to 0.9, "cardio" to 0.85
+    )
+
+    @Test
+    fun `적대적 평가셋 dev2 점수와 태그별 하한`() {
+        val node = mapper.readTree(javaClass.getResourceAsStream("/search-eval/dev2.json") ?: error("search-eval/dev2.json not found"))
+        val cases = loadCases(node).filter { "catalog-gap" !in it.tags && it.acceptable.isNotEmpty() }
+        val engine = ExerciseSearchEngine(loadCatalogDocs(mapper))
+        val misses = ArrayList<String>()
+        val perLocale = HashMap<String, MutableList<Boolean>>()
+        val perTag = HashMap<String, MutableList<Boolean>>()
+        var rrSum = 0.0
+        var hit5 = 0
+        for (c in cases) {
+            val slugs = engine.search(c.query, c.category, c.equipments, c.locale).take(50).map { it.doc.slug }
+            val rank = slugs.indexOfFirst { it in c.acceptable }.let { if (it >= 0) it + 1 else null }
+            val ok = rank != null && rank <= minOf(c.k, 5)
+            if (ok) hit5++
+            rrSum += rank?.let { 1.0 / it } ?: 0.0
+            perLocale.getOrPut(c.locale) { ArrayList() }.add(ok)
+            c.tags.forEach { perTag.getOrPut(it) { ArrayList() }.add(ok) }
+            if (!ok) misses.add("${c.id} [${c.locale}] ${c.query} -> ${slugs.take(5)}")
+        }
+        val n = cases.size
+        println("dev2 n=$n hit@5=${hit5.toDouble() / n} mrr=${rrSum / n} misses=${misses.size}")
+        misses.forEach { println("  MISS $it") }
+        assertTrue(hit5.toDouble() / n >= 0.93, "dev2 hit@5 ${hit5.toDouble() / n} < 0.93\n${misses.joinToString("\n")}")
+        assertTrue(rrSum / n >= 0.85, "dev2 MRR ${rrSum / n} < 0.85")
+        perLocale.forEach { (loc, v) -> assertTrue(v.count { it }.toDouble() / v.size >= 0.90, "dev2 $loc hit@5 < 0.90") }
+        scoreboard.forEach { (tag, min) ->
+            val v = perTag[tag] ?: error("tag $tag absent")
+            assertTrue(v.count { it }.toDouble() / v.size >= min, "dev2 태그 $tag hit@5 ${v.count { it }.toDouble() / v.size} < $min")
+        }
+    }
+
+    @Test
+    fun `안전 규칙 - 부정 부상 오매칭 금지 위반 0`() {
+        val node = mapper.readTree(javaClass.getResourceAsStream("/search-eval/safety.json") ?: error("search-eval/safety.json not found"))
+        val engine = ExerciseSearchEngine(loadCatalogDocs(mapper))
+        val violations = ArrayList<String>()
+        for (rule in node["rules"]) {
+            val query = rule["query"].asText()
+            val top = engine.search(query, null, null, rule["locale"].asText()).take(5)
+            val re = rule["forbid_slug_regex"]?.asText()?.let { Regex(it, RegexOption.IGNORE_CASE) }
+            val forbidEquip = rule["forbid_equipment"]?.map { it.asText() }?.toSet().orEmpty()
+            val bad = top.filter { h -> (re != null && re.containsMatchIn(h.doc.slug)) || h.doc.equipment?.name in forbidEquip }
+            val empty = rule["require_nonempty"]?.asBoolean() == true && top.isEmpty()
+            if (bad.isNotEmpty() || empty) violations.add("$query -> ${if (empty) "(empty)" else bad.map { it.doc.slug }}")
+        }
+        assertTrue(violations.isEmpty(), "안전 규칙 위반 ${violations.size}건\n${violations.joinToString("\n")}")
+    }
 }

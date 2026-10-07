@@ -42,7 +42,8 @@ object SearchText {
     /** NFKC + 소문자. 입력 상한을 먼저 적용한다(NFKC 는 길이를 늘릴 수 있으므로 2배까지 허용). */
     fun normalize(raw: String): String {
         val head = if (raw.length > MAX_QUERY_CHARS * 2) raw.substring(0, MAX_QUERY_CHARS * 2) else raw
-        val n = Normalizer.normalize(head, Normalizer.Form.NFKC).lowercase(Locale.ROOT)
+        // 아포스트로피는 단어를 가르지 않고 지운다 (captain's → captains)
+        val n = Normalizer.normalize(head, Normalizer.Form.NFKC).lowercase(Locale.ROOT).filter { it != '\'' && it != '\u2019' && it != '`' }
         return if (n.length > MAX_QUERY_CHARS) n.substring(0, MAX_QUERY_CHARS) else n
     }
 

@@ -241,19 +241,41 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
 
         // 2) 소음/충격 회피 표현 → 점프류 제외 + 집
         var quiet = false
-        for (idx in segs.indices) if (!consumed[idx] && segs[idx].has(Role.QUIET)) { quiet = true; consumed[idx] = true }
+        for (idx in segs.indices) if (!consumed[idx] && segs[idx].has(Role.QUIET)) { quiet = true; if (!segs[idx].has(Role.CONCEPT)) consumed[idx] = true }
         if (quiet) lex.moveGroups["jump"]?.let { excludeKeys.addAll(it.keys) }
 
-        // 3) 부상: 단서가 있으면 관절은 목표가 아니라 피할 부위
+        // 3) 부상: 단서(痛い/아플 때/bad)에 걸린 관절은 목표가 아니라 피할 부위. 단서마다 가장 가까운 관절 하나(와 접속어로 이어진 관절들)만 쓴다.
         val cue = cueFlag || segs.indices.any { !consumed[it] && segs[it].has(Role.CUE) }
         val injuries = LinkedHashSet<Joint>()
         if (cue) {
             for (idx in segs.indices) {
-                if (consumed[idx]) continue
-                val sg = segs[idx]
-                val joint = sg.terms?.firstNotNullOfOrNull { it.joint }
-                if (joint != null) { injuries.add(joint); consumed[idx] = true }
-                else if (sg.has(Role.CUE)) consumed[idx] = true
+                if (consumed[idx] || !segs[idx].has(Role.CUE)) continue
+                val own = segs[idx].terms?.firstNotNullOfOrNull { t -> if (t.role == Role.CUE) t.joint else null }
+                if (own != null) { injuries.add(own); consumed[idx] = true; continue }
+                consumed[idx] = true
+                val near = nearestJoint(segs, consumed, idx, text) ?: continue
+                for (j in near) { injuries.add(segs[j].terms!!.firstNotNullOf { it.joint }); consumed[j] = true }
+            }
+            // 단서 없이 남은 관절 표기는 목표 부위로 쓰이므로 건드리지 않는다
+        }
+
+        // 3.5) 세부 부위: 부위 + 수식어(상부/下部/rear …) → 세부 개념. 한글·가나는 부위 뒤, 라틴은 부위 앞 수식어가 흔하다.
+        val refined = HashMap<Int, Concept>()
+        for (idx in segs.indices) {
+            if (consumed[idx]) continue
+            val mod = segs[idx].terms?.firstNotNullOfOrNull { it.mod } ?: continue
+            val latin = text[segs[idx].s].code < 0x250
+            val order = if (latin) intArrayOf(1, -1) else intArrayOf(-1, 1)
+            for (step in order) {
+                var j = idx + step
+                var guard = 0
+                while (j in segs.indices && guard++ < 3 && segs[j].onlyRoles(Role.NOISE)) j += step
+                if (j !in segs.indices || consumed[j]) continue
+                val base = refined[j] ?: segs[j].terms?.firstOrNull { it.role == Role.CONCEPT }?.concept ?: continue
+                val target = lex.refine(base, mod) ?: continue
+                refined[j] = target
+                consumed[idx] = true
+                break
             }
         }
 
@@ -289,7 +311,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                     if (v != null && v >= HIGH_REPS && nextKey != null && nextKey in REP_UNITS) highReps = true
                 } else {
                     val terms = sg.terms!!
-                    val concept = terms.firstOrNull { it.role == Role.CONCEPT }?.concept
+                    val concept = refined[idx] ?: terms.firstOrNull { it.role == Role.CONCEPT }?.concept
                     if (concept != null) concepts.add(concept)
                     terms.firstOrNull { it.role == Role.EQUIP }?.let { equipments.addAll(it.equipment) }
                     if (terms.any { it.role == Role.HOME }) home = true
@@ -297,7 +319,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                     terms.firstOrNull { it.role == Role.LEVEL }?.let { level = it.level }
                     val contentRole = terms.any { it.role == Role.CONCEPT || it.role == Role.EQUIP || it.role == Role.HOME || it.role == Role.STRETCH }
                     if (!contentRole) {
-                        if (terms.any { it.role == Role.NAME }) positiveName = true
+                        // 부위에 붙지 못한 수식어(front squat 의 front)는 이름의 일부 — 한 글자 한자 수식어는 무시
+                        if (terms.any { it.role == Role.NAME } || (terms.any { it.role == Role.MODIFIER } && sg.e - sg.s >= 2)) positiveName = true
                         else if (terms.any { it.role == Role.JOINT }) jointPlain = true
                     }
                 }
@@ -308,7 +331,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         // 스트레칭 단독("스트레칭", "ヨガ")은 이름 검색, 부위와 함께면 의도 검색
         if (stretch && concepts.isEmpty() && equipments.isEmpty()) positiveName = true
 
-        val distinctConcepts = concepts.distinctBy { it.id }
+        val distinctConcepts = concepts.distinctBy { it.id }.let { list -> if (list.size > 1) list.filter { it.id != "fatloss" }.ifEmpty { list } else list }
         var effectiveConcepts: List<Concept> = distinctConcepts
 
         // 부상만 있고 목표 부위가 없으면: 그 관절에 안전한 운동 전반
@@ -334,9 +357,11 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         }
         // 군더더기만 있는 질의는 목록(브라우즈). 단, 숫자만 있거나 1~2글자면 이름 검색으로 보낸다(무관한 전체 목록을 주지 않는다).
         var finalSeeds = seeds
-        if (mode == Mode.BROWSE && (numbers.isNotEmpty() || text.length <= 2)) {
-            mode = Mode.NAME
-            finalSeeds = listOf(tok.words)
+        if (mode == Mode.BROWSE) {
+            // 이름에도 쓰이는 군더더기("lift", "set")만 남은 질의는 그 단어 자체로 이름 검색한다
+            val keepAmbiguous = seeds.lastOrNull().orEmpty()
+            if (keepAmbiguous.isNotEmpty()) { mode = Mode.NAME; finalSeeds = listOf(keepAmbiguous) }
+            else if (numbers.isNotEmpty() || text.length <= 2) { mode = Mode.NAME; finalSeeds = listOf(tok.words) }
         }
         if (mode == Mode.NAME && finalSeeds.isEmpty()) finalSeeds = listOf(tok.words)
         return QueryPlan(
@@ -344,6 +369,44 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             excludeEquip = excludeEquip, excludeKeys = excludeKeys, injuries = injuries, numbers = numbers, highReps = highReps,
             seeds = finalSeeds, hasUnknown = unknownChunks.isNotEmpty()
         )
+    }
+
+    /**
+     * 단서 위치 idx 에 걸린 관절 조각들의 인덱스. 일본어·한국어는 관절이 단서 앞(膝が痛い), 영어 형용사 단서는 뒤(bad knees)·명사 단서는 앞(knee pain).
+     * 접속어로 이어진 관절(무릎이랑 허리)도 함께 돌려준다.
+     */
+    private fun nearestJoint(segs: List<Seg>, consumed: BooleanArray, idx: Int, text: String): List<Int>? {
+        fun isJoint(i: Int) = !consumed[i] && segs[i].terms?.any { it.joint != null && it.role == Role.JOINT } == true
+        fun skippable(i: Int) = !segs[i].unknown && !segs[i].isNum && (segs[i].onlyRoles(Role.NOISE) || segs[i].has(Role.CONJ))
+        fun scan(from: Int, step: Int): Int? {
+            var i = from + step
+            var guard = 0
+            while (i in segs.indices && guard++ < 8) {
+                if (isJoint(i)) return i
+                if (!skippable(i)) return null
+                i += step
+            }
+            return null
+        }
+        val left = scan(idx, -1)
+        val right = scan(idx, 1)
+        val cueKey = text.substring(segs[idx].s, segs[idx].e)
+        val latin = cueKey.isNotEmpty() && cueKey[0].code < 0x250
+        val pick = when {
+            left != null && right != null -> if (latin && cueKey in lex.adjectiveCues) right else left
+            else -> left ?: right
+        } ?: return null
+        val out = arrayListOf(pick)
+        // 접속어로 이어진 같은 쪽 관절들
+        val step = if (pick < idx) -1 else 1
+        var cur = pick
+        while (true) {
+            var i = cur + step
+            var sawConj = false
+            while (i in segs.indices && skippable(i)) { if (segs[i].has(Role.CONJ)) sawConj = true; i += step }
+            if (sawConj && i in segs.indices && isJoint(i)) { out.add(i); cur = i } else break
+        }
+        return out
     }
 
     /** 부정 대상 하나를 해석해 제외 조건에 반영한다. 반영했으면 true. */
@@ -417,7 +480,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                     sg.isNum -> false
                     else -> {
                         val terms = sg.terms!!
-                        val contentRole = terms.any { it.role == Role.CONCEPT || it.role == Role.EQUIP || it.role == Role.NAME || it.role == Role.JOINT || it.role == Role.STRETCH }
+                        val contentRole = terms.any { it.role == Role.CONCEPT || it.role == Role.EQUIP || it.role == Role.NAME || it.role == Role.JOINT || it.role == Role.STRETCH || it.role == Role.MODIFIER }
                         when {
                             contentRole -> true
                             keepAmbiguous && key in ambiguousNoise -> true

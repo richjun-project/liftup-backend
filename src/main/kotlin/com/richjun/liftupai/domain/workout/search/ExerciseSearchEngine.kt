@@ -61,10 +61,20 @@ class ExerciseSearchEngine(
         val loose: String = SearchText.looseKey(strict)
         val looseWords: List<String> = words.map { SearchText.looseKey(it) }
 
+        /** 일반 단어(장비·수식어·stretch)를 뺀 핵심 키 — 퍼지·바이그램은 이것으로 비교한다(frog stretch 가 모든 stretch 에 걸리지 않게) */
+        val coreLoose: String = SearchText.looseKey(SearchText.strictKey(words.filter { it !in QueryLexicon.genericWords }))
+
         /** 이 변형이 말하는 동작 단어(머리 단어)와 부위 묶음 */
-        val heads: BitSet = BitSet().also { b -> QueryLexicon.headWords.forEachIndexed { i, k -> if (strict.contains(k.key)) b.set(i) } }
+        val heads: BitSet = BitSet().also { b ->
+            // 마지막 단어가 동작 단어를 치다 만 것("face pul")이어도 그 동작을 말한 것으로 본다
+            val tail = words.lastOrNull().orEmpty()
+            QueryLexicon.headWords.forEachIndexed { i, k -> if (strict.contains(k.key) || (tail.length >= 3 && k.key.length > tail.length && k.key.contains(tail))) b.set(i) }
+        }
         val regions: BitSet = BitSet().also { b ->
-            QueryLexicon.regionGroups.forEachIndexed { i, g -> if (words.any { w -> g.any { it.key == w } }) b.set(i) }
+            // 라틴 표기는 단어가 같을 때만, 한글·가나 표기는 붙여 쓴 복합어(レッグエクステンション) 안에서도 부위로 본다
+            QueryLexicon.regionGroups.forEachIndexed { i, g ->
+                if (g.any { k -> if (k.latin) words.any { w -> w == k.key } else strict.contains(k.key) }) b.set(i)
+            }
         }
     }
 
@@ -93,6 +103,18 @@ class ExerciseSearchEngine(
     }
 
     val size: Int get() = indexed.size
+
+    init {
+        warmUp()
+    }
+
+    /** 대표 질의 몇 개를 미리 돌려 클래스 로딩·JIT 비용을 첫 요청이 아니라 빌드 시점에 치른다 */
+    fun warmUp() {
+        runCatching {
+            for (q in WARM_QUERIES) search(q)
+            synchronized(cache) { cache.clear() }
+        }
+    }
 
     // ── 공개 API ─────────────────────────────────────────────────────────────────────────────
 
@@ -127,6 +149,8 @@ class ExerciseSearchEngine(
 
     /** 질의 해석 결과(진단·테스트용) */
     internal fun analyze(query: String): QueryPlan = analyzer.analyze(SearchText.tokenize(query)).plan
+
+    internal fun nearestDebug(word: String): List<String> = vocabulary.nearest(SearchText.words(word).firstOrNull().orEmpty())
 
     /** 질의 해석을 사람이 읽는 문자열로(진단용): 분해된 조각과 계획 */
     internal fun explain(query: String): String {
@@ -342,6 +366,10 @@ class ExerciseSearchEngine(
             // 장비·집 조건 안에 그 부위 운동이 없으면, 장비 조건만으로라도 보여 준다 (kettlebell 전신)
             out = scoreIntent(plan, cands, emptyList(), soft, prefer)
         }
+        if (out.isEmpty() && plan.stretch) {
+            // 스트레칭을 물었는데 부위 신호가 안 맞으면(전신 스트레칭) 스트레칭 전반을 인기·티어 순으로 보여 준다
+            out = cands.filter { it.isStretch }.map { ExerciseSearchHit(it.doc, BAND_INTENT + 6.0 + it.rank) }
+        }
         return rankSorted(out)
     }
 
@@ -361,7 +389,7 @@ class ExerciseSearchEngine(
             }
             var score = BAND_INTENT + 25.0 * fit + d.rank - 0.5 * (d.wordCount - 3).coerceIn(0, 4)
             if (plan.home && plan.equipments.isEmpty()) {
-                score += 8.0 * (ExerciseSearchLexicon.homeEquipmentPreference[d.doc.equipment] ?: 0.0)
+                score += HOME_PREF_WEIGHT * (ExerciseSearchLexicon.homeEquipmentPreference[d.doc.equipment] ?: 0.0)
             }
             score += levelAdjust(d.doc, plan.level) + injuryAdjust(d, plan, soft, prefer)
             out.add(ExerciseSearchHit(d.doc, score))
@@ -437,13 +465,14 @@ class ExerciseSearchEngine(
                 var best = -1.0
                 for (v in variants) {
                     if (v.penalty > 0) continue  // 퍼지는 원문 단어열에만 — 동의어 변형까지 오타 허용하면 무관한 운동이 걸린다
-                    if (v.words.size == 1 && isLatin(v.words[0]) && v.loose.length <= FUZZY_MIN_LATIN) continue  // HIIT 가 hip 으로 번지는 것 방지
-                    val k = SearchText.allowedTypos(v.loose.length)
+                    val core = v.coreLoose
+                    if (core.isEmpty() || (isLatin(core) && core.length <= FUZZY_MIN_LATIN)) continue  // HIIT 가 hip 으로, frog 가 front 로 번지는 것 방지
+                    val k = SearchText.allowedTypos(core.length)
                     if (k == 0) continue
                     for (n in d.names) {
-                        if (missingChars(v.loose, n.bloom) > k) continue
+                        if (missingChars(core, n.bloom) > k) continue
                         if (conflicts(v, n)) continue
-                        val dist = SearchText.approxSubstring(v.loose, n.loose, k)
+                        val dist = SearchText.approxSubstring(core, n.loose, k)
                         if (dist <= k) {  // dist 0 은 단어 경계를 넘는 우연 일치이므로 오타 1개와 동급
                             val s = BAND_FUZZY - maxOf(dist, 1) * 6.0 - v.penalty
                             if (s > best) best = s
@@ -458,8 +487,8 @@ class ExerciseSearchEngine(
         // 그래도 결과가 거의 없으면 문자 바이그램 유사도(Dice)로 보강
         if (results.size < BIGRAM_TRIGGER && !overBudget()) {
             val base = variants.first()
-            val qBigrams = bigrams(base.loose)
-            if (base.loose.length >= BIGRAM_MIN_LEN && qBigrams.size >= 3) {
+            val qBigrams = bigrams(base.coreLoose)
+            if (base.coreLoose.length >= BIGRAM_MIN_LEN && qBigrams.size >= 3) {
                 for (d in pool) {
                     if (results.containsKey(d.doc.id)) continue
                     var best = 0.0
@@ -493,6 +522,7 @@ class ExerciseSearchEngine(
                     if (!n.strict.startsWith(q, st)) continue
                     val wordEnd = st + q.length
                     val exactWord = wordEnd == n.strict.length || wordEnd in n.starts
+                    if (q.length == 1 && !exactWord) continue  // 한 글자는 단어가 정확히 같을 때만
                     s = maxOf(s, if (exactWord) BAND_TOKEN_WB else BAND_TOKEN_SUB)
                 }
                 // 2글자 CJK 단어("ヨガ")는 이름 안 어디에서든 글자 그대로 나오면 인정 (한 글자는 단어가 정확히 같을 때만)
@@ -553,7 +583,9 @@ class ExerciseSearchEngine(
             totalLen += t.length
             val q = occurrenceQuality(n, t)
             if (q == OCC_NONE) { allStrict = false; continue }
-            if (q == OCC_MID_WORD) allBoundary = false else matchedLen += t.length  // 단어 중간 일치는 부분 일치로 치지 않는다
+            if (q == OCC_MID_WORD) allBoundary = false
+            // 부분 일치에서는 단어 중간 일치와, (마지막 단어가 아닌) 접두 일치를 일치로 치지 않는다 — sled push ↛ pushdown
+            else if (q != OCC_WORD || !isLatin(t) || t === tokens.last()) matchedLen += t.length
             if (q == OCC_EXACT && isLatin(t)) exactWords++
         }
         if (allStrict) {
@@ -577,7 +609,7 @@ class ExerciseSearchEngine(
         if (tokens.size >= 2 && matchedLen > 0 && matchedLen.toDouble() / totalLen >= PARTIAL_MIN_FRACTION) {
             if (conflicts(v, n)) return -1.0
             // 일반 단어(장비·수식어) 하나만 맞은 이름은 일치로 치지 않는다
-            if (tokens.none { t -> t !in QueryLexicon.genericWords && occurrenceQuality(n, t) >= OCC_WORD }) return -1.0
+            if (tokens.none { t -> t !in QueryLexicon.genericWords && occurrenceQuality(n, t).let { q -> q == OCC_EXACT || (q == OCC_WORD && (!isLatin(t) || t === tokens.last())) } }) return -1.0
             // 질의의 부위 단어가 이름에 없으면, 그 운동이 정말 그 부위의 것일 때만 인정한다 (leg extension ↛ triceps extension)
             if (!v.regions.isEmpty && !n.regions.intersects(v.regions) && !muscleHints.matches(doc)) return -1.0
             var s = BAND_PARTIAL + 20.0 * matchedLen / totalLen
@@ -588,6 +620,8 @@ class ExerciseSearchEngine(
     }
 
     private fun isLatin(t: String) = t.isNotEmpty() && t[0].code < 0x250
+
+    private fun isKana(t: String) = t.isNotEmpty() && t.all { it.code in 0x3041..0x30FF }
 
     /**
      * 토큰이 이름 키에서 나타나는 방식의 최선 품질.
@@ -607,7 +641,9 @@ class ExerciseSearchEngine(
                 val hangul = SearchText.isHangulSyllable(t[0])
                 val startsWord = i in n.starts
                 val endsWord = e == n.strict.length || n.wordOf[e] != n.wordOf[e - 1]
-                val q = if (!hangul || t.length >= 3 || startsWord || endsWord) OCC_WORD else OCC_MID_WORD
+                var q = if (!hangul || t.length >= 3 || startsWord || endsWord) OCC_WORD else OCC_MID_WORD
+                // 짧은 가나 토큰이 더 긴 단어의 앞부분일 뿐이면(ロー ⊂ ロールアウト) 약한 일치 — 합성어의 끝에 붙은 경우(フルスクワット)는 정상
+                if (q == OCC_WORD && !hangul && t.length <= 4 && startsWord && !endsWord && isKana(t)) q = OCC_MID_WORD
                 best = maxOf(best, q)
                 if (best == OCC_EXACT) return best
                 from = i + 1
@@ -615,7 +651,8 @@ class ExerciseSearchEngine(
             }
             val startsWord = i in n.starts
             val crossesUnaligned = n.wordOf[e - 1] != n.wordOf[i] && e < n.strict.length && n.wordOf[e] == n.wordOf[e - 1]
-            if (!crossesUnaligned) {
+            // 3글자 이하 라틴 토큰은 단어 중간에서 일치하지 않는다 (hop ⊄ chop)
+            if (!crossesUnaligned && (startsWord || t.length > 3)) {
                 val endsWord = e == n.strict.length || e in n.starts
                 best = maxOf(best, if (startsWord && endsWord) OCC_EXACT else if (startsWord) OCC_WORD else OCC_MID_WORD)
                 if (best == OCC_EXACT) return best
@@ -839,6 +876,7 @@ class ExerciseSearchEngine(
         private const val HYBRID_PENALTY = 60.0
         private const val REGION_MISMATCH_PENALTY = 10.0
         private const val NUMBER_BOOST = 1.5
+        private const val HOME_PREF_WEIGHT = 12.0
         private const val LEVEL_ADJUST = 5.0
         private const val INJURY_SOFT_PENALTY = 14.0
         private const val INJURY_PREFER_BONUS = 10.0
@@ -852,6 +890,7 @@ class ExerciseSearchEngine(
         private const val MAX_COMBO_WORDS = 6
         private const val MAX_SYN_RUN = 3
         private const val CACHE_SIZE = 512
+        private val WARM_QUERIES = listOf("スクワット", "벤치프레스", "bench press", "背中を鍛えたい", "무릎 안 좋을 때 하체운동", "bad knees leg workout", "without deadlifts", "덤벨 컬", "유산소", "ヒップアップ")
         /** 한 질의의 후보 점수 계산 예산 — 넘으면 비싼 보강 단계(퍼지·바이그램)를 건너뛴다 */
         private const val BUDGET_NANOS = 40_000_000L
     }
