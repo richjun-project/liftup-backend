@@ -90,6 +90,8 @@ class AIPlanGenerationService(
             equipment = if (ctx.equipment.isEmpty()) request.equipment else ctx.equipment.toList(),
             // 요청의 집중 부위에 저장된 집중 목표(thick_legs·glutes …)를 합친다 — 예전엔 요청 값만 읽었다
             focusAreas = ((request.focusAreas ?: emptyList()) + ctx.focusAreas.map { it.name.lowercase() }).distinct().ifEmpty { null },
+            // 요청에 locale 이 없으면 저장된 언어 — 옛 앱의 일본어 사용자가 한국어 플랜 이름·코칭 노트를 받지 않게 한다
+            locale = request.locale?.takeIf { it.isNotBlank() } ?: ctx.language,
         )
         val targets = targetsOf(effectiveRequest)
         val restricted = restrictedChecker(injuries)

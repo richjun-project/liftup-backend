@@ -38,6 +38,7 @@ import org.mockito.Mockito.mock
  *  - 반복: 집·부상 사용자의 같은 운동이 후보가 충분한데 주 3회 이상 나오지 않음  (RecoFitChecks.repeats)
  *  - 집중 부위 우선: 목표에서 읽은 첫 번째 집중 부위도 주간 기준 이상
  *  - 순서: 그날 대표(ESSENTIAL) 복합운동이 있으면 첫 운동  (RecoFitChecks.leadOrdering)
+ *  - 짧은 세션: 30분 이하 사용자의 추천 템플릿은 하루 평균 36분 이하(그런 후보가 있을 때)
  * 집계 지표(표 아래 출력, 복합운동 선두율은 [MIN_COMPOUND_LEAD_RATE] 이상이어야 통과)
  *
  * 다른 페르소나 파일은 -DrecoEval.file=<경로> (또는 환경변수 RECO_EVAL_FILE) 로 채점한다. 파일 형식은 reco-eval/personas.json 과 같고,
@@ -79,6 +80,9 @@ class RecoFitEvalTest {
     companion object {
         /** 하루의 첫 운동이 코어·유산소가 아닌 복합운동인 날의 비율 하한 — 첫 종목이 보조·복근 운동이면 좋은 플랜이 아니다 */
         const val MIN_COMPOUND_LEAD_RATE = 0.90
+
+        /** 30분 이하 세션에 추천하는 템플릿의 하루 평균 시간 상한(분) */
+        const val MAX_AVG_TEMPLATE_MINUTES_FOR_SHORT = 36.0
 
         /** 집중 부위로 인정하려면 주간 최소 이 개수 (2일 플랜은 2개) */
         fun requiredFocusHits(planDays: Int) = if (planDays <= 2) 2 else 3
@@ -280,14 +284,17 @@ class RecoFitEvalTest {
         }
         // 하루 최소 운동 수
         val sizes = outcome.adapted.map { it.exercises.size }
-        if (sizes.any { it < p.minPerDay }) failures += "하루 운동 수 부족 $sizes < ${p.minPerDay}"
+        // 20분 이하의 세션은 2종목이 하한이다(3종목 × 2세트 × 휴식이 15분에 안 들어간다) — 시간 적합이 우선
+        val minPerDay = if (p.sessionDuration <= 20) minOf(p.minPerDay, 2) else p.minPerDay
+        if (sizes.any { it < minPerDay }) failures += "하루 운동 수 부족 $sizes < $minPerDay"
         // 같은 날 중복
         outcome.adapted.forEach { d ->
             val dup = d.exercises.groupBy { it.exercise.id }.filter { it.value.size > 1 }.keys
             if (dup.isNotEmpty()) failures += "day ${d.dayNumber} 중복 운동 $dup"
         }
         // 집중 볼륨 — 부상·장비·수준 때문에 그 부위의 후보 자체가 모자라면 가능한 만큼만 요구한다
-        val need = requiredFocusHits(outcome.adapted.size)
+        // 20분 이하의 세션은 하루가 2~3종목(첫 종목은 대표 복합운동)이라 집중 부위 볼륨 기준을 요구하지 않는다
+        val need = if (p.sessionDuration <= 20) 0 else requiredFocusHits(outcome.adapted.size)
         val suitableForFocus = RecoRules.suitability(p.equipment, p.level ?: ExperienceLevel.BEGINNER, p.age)
         fun feasibleHits(area: FocusArea) = exercises.count { ex ->
             ex.isPlanEligible && area.hits(ex) && TemplatePlanAdapter.equipmentAllowed(ex, p.equipment) && suitableForFocus(ex) &&
@@ -300,9 +307,32 @@ class RecoFitEvalTest {
         }
 
         // ── 새 하드 체크 ──
+        // 짧은 세션(30분 이하): 추천된 템플릿의 하루 평균 시간이 36분 이하여야 한다 — 단, 36분 이하의 후보 템플릿이 아예 없으면 면제.
+        // (30분 사용자에게 44~48분짜리 템플릿이 나가 보조 종목이 통째로 잘려 나가던 사례)
+        if (p.sessionDuration in 25..30 && TemplateRecommendationEngine.rankOf(p.experience) <= 1) {
+            val avg = t.days.map { it.estimatedMinutes }.average()
+            // 같은 수준(또는 한 단계 아래)이고 장비·부상 필터에 70% 이상 살아남는 짧은 템플릿이 있을 때만 요구한다
+            val shortExists = outcome.ranked.any { it.survival >= 0.7 && it.template.days.map { d -> d.estimatedMinutes }.average() <= MAX_AVG_TEMPLATE_MINUTES_FOR_SHORT }
+            if (avg > MAX_AVG_TEMPLATE_MINUTES_FOR_SHORT && shortExists) {
+                failures += "30분 이하 세션인데 템플릿 평균 ${"%.0f".format(avg)}분 > ${MAX_AVG_TEMPLATE_MINUTES_FOR_SHORT.toInt()}분"
+            }
+        }
         val plan = RecoFitChecks.fromAdapted(outcome.adapted)
-        // 시간 적합 (85~110%)
-        failures += RecoFitChecks.minuteFit(plan, p.sessionDuration)
+        // 시간 적합 (85~110%). 모자란 날은 더 채울 여지(안 쓴 적합 운동·세트·휴식 안전 상한)가 있을 때만 위반
+        val level = p.level ?: ExperienceLevel.BEGINNER
+        val suitableAll = RecoRules.suitability(p.equipment, level, p.age)
+        fun eligible(ex: Exercise) = ex.isPlanEligible && TemplatePlanAdapter.equipmentAllowed(ex, p.equipment) && suitableAll(ex) &&
+            (p.injuries.isEmpty() || !service.isRestrictedByRule(ex, p.injuries))
+        val eligiblePool = exercises.filter(::eligible)
+        failures += RecoFitChecks.minuteFit(plan, p.sessionDuration) { day ->
+            val inDay = day.items.map { it.exercise.id }.toSet()
+            val canAdd = day.items.size < TemplatePlanAdapter.maxExercisesFor(p.sessionDuration) && eligiblePool.any { it.id !in inDay }
+            val canRaise = day.items.any { i ->
+                i.sets < RecoRules.maxSetsFor(i.exercise, level, p.age, i.isCompound, p.sessionDuration) ||
+                    i.restSeconds < RecoRules.maxRestFor(i.exercise, i.isCompound, i.minReps)
+            }
+            canAdd || canRaise
+        }
         // 첫 세션 무게: 바벨 20kg 미만 금지
         val up = profileOf(p)
         val weights = outcome.adapted.flatMap { it.exercises }.map { e ->

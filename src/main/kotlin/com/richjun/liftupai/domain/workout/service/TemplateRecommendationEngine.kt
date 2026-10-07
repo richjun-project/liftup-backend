@@ -99,6 +99,9 @@ class TemplateRecommendationEngine(
         )
     }
 
+    private fun RecoDay.computedMinutes(): Int =
+        if (exercises.isEmpty()) estimatedMinutes else SessionFit.minutes(exercises.map { TemplatePlanAdapter.slotOf(it, null, null, false) })
+
     private fun RecoDay.toSource() = TemplatePlanAdapter.SourceDay(dayNumber, workoutType, exercises)
 
     private fun score(t: RecoTemplate, p: RecoProfile, personRank: Int): Scored {
@@ -128,11 +131,12 @@ class TemplateRecommendationEngine(
             else -> -30.0
         }
         // 시간: 회당 시간을 넘기면 감점, 많이 남아도 소폭 감점
-        val avgMinutes = t.days.map { it.estimatedMinutes }.average()
+        // 템플릿에 적힌 분(예: 50)이 아니라 운동 구성이 실제로 걸리는 시간 — 적힌 분은 실제보다 평균 25% 부풀려져 있었다
+        val avgMinutes = t.days.map { it.computedMinutes() }.average()
         val over = avgMinutes - p.sessionDuration
         // 짧은 세션(30분 이하)에 긴 템플릿은 세트·종목이 잘려 나가 별로다 — 더 크게 감점한다
         parts["duration"] = when {
-            over > 0 -> -minOf(if (p.sessionDuration <= 30) 20.0 else 14.0, over * if (p.sessionDuration <= 30) 0.9 else 0.6)
+            over > 0 -> -minOf(if (p.sessionDuration <= 30) 24.0 else 14.0, over * if (p.sessionDuration <= 30) 1.4 else 0.6)
             over < -30 -> -minOf(6.0, (-over - 30) * 0.2)
             else -> 0.0
         }

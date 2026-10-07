@@ -110,7 +110,10 @@ object RecoTestKit {
     )
 
     /** 활성 플랜 한 개(하루 N개 운동)와 그 위의 실제 UserPlanService·PlanWorkoutEnricher 를 조립한다. */
-    class PlanFixture(val repos: Repos, rows: List<Triple<Exercise, Int, IntRange>>, val restSeconds: Int = 90) {
+    class PlanFixture(
+        val repos: Repos, rows: List<Triple<Exercise, Int, IntRange>>, val restSeconds: Int = 90,
+        val localization: ExerciseCatalogLocalizationService? = null,
+    ) {
         val user: User = repos.profile?.user ?: user()
         val plan = UserWorkoutPlan(
             id = 1L, user = user, sourceType = PlanSourceType.TEMPLATE, sourceId = "t", planName = "plan",
@@ -138,6 +141,8 @@ object RecoTestKit {
             every { planRepo.findFirstByUserIdAndStatusOrderByCreatedAtDesc(any(), PlanStatus.ACTIVE) } returns plan
             every { dayRepo.findByPlanIdAndDayNumber(plan.id, 1) } returns day
             every { dayRepo.findByPlanIdOrderByDayNumber(plan.id) } returns listOf(day)
+            every { dayExRepo.save(any()) } answers { firstArg<UserPlanDayExercise>() }
+            every { planRepo.save(any()) } answers { firstArg<UserWorkoutPlan>() }
             every { dayExRepo.findByPlanDayIdWithExerciseOrderByOrderInDay(day.id) } returns planRows
             every { dayExRepo.findByPlanDayIdOrderByOrderInDay(day.id) } returns planRows
             every { progressive.calculateWeightForPlan(any(), any(), any(), any(), any(), any(), any(), any()) } returns null
@@ -150,7 +155,7 @@ object RecoTestKit {
             exerciseRepo, dayRepo, sessionRepo, mockk(relaxed = true), mockk(relaxed = true),
             ExerciseSubstitutionService(mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), exerciseRepo, injuryFilter),
             ExerciseTrainingProfileResolver(ExercisePatternClassifier()),
-            repos.userProfileRepository, repos.userSettingsRepository, repos.resolver, catalogCache, injuryFilter, null,
+            repos.userProfileRepository, repos.userSettingsRepository, repos.resolver, catalogCache, injuryFilter, localization,
         )
 
         val service = UserPlanService(

@@ -140,7 +140,12 @@ class TemplatePlanAdapter(
         val focused = if (ctx.focus.isEmpty()) adapted else addFocusVolume(adapted, ctx)
         val varied = diversify(focused, ctx)
         val ordered = varied.map { it.copy(exercises = leadWithBestCompound(it.exercises)) }
-        return finishDays(ordered, ctx)
+        val finished = finishDays(ordered, ctx)
+        // 시간 맞춤이 집중 부위 운동을 잘라 냈을 수 있다 — 모자라면 다시 채우고 한 번 더 맞춘다 (집중 볼륨은 시간 맞춤 뒤에도 지켜져야 한다)
+        if (ctx.focus.isEmpty() || ctx.sessionMinutes == null) return finished
+        val refocused = addFocusVolume(finished, ctx)
+        return if (refocused == finished) finished
+        else finishDays(refocused.map { it.copy(exercises = leadWithBestCompound(it.exercises)) }, ctx)
     }
 
     /**
@@ -159,9 +164,10 @@ class TemplatePlanAdapter(
         avoidPatterns: Set<String> = emptySet(),
     ): List<Exercise> {
         if (needed <= 0) return emptyList()
+        // 마지막 수단으로 다른 부위(하체 포함)까지 — 부상·장비로 그날의 부위 후보가 바닥난 긴 세션이 반쯤 빈 채 나가지 않게
         val categories = refillCategoriesFor(workoutType) + listOf(
             ExerciseCategory.CORE, ExerciseCategory.CHEST, ExerciseCategory.BACK,
-            ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS,
+            ExerciseCategory.SHOULDERS, ExerciseCategory.ARMS, ExerciseCategory.LEGS,
         )
         val picked = mutableListOf<Exercise>()
         val seen = exclude.toMutableSet()
@@ -234,7 +240,13 @@ class TemplatePlanAdapter(
                         list[swapIdx] = planned
                     } else if (list.size < MAX_EXERCISES_PER_DAY) {
                         list += planned
-                    } else continue
+                    } else {
+                        // 하루가 가득 차 있고 바꿀 보조 종목도 없으면, 채워 넣은(REFILL) 종목 중 집중 부위가 아닌 것 하나를 바꾼다 — 템플릿 본래 종목은 건드리지 않는다
+                        val refillIdx = list.withIndex()
+                            .filter { (i, p) -> i > 0 && p.origin == Origin.REFILL && allFocus.none { it.hits(p.exercise) } }
+                            .minByOrNull { (_, p) -> p.exercise.popularity }?.index ?: continue
+                        list[refillIdx] = planned
+                    }
                     usedInPlan += pick.id
                     patternsUsed += pick.movementPattern
                     current++
@@ -251,12 +263,12 @@ class TemplatePlanAdapter(
         area.candidateCategories().flatMap { poolByCategory(it) }
             .filter { ex ->
                 area.hits(ex) && equipmentAllowed(ex, ctx.allowedEquipment) &&
-                    (ctx.maxDifficulty == null || ex.difficulty <= ctx.maxDifficulty) &&
                     ctx.suitable(ex) &&
                     (ctx.injuries.isEmpty() || !isRestricted(ex))
             }
-            // 티어 → 인기도. 같은 인기도면 id 로 고정(재현성)
-            .sortedWith(compareBy<Exercise>({ tierRank(it.recommendationTier) }, { -it.popularity }, { it.id }))
+            // 난이도 상한(초보 40) 안의 운동을 먼저, 모자라면 상한 밖(적합성은 통과)도 쓴다 — 카탈로그 난이도는 초보 기준으로 믿기 어렵다
+            // (바벨 로우 등이 상한 밖이라 등 집중 목표 초보에게 등 운동이 하나도 안 들어갔다). 그다음 티어 → 인기도, 같으면 id 로 고정(재현성)
+            .sortedWith(compareBy<Exercise>({ if (ctx.maxDifficulty != null && it.difficulty > ctx.maxDifficulty) 1 else 0 }, { tierRank(it.recommendationTier) }, { -it.popularity }, { it.id }))
 
     /** 새 패턴 우선(스쿼트만 3개 같은 쏠림 방지), 플랜에 아직 없는 운동 우선, 같은 날 중복 금지 */
     private fun chooseFocusExercise(
@@ -417,10 +429,13 @@ class TemplatePlanAdapter(
         if (ctx.level == null && ctx.age == null && ctx.sessionMinutes == null) return days
         val planUse = HashMap<Long, Int>()
         days.forEach { d -> d.exercises.forEach { planUse.merge(it.exercise.id, 1, Int::plus) } }
+        // 하루에 지켜야 할 집중 부위 운동 수 — 짧은 세션에서 시간을 맞추려고 집중 부위 운동부터 잘라 내지 않게 한다
+        val dayCount = days.size.coerceAtLeast(1)
+        val focusQuota = if (ctx.focus.isEmpty()) 0 else (focusTargetPerWeek(dayCount) + dayCount - 1) / dayCount
         return days.map { day ->
             val prescribed = day.exercises.map { prescribe(it, ctx) }
             val target = ctx.sessionMinutes
-            val fitted = if (target != null) fitDay(day.workoutType, prescribed, ctx, target, planUse) else prescribed
+            val fitted = if (target != null) fitDay(day.workoutType, prescribed, ctx, target, planUse, focusQuota) else prescribed
             // 시간 맞춤으로 종목이 더해졌을 수 있다 — 그날의 대표 복합운동이 다시 첫 운동이 되게 한다
             day.copy(exercises = leadWithBestCompound(fitted))
         }
@@ -453,9 +468,14 @@ class TemplatePlanAdapter(
      * 목표 시간에 맞춘다. 넘치면 세트·휴식을 줄이고 그래도 넘치면 덜 중요한 종목을 뺀다.
      * 모자라면 세트·휴식을 상한까지 늘리고, 그래도 모자라면 종목을 더한다.
      */
-    private fun fitDay(workoutType: String, input: List<PlannedExercise>, ctx: Context, target: Int, planUse: MutableMap<Long, Int>): List<PlannedExercise> {
+    private fun fitDay(workoutType: String, input: List<PlannedExercise>, ctx: Context, target: Int, planUse: MutableMap<Long, Int>, focusQuota: Int = 0): List<PlannedExercise> {
         var current = input
-        val minExercises = if (target >= 30) 4 else 3
+        // 20분 이하의 아주 짧은 세션은 2종목까지, 30분 이상은 4종목 미만으로 줄이지 않는다
+        val minExercises = when {
+            target >= 30 -> 4
+            target > 20 -> 3
+            else -> 2
+        }
         val maxExercises = maxExercisesFor(target)
         var adds = 0
         // 1단계: 세트는 표준(3세트)까지만 늘리고, 모자라면 종목을 더한다 — 코치는 세트를 4~5로 올리기 전에 종목을 먼저 늘린다
@@ -463,7 +483,7 @@ class TemplatePlanAdapter(
             val before = current
             val res = SessionFit.fit(
                 current.map { slotOfPlanned(it, ctx, COMFORT_SETS) }, target, minExercises,
-                pickDrop = { kept, _ -> dropCandidate(kept.map { before[it] }, ctx) },
+                pickDrop = { kept, _ -> dropCandidate(kept.map { before[it] }, ctx, focusQuota) },
             )
             current = res.keptIndices.mapIndexed { pos, orig -> applySlot(before[orig], res.slots[pos]) }
             val ratio = SessionFit.ratio(res.slots, target)
@@ -486,9 +506,14 @@ class TemplatePlanAdapter(
         else p.copy(source = p.source.copy(sets = slot.sets, restSeconds = slot.restSeconds))
 
     /** 시간이 넘칠 때 뺄 종목: 복합·집중 부위·ESSENTIAL 이 아닌 것 중 가치가 가장 낮은 것. 첫 종목은 지킨다. */
-    private fun dropCandidate(list: List<PlannedExercise>, ctx: Context): Int? {
+    private fun dropCandidate(list: List<PlannedExercise>, ctx: Context, focusQuota: Int = 0): Int? {
         if (list.size <= 1) return null
-        fun keep(p: PlannedExercise): Double = RecoRules.keepValue(p.exercise, p.source.isCompound, ctx.focus, p.origin == Origin.TEMPLATE)
+        // 그날 집중 부위 운동이 할당량 이하면 그 종목은 복합운동보다도 먼저 지킨다
+        fun focusProtected(p: PlannedExercise): Boolean = focusQuota > 0 && ctx.focus.any { area ->
+            area.hits(p.exercise) && list.count { area.hits(it.exercise) } <= focusQuota
+        }
+        fun keep(p: PlannedExercise): Double = RecoRules.keepValue(p.exercise, p.source.isCompound, ctx.focus, p.origin == Origin.TEMPLATE) +
+            if (focusProtected(p)) 200.0 else 0.0
         return (1 until list.size).minWithOrNull(compareBy<Int>({ keep(list[it]) }, { -it }))
     }
 
@@ -506,11 +531,12 @@ class TemplatePlanAdapter(
         }
         val cap = ctx.repeatCap
         val used = planUse.filter { (_, n) -> cap != null && n >= cap }.keys
-        val picked = pickRefill(
-            workoutType, ctx.injuries, inDay + used, 1, ctx.allowedEquipment, ctx.maxDifficulty, ctx.suitable, patterns,
-        ).ifEmpty {
-            pickRefill(workoutType, ctx.injuries, inDay + used, 1, ctx.allowedEquipment, null, ctx.suitable, patterns)
-        }.firstOrNull() ?: return null
+        // 1차: 주간 반복 상한을 지키는 후보. 2차: 후보가 바닥났으면(좁은 장비·부상) 반복을 허용하고서라도 요청한 시간을 채운다
+        val picked = listOf(inDay + used, inDay).firstNotNullOfOrNull { exclude ->
+            pickRefill(workoutType, ctx.injuries, exclude, 1, ctx.allowedEquipment, ctx.maxDifficulty, ctx.suitable, patterns).ifEmpty {
+                pickRefill(workoutType, ctx.injuries, exclude, 1, ctx.allowedEquipment, null, ctx.suitable, patterns)
+            }.firstOrNull()
+        } ?: return null
         return PlannedExercise(refillSource(picked), Origin.REFILL)
     }
 
@@ -518,7 +544,7 @@ class TemplatePlanAdapter(
         /** 템플릿 하루 운동 수 목표. 부상·장비로 빠진 만큼 여기까지 채운다. */
         const val TARGET_EXERCISES_PER_DAY = 5
         const val MAX_EXERCISES_PER_DAY = 6
-        private const val MAX_ADDS_PER_DAY = 5
+        private const val MAX_ADDS_PER_DAY = 10
         private const val COMFORT_SETS = 3
         private const val FOCUS_PER_DAY_CAP = 3
 

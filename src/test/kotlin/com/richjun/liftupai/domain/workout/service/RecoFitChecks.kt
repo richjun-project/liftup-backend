@@ -42,10 +42,14 @@ object RecoFitChecks {
         day.items.map { SessionDurationFitter.Slot(it.sets, "${it.minReps}-${it.maxReps}", it.restSeconds, it.restSeconds) }
     )
 
-    /** 모든 날이 요청 시간의 85~110% 안에 있어야 한다 */
-    fun minuteFit(days: List<Day>, sessionMinutes: Int): List<String> = days.mapNotNull { d ->
+    /**
+     * 모든 날이 요청 시간의 85~110% 안에 있어야 한다.
+     * 모자란 날은 [canGrow] 가 true 일 때만 위반이다 — 부상·장비·수준으로 후보가 바닥났고 세트·휴식도 안전 상한이면 더 채울 수 없다("후보가 허용하는 한").
+     */
+    fun minuteFit(days: List<Day>, sessionMinutes: Int, canGrow: (Day) -> Boolean = { true }): List<String> = days.mapNotNull { d ->
         val ratio = seconds(d) / (sessionMinutes * 60.0)
-        if (ratio < MIN_TIME_RATIO || ratio > MAX_TIME_RATIO)
+        val short = ratio < MIN_TIME_RATIO
+        if ((short && canGrow(d)) || ratio > MAX_TIME_RATIO)
             "day ${d.dayNumber} 시간 ${"%.0f".format(seconds(d) / 60.0)}분 = 요청 ${sessionMinutes}분의 ${"%.0f".format(ratio * 100)}% (허용 85~110%)"
         else null
     }

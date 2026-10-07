@@ -43,7 +43,18 @@ data class PresetTemplate(
  * 이름/설명/요일 이름의 en·ja 번역은 workout_messages*.properties 의 template.<code>.* 에 둔다.
  */
 object PresetTemplates {
-    val ALL: List<PresetTemplate> = listOf(
+    /** 하루에 적은 분이 실제 운동 구성 시간과 달랐다(평균 25% 부풀림) — 새로 심는 템플릿은 구성에서 계산한 분을 쓴다 */
+    val ALL: List<PresetTemplate> by lazy {
+        DEFINITIONS.map { t ->
+            t.copy(days = t.days.map { d ->
+                d.copy(durationMinutes = com.richjun.liftupai.domain.workout.util.SessionDurationFitter.estimateMinutes(
+                    d.exercises.map { com.richjun.liftupai.domain.workout.util.SessionDurationFitter.Slot(it.sets, "${it.minReps}-${it.maxReps}", it.restSeconds, it.restSeconds) }
+                ))
+            })
+        }
+    }
+
+    private val DEFINITIONS: List<PresetTemplate> = listOf(
         // 초급자 전신 루틴 (3일/주)
         PresetTemplate(
             code = "beginner_fullbody",
