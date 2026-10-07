@@ -6,6 +6,7 @@ import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.RecommendationTier
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseTranslationRepository
+import com.richjun.liftupai.domain.workout.search.engine.QueryLexicon
 import com.richjun.liftupai.domain.workout.search.ops.SearchSynonymRepository
 import com.richjun.liftupai.domain.workout.search.ops.SynonymLines
 import org.slf4j.LoggerFactory
@@ -71,6 +72,9 @@ class ExerciseSearchIndexService(
         fun put(key: ResultKey, value: List<Long>) {
             map[key] = value
         }
+
+        @Synchronized
+        fun size(): Int = map.size
     }
 
     @Volatile
@@ -87,6 +91,9 @@ class ExerciseSearchIndexService(
     @Volatile
     private var retryNotBeforeMillis = 0L
 
+    /** 현재 스냅샷의 결과 캐시 항목 수 (테스트·운영 점검용) */
+    internal fun cachedResultCount(): Int = snapshot?.results?.size() ?: 0
+
     /** 빌드 횟수 (테스트·운영 점검용) */
     internal val buildCount = AtomicInteger()
 
@@ -94,6 +101,9 @@ class ExerciseSearchIndexService(
     internal var synonymTtlMillis: Long = SYNONYM_TTL_MILLIS
     internal var failureBackoffMillis: Long = FAILURE_BACKOFF_MILLIS
     internal var clock: () -> Long = System::currentTimeMillis
+
+    /** 엔진의 질의당 시간 예산(테스트에서 줄여 "예산 초과 결과는 캐시하지 않음"을 확인한다) */
+    internal var engineBudgetNanos: Long = ExerciseSearchEngine.DEFAULT_BUDGET_NANOS
 
     private val refresher by lazy {
         Executors.newSingleThreadExecutor { r -> Thread(r, "exercise-search-index-refresh").apply { isDaemon = true } }
@@ -208,8 +218,10 @@ class ExerciseSearchIndexService(
         val q = normalizeQuery(query)
         val key = ResultKey(q.orEmpty(), category, equipments?.toSet(), locale?.lowercase())
         snap.results.get(key)?.let { return it }
-        val ids = snap.engine.search(q, category, equipments, locale).map { it.doc.id }
-        snap.results.put(key, ids)
+        val outcome = snap.engine.searchOutcome(q, category, equipments, locale)
+        val ids = outcome.hits.map { it.doc.id }
+        // 시간 예산을 넘겨 일부만 훑은 결과는 캐시하지 않는다 — 한 번 느렸다고 TTL 동안 잘린 결과가 남지 않게
+        if (outcome.complete) snap.results.put(key, ids)
         return ids
     }
 
@@ -232,9 +244,15 @@ class ExerciseSearchIndexService(
     ): List<Long> {
         val q = normalizeQuery(query) ?: return emptyList()
         val engine = engine()
-        fun representative(hits: List<ExerciseSearchHit>): List<Long> =
-            hits.filter { it.doc.tier == RecommendationTier.ESSENTIAL || it.doc.tier == RecommendationTier.STANDARD }
+        // 질의 전체의 부정·부상 맥락("점프 빼고", "무릎이 안 좋은데")을 대안에도 적용한다 — 단어별로 쪼개 찾으면 맥락이 사라져 금지된 운동이 되살아난다
+        val excluded = engine.exclusionPredicate(q)
+        fun allowed(hits: List<ExerciseSearchHit>): List<ExerciseSearchHit> =
+            if (excluded == null) hits else hits.filter { !excluded(it.doc) }
+        fun representative(found: List<ExerciseSearchHit>): List<Long> {
+            val hits = allowed(found)
+            return hits.filter { it.doc.tier == RecommendationTier.ESSENTIAL || it.doc.tier == RecommendationTier.STANDARD }
                 .ifEmpty { hits }.map { it.doc.id }.distinct().take(limit)
+        }
 
         if (equipments != null) {
             representative(engine.search(q, category, null, locale)).takeIf { it.isNotEmpty() }?.let { return it }
@@ -247,7 +265,7 @@ class ExerciseSearchIndexService(
         val scores = HashMap<Long, Double>()
         val docs = HashMap<Long, ExerciseSearchDoc>()
         tokens.forEach { token ->
-            engine.search(token, category, null, locale).take(FALLBACK_PER_TOKEN).forEach { hit ->
+            allowed(engine.search(token, category, null, locale)).take(FALLBACK_PER_TOKEN).forEach { hit ->
                 scores.merge(hit.doc.id, hit.score, Double::plus)
                 docs[hit.doc.id] = hit.doc
             }
@@ -319,7 +337,7 @@ class ExerciseSearchIndexService(
 
     /** DB 동의어(search_synonyms)를 내장 사전 뒤에 붙여 엔진을 만든다 — 재배포 없이 검색 결과를 조정하는 경로 */
     private fun newEngine(docs: List<ExerciseSearchDoc>, synonymLines: List<String>): ExerciseSearchEngine =
-        ExerciseSearchEngine(docs, synonymLines)
+        ExerciseSearchEngine(docs, synonymLines, engineBudgetNanos)
 
     private fun toDoc(e: Exercise, translated: Map<String, String>): ExerciseSearchDoc {
         val names = LinkedHashMap<String, String>()
@@ -351,29 +369,53 @@ class ExerciseSearchIndexService(
         private const val MAX_FALLBACK_TOKENS = 5
 
         /** 엔진에 넘기는 질의의 상한 — 이보다 긴 입력은 엔진 비용이 초선형으로 늘어난다 */
-        const val MAX_QUERY_CHARS = 80
-        const val MAX_QUERY_WORDS = 6
+        const val MAX_QUERY_CHARS = 160
+        const val MAX_QUERY_WORDS = 14
+        private const val HEAD_WORDS = 8
+        private val FILLER_WORDS = setOf("a", "an", "the", "of", "to", "for", "my", "me", "i", "im", "ive", "please", "just", "some", "any", "that", "this", "it", "is", "are", "be", "so", "very", "really", "can", "could", "would", "should", "do", "does", "want", "wanna", "need", "like", "also", "too", "because", "since", "as")
+
 
         private val WHITESPACE = Regex("\\s+")
         private val WARM_QUERIES = listOf(
             "squat", "스쿼트", "ベンチプレス", "bench press", "하체", "胸", "덤벨 가슴", "lat pulldown", "ラットプルダウン", "plank"
         )
 
-        /** 제어문자 제거·공백 정리·중복 단어 제거·길이(80자)와 단어 수(6개) 제한. 비면 null(브라우즈) */
+        /** 제어문자 제거·공백 정리·반복 단어 제거·길이(160자)와 단어 수(14개) 제한. 비면 null(브라우즈) */
         fun normalizeQuery(raw: String?): String? {
             if (raw.isNullOrBlank()) return null
-            val cleaned = buildString(raw.length.coerceAtMost(MAX_QUERY_CHARS * 4)) {
-                for (c in raw.take(MAX_QUERY_CHARS * 4)) append(if (c.isISOControl()) ' ' else c)
+            val limit = MAX_QUERY_CHARS * 4
+            var cleaned = buildString(raw.length.coerceAtMost(limit)) {
+                for (c in raw.take(limit)) append(if (c.isISOControl()) ' ' else c)
             }.replace(WHITESPACE, " ").trim()
+            // 입력이 상한에서 단어 중간에 잘렸다면 그 조각 단어는 버린다("…dumbbell c" 같은 가짜 단어가 질의에 남지 않게). 공백 없는 한 덩어리면 그대로 둔다.
+            if (raw.length > limit && !raw[limit].isWhitespace() && !raw[limit - 1].isWhitespace()) {
+                val ws = cleaned.lastIndexOf(' ')
+                if (ws > 0) cleaned = cleaned.substring(0, ws)
+            }
             if (cleaned.isEmpty()) return null
-            val cut = if (cleaned.length > MAX_QUERY_CHARS) {
+            // 같은 단어의 반복("dumbbell curl row" × 450)은 의미 없이 비용만 키운다 — 중복을 빼고 단어 수를 제한한다.
+            // 부정어("no squat no lunge" 의 두 번째 no)는 반복해도 뜻이 있어 남긴다.
+            val seen = HashSet<String>()
+            val distinct = cleaned.split(' ').filter { w -> seen.add(w.lowercase()) || w.lowercase() in QueryLexicon.negationWords }
+            val joined = selectWords(distinct).joinToString(" ")
+            val cut = if (joined.length > MAX_QUERY_CHARS) {
                 var end = MAX_QUERY_CHARS
-                if (Character.isHighSurrogate(cleaned[end - 1])) end--
-                cleaned.substring(0, end).trim()
-            } else cleaned
-            // 같은 단어의 반복("dumbbell curl row" × 450)은 의미 없이 비용만 키운다 — 중복을 빼고 앞 6단어만
-            val words = cut.split(' ').distinctBy { it.lowercase() }
-            return (if (words.size > MAX_QUERY_WORDS) words.take(MAX_QUERY_WORDS).joinToString(" ") else words.joinToString(" ")).ifEmpty { null }
+                if (Character.isHighSurrogate(joined[end - 1])) end--
+                joined.substring(0, end).trim()
+            } else joined
+            return cut.ifEmpty { null }
+        }
+
+        /**
+         * 단어 수 상한(14) 안에서 고른다. 넘치면 뜻 없는 영어 군더더기(a, the, of, please …)부터 빼고, 그래도 넘치면 앞 8 + 뒤 6 단어를 남긴다 —
+         * 부정·부상 표현("…without jumping", "…because my knees hurt")은 꼬리에 오므로 앞 N개만 자르면 가장 중요한 말이 사라진다.
+         */
+        private fun selectWords(words: List<String>): List<String> {
+            if (words.size <= MAX_QUERY_WORDS) return words
+            val lean = words.filter { it.lowercase() !in FILLER_WORDS }
+            val base = if (lean.size >= 2) lean else words
+            if (base.size <= MAX_QUERY_WORDS) return base
+            return base.take(HEAD_WORDS) + base.takeLast(MAX_QUERY_WORDS - HEAD_WORDS)
         }
     }
 }

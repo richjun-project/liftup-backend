@@ -126,7 +126,8 @@ class SearchOpsRecorder(
         const val MAX_QUERY_LENGTH = 100
 
         private val WHITESPACE = Regex("\\s+")
-        private val SENSITIVE = Regex("@|https?://|\\d{6,}", RegexOption.IGNORE_CASE)
+        /** 이메일·URL·긴 숫자열. 전화번호는 구분자(공백·하이픈·점·괄호·슬래시)가 끼어도 숫자가 7개 이상 이어지면 개인정보로 본다("010-1234-5678"). */
+        private val SENSITIVE = Regex("@|https?://|\\d{6,}|(?:\\d[\\s\\-.()/]*){7,}", RegexOption.IGNORE_CASE)
 
         /** 정규화: NFKC(전각→반각)·소문자·제어문자 제거·공백 정리·길이 제한. 비었거나 개인정보로 보이면 null */
         fun normalize(raw: String?): String? {

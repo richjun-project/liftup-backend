@@ -73,7 +73,11 @@ internal class IDoc(val index: Int, val doc: ExerciseSearchDoc, val names: List<
 
     val isStretch: Boolean = doc.movementPattern == "STRETCHING" || sigNames.any { n -> STRETCH_KEYS.any { n.has(it) } }
 
+    /** 폼롤러 같은 롤링 운동 — 스트레칭 질의에서는 진짜 스트레칭 뒤로 미룬다 */
+    val isRolling: Boolean = sigNames.any { n -> ROLLING_KEYS.any { n.has(it) } }
+
     companion object {
+        private val ROLLING_KEYS = listOf("foam roller", "foam rolling", "フォームローラー", "폼롤러", "폼 롤러").map { SigKey(SearchText.strictKey(it), false) }
         private val STRETCH_KEYS = listOf("stretch", "ストレッチ", "스트레칭", "yoga", "ヨガ", "요가").map { SigKey(SearchText.strictKey(it), false) }
     }
 }
