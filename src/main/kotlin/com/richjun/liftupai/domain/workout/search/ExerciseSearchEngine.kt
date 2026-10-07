@@ -226,7 +226,9 @@ class ExerciseSearchEngine(
         var cands = pool.filter { ex == null || !isExcluded(it, plan, ex) }
         if (plan.mode == Mode.INTENT) {
             val allowedEquip = intentEquipment(plan)
-            if (allowedEquip != null) cands.filter { it.doc.equipment in allowedEquip }.takeIf { it.isNotEmpty() && !softEquipment(plan, it) }?.let { cands = it }
+            // 스트레칭·모빌리티 의도에서 장비는 "있으면 좋은" 조건 — 그 장비의 스트레칭이 몇 개 없으면 의미 후보를 장비로 거르지 않는다
+            if (allowedEquip != null) cands.filter { it.doc.equipment in allowedEquip }
+                .takeIf { it.isNotEmpty() && !(mobilityIntent(plan) && it.count { d -> d.isStretch } < SOFT_EQUIP_MIN_HITS) }?.let { cands = it }
         }
         val allowed = BitSet(indexed.size)
         for (d in cands) if (soft == null || !soft.get(d.index)) allowed.set(d.index)
@@ -611,12 +613,16 @@ class ExerciseSearchEngine(
         val prefer = preferBits(plan)
         val allowed: Set<Equipment>? = intentEquipment(plan)
         var cands = pool.filter { !isExcluded(it, plan, ex) }
+        var unrestricted: List<IDoc>? = null
         if (allowed != null) {
             val byEquip = cands.filter { it.doc.equipment in allowed }
             if (byEquip.isEmpty()) {
                 // 장비만 물은 질의("kettlebell")인데 필터 안에 그 장비가 없으면 결과 없음 — 전체를 돌려주면 무관한 운동이 쏟아진다
                 if (plan.concepts.isEmpty()) return emptyList()
-            } else if (!softEquipment(plan, byEquip)) cands = byEquip
+            } else {
+                unrestricted = cands
+                cands = byEquip
+            }
         }
         var evals = plan.concepts.map { ConceptEval(it, plan.stretch) }
         if (plan.concepts.isEmpty() && plan.similarTo.isNotEmpty()) similarFits(plan)?.let { fits ->
@@ -624,6 +630,8 @@ class ExerciseSearchEngine(
             if (similar.isNotEmpty()) return rankSorted(scoreIntent(plan, similar, emptyList(), soft, prefer, fits))
         }
         var out = scoreIntent(plan, cands, evals, soft, prefer)
+        // 스트레칭·모빌리티 의도에서 장비는 "있으면 좋은" 조건이다("수건으로 어깨 풀기"의 수건은 밴드 대용일 뿐) — 장비로 거르면 결과가 너무 적을 때는 장비 조건을 풀어서 다시 찾는다
+        if (unrestricted != null && out.size < SOFT_EQUIP_MIN_HITS && mobilityIntent(plan)) out = scoreIntent(plan, unrestricted, evals, soft, prefer)
         if (plan.combineAll && out.size < COMBINE_MIN_HITS && plan.concepts.none { it.id == "foamroll" }) {
             // 두 조건에 모두 맞는 운동이 적으면("가슴 웜업") 한쪽만 맞는 운동으로 채우되, 둘 다 맞는 것을 위에 둔다
             val both = out.associateBy { it.doc.id }
@@ -647,11 +655,7 @@ class ExerciseSearchEngine(
         return rankSorted(out)
     }
 
-    /**
-     * 스트레칭 의도에서 장비는 "있으면 좋은" 조건이다 — "수건으로 어깨 풀기"의 수건은 밴드 대용일 뿐 그 장비 운동만 찾는다는 뜻이 아니다.
-     * 장비로 걸러 남는 스트레칭이 너무 적으면(밴드 스트레칭은 몇 개 없다) 장비 필터를 걸지 않는다.
-     */
-    private fun softEquipment(plan: QueryPlan, byEquip: List<IDoc>): Boolean = plan.stretch && byEquip.size < STRETCH_EQUIP_MIN
+    private fun mobilityIntent(plan: QueryPlan): Boolean = plan.stretch || plan.concepts.any { it.stretch || it.id.startsWith("mob:") }
 
     /** 의도 질의가 말한 장비 범위: 장비를 직접 말했으면 그것, 집이면 홈 장비, 벽·의자·테이블 같은 생활 사물이면 맨몸·밴드(바벨·머신·케이블·덤벨은 "사물만 쓰는" 운동이 아니다) */
     private fun intentEquipment(plan: QueryPlan): Set<Equipment>? = when {
@@ -1193,7 +1197,7 @@ class ExerciseSearchEngine(
 
     companion object {
         // band 간격(20)은 장비 우선 가중치(15)·타이브레이커(<=9)보다 크게 유지
-        private const val STRETCH_EQUIP_MIN = 6
+        private const val SOFT_EQUIP_MIN_HITS = 6
         /** 생활 사물(벽·의자·테이블…)만 쓰는 운동에 허용하는 장비 */
         internal val OBJECT_EQUIPMENT: Set<Equipment> = setOf(Equipment.BODYWEIGHT, Equipment.OTHER, Equipment.RESISTANCE_BAND)
         const val BAND_EXACT = 200.0

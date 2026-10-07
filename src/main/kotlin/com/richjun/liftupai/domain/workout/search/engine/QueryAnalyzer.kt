@@ -334,6 +334,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                 while (p >= 0 && skippable(segs[p])) p--
                 if (p >= 0 && !segs[p].unknown && !segs[p].isNum && segs[p].terms!!.any { it.role == Role.CONCEPT && it.concept != null && it.concept.id in FAT_GOAL_IDS }) { consumed[idx] = true; continue }
             }
+            // "ダンベルしか空いてない", "덤벨밖에 없을 때" — "그것밖에 없다"는 그것만 쓸 수 있다는 긍정이다(그 장비를 빼라는 뜻이 아니다)
+            if (idx > 0 && !segs[idx - 1].unknown && !segs[idx - 1].isNum && text.substring(segs[idx - 1].s, segs[idx - 1].e).let { it.endsWith("しか") || it.endsWith("밖에") }) continue
             // "ダンベルで代用したい" — 「で」 뒤의 代用 은 앞의 것으로 대신한다는 긍정이다(앞 장비를 빼라는 뜻이 아니다)
             if (neg.instead && idx > 0 && !segs[idx - 1].unknown && !segs[idx - 1].isNum && text.substring(segs[idx].s, segs[idx].e) == "代用" && text.substring(segs[idx - 1].s, segs[idx - 1].e) == "で") continue
             // "ローラーが無いときの代わり", "랙 없을 때 대신" — 없다는 표지 바로 뒤에 대신 표지가 이어지면 이 부정은 대안 요청이다
