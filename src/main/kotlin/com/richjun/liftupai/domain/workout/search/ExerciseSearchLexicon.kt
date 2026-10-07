@@ -271,7 +271,7 @@ internal object ExerciseSearchLexicon {
     )
 
     val homeTerms: Set<String> = listOf(
-        "집|집에서|홈트|홈트레이닝|홈|자취방|자취|home|at home|athome|home workout|自宅|宅トレ|おうち|ホーム|家|家で|宅|hotel|hotel room|hotelroom|호텔|호텔방|ホテル|travel|traveling|출장|여행|여행지|旅行|旅先|small space|limited space|no space|좁은 곳|좁은 공간|狭い部屋|office|사무실|オフィス|desk workout|책상|デスク"
+        "집|집에서|홈트|홈트레이닝|홈|자취방|자취|home|at home|athome|home workout|自宅|宅トレ|おうち|ホーム|家|家で|宅|hotel|hotel room|hotelroom|호텔|호텔방|ホテル|travel|traveling|출장|여행|여행지|旅行|旅先|small space|limited space|no space|좁은 곳|좁은 공간|狭い部屋|office|사무실|사무실에서|オフィス|オフィスで|desk workout|desk|at your desk|at work|workplace|책상|책상에서|デスク|デスクで"
     ).flatMap { it.split("|") }.map { key(it) }.filter { it.isNotEmpty() }.toSet()
 
     /** 의도 해석 시 무시하는 군더더기 단어 */

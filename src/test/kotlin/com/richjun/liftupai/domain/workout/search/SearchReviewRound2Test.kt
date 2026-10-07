@@ -669,4 +669,114 @@ class SearchReviewRound2Test {
         assertTrue(plan.excludeEquip.isEmpty())
         assertTrue(plan.excludeKeys.isEmpty())
     }
+
+    // ═════════════════════════ 17. 2차 점검에서 더해진 유형 ═════════════════════════
+
+    @ParameterizedTest
+    @ValueSource(strings = ["허리 아플 때 스트레칭", "腰痛 ストレッチ", "stretches for back pain"])
+    fun `아픈 부위의 스트레칭은 그 부위를 풀어 주는 스트레칭이다`(q: String) {
+        val got = slugs(q, 8)
+        assertTrue(got.any { it.contains("lower-back") || it.contains("spine") || it == "cat-cow" || it == "child-pose" }, "$q -> $got")
+        assertTrue(top(q, 5).all { it.movementPattern == "STRETCHING" || it.slug.contains("stretch") || it.slug == "cat-cow" || it.slug.contains("rotation") })
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["런닝 후 스트레칭", "stretches after running", "ランニング後 ストレッチ", "stretches for runners"])
+    fun `러닝 뒤 스트레칭은 하체 스트레칭이다`(q: String) {
+        val got = slugs(q, 6)
+        assertTrue(got.any { it == "runner-stretch" || it.contains("calf") || it.contains("quad") || it.contains("hamstring") }, "$q -> $got")
+        assertTrue(got.none { it.startsWith("treadmill") || it.startsWith("running") }, "$q -> $got")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["desk stretches", "stretches for sitting all day", "デスクワーク ストレッチ", "座りっぱなし ストレッチ"])
+    fun `책상·장시간 앉기 스트레칭은 대표 스트레칭을 돌려준다`(q: String) {
+        val got = top(q, 5)
+        assertEquals(5, got.size, q)
+        assertTrue(got.count { it.slug in canonicalStretches } >= 3, "$q -> ${got.map { it.slug }}")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["요가", "yoga", "ヨガ", "yoga stretches", "요가 자세"])
+    fun `요가는 요가 포즈를 돌려준다`(q: String) {
+        val got = slugs(q, 6)
+        assertTrue(got.any { it == "child-pose" || it == "cat-cow" || it == "pigeon-pose" }, "$q -> $got")
+        assertTrue(got.none { it.contains("pause") }, "ポーズ(pose) 와 pause 가 섞이지 않는다: $got")
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "座ってできる運動, seated",
+        "앉아서 하는 운동, seated",
+        "seated exercises, seated",
+        "寝ながらできる運動, lying|floor|mat|supine",
+        "누워서 하는 운동, lying|floor|mat|supine",
+        "立ったままできる運動, standing",
+        "서서 하는 운동, standing"
+    )
+    fun `자세 표현은 그 자세로 하는 운동을 돌려준다`(q: String, fragment: String) {
+        val re = Regex(fragment)
+        val got = slugs(q, 6)
+        assertEquals(6, got.size, q)
+        assertTrue(got.count { re.containsMatchIn(it) } >= 4, "$q -> $got")
+    }
+
+    @Test
+    fun `자세와 부위가 함께면 둘 다에 맞는 운동을 앞세운다`() {
+        val got = top("앉아서 하는 하체", 5)
+        assertTrue(got.all { it.category == ExerciseCategory.LEGS }, "${got.map { it.slug }}")
+        assertTrue(got.count { it.slug.contains("seated") || it.slug.contains("chair") } >= 3, "${got.map { it.slug }}")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["疲労回復 ストレッチ", "피로 풀기 스트레칭", "recovery day", "sore muscles", "筋肉痛", "active recovery"])
+    fun `회복 표현은 대표 스트레칭이다`(q: String) {
+        assertTrue(top(q, 5).count { it.slug in canonicalStretches } >= 4, "$q -> ${slugs(q, 5)}")
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "everything but legs, LEGS",
+        "legs but not squats, none",
+        "not legs, LEGS",
+        "upper body apart from chest, CHEST"
+    )
+    fun `부정 표현이 여러 가지여도 부정된 부위는 빠진다`(q: String, banned: String) {
+        val hits = engine.search(q).take(25).map { it.doc }
+        assertTrue(hits.isNotEmpty(), q)
+        if (banned != "none") assertTrue(hits.none { it.category.name == banned }, "$q -> ${hits.map { it.slug }}")
+    }
+
+    @Test
+    fun `이두 빼고 는 같은 팔 카테고리의 삼두 운동을 남긴다`() {
+        val got = engine.search("arms except biceps").take(12).map { it.doc }
+        assertTrue(got.any { it.slug.contains("tricep") || it.slug.contains("pushdown") }, "${got.map { it.slug }}")
+        assertTrue(got.none { it.slug.contains("biceps-curl") || it.slug == "dumbbell-curls" || it.slug.contains("hammer-curl") }, "${got.map { it.slug }}")
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "ハイパーエクステ, back-extension",
+        "ローマンチェア, back-extension",
+        "背筋台, back-extension",
+        "로만체어, back-extension",
+        "roman chair, back-extension",
+        "サンドバッグ, boxing",
+        "샌드백, boxing",
+        "ボクシング, boxing",
+        "腹筋台, sit-up",
+        "싯업 벤치, sit-up",
+        "시로, seated-row",
+        "ステッパー, stair-climber",
+        "스텝퍼, stair-climber"
+    )
+    fun `일본·한국 기구 통칭이 카탈로그 운동으로 이어진다`(q: String, fragment: String) {
+        assertTrue(slugs(q, 3).any { it.contains(fragment) }, "$q -> ${slugs(q, 5)}")
+    }
+
+    @Test
+    fun `반복된 4단어 동의어 트리거도 적용된다`() {
+        assertTrue("chin-up" in slugs("reverse grip pull up", 3))
+        assertTrue("reverse-grip-lat-pull-down" in slugs("reverse grip lat pulldown", 3))
+    }
 }

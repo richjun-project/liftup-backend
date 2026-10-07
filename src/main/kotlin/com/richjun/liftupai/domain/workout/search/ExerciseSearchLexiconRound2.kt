@@ -41,6 +41,16 @@ internal object ExerciseSearchLexiconRound2 {
         "シーロー|케이블 시티드 로우 =>>> 시티드 로우|seated row|シーテッドロー|cable row",
         "デッドリ|デドリ|デッドリフ =>>> 데드리프트|deadlift|デッドリフト",
         "バーピーテスト|버피테스트|버피 테스트|burpee test|burpees test =>>> 버피|burpee|バーピー",
+        // 백 익스텐션 기구(로만 체어·햄글루트·하이퍼) — 일본에서는 背筋台·ローマンチェア
+        "ハイパーエクステ|ハイパーエクステンション|ローマンチェア|ローマン チェア|背筋台|背筋マシン|バックエクステ|バックエクステンション|하이퍼 익스텐션|하이퍼익스텐션|백 익스텐션|백익스텐션|로만 체어|로만체어|등 기구|척추기립근 기구|roman chair|back extension machine|hyper extension|hyperextension bench|45 degree back extension|backextension =>>> 백 익스텐션|back extension|hyperextension|バックエクステンション|ハイパーエクステンション|하이퍼 익스텐션",
+        // 복싱·샌드백
+        "サンドバッグ|サンドバック|샌드백|샌드 백|펀칭백|펀칭 백|punching bag|heavy bag|boxing bag|ボクシング|ボクシングエクササイズ|キックボクシング|シャドーボクシング|シャドウボクシング|복싱|권투|킥복싱|섀도 복싱|쉐도우 복싱|boxing|kickboxing|shadow boxing|shadowboxing|boxing workout =>>> 복싱|boxing|shadow boxing|ボクシング|シャドーボクシング",
+        // 윗몸일으키기 벤치
+        "腹筋台|腹筋ベンチ|シットアップベンチ|シットアップ台|싯업 벤치|싯업벤치|윗몸일으키기 벤치|복근 벤치|sit up bench|situp bench|ab bench|abs bench|decline sit up bench|ab board|sit-up board =>>> 디클라인 싯업|decline sit up|デクライン シットアップ|decline bench sit up",
+        // 시티드 로우 줄임말
+        "시로|시티드로|シーテッドロ =>>> 시티드 로우|seated row|シーテッドロー",
+        // 스테퍼 = 계단 오르기 기구(일본·한국 헬스장 통칭). 작은 스텝 박스 운동은 아래 스텝업 규칙이 함께 잡는다.
+        "ステッパー|ステッパーマシン|스텝퍼|스텝퍼 머신|스테퍼|stepper machine|stair stepper machine|steppers =>>> 스텝밀|stair climber|ステアクライマー",
         // 스텝퍼(작은 계단 기구)는 스텝업 계열과 구분한다 — 스테어마스터는 위의 규칙
         "스텝퍼|stepper|ステッパー => step up|스텝업|ステップアップ|stepper|스텝퍼"
     )

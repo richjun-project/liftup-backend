@@ -385,6 +385,10 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             idx++
         }
         if (jointPlain) positiveName = true
+        // "허리 아플 때 스트레칭": 아픈 관절은 피할 부위이기도 하지만 스트레칭에서는 풀어 줄 부위다 — 그 부위 스트레칭을 보여 준다
+        if (stretch && concepts.isEmpty() && equipments.isEmpty() && injuries.isNotEmpty() && !positiveName) {
+            for (j in injuries) lex.jointStretchTarget(j)?.let { concepts.add(it) }
+        }
         // 스트레칭 단독("스트레칭", "ストレッチ")은 가장 쓸모 있는 일반 스트레칭 목록, 다른 이름 조각이 섞였으면("스트레칭 폴") 이름 검색, 부위와 함께면 의도 검색
         if (stretch && concepts.isEmpty() && equipments.isEmpty()) {
             val general = lex.conceptById["stretchgeneral"]
@@ -441,7 +445,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             excludeEquip = excludeEquip, excludeKeys = excludeKeys, injuries = injuries, numbers = numbers, highReps = highReps,
             seeds = finalSeeds, hasUnknown = unknownChunks.isNotEmpty(), similarTo = similarKeys,
             excludeConcepts = negConcepts.distinctBy { it.id },
-            combineAll = effectiveConcepts.size > 1 && effectiveConcepts.any { it.id == "warmup" }
+            combineAll = effectiveConcepts.size > 1 && effectiveConcepts.any { it.id in COMBINE_IDS }
         )
     }
 
@@ -626,6 +630,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private const val NUM_COST = 2
         private const val NOISE_EXTRA_COST = 4
         private const val MAX_TERM_LEN = 40
+        /** 다른 부위와 겹쳐 쓰는 개념 — "하체 워밍업", "앉아서 하는 복근" 은 두 조건에 모두 맞는 운동을 앞세운다 */
+        private val COMBINE_IDS = setOf("warmup", "pos-seated", "pos-lying", "pos-standing")
         private const val HIGH_REPS = 20
         private val FREE_NOT_NEG_BEFORE = setOf("weight", "motion", "hand", "style", "form", "flow", "fall", "standing", "range", "running", "lift", "lifting").map { SearchText.strictKey(it) }.toSet()
         private val LESS_NEG_BEFORE = setOf("workout", "exercise", "training", "routine", "program", "plan").map { SearchText.strictKey(it) }.toSet()

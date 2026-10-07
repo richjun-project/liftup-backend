@@ -300,7 +300,9 @@ class ExerciseSearchEngine(
         if (c.categories.isEmpty() && c.muscles.isEmpty()) b.or(sigIndex.anyOf(c.sig))
         else for (d in indexed) {
             val docMuscles = d.doc.muscleGroups
-            if (d.doc.category in c.categories || (docMuscles.isNotEmpty() && docMuscles.all { it in c.muscles })) b.set(d.index)
+            // 같은 카테고리라도 근육이 겹쳐야 그 부위 운동이다 — 팔 카테고리의 삼두 운동은 "이두 빼고" 에서 남는다
+            val inCategory = d.doc.category in c.categories && (c.muscles.isEmpty() || docMuscles.any { it in c.muscles })
+            if (inCategory || (docMuscles.isNotEmpty() && docMuscles.all { it in c.muscles })) b.set(d.index)
         }
         b
     }
