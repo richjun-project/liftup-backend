@@ -330,7 +330,7 @@ internal object QueryLexicon {
         squat: squat|squats|스쿼트|스쿼|スクワット
         lunge: lunge|lunges|런지|ランジ
         pushup: push up|pushup|푸시업|푸쉬업|腕立て|腕立て伏せ|プッシュアップ|팔굽혀펴기
-        pullup: pull up|pullup|chin up|턱걸이|풀업|친업|懸垂|プルアップ|チンアップ|チンニング
+        pullup: pull up|pullup|chin up|턱걸이|풀업|친업|懸垂|プルアップ|チンアップ|チンニング|pull up bar|pullup bar|chin up bar|chinning bar|懸垂バー|チンニングバー|プルアップバー|철봉|풀업 바|턱걸이 바|철봉 바
         bench: bench|벤치|ベンチ|ベンチ台|벤치대|벤치 프레스|ベンチプレス|bench press
         press: press|프레스|プレス
         curl: curl|컬|カール

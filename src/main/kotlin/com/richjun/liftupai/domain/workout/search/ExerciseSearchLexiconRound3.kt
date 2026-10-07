@@ -35,6 +35,8 @@ internal object ExerciseSearchLexiconRound3 {
         "~体を反らす|背中を反らす|上体を反らす|上体を起こして反らす|몸을 뒤로 젖히는|상체를 젖히는|허리를 젖히는|arch your back backward|extend your back|extend your torso backward =>>> 백 익스텐션 머신|back extension machine|バックエクステンション|hyperextension",
         "~腕を押し下げる|腕を下に押す|ハンドルを押し下げる|팔을 아래로 미는|손잡이를 아래로 미는|push the handles down|push down with your arms|press your arms down =>>> 삼두 익스텐션 머신|tricep extension machine|トライセプスエクステンション|triceps pushdown",
         "~足首を伸ばす|つま先を伸ばす|足首を押し下げる|발목을 펴는|발끝으로 미는|발끝을 펴는|point your toes|push through your toes|push with your toes =>>> 카프 레이즈 머신|calf raise machine|カーフレイズ",
+        // 짐볼·밸런스볼
+        "~짐볼|짐 볼|스위스볼|스위스 볼|스태빌리티볼|스태빌리티 볼|바란스볼|バランスボール|スイスボール|スタビリティボール|ジムボール|stability ball|swiss ball|gym ball|balance ball|yoga ball|fitness ball|birth ball =>>> 짐볼|exercise ball|エクササイズボール|stability ball",
         // 평행봉·딥 스테이션
         "~平行棒|평행봉|parallel bars|parallel bar|parallettes|dip bars|dip bar|dip station|dipping bars|ディップバー|ディップスタンド|ディップステーション|ディップス台|딥 바|딥바|딥 스테이션|딥스테이션 =>>> 딥|dip|ディップ|chest dip|ディップス|hanging leg raise",
         // 요가 자세의 일본식 이름

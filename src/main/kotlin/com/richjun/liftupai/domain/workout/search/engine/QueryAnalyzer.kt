@@ -516,7 +516,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         }
 
         concepts.addAll(insteadConcepts)
+        // "座りっぱなしでお尻が痛い" — 자세 개념(posture)은 구체적인 부위 개념이 함께 있으면 그 부위가 목표다
         val distinctConcepts = concepts.distinctBy { it.id }.let { list -> if (list.size > 1) list.filter { it.id != "fatloss" }.ifEmpty { list } else list }
+            .let { list -> if (list.size > 1 && list.any { it.id.startsWith("muscle:") }) list.filter { it.id != "posture" }.ifEmpty { list } else list }
         var effectiveConcepts: List<Concept> = distinctConcepts
         // "다이어트 근력 운동" — 살 빼기에 근력 단서가 붙으면 유산소가 아니라 몸을 쓰는 근력·복합 동작을 보여 준다
         if (effectiveConcepts.any { it.id == "fatloss" } && segs.any { sg -> !sg.unknown && !sg.isNum && text.substring(sg.s, sg.e) in STRENGTH_CUES }) {
