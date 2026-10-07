@@ -190,7 +190,8 @@ class ConstraintUnderstandingTest {
         assertExcludes(Equipment.MACHINE, "머신 쓰는 건 싫어 등", "マシンはちょっとなあ 脚", "say no to machines, back")
         assertExcludes(Equipment.BARBELL, "바벨은 좀 그래 하체", "hard pass on barbells, legs")
         // 부위를 싫어하는 말은 그 부위를 뺀다(개념 대상은 취향 표지에서도 그대로)
-        assertTrue(plan("가슴 운동은 싫어 등").excludeConcepts.isNotEmpty() || plan("가슴 운동은 싫어 등").concepts.none { it.id.contains("manboob") })
+        val dislikedChest = plan("가슴 운동은 싫어 등")
+        assertTrue(dislikedChest.concepts.none { it.id.contains("manboob") } && dislikedChest.concepts.isNotEmpty(), engine.explain("가슴 운동은 싫어 등"))
     }
 
     @Test
@@ -371,5 +372,104 @@ class ConstraintUnderstandingTest {
         val q = "kettlebells are totally zorbled today, full body"
         val out = fused(q, QueryRewrite(emptyList(), setOf(Equipment.KETTLEBELL)))
         assertTrue(out.isNotEmpty() && out.all { it.equipment == Equipment.KETTLEBELL }, out.map { it.slug }.toString())
+    }
+
+    // ── 문형 계열 전체(템플릿 × 장비 × 부위) ─────────────────────────────────────────────────────
+
+    private class Eq(val ko: String, val ja: String, val en: String, val enSingular: String, val e: Equipment)
+
+    private val equipments = listOf(
+        Eq("바벨", "バーベル", "barbells", "barbell", Equipment.BARBELL), Eq("덤벨", "ダンベル", "dumbbells", "dumbbell", Equipment.DUMBBELL),
+        Eq("케이블", "ケーブル", "cables", "cable", Equipment.CABLE), Eq("머신", "マシン", "machines", "machine", Equipment.MACHINE),
+        Eq("케틀벨", "ケトルベル", "kettlebells", "kettlebell", Equipment.KETTLEBELL), Eq("밴드", "バンド", "bands", "band", Equipment.RESISTANCE_BAND)
+    )
+    private val partKo = listOf("가슴", "등", "하체", "어깨")
+    private val partJa = listOf("胸", "背中", "脚", "肩")
+    private val partEn = listOf("chest", "back", "legs", "shoulders")
+
+    private fun fill(t: String, x: String, p: String) = t.replace("{X}", x).replace("{P}", p)
+
+    @Test
+    fun `쓸 수 없다·싫다·금지 문형 계열 전체는 어느 장비에서나 그 장비를 뺀다`() {
+        val ko = listOf("{X} 안 써 {P}", "{X} 사용 중이라 {P}", "{X} 전부 사용중이야 {P}", "{X} 줄 길어서 {P}", "{X} 점검 중이라 {P}", "{X} 고장났어 {P}", "{X} 못 써 {P}", "{X} 쓸 수 없어 {P}",
+            "{X} 없이 {P}", "{X} 빼고 {P}", "{X} 싫어 {P}", "{X} 금지 {P}", "{X} 자리 없어 {P}", "{X} 사람 많아서 {P}", "{X} 누가 쓰고 있어 {P}", "{X} 다 나갔어 {P}", "{X} 막혀서 {P}",
+            "{X}는 쓰지 않을래 {P}", "{X} 이용 불가 {P}", "{X}는 별로야 {P}", "{X} 쓰기 싫은 날 {P}", "{X}는 사양 {P}", "{X} 쓰지 말고 {P}")
+        val ja = listOf("{X}が使用中で{P}", "{X}が全部使われてて{P}", "{X}は混んでるので{P}", "{X}の順番待ちが長くて{P}", "{X}が壊れてて{P}", "{X}は故障中なので{P}", "{X}がメンテ中で{P}", "{X}が点検中 {P}",
+            "{X}は使わない {P}", "{X}は使いたくない {P}", "{X}は避けたい {P}", "{X}以外で{P}", "{X}なしで{P}", "{X}は禁止 {P}", "{X}NG {P}", "{X}はパス {P}", "{X}使えない {P}", "{X}取られてる {P}",
+            "{X}は嫌い {P}", "{X}は遠慮したい {P}", "{X}の順番が回ってこない {P}", "{X}は勘弁 {P}")
+        val en = listOf("{X} are all taken, {P}", "{X} are busy today, {P}", "{X} are broken, {P}", "{X} are out of order, {P}", "{X} are down, {P}", "no {X}, {P}", "without {X}, {P}", "{X} are unavailable, {P}",
+            "can't use {X}, {P}", "avoid {X}, {P}", "skip {X}, {P}", "everyone is on the {X}, {P}", "{X} are being used, {P}", "{X} are gone, {P}", "{X} are not an option, {P}", "not using {X} today, {P}",
+            "don't wanna use {X}, {P}", "{X} aren't allowed, {P}", "say no to {X}, {P}", "hard pass on {X}, {P}", "exclude {X}, {P}")
+        var checked = 0
+        for ((i, eq) in equipments.withIndex()) {
+            for (t in ko) { val q = fill(t, eq.ko, partKo[i % 4]); assertExcludesPlan(q, eq.e); checked++ }
+            for (t in ja) { val q = fill(t, eq.ja, partJa[i % 4]); assertExcludesPlan(q, eq.e); checked++ }
+            for (t in en) { val q = fill(t, eq.en, partEn[i % 4]); assertExcludesPlan(q, eq.e); checked++ }
+        }
+        assertTrue(checked > 300)
+    }
+
+    private fun assertExcludesPlan(q: String, e: Equipment) {
+        val p = plan(q)
+        assertTrue(e in p.excludeEquip && e !in p.equipments, "[$q] ${engine.explain(q)}")
+    }
+
+    @Test
+    fun `한쪽은 되고 한쪽은 안 되는 문형 계열은 안 되는 쪽만 뺀다`() {
+        val ko = listOf("{A}는 되는데 {B}는 안 돼 {P}", "{A} 있고 {B} 없음 {P}", "{A} 쓸 수 있는데 {B}는 못 씀 {P}", "{A} 괜찮고 {B}는 싫어 {P}", "{B} 말고 {A}로 {P}", "{A}는 오케이 {B}는 노노 {P}",
+            "{A} 되고 {B} 안됨 {P}", "{A} O {B} X {P}", "{B} 빼고 {A} 써서 {P}", "{A}는 되고 {B}는 사용 불가 {P}", "{A}는 쓰는데 {B}는 줄 길어서 못 써 {P}")
+        val ja = listOf("{A}は使えるが{B}は使えない {P}", "{A}OK{B}NG {P}", "{A}はあるけど{B}はない {P}", "{B}じゃなくて{A}で{P}", "{B}の代わりに{A}で{P}", "{A}あり {B}なし {P}", "{A}は良いが{B}はダメ {P}",
+            "{A}を使って{B}は使わない {P}", "{A}はあるが{B}は故障中 {P}", "{A}は空いてるけど{B}は埋まってる {P}")
+        val en = listOf("{A} yes, {B} no, {P}", "{A} ok but no {B}, {P}", "{A} are fine but {B} aren't available, {P}", "i have {A} but not {B}, {P}", "{A} are fine, {B} are not, {P}", "{A} instead of {B}, {P}",
+            "use {A} not {B}, {P}", "{A} available, {B} out of order, {P}", "{A} are free but {B} are taken, {P}", "got {A} but {B} are broken, {P}", "{A} okay, {B} not okay, {P}", "{A} no, {B} yes, {P}")
+        for ((i, a) in equipments.withIndex()) {
+            val b = equipments[(i + 2) % equipments.size]
+            for (t in ko) { val q = t.replace("{A}", a.ko).replace("{B}", b.ko).replace("{P}", partKo[i % 4]); assertMixed(q, a.e, b.e, false) }
+            for (t in ja) { val q = t.replace("{A}", a.ja).replace("{B}", b.ja).replace("{P}", partJa[i % 4]); assertMixed(q, a.e, b.e, false) }
+            for (t in en) { val q = t.replace("{A}", a.en).replace("{B}", b.en).replace("{P}", partEn[i % 4]); assertMixed(q, a.e, b.e, t.startsWith("{A} no")) }
+        }
+    }
+
+    private fun assertMixed(q: String, ok: Equipment, banned: Equipment, swapped: Boolean) {
+        val p = plan(q)
+        val (good, bad) = if (swapped) banned to ok else ok to banned
+        assertTrue(bad in p.excludeEquip && good !in p.excludeEquip && bad !in p.equipments, "[$q] ${engine.explain(q)}")
+    }
+
+    @Test
+    fun `그것만 있다는 문형 계열은 모든 장비에서 그 장비로만 좁힌다`() {
+        val ko = listOf("{X}만 있어요 {P}", "{X}밖에 없어 {P}", "{X}만 가지고 {P}", "{X}로만 {P}", "집에 {X}만 있음 {P}", "{X}만 가능 {P}", "헬스장에 {X}만 있어 {P}")
+        val ja = listOf("{X}しかない {P}", "{X}だけある {P}", "{X}のみ {P}", "{X}だけで{P}", "{X}しか使えない {P}", "家には{X}だけ {P}", "{X}しか持ってない {P}")
+        val en = listOf("only {X}, {P}", "{X} only, {P}", "just {X}, {P}", "i only have {X}, {P}", "all i have is {X}, {P}", "nothing but {X}, {P}", "{X} is all i have, {P}", "limited to {X}, {P}", "using only {X}, {P}")
+        for ((i, eq) in equipments.withIndex()) {
+            val cases = ko.map { fill(it, eq.ko, partKo[i % 4]) } + ja.map { fill(it, eq.ja, partJa[i % 4]) } + en.map { fill(it, eq.en, partEn[i % 4]) }
+            for (q in cases) {
+                val p = plan(q)
+                assertEquals(setOf(eq.e), p.equipments, "[$q] ${engine.explain(q)}")
+                assertTrue(p.excludeEquip.isEmpty(), "[$q] ${engine.explain(q)}")
+                val out = top(q, 10)
+                assertTrue(out.isNotEmpty() && out.all { it.equipment == eq.e }, "[$q] ${out.map { it.slug to it.equipment }}")
+            }
+        }
+    }
+
+    @Test
+    fun `부상과 장비 제약 문형 계열은 부상 프로필과 장비 제외를 함께 건다`() {
+        val joints = listOf(Triple("무릎", "膝", "knee") to QueryLexicon.Joint.KNEE, Triple("허리", "腰", "lower back") to QueryLexicon.Joint.LOWER_BACK,
+            Triple("손목", "手首", "wrist") to QueryLexicon.Joint.WRIST, Triple("어깨", "肩", "shoulder") to QueryLexicon.Joint.SHOULDER, Triple("팔꿈치", "肘", "elbow") to QueryLexicon.Joint.ELBOW)
+        val ko = listOf("{J} 아파서 {X} 못 써 {P}", "{J} 때문에 {X}는 안 돼 {P}", "{J}가 안 좋아서 {X} 빼고 {P}", "{J} 다쳐서 {X}는 무서워 {P}", "{J} 통증 있어서 {X} 쓰기 싫어 {P}", "{J} 부상이라 {X} 사용 불가 {P}", "{J} 재활 중이라 {X} 말고 {P}")
+        val ja = listOf("{J}が痛くて{X}は使えない {P}", "{J}を痛めたので{X}は持てない {P}", "{J}が悪いので{X}は避けたい {P}", "{J}が痛いので{X}は無理 {P}", "{J}のケガで{X}NG {P}", "{J}が痛いから{X}なしで{P}")
+        val en = listOf("{J} hurts, can't use {X}, {P}", "bad {J} so no {X}, {P}", "{J} injury, {X} are out, {P}", "sore {J} and {X} are taken, {P}", "{J} pain, avoid {X}, {P}", "my {J} is hurt so {X} are off limits, {P}")
+        for ((i, eq) in equipments.withIndex().filter { it.value.e != Equipment.RESISTANCE_BAND }) {
+            val (names, joint) = joints[i % joints.size]
+            for (t in ko) check(t.replace("{J}", names.first).replace("{X}", eq.ko).replace("{P}", partKo[i % 4]), eq.e, joint)
+            for (t in ja) check(t.replace("{J}", names.second).replace("{X}", eq.ja).replace("{P}", partJa[i % 4]), eq.e, joint)
+            for (t in en) check(t.replace("{J}", names.third).replace("{X}", eq.en).replace("{P}", partEn[i % 4]), eq.e, joint)
+        }
+    }
+
+    private fun check(q: String, banned: Equipment, joint: QueryLexicon.Joint) {
+        val p = plan(q)
+        assertTrue(joint in p.injuries && banned in p.excludeEquip && banned !in p.equipments, "[$q] ${engine.explain(q)}")
     }
 }

@@ -28,7 +28,6 @@ internal object QueryLexiconConstraint {
         |막혀서|막혀 있|막혀있|막혔어|막혔네|막혔는데|비어 있지 않|비어있지 않|안 비어 있|안 비어있|안 비네|안 비어서|안 비는데
         |고장이라|고장이야|고장이에요|고장이예요|고장이네|고장입니다|고장났어|고장났네|고장났는데|고장 났어|고장 났네|고장 났는데|고장이 났|고장 중|고장중|고장 상태|고장인데|고장이라서|고장나 있|고장 나 있|고장나있|고장난 상태|망가져서|망가졌어|망가졌네|망가져 있|망가져있|부서져서|부서졌어|부서졌네|파손|파손돼서|파손되어
         |점검중이라|점검 중이라|점검중이야|점검 중이야|점검중이어서|점검 중이어서|점검중인데|점검 중인데|점검중이네|점검 중이네|점검 중입니다|점검중입니다|점검중임|점검 중임|점검 때문에|점검으로|점검이라|점검이야|정비 중|정비중|정비 때문에|수리 때문에|수리 들어가|수리해야|공사 중|공사중|폐쇄|폐쇄돼서|폐쇄됐|폐쇄되어|닫혀|닫혀서|닫혀 있|닫혀있|닫았|닫았어|운영 안 함|운영안함|운영 안 해|운영 중단|이용 불가|이용불가|이용 금지|이용금지|이용 못 해|이용 못함
-        |없음|없네|없다|없어요|없습니다|없네요|없거든|없거든요|없다니까|없는 상태|없는 환경|없는 곳
         |싫음|싫다|싫은데|싫어요|싫네|싫거든|싫어서|싫은 거|싫은거|꺼려|꺼려져요
         |빼줘|빼 줘|빼주세요|빼 주세요|빼자|빼고싶|빼고 싶|빼 놓고|빼놓고|제외해줘|제외해 줘|제외해주세요|제외해 주세요|제외하고 싶|뺀 걸로|뺀 운동
         |パス|パスで|はパス|のでパス|からパス|ならパス|でパス|もパス|パスです|パスしたい|パスしたいです|パスだ|パスね|パスかな|パスで全|ぱすで
@@ -39,13 +38,13 @@ internal object QueryLexiconConstraint {
         |使われてる|使われている|使われてて|使われていて|使われてます|使われています|使われっぱなし|使われっぱ|使われちゃってる|使われちゃって|使われてしまって|使われまくり|使用されてる|使用されている|使用されてて|使用されていて|占領されてる|占領されている|占領されてて|占領されて|占拠されてる|占拠されて|独占されてる|独占されている|独占されてて|独占されて|独り占め|取られてる|取られている|取られてて|取られちゃって|取られっぱなし|押さえられてる|ふさがってる|ふさがっている|ふさがってて|塞がってる|塞がっている|塞がってて|埋まっちゃってる|埋まっちゃって|埋まりっぱなし
         |並んでる|並んでいる|並んでて|並んでいて|行列|行列で|行列ができてる|行列ができて|順番待ち|順番待ちで|順番待ちしてる|待ちで|待ちが長い|待ち時間が長い|待ち時間長い|待たされる|待たないと|待たなきゃ|待たなければ
         |故障で|全部故障|全て故障|すべて故障|ぜんぶ故障|が全部故障|全部壊れて|全部壊れてる|全て壊れて|故障だ|故障なので|故障なんで|故障中で|故障中です|故障中なので|故障してる|壊れてます|壊れています|壊れちゃって|壊れちゃってる|壊れっぱなし|壊れかけ|破損してる|破損して|メンテで|メンテ中で|メンテ中です|メンテナンス中で|メンテナンス中です|メンテナンスで|点検で|点検中で|点検中です|点検中なので|点検してる|点検してて|点検している|修理中|修理中で|修理中です|修理中なので|修理してる|修理してて|修理している|修理待ち|修理に出てる|整備中|整備中で|整備中です|工事中|工事中で|工事中です|閉鎖中|閉鎖されてる|閉鎖されて|休止中|停止中|使用停止|使用中止|閉まってる|閉まっている|閉まってて|閉まっていて|閉まってます|閉まっています
-        |ないです|ないので|ないんで|ないんです|ないんだ|ないんだよ|ないんだよね|ありません|ありませんので|ないけど|ないんですが|ないのですが|ないんだけど|ないですが|なくなった|なくなって|なくなっちゃった|無いです|無いので
         |はちょっと|ちょっと苦手|はちょっと苦手|はちょっと無理|はちょっと遠慮|はちょっと嫌|はちょっとね|はちょっとなあ|は勘弁|勘弁|勘弁して|勘弁してほしい|は勘弁して|は結構です|結構です|はけっこうです|はいらない|はいりません
         |nope|nah|meh|uh no|hard pass|hard no|no no|nono|hell no|nuh uh|nuh-uh
         |쓰지 말고|쓰지말고|사용하지 말고|사용하지말고|하지 말고|하지말고|쓰지 마|쓰지마|쓰지 마세요|쓰지마세요|쓰지 마요|쓰지 않게|쓰지 않도록|사용하지 않게|사용하지 않도록|사용하지 마|사용하지마|쓰지 않는|쓰지 않으면|쓰지 않으면서
         |노노|노우|놉|놉놉|x|×|✕|✗|❌|엑스|아니야|아님|아니에요
         |arent available|aren't available|are not available|arent accessible|aren't accessible|are not accessible|are unavailable|arent usable|aren't usable|are not usable|arent working|aren't working|are not working
         |쓰지 않을래|쓰지 않을 거야|쓰지 않을거야|쓰지 않을게|쓰지 않겠|안 쓰겠|안 쓸게|안쓸게|안 쓸 거야|안쓸거야|안 쓸래요
+        |順番待ちが長い|順番待ちが長くて|順番待ちが長いので|順番待ちが長すぎる|順番待ちが多い|順番待ちが多くて|待ち時間が長くて|待ち時間が長いので|待ちが長くて|待ちが長いので|行列が長い|行列が長くて|行列が長いので|待たされそう|待ってられない
         |順番が回ってこない|順番が来ない|順番が回ってこなくて|順番が回ってこず|順番が全然来ない|順番が回ってこないので
         |has a long wait|have a long wait|has a long line|have a long line|has a long queue|have a long queue|has a wait|have a wait|has a huge line|have a huge line|has a massive line|has a big line|has a crazy line|has a huge queue|has a big queue
         |사양|사양할게|사양합니다|사양이야|사양이에요|사양하겠습니다|사양할래|사양해요
@@ -58,6 +57,15 @@ internal object QueryLexiconConstraint {
         |is taken over|are taken over|taken over|got taken|got taken over|is monopolized|are monopolized|monopolized|is all used|are all used|is used up|are used up|used up|is spoken for|are spoken for|spoken for|is blocked|are blocked|blocked|blocked off|roped off|is not free|are not free|isnt free|arent free|isn't free|aren't free|is not open|are not open|isnt open|arent open|isn't open|aren't open|is unusable|are unusable|unusable|is gone|are gone|all gone|always taken|always busy|always in use|always occupied|always full|always packed|always crowded|always has a line|always a line|always a queue|always a wait
         |is out of service|are out of service|out of service|down for repairs|down for maintenance|is being repaired|are being repaired|being repaired|is being fixed|are being fixed|being fixed|is being serviced|being serviced|needs repair|need repair|needs repairs|need repairs|needs fixing|need fixing|needs maintenance|is under repair|are under repair|under repair|under repairs|is being cleaned|being cleaned|jammed|is jammed|are jammed|doesnt work|doesn't work|dont work|don't work|wont work|won't work|not functional|not functioning|isnt functioning|isn't functioning|is not functioning|malfunctioning|is malfunctioning|are malfunctioning|is faulty|are faulty|faulty|is defective|are defective|defective|is busted|are busted|busted|is dead|are dead|got broken|got broke|is broke|are broke
         |is overrun|are overrun|overrun|is overcrowded|are overcrowded|overcrowded|jam packed|jampacked|is crammed|are crammed|crammed|is swarmed|are swarmed|swarmed|is overbooked|overbooked|is fully booked|are fully booked|fully booked|is sold out|are sold out|sold out|full up|is full of people|are full of people|full of people|has people on it|have people on it|has someone on it|have someone on it|has someone using it|have someone using them|someone is on it|someone is using it|someone is using them|someone has it|someone has them|somebody is on it|somebody is using it|somebody is using them|people are on it|people are using it|people are using them|in use by someone|being used by someone|used by someone|in use by people|being used by people|used by people|occupied by someone|occupied by people|taken by someone|taken by people|reserved by someone|hogged by someone|hogged by people|blocked by someone
+    """.trimIndent()
+
+    /**
+     * "없다/ない" 계열 — 존재 부정. "쓸 수 없다"(avail)가 아니라 그 장비·운동·부위가 없다는 평범한 부정이라 [QueryLexiconRound3] 의 "없어·없고" 와 같게 읽는다
+     * (부위 대상도 빼고, 모르는 덩어리 대상도 평소대로 — 시간·장소가 없다는 말이 장비를 빼게 만들지 않는다).
+     */
+    val NEG_AFTER_EXISTENCE = """
+        없음|없네|없다|없어요|없습니다|없네요|없거든|없거든요|없다니까|없는 상태|없는 환경|없는 곳
+        |ないです|ないので|ないんで|ないんです|ないんだ|ないんだよ|ないんだよね|ありません|ありませんので|ないけど|ないんですが|ないのですが|ないんだけど|ないですが|なくなった|なくなって|なくなっちゃった|無いです|無いので
     """.trimIndent()
 
     /**
@@ -93,6 +101,7 @@ internal object QueryLexiconConstraint {
     val AVAIL_EXTRA = """
         점검중|점검 중|고장|고장나서|고장 나서|고장난|고장 난|수리 중|수리중|사용 중|사용중|가 사용 중|이 사용 중|꽉 차|가 꽉 차|이 꽉 차|가 다 차|이 다 차|가 만석|이 만석|사람 많아|사람이 많아|누가 쓰고 있|누가 쓰고있|줄 서 있|줄 서있|줄이 길|대기 줄|대기가 많|웨이팅|차지하고 있|차지하고있|점령당|누가 차지
         |が使用中|使用中|が使われている|が埋まっている|が埋まってる|埋まっている|埋まってる|が空いてない|が空いていない|空いてない|空いていない|が空いてなくて|が空いてないので|が空いてないから|が空いていなくて|が空いていないので|が空かない|が空かなくて|が空かないので|が空かず|空かなくて|空かないので|空いてなくて|空いてないので|埋まってて|埋まっていて|が埋まってて|が埋まっていて|混んでいる|混んでる|が混んでいる|が混んでる|が混んでて|が混んでいて|混んでて|混んでいて|が混雑|が混雑している|が混雑していて|混雑してて|混雑している|が占領されて|が取られて|が取られていて|が使われてて|が使われていて|故障中|故障して|故障してて|故障している|壊れてる|壊れていて|壊れてて|が壊れて|メンテ中|メンテナンス中|点検中|満員|満席
+        |are down|were down|have gone down|has gone down|went down|is all down|are all down|are down today|is shut down|are shut down|is shut|are shut|shut down|are closed down|is closed down|are all broken|is all broken
         |is taken|are taken|is occupied|are occupied|is being used|are being used|is in use|are in use|is busy|are busy|is full|is crowded|are crowded|is not free|being used|taken|occupied|in use|all busy|all taken|all occupied|all in use|all full|all being used|all booked|are all busy|are all taken|are all full
         |is packed|are packed|packed|is slammed|are slammed|slammed|is swamped|swamped|is jammed|is mobbed|mobbed|is hogged|are hogged|hogged|being hogged|has a line|has a queue|have a line|has a waitlist|is booked|are booked|is reserved|are reserved|is broken|are broken|broken|out of order|is out of order|are out of order|under maintenance|is down|not working|isnt working|isn't working|arent working|aren't working|is closed|are closed
     """.trimIndent()
@@ -120,6 +129,7 @@ internal object QueryLexiconConstraint {
         |fine|great|cool|awesome|perfect|alright|sweet
         |anything with|anything that uses|anything that use|anything using|anything involving|anything that needs|anything needing|anything|everything with|everything that uses|something with|stuff with|stuff that uses|stuff using|things with|things that use|things using|exercises that use|exercises that need|exercises involving|moves using|any exercise with|any exercises with|any workout with|any workouts with
         |i got nothing|got nothing|i have nothing|have nothing|i've got nothing|ive got nothing|there is nothing|there's nothing|theres nothing
+        |쓰는데|쓸 거고|쓸거고|쓸 수 있고|쓸 수 있는데|써도 되고|써도 되는데|쓸래|쓰고
         |needing|requiring|involving|needs|need|needed|require|requires|required|involve|involves|that need|that needs|that require|that requires|that involve|that involves|that use|that uses|which need|which needs|which use|which uses|having
         |bored|boring|ideas|idea|variation|variations|variety|switch up|mix up
         |라서|이라서|라서요|이라서요|라니까|이라니까|이니까|이니까요|니까요|여서|이어서|인데|인데요|이라고|이라는|라는|이었|였는데|이었는데|였어|이었어|였고|이었고

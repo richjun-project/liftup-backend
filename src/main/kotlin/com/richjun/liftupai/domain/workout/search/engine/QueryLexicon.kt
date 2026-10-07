@@ -482,6 +482,7 @@ internal object QueryLexicon {
         // 장비 제약 문형(쓸 수 없다는 말) — avail 표지. 대안 표지와 같은 말이면 대안 표지가 먼저 시도된다
         for (k in splitRules(QueryLexiconConstraint.NEG_AFTER) + splitRules(QueryLexiconConstraint.AVAIL_EXTRA) + splitRules(QueryLexiconConstraint.CROWD_AFTER)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k), avail = true))
         for (k in splitRules(QueryLexiconConstraint.NEG_BEFORE)) add(key(k), Term(Role.NEG, targetBefore = false, avail = true))
+        for (k in splitRules(QueryLexiconConstraint.NEG_AFTER_EXISTENCE)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k)))
         for (k in splitRules(QueryLexiconConstraint.DISLIKE_EXTRA)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k), dislike = true))
         for (k in splitRules(CUES) + QueryLexiconRound3.CUES.split("|")) add(key(k), Term(Role.CUE))
         for (k in splitRules(QueryLexiconConstraint.CUES_EXTRA)) add(key(k), Term(Role.CUE))

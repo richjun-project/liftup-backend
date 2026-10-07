@@ -260,6 +260,12 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             if (key == "free" && prevWord(tok, i) in FREE_VACANT_BEFORE) return false
             if (key == "less" && next.isNotEmpty() && next !in LESS_NEG_BEFORE) return false
         }
+        // "squat x 5", "3 x 10" — 횟수 앞뒤의 x 는 곱하기이지 X 표시(안 됨)가 아니다
+        if (t.role == Role.NEG && key == "x") {
+            val next = nextWord(tok, j)
+            val prev = prevWord(tok, i)
+            if ((next.isNotEmpty() && next.first().isDigit()) || (prev.isNotEmpty() && prev.last().isDigit())) return false
+        }
         // 가타카나 낱말 속 부정어("チェストパス" 의 パス)는 부정이 아니다 — 가타카나로 시작하는 부정 표지는 앞 글자가 가타카나가 아닐 때만
         if (t.role == Role.NEG && !t.particle && tok.kata[i] && i > 0 && tok.kata[i - 1]) return false
         if (t.particle) {
@@ -391,8 +397,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             var guard = 0
             while (j in segs.indices && guard++ < 14) {
                 val sg = segs[j]
-                // 왼쪽(이미 처리한 쪽)에서는 대상을 못 찾아 쓰이지 않은 부정 조각("少なくて" 의 なくて)은 그냥 지나간다. 오른쪽은 아직 처리 전이라 멈춘다.
-                if (!sg.unknown && (sg.isNum || (sg.has(Role.NEG) && (!before || consumed[j])))) return null
+                // 왼쪽(이미 처리한 쪽)의 부정 조각("少なくて" 의 なくて)은 지나간다 — 그 부정이 쓴 장비는 이미 consumed 라 후보가 아니다. 오른쪽은 아직 처리 전이라 멈춘다.
+                if (!sg.unknown && (sg.isNum || (sg.has(Role.NEG) && !before))) return null
                 // "덤벨은 있는데 스미스가 점유중" — 가졌다·된다는 말 앞의 장비는 다른 절이다
                 if (!sg.unknown && !sg.isNum && text.substring(sg.s, sg.e) in lex.chainBreakers) return null
                 if (!sg.unknown && !sg.isNum && !consumed[j] && sg.has(Role.EQUIP)) return j
@@ -511,6 +517,12 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                     if (!sg.unknown && sg.has(Role.EQUIP) && range.first - 1 >= 0 && !consumed[range.first - 1]) {
                         val pv = segs[range.first - 1]
                         if (!pv.unknown && !pv.isNum && pv.onlyRoles(Role.NAME) && text.substring(pv.s, pv.e) in MACHINE_NAME_KEYS) range = (range.first - 1)..range.last
+                    }
+                    // "hack squat machine is broken", "레그컬 머신 고장" — 운동 이름 뒤에 붙은 일반 머신은 그 기구 하나의 이름이다(머신 전체가 아니다)
+                    if (!sg.unknown && sg.has(Role.EQUIP) && range.first == range.last && sg.terms!!.filter { it.role == Role.EQUIP }.all { it.equipment == setOf(Equipment.MACHINE) } &&
+                        range.first - 1 >= 0 && !consumed[range.first - 1]) {
+                        val pv = segs[range.first - 1]
+                        if (!pv.unknown && !pv.isNum && pv.onlyRoles(Role.NAME) && pv.terms!!.any { it.move == null } ) range = (range.first - 1)..range.last
                     }
                     if (targets.isNotEmpty()) {
                         // 이어지는 대상은 접속어(や·と·도·and)가 있거나, 쉼표·공백으로 나열된 별개 단어일 때만 (스쿼트, 런지 없이)
