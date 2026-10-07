@@ -142,11 +142,14 @@ class QueryRewriterTest {
     }
 
     @Test
-    fun `잘못된 응답은 실패로 세고 캐시하지 않는다`() {
+    fun `잘못된 응답은 성공으로 캐시하지 않고 음성 캐시 동안만 다시 부르지 않는다`() {
         val t = transport("not json")
         val r = rewriter(t, failures = 100)
         assertNull(r.rewrite("q"))
         t.answer = { goodJson }
+        assertNull(r.rewrite("q"), "같은 질의는 음성 캐시 동안 다시 부르지 않는다")
+        assertEquals(1, t.calls.get())
+        now += 11 * 60_000L  // 음성 캐시(기본 10분)가 지나면 다시 시도한다
         assertNotNull(r.rewrite("q"))
         assertEquals(2, t.calls.get())
     }

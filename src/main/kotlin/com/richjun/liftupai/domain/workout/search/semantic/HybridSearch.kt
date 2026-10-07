@@ -7,6 +7,7 @@ import com.richjun.liftupai.domain.workout.search.ExerciseSearchEngine
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchHit
 import com.richjun.liftupai.domain.workout.search.rewrite.QueryRewrite
 import com.richjun.liftupai.domain.workout.search.rewrite.RewriteFusion
+import com.richjun.liftupai.domain.workout.search.ops.SearchLlmGuard
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
@@ -32,7 +33,9 @@ class HybridSearch(
     private val vectors: ExerciseVectors,
     private val config: Config = Config(),
     /** 있으면 LLM 해석과 질의 임베딩을 병렬로 가져온다. 없으면 차례로(테스트·평가 오라클) */
-    private val executor: Executor? = null
+    private val executor: Executor? = null,
+    /** 있으면 Gemini 를 기다리는 자연어 검색 수에 상한을 건다 — 꽉 차면 기다리지 않고 어휘 결과로 진행한다(Tomcat 스레드 보호) */
+    private val guard: SearchLlmGuard? = null
 ) {
     data class Config(
         /** RRF 상수 k — 클수록 순위 차이의 영향이 작다 */
@@ -83,7 +86,7 @@ class HybridSearch(
     )
 
     /** [hits] 는 어휘 검색과 같은 길이의 전체 순서. [semantic] 은 의미 검색이 실제로 섞였는가. [degraded] 는 의미 검색이나 LLM 해석이 필요했는데 질의 벡터·해석을 못 구해 그만큼 빠진 결과를 낸 경우(호출자는 이 결과를 오래 캐시하지 않는다). [complete] 는 어휘 검색이 시간 예산 안에 끝났는가. */
-    class Result(val hits: List<ExerciseSearchHit>, val complete: Boolean, val semantic: Boolean, val degraded: Boolean = false, val rewritten: Boolean = false)
+    class Result(val hits: List<ExerciseSearchHit>, val complete: Boolean, val semantic: Boolean, val degraded: Boolean = false, val rewritten: Boolean = false, val llmSkipped: Boolean = false)
 
     /** 엔진 문서 → 벡터 행(벡터가 없는 문서는 의미 후보가 될 수 없다) */
     private val docs: List<ExerciseSearchDoc> = engine.documents()
@@ -108,6 +111,20 @@ class HybridSearch(
         val wantRewrite = rewrite != null && needsRewrite(query.orEmpty(), lex.hits, constraint)
         if (!wantSemantic && !wantRewrite) return Result(lex.hits, true, false)
 
+        // Gemini 를 기다리는 검색이 너무 많으면 기다리지 않고 어휘 결과로 간다(결과는 degraded — 오래 캐시하지 않는다)
+        if (guard != null && !guard.tryEnterSearch()) return Result(lex.hits, true, false, degraded = true, llmSkipped = true)
+        try {
+            return searchWithLlm(query, category, equipments, locale, rewrite, queryVector, lex, constraint, wantSemantic, wantRewrite)
+        } finally {
+            guard?.exitSearch()
+        }
+    }
+
+    private fun searchWithLlm(
+        query: String?, category: ExerciseCategory?, equipments: Set<Equipment>?, locale: String?,
+        rewrite: (() -> QueryRewrite?)?, queryVector: () -> FloatArray?,
+        lex: ExerciseSearchEngine.SearchOutcome, constraint: SemanticConstraint, wantSemantic: Boolean, wantRewrite: Boolean
+    ): Result {
         // LLM 해석(네트워크, 느림)을 먼저 띄워 두고 질의 임베딩을 구한다 — 둘 중 느린 쪽이 전체 지연이 된다
         val pending: CompletableFuture<QueryRewrite?>? = if (wantRewrite) startRewrite(rewrite!!) else null
         // 힌트 후보에 거는 조건(의도 장비 범위만 어휘 검색용보다 느슨하다) — LLM 을 기다리는 동안 만들어 둔다
@@ -120,7 +137,8 @@ class HybridSearch(
         val degraded = (wantSemantic && qv == null) || (wantRewrite && rw == null)
         val withRewrite = if (rw != null && !rw.isEmpty) applyRewrite(base, lex.hits, rw, hintConstraint, category, equipments) else null
         val fused = withRewrite ?: base
-        val ordered = if (constraint.homeBodyweightFirst && (hybrid != null || withRewrite != null)) bodyweightFirst(fused) else fused
+        val goalOrdered = if (constraint.goalLiftIds.isNotEmpty() && (hybrid != null || withRewrite != null)) goalLiftsLast(fused, constraint.goalLiftIds) else fused
+        val ordered = if (constraint.homeBodyweightFirst && (hybrid != null || withRewrite != null)) bodyweightFirst(goalOrdered) else goalOrdered
         return Result(ordered, true, semantic = hybrid != null, degraded = degraded, rewritten = withRewrite != null)
     }
 
@@ -133,6 +151,36 @@ class HybridSearch(
         val head = hits.take(HOME_REORDER_DEPTH)
         val (bw, rest) = head.partition { it.doc.equipment == Equipment.BODYWEIGHT }
         return bw + rest + hits.drop(HOME_REORDER_DEPTH)
+    }
+
+    /**
+     * "벤치프레스 보조로 삼두" 같은 목표 말투 — 의미·LLM 후보를 섞은 뒤에도 말로 언급된 운동(벤치프레스 변형)이 목표 부위 운동·LLM 힌트 위로 올라오지 않게
+     * 상위 [HOME_REORDER_DEPTH] 안에서 그 운동들을 나머지 뒤로 보낸다(상대 순서는 그대로, 목록에서 빼지는 않는다).
+     */
+    private fun goalLiftsLast(hits: List<ExerciseSearchHit>, liftIds: Set<Long>): List<ExerciseSearchHit> {
+        if (hits.size < 2) return hits
+        val head = hits.take(HOME_REORDER_DEPTH)
+        val (lifts, rest) = head.partition { it.doc.id in liftIds }
+        if (lifts.isEmpty() || rest.isEmpty()) return hits
+        return rest + lifts + hits.drop(HOME_REORDER_DEPTH)
+    }
+
+    /**
+     * 힌트가 가리킨 운동([intended])이 조건으로 빠졌을 때 대신 쓸 후보([cand])가 그 운동과 이어지는가 —
+     * 같은 분류(부위)이고, 동작 계열이 같거나 근육이 겹쳐야 한다.
+     */
+    private fun hintAgrees(intended: ExerciseSearchDoc, cand: ExerciseSearchDoc): Boolean {
+        if (cand.id == intended.id) return true
+        if (cand.category != intended.category) return false
+        val pi = intended.movementPattern?.takeIf { it != "OTHER" }?.let(::patternFamily)
+        val pc = cand.movementPattern?.takeIf { it != "OTHER" }?.let(::patternFamily)
+        if (pi != null && pi == pc) return true
+        return cand.muscleGroups.any { it in intended.muscleGroups }
+    }
+
+    private fun patternFamily(p: String): String {
+        for (suffix in PATTERN_EQUIPMENT_SUFFIXES) if (p.endsWith(suffix)) return p.removeSuffix(suffix)
+        return p
     }
 
     private fun startRewrite(call: () -> QueryRewrite?): CompletableFuture<QueryRewrite?> {
@@ -152,7 +200,8 @@ class HybridSearch(
         if (constraint.unrecognized) return true
         val top = lexical.firstOrNull() ?: return true
         val words = query.trim().split(WHITESPACE).count { it.isNotEmpty() }
-        return !(top.score >= skip && words <= config.rewriteSkipMaxWords)
+        // 이름 일치가 확실할 때만 건너뛴다 — 질의의 내용 토큰이 이름에서 통째 단어로 나와야 한다(합성어 속 부분 문자열은 확실한 일치가 아니다)
+        return !(top.score >= skip && words <= config.rewriteSkipMaxWords && constraint.wholeTokenNameMatch(top.doc))
     }
 
     /**
@@ -165,15 +214,21 @@ class HybridSearch(
     ): List<ExerciseSearchHit>? {
         val hintHits = rw.hints.map { hint ->
             val out = engine.searchOutcome(hint, category, equipments, "en")
-            if (!out.complete) RewriteFusion.HintHits(emptyList())
+            if (!out.complete || out.hits.isEmpty()) RewriteFusion.HintHits(emptyList())
             else {
-                val hits = (if (config.rewriteConstrainHints) out.hits.filter { constraint.allows(it.doc) } else out.hits).take(config.rewrite.perHint)
+                // 힌트가 가리킨 운동(그 힌트의 1위)이 부상·부정·집 조건으로 빠졌다면, 이름 한 단어만 겹치는 무관한 운동("leg extension" → "triceps extension")이
+                // 대신 들어오지 않게 한다 — 같은 부위(분류)이고 동작·근육이 이어지는 후보만 남기고 나머지는 버린다(전부 버려지면 이 힌트는 없던 것).
+                val intended = out.hits.first().doc
+                val intendedAllowed = !config.rewriteConstrainHints || constraint.allows(intended)
+                val hits = (if (config.rewriteConstrainHints) out.hits.filter { constraint.allows(it.doc) } else out.hits)
+                    .filter { intendedAllowed || hintAgrees(intended, it.doc) }.take(config.rewrite.perHint)
                 RewriteFusion.HintHits(hits, hits.isNotEmpty() && hits.first() === out.hits.first() && (engine.isExactName(hint) || (config.rewriteStrongHintScore?.let { out.hits.first().score >= it } ?: false)))
             }
         }
-        val pinned = if (config.rewriteKeepProtected) config.protectScore?.let { p -> lexical.firstOrNull()?.takeIf { it.score >= p }?.doc?.id } else null
+        val pinned = if (config.rewriteKeepProtected) config.protectScore?.let { p -> lexical.firstOrNull()?.takeIf { it.score >= p && constraint.wholeTokenNameMatch(it.doc) }?.doc?.id } else null
         // LLM 의 제외 장비는 호출자가 고른 장비 필터와 부딪히면 따르지 않는다(필터는 하드 조건이다). 질의 속 장비 말은 사전이 틀릴 수 있어("수건"→밴드) 여기서는 LLM 을 믿는다.
-        val forbid = rw.forbidEquipment - (equipments ?: emptySet())
+        // 질의가 직접 요청한 장비("cable fly without the cable stack" 의 cable)도 LLM 의 제외 장비에서 뺀다 — 사용자가 방금 찾은 것을 지우지 않는다
+        val forbid = rw.forbidEquipment - (equipments ?: emptySet()) - constraint.requestedEquipment
         if (hintHits.all { it.hits.isEmpty() } && forbid.isEmpty()) return null
         return RewriteFusion.fuse(base, hintHits, forbid, pinned, config.rewrite)
     }
@@ -222,7 +277,7 @@ class HybridSearch(
             doc[d.id] = d
             semSim[d.id] = sim
         }
-        val protectedId = config.protectScore?.let { p -> lexical.firstOrNull()?.takeIf { it.score >= p }?.doc?.id }
+        val protectedId = config.protectScore?.let { p -> lexical.firstOrNull()?.takeIf { it.score >= p && constraint.wholeTokenNameMatch(it.doc) }?.doc?.id }
         val fused = score.entries.sortedWith(
             compareByDescending<Map.Entry<Long, Double>> { it.key == protectedId }
                 .thenByDescending { it.value }
@@ -254,6 +309,7 @@ class HybridSearch(
         /** '집에서' 맨몸 우선 재정렬을 적용할 상위 범위 */
         const val HOME_REORDER_DEPTH = 20
         private const val SCORE_SCALE = 1000.0
+        private val PATTERN_EQUIPMENT_SUFFIXES = listOf("_BARBELL", "_DUMBBELL", "_MACHINE", "_CABLE")
         private val WHITESPACE = Regex("\\s+")
     }
 }

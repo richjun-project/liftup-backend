@@ -46,13 +46,15 @@ class SearchOpsRecorder(
      */
     fun record(rawQuery: String?, locale: String?, resultCount: Int, latencyMs: Long, source: String, hasFilters: Boolean = false): Boolean {
         if (!enabled) return false
+        // 이 스레드에서 방금 한 검색이 의미·LLM 해석을 썼다면 source 에 꼬리표를 붙인다(예: exercise_list+sr). 큐가 꽉 차거나 기록 대상이 아니어도 비워 다음 요청에 새지 않게 한다.
+        val usage = SearchUsageContext.consumeSuffix()
         val query = normalize(rawQuery) ?: return false
         val entry = Entry(
             query = query,
             locale = normalizeLocale(locale),
             resultCount = resultCount.coerceAtLeast(0),
             latencyMs = latencyMs.coerceIn(0, Int.MAX_VALUE.toLong()).toInt(),
-            source = source.take(20),
+            source = (source + usage).take(20),
             hasFilters = hasFilters,
             at = AppTime.utcNow()
         )

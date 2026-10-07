@@ -7,7 +7,9 @@ import com.richjun.liftupai.domain.workout.entity.RecommendationTier
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseTranslationRepository
 import com.richjun.liftupai.domain.workout.search.engine.QueryLexicon
+import com.richjun.liftupai.domain.workout.search.ops.SearchLlmGuard
 import com.richjun.liftupai.domain.workout.search.ops.SearchSynonymRepository
+import com.richjun.liftupai.domain.workout.search.ops.SearchUsageContext
 import com.richjun.liftupai.domain.workout.search.ops.SynonymLines
 import com.richjun.liftupai.domain.workout.search.rewrite.QueryRewriteSource
 import com.richjun.liftupai.domain.workout.search.semantic.ExerciseVectorStore
@@ -17,6 +19,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
+import org.springframework.web.context.request.RequestContextHolder
+import org.springframework.web.context.request.ServletRequestAttributes
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 import java.util.concurrent.Executors
@@ -50,7 +54,9 @@ class ExerciseSearchIndexService(
     /** 운동 문서 임베딩(리소스) */
     private val vectorStore: ExerciseVectorStore? = null,
     /** LLM 질의 해석(트레이너식 힌트·장비 제외) — 없거나 꺼져 있거나 실패하면 하이브리드 결과 그대로다. 의미 검색(하이브리드)이 켜져 있을 때만 쓴다. */
-    private val queryRewriter: QueryRewriteSource? = null
+    private val queryRewriter: QueryRewriteSource? = null,
+    /** 검색 쪽 Gemini 호출의 전역 예산·동시성 상한·지표 — 없으면 제한 없이(테스트·오라클) */
+    private val llmGuard: SearchLlmGuard? = null
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -60,27 +66,39 @@ class ExerciseSearchIndexService(
         val generation: Long,
         val synonymVersion: Int,
         /** 의미 검색을 섞을 수 있으면(설정 켜짐 + 문서 임베딩 있음) 하이브리드, 아니면 null(어휘 전용) */
-        val hybrid: HybridSearch? = null
-    ) {
-        /** 이 스냅샷 전용 결과 캐시 — 스냅샷이 바뀌면 함께 사라진다 */
-        val results = ResultCache(RESULT_CACHE_SIZE)
-    }
+        val hybrid: HybridSearch? = null,
+        /** 운동 문서 내용의 해시 — 같으면 결과 캐시를 이어받아도 된다 */
+        val contentHash: Int = 0,
+        /**
+         * 결과 캐시 — 카탈로그·동의어·문서 내용이 그대로인 TTL 재빌드는 이전 스냅샷의 캐시를 이어받는다(페이지 넘김 중에 목록이 바뀌지 않게).
+         * 카탈로그가 바뀌었거나 동의어·내용이 바뀌면 새로 시작한다(낡은 목록이 남지 않게).
+         */
+        val results: ResultCache = ResultCache(RESULT_CACHE_SIZE)
+    )
 
     private class SynonymState(val lines: List<String>, val loadedAtMillis: Long) {
         val version: Int = lines.hashCode()
     }
 
-    private data class ResultKey(
+    internal data class ResultKey(
         val query: String,
         val category: ExerciseCategory?,
         val equipments: Set<Equipment>?,
         val locale: String?
     )
 
-    /** 캐시된 결과 id 목록. [degradedAtMillis] 가 있으면 의미 검색이 필요했는데 질의 벡터를 못 구해 어휘 결과만 담은 것 — 잠깐만 쓴다. */
-    private class CachedIds(val ids: List<Long>, val degradedAtMillis: Long? = null)
+    /**
+     * 캐시된 결과 id 목록. [degraded] 는 의미 검색·LLM 해석이 필요했는데 못 얻어 어휘(또는 일부 융합) 결과만 담은 것.
+     * [flags] 는 [SearchUsageContext] 비트(의미·해석 사용 여부). [ids] 는 박싱을 피하려고 LongArray 로 둔다.
+     */
+    internal class CachedIds(val ids: LongArray, val createdAtMillis: Long, val degraded: Boolean, val flags: Int) {
+        val list: List<Long> = object : AbstractList<Long>(), RandomAccess {
+            override val size: Int get() = ids.size
+            override fun get(index: Int): Long = ids[index]
+        }
+    }
 
-    private class ResultCache(private val max: Int) {
+    internal class ResultCache(private val max: Int) {
         private val map = object : LinkedHashMap<ResultKey, CachedIds>(64, 0.75f, true) {
             override fun removeEldestEntry(eldest: MutableMap.MutableEntry<ResultKey, CachedIds>?) = size > max
         }
@@ -219,7 +237,10 @@ class ExerciseSearchIndexService(
             try {
                 val lines = loadSynonyms(force = forceSynonymReload || synonyms == null).lines
                 val engine = build(lines)
-                built = Snapshot(engine, clock(), gen, synonyms?.version ?: 0, hybridFor(engine))
+                val synVersion = synonyms?.version ?: 0
+                val contentHash = engine.documents().hashCode()
+                val carry = snapshot?.takeIf { it.generation == gen && it.synonymVersion == synVersion && it.contentHash == contentHash }?.results
+                built = Snapshot(engine, clock(), gen, synVersion, hybridFor(engine), contentHash, carry ?: ResultCache(RESULT_CACHE_SIZE))
             } catch (e: Exception) {
                 val prev = snapshot
                 if (prev == null) throw e
@@ -239,36 +260,65 @@ class ExerciseSearchIndexService(
 
     // ── 질의 ─────────────────────────────────────────────────────────────────────────────────────
 
-    /** 질의 검색(질의가 비면 브라우즈) — 결과는 점수 순 운동 id 목록 */
+    /**
+     * 질의 검색(질의가 비면 브라우즈) — 결과는 점수 순 운동 id 목록.
+     *
+     * 같은 (질의·필터·로케일)의 페이지들은 같은 순위 목록에서 나온다. LLM 이 없어 어휘 결과만 담은(degraded) 목록은 페이지 넘김 구간([PAGING_WINDOW_MILLIS]) 동안 유지하고,
+     * 첫 페이지 요청만 [DEGRADED_RETRY_MILLIS] 뒤에 다시 시도해 교체할 수 있다(그러면 클라이언트는 첫 페이지부터 다시 받는다).
+     * @param page 요청한 페이지 번호. 모르면(null) 현재 HTTP 요청의 page 파라미터를 읽고, 그것도 없으면 첫 페이지로 본다.
+     */
     fun searchIds(
         query: String?,
         category: ExerciseCategory?,
         equipments: Set<Equipment>?,
-        locale: String?
+        locale: String?,
+        page: Int? = null
     ): List<Long> {
         val snap = current()
         val q = normalizeQuery(query)
         val key = ResultKey(q.orEmpty(), category, equipments?.toSet(), locale?.lowercase())
+        val firstPage = (page ?: requestPage()) <= 0
+        val now = clock()
         snap.results.get(key)?.let { cached ->
-            // 의미 검색 없이 낸(벡터를 못 구한) 결과는 잠깐만 재사용하고, 그 뒤에는 다시 시도한다 — 순간 장애가 TTL 동안 품질을 깎지 않게
-            val degradedAt = cached.degradedAtMillis
-            if (degradedAt == null || clock() - degradedAt < DEGRADED_RESULT_TTL_MILLIS) return cached.ids
+            val age = now - cached.createdAtMillis
+            val usable = when {
+                !cached.degraded -> age < RESULT_TTL_MILLIS
+                // 첫 페이지 요청은 장애가 풀렸는지 곧 다시 시도하고, 다음 페이지는 같은 목록을 이어서 본다
+                firstPage -> age < DEGRADED_RETRY_MILLIS
+                else -> age < PAGING_WINDOW_MILLIS
+            }
+            if (usable) {
+                llmGuard?.recordResultCache(true)
+                if (cached.degraded && !firstPage && age >= DEGRADED_RETRY_MILLIS) llmGuard?.recordPagedReplay()
+                SearchUsageContext.note(q, cached.flags)
+                return cached.list
+            }
         }
+        llmGuard?.recordResultCache(false)
         val hybrid = snap.hybrid
         if (hybrid != null && q != null) {
             // 질의 임베딩이 어떤 이유로든 예외를 던져도 검색은 어휘 결과로 계속된다
             val rewriter = queryRewriter?.takeIf { it.enabled }
             val result = hybrid.search(q, category, equipments, locale, rewriter?.let { r -> { r.rewrite(q) } }) { runCatching { queryVectors?.embed(q) }.getOrNull() }
-            val ids = result.hits.map { it.doc.id }
-            if (result.complete) snap.results.put(key, CachedIds(ids, if (result.degraded) clock() else null))
-            return ids
+            val ids = result.hits.map { it.doc.id }.toLongArray()
+            val flags = (if (result.semantic) SearchUsageContext.SEMANTIC else 0) or (if (result.rewritten) SearchUsageContext.REWRITTEN else 0) or (if (result.degraded) SearchUsageContext.DEGRADED else 0)
+            llmGuard?.takeIf { result.semantic || result.rewritten || result.degraded }?.recordSearch(result.semantic, result.rewritten, result.degraded)
+            val entry = CachedIds(ids, clock(), result.degraded, flags)
+            if (result.complete) snap.results.put(key, entry)
+            SearchUsageContext.note(q, flags)
+            return entry.list
         }
         val outcome = snap.engine.searchOutcome(q, category, equipments, locale)
-        val ids = outcome.hits.map { it.doc.id }
+        val entry = CachedIds(outcome.hits.map { it.doc.id }.toLongArray(), clock(), false, 0)
         // 시간 예산을 넘겨 일부만 훑은 결과는 캐시하지 않는다 — 한 번 느렸다고 TTL 동안 잘린 결과가 남지 않게
-        if (outcome.complete) snap.results.put(key, CachedIds(ids))
-        return ids
+        if (outcome.complete) snap.results.put(key, entry)
+        SearchUsageContext.note(q, 0)
+        return entry.list
     }
+
+    /** 현재 HTTP 요청의 page 파라미터(없거나 요청 밖이면 0) */
+    private fun requestPage(): Int =
+        ((RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes)?.request?.getParameter("page")?.trim()?.toIntOrNull()) ?: 0
 
     /** 노출 가능한 운동(ESSENTIAL + STANDARD)만, 브라우즈 순서(티어 → 인기도 → 이름)로 */
     fun listableIds(category: ExerciseCategory?, locale: String?): List<Long> =
@@ -386,8 +436,10 @@ class ExerciseSearchIndexService(
         val source = queryVectors ?: return null
         if (!source.enabled) return null
         val vectors = try { vectorStore?.get() } catch (e: Exception) { logger.warn("Exercise embeddings unavailable, semantic search is off: {}", e.message); null } ?: return null
-        val hybrid = HybridSearch(engine, vectors, executor = rewriteExecutor)
+        val hybrid = HybridSearch(engine, vectors, executor = rewriteExecutor, guard = llmGuard)
         logger.info("Semantic search enabled: {} of {} exercises have embeddings", hybrid.coveredDocs, engine.size)
+        // 임베딩이 없는 운동(새로 추가·수정된 운동)은 의미·힌트 융합에서 조용히 빠진다 — 인덱스를 다시 만들 때마다 눈에 띄게 알린다
+        if (hybrid.coveredDocs < engine.size) logger.warn("{} of {} exercises have no embedding and are invisible to semantic search; regenerate exercise-embeddings.bin (scripts/search/regenerate_embeddings.py)", engine.size - hybrid.coveredDocs, engine.size)
         return hybrid
     }
 
@@ -438,9 +490,14 @@ class ExerciseSearchIndexService(
         private const val SYNONYM_TTL_MILLIS = 60 * 1000L
         private const val FAILURE_BACKOFF_MILLIS = 30 * 1000L
         private const val MAX_REBUILD_ATTEMPTS = 3
-        private const val RESULT_CACHE_SIZE = 512
+        private const val RESULT_CACHE_SIZE = 1024
         private const val REWRITE_THREADS = 16
-        private const val DEGRADED_RESULT_TTL_MILLIS = 30 * 1000L
+        /** 완전한 결과를 이어서 쓰는 시간 — 인덱스 TTL 과 같다 */
+        private const val RESULT_TTL_MILLIS = 10 * 60 * 1000L
+        /** 첫 페이지 요청이 LLM 이 풀렸는지 다시 시도하기까지 degraded 목록을 그대로 내는 시간 */
+        private const val DEGRADED_RETRY_MILLIS = 30 * 1000L
+        /** 페이지 넘김 구간 — 이 안에서는 첫 페이지가 아닌 요청이 degraded 목록을 바꾸지 못한다 */
+        private const val PAGING_WINDOW_MILLIS = 5 * 60 * 1000L
         private const val FALLBACK_LIMIT = 10
         private const val FALLBACK_PER_TOKEN = 30
         private const val MAX_FALLBACK_TOKENS = 5

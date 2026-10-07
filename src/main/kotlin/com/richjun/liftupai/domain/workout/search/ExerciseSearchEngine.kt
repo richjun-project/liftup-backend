@@ -219,14 +219,17 @@ class ExerciseSearchEngine(
         if (norm.isEmpty() || SearchText.isChoseongQuery(norm)) return null
         val tok = SearchText.tokenize(raw)
         if (tok.words.isEmpty() || tok.strict in exactNames) return null
-        val plan = analyzer.analyze(tok).plan
+        val analysis = analyzer.analyze(tok)
+        val plan = analysis.plan
         if (plan.mode == Mode.BROWSE) return null
         val pool = filtered(category, equipments)
+        // "수건으로 …"처럼 장비 자리에 쓴 생활 사물(밴드 대용) — 힌트 후보의 장비 범위를 홈 장비로 넓혀도 되는 경우
+        val substituteObject = forHints && plan.home && SUBSTITUTE_OBJECT_KEYS.any { tok.strict.contains(it) }
         val ex = if (plan.hasExclusions) exclusionSet(plan) else null
         val soft = if (plan.injuries.isNotEmpty()) softBits(plan) else null
         var cands = pool.filter { ex == null || !isExcluded(it, plan, ex) }
         if (plan.mode == Mode.INTENT) {
-            val allowedEquip = if (forHints) hintIntentEquipment(plan) else intentEquipment(plan)
+            val allowedEquip = if (forHints) hintIntentEquipment(plan, substituteObject) else intentEquipment(plan)
             // 스트레칭·모빌리티 의도에서 장비는 "있으면 좋은" 조건 — 그 장비의 스트레칭이 몇 개 없으면 의미 후보를 장비로 거르지 않는다
             if (allowedEquip != null) cands.filter { it.doc.equipment in allowedEquip }
                 .takeIf { it.isNotEmpty() && !(mobilityIntent(plan) && it.count { d -> d.isStretch } < SOFT_EQUIP_MIN_HITS) }?.let { cands = it }
@@ -234,8 +237,14 @@ class ExerciseSearchEngine(
         val allowed = BitSet(indexed.size)
         for (d in cands) if (soft == null || !soft.get(d.index)) allowed.set(d.index)
         val byId = indexById
+        // "벤치프레스 보조로 삼두"처럼 목표 말투에서 그 운동 자체는 뒤로 미룰 문서, 그리고 이름 일치를 "토큰 통째"로 확인할 내용 토큰
+        val goalLifts = if (plan.mode == Mode.NAME) goalSupport(raw, analysis, plan, pool)?.liftIds.orEmpty() else emptySet()
+        val contentTokens = contentTokensOf(plan)
         return object : SemanticConstraint {
             override fun allows(doc: ExerciseSearchDoc): Boolean = byId[doc.id]?.let { allowed.get(it.index) } ?: false
+            override val goalLiftIds: Set<Long> = goalLifts
+            override val requestedEquipment: Set<Equipment> = if (SUBSTITUTE_OBJECT_KEYS.any { tok.strict.contains(it) }) emptySet() else plan.equipments
+            override fun wholeTokenNameMatch(doc: ExerciseSearchDoc): Boolean = byId[doc.id]?.let { d -> wholeTokenMatch(d, contentTokens) } ?: false
             override val unrecognized: Boolean = plan.hasUnknown
             override val injuryAware: Boolean = plan.injuries.isNotEmpty()
             override val homeBodyweightFirst: Boolean = plan.home && plan.equipments.isEmpty() && equipments.isNullOrEmpty()
@@ -304,6 +313,11 @@ class ExerciseSearchEngine(
         // 질의가 어떤 운동의 이름(어느 언어든)과 정확히 같으면 해석할 것 없이 그 이름으로 찾는다 ("AB 턱", "Barbell good morning")
         val analysis = if (tok.strict in exactNames) null else analyzer.analyze(tok)
         val plan = analysis?.plan ?: QueryPlan.nameOnly(tok.words)
+        // "벤치프레스 보조로 삼두 키우기"처럼 어떤 운동을 돕는 목표 말투면 그 운동이 아니라 목표 부위 운동을 찾는다(그 운동 자체는 뒤로)
+        if (analysis != null && plan.mode == Mode.NAME) goalSupport(raw, analysis, plan, pool)?.let { g ->
+            val out = searchIntent(g.plan, pool).map { h -> if (h.doc.id in g.liftIds) ExerciseSearchHit(h.doc, h.score - GOAL_LIFT_PENALTY) else h }
+            if (out.isNotEmpty()) return rankSorted(out)
+        }
         var result = when (plan.mode) {
             Mode.BROWSE -> browseSorted(excludeFrom(pool, plan), locale)
             Mode.INTENT -> searchIntent(plan, pool)
@@ -397,8 +411,17 @@ class ExerciseSearchEngine(
         val intentMotion = plan.mode == Mode.INTENT && motion && !plan.stretch && plan.excludeKeys.isEmpty() && plan.excludeConcepts.isEmpty()
         if (!nameWeak && !intentMotion) return result
         // 장비를 말한 질의("…マシン", "…머신")는 설명문 후보도 그 장비로 좁힌다(그 장비의 운동이 없으면 좁히지 않는다)
-        val equipPool = if (plan.equipments.isEmpty()) pool else pool.filter { it.doc.equipment in plan.equipments }.ifEmpty { pool }
+        var equipPool = if (plan.equipments.isEmpty()) pool else pool.filter { it.doc.equipment in plan.equipments }.ifEmpty { pool }
+        // 집·생활 사물 의도는 이름·의도 경로와 같은 장비 범위(맨몸·홈 장비·밴드)만 쓴다 — 설명문만으로 찾은 후보가 바벨·머신으로 새지 않게.
+        // 스트레칭·모빌리티 의도에서 장비는 "있으면 좋은" 조건이라 그 범위의 스트레칭이 몇 개 없으면 좁히지 않는다.
+        if (plan.equipments.isEmpty()) intentEquipment(plan)?.let { eq ->
+            pool.filter { it.doc.equipment in eq }
+                .takeIf { it.isNotEmpty() && !(mobilityIntent(plan) && it.count { d -> d.isStretch } < SOFT_EQUIP_MIN_HITS) }
+                ?.let { equipPool = it }
+        }
         val allowed = BitSet(indexed.size).also { b -> equipPool.forEach { b.set(it.index) } }
+        val soft = if (plan.injuries.isNotEmpty()) softBits(plan) else null
+        val prefer = if (plan.injuries.isNotEmpty()) preferBits(plan) else null
         val ex = if (plan.hasExclusions) exclusionSet(plan) else null
         // 이름 일치가 조금이라도 있는 질의("frog stretch")는 설명문이 그 위에 쏟아져 들어오지 않게 더 엄격하게(coverage 높게) 본다
         val minCoverage = if (result.isNotEmpty() && !weak && !motion) DESC_MIN_COVERAGE_WITH_NAME else DESC_MIN_COVERAGE
@@ -419,7 +442,9 @@ class ExerciseSearchEngine(
             val rel = 0.5 * h.coverage + 0.5 * (h.bm25 / best)
             val cur = out[d.doc.id]
             seen.add(d.doc.id)
-            out[d.doc.id] = ExerciseSearchHit(d.doc, (cur?.score ?: (newBase + d.rank * 0.3)) + DESC_WEIGHT * rel)
+            // 새로 끼워 넣는 후보에도 부상 관절의 "조심할 동작" 뒤로 미룸·권장 동작 앞으로를 같게 적용한다(이미 찾은 후보는 그 경로에서 적용됐다)
+            val injury = if (cur == null && soft != null && prefer != null) injuryAdjust(d, plan, soft, prefer) else 0.0
+            out[d.doc.id] = ExerciseSearchHit(d.doc, (cur?.score ?: (newBase + d.rank * 0.3 + injury)) + DESC_WEIGHT * rel)
         }
         // 이름 근거가 약한데 설명문이 가리키는 곳이 따로 있으면, 설명문에 안 걸린 약한 후보는 뒤로
         // (이름 부분 일치 이상으로 찾은 후보는 이름 질의의 근거라 깎지 않는다 — 의도·폴백·퍼지로 찾은 것만)
@@ -427,6 +452,73 @@ class ExerciseSearchEngine(
             out[h.doc.id] = ExerciseSearchHit(h.doc, h.score - (if (posOnly) WEAK_DEMOTE * 2 else WEAK_DEMOTE))
         }
         return rankSorted(out.values.toList())
+    }
+
+    // ── 목표 말투("~의 보조로 삼두") ───────────────────────────────────────────────────────────
+
+    /** 목표 말투로 읽은 결과: 목표 부위 의도 계획과, 말로 언급된 운동 자체(뒤로 미룰 문서들) */
+    private class GoalSupport(val plan: QueryPlan, val liftIds: Set<Long>)
+
+    /**
+     * "ベンチプレスの補助で三頭筋を鍛える", "벤치프레스 보조로 삼두", "triceps work to support my bench press" —
+     * 어떤 운동(말로 언급)을 돕는 보조 목표 말투이고 목표 부위가 있으면, 언급된 운동이 아니라 그 부위의 운동을 찾는다.
+     * 아니면 null. 부위 개념과 언급된 운동(이름 구간)과 보조 표현이 모두 있을 때만 켜진다.
+     */
+    private fun goalSupport(raw: String, a: QueryAnalyzer.Analysis, plan: QueryPlan, pool: List<IDoc>): GoalSupport? {
+        if (plan.mode != Mode.NAME || plan.concepts.none { it.id.startsWith("muscle:") }) return null
+        val folded = SearchText.normalize(raw).lowercase()
+        if (!GOAL_PHRASES.containsMatchIn(folded)) return null
+        val lifts = ArrayList<String>()
+        for (sg in a.segs) {
+            if (!sg.has(Role.NAME)) continue
+            val t = a.tok.strict.substring(sg.s, sg.e)
+            if (t.length < 2 || GOAL_PHRASES.containsMatchIn(t)) continue  // "support" 자체가 이름 단어로 읽힌 구간은 언급된 운동이 아니다
+            lifts.add(t)
+        }
+        if (lifts.isEmpty()) return null
+        val ids = HashSet<Long>()
+        for (d in pool) if (lifts.all { t -> d.names.any { n -> occurrenceQuality(n, t) >= OCC_WORD } }) ids.add(d.doc.id)
+        if (ids.isEmpty()) return null
+        val intent = QueryPlan(
+            mode = Mode.INTENT, concepts = plan.concepts, equipments = plan.equipments, home = plan.home, stretch = plan.stretch, level = plan.level,
+            regress = plan.regress, excludeEquip = plan.excludeEquip, excludeKeys = plan.excludeKeys, injuries = plan.injuries, numbers = plan.numbers,
+            highReps = plan.highReps, seeds = plan.seeds, hasUnknown = plan.hasUnknown, similarTo = plan.similarTo, excludeConcepts = plan.excludeConcepts,
+            combineAll = plan.combineAll
+        )
+        return GoalSupport(intent, ids)
+    }
+
+    /** 질의의 내용 토큰 — 이름 검색용 첫 단어열에서 장비·수식어 같은 일반 단어를 뺀 것(다 빠지면 그대로) */
+    private fun contentTokensOf(plan: QueryPlan): List<String> {
+        val words = plan.seeds.firstOrNull { it.isNotEmpty() } ?: return emptyList()
+        return words.filter { it !in QueryLexicon.genericWords }.ifEmpty { words }
+    }
+
+    /**
+     * 모든 내용 토큰이 이 문서의 어떤 이름에서 "통째 단어(단어 경계에서 시작해 단어 경계에서 끝남)"로 나오는가 — 합성어 속 부분 문자열("삼각형" ⊂ "역삼각형")은 아니다.
+     * 사전이 아는 별칭("ブルスク", "불스")이거나 사전 낱말로 나뉘는 붙여 쓴 복합어("ケーブルロウ")는 그 말이 이름을 가리키는 것이니 통째로 본다(부분 문자열 우연 일치가 아니다).
+     */
+    private fun wholeTokenMatch(d: IDoc, tokens: List<String>): Boolean {
+        if (tokens.isEmpty()) return true
+        return tokens.all { t -> d.names.any { n -> alignedOccurrence(n, t) } || knownAlias(t) }
+    }
+
+    private fun knownAlias(t: String): Boolean {
+        if (synonymGroups(t) != null) return true
+        val parts = splitCompounds(listOf(t)) ?: return false
+        return parts.all { synonymGroups(it) != null || it in ExerciseSearchLexicon.equipmentTerms }
+    }
+
+    private fun alignedOccurrence(n: NameKey, t: String): Boolean {
+        if (t.isEmpty()) return false
+        var from = 0
+        while (true) {
+            val i = n.strict.indexOf(t, from)
+            if (i < 0) return false
+            val e = i + t.length
+            if ((i == 0 || i in n.starts) && (e == n.strict.length || e in n.starts)) return true
+            from = i + 1
+        }
     }
 
     // ── 풀/브라우즈 ──────────────────────────────────────────────────────────────────────────
@@ -677,11 +769,12 @@ class ExerciseSearchEngine(
     }
 
     /**
-     * LLM 힌트 후보에 거는 의도 장비 범위 — [intentEquipment] 와 같되, 집이라고 말하면서 사전이 장비로 읽은 말("수건"→밴드)이 있으면 그 장비 하나로 좁히지 않고 홈 장비 전체를 허용한다.
+     * LLM 힌트 후보에 거는 의도 장비 범위 — [intentEquipment] 와 같되, 집이라고 말하면서 사전이 장비로 읽은 말이 생활 사물 대용("수건"→밴드)일 때만 그 장비 하나로 좁히지 않고 홈 장비 전체를 허용한다.
+     * 덤벨처럼 사용자가 직접 말한 일반 장비는 넓히지 않는다("집에서 덤벨 운동"의 힌트가 밴드·맨몸으로 희석되지 않게).
      * (사전의 장비 해석이 틀릴 수 있는 곳에서 LLM 의 읽기를 살리되, "집·사물만 쓴다"는 범위는 그대로 지킨다)
      */
-    private fun hintIntentEquipment(plan: QueryPlan): Set<Equipment>? =
-        if (plan.equipments.isNotEmpty() && plan.home) plan.equipments + ExerciseSearchLexicon.homeEquipmentPreference.keys else intentEquipment(plan)
+    private fun hintIntentEquipment(plan: QueryPlan, substituteObject: Boolean): Set<Equipment>? =
+        if (plan.equipments.isNotEmpty() && plan.home && substituteObject) plan.equipments + ExerciseSearchLexicon.homeEquipmentPreference.keys else intentEquipment(plan)
 
     private fun relax(c: QueryLexicon.Concept) = QueryLexicon.Concept(
         c.id + "~relaxed", c.muscles, c.categories, c.sig, c.sig2, c.patterns, c.avoid, false, c.stretch, c.cardio, c.nameWords
@@ -1216,6 +1309,12 @@ class ExerciseSearchEngine(
     companion object {
         // band 간격(20)은 장비 우선 가중치(15)·타이브레이커(<=9)보다 크게 유지
         private const val SOFT_EQUIP_MIN_HITS = 6
+        /** 장비 자리에 쓰는 생활 사물(밴드 대용) 표기 — 사전이 장비로 읽어도 LLM 이 다른 홈 장비를 고를 수 있다 */
+        private val SUBSTITUTE_OBJECT_KEYS: List<String> = ExerciseSearchLexiconRound3.TOWEL.split("|").map { SearchText.strictKey(it) }.filter { it.isNotEmpty() }
+        /** 목표 말투에서 언급된 운동 자체를 목표 부위 운동 뒤로 미루는 점수 */
+        private const val GOAL_LIFT_PENALTY = 30.0
+        /** 보조·지원 목표 말투 표지(ja·ko·en) — 부위 개념·언급된 운동과 함께 있을 때만 쓴다 */
+        private val GOAL_PHRASES = Regex("補助|補強|補完|サポート|アシスト|支える|ほじょ|さぽーと|보조|보완|보강|서포트|받쳐|\\b(?:support|supports|supporting|assist|assisting|assistance|accessory|accessories|supplement|supplemental|complement|complementary)\\b")
         /** 생활 사물(벽·의자·테이블…)만 쓰는 운동에 허용하는 장비 */
         internal val OBJECT_EQUIPMENT: Set<Equipment> = setOf(Equipment.BODYWEIGHT, Equipment.OTHER, Equipment.RESISTANCE_BAND)
         const val BAND_EXACT = 200.0
