@@ -35,6 +35,15 @@ internal class QueryPlan(
     /** "X 대신/alternative to X" 의 X — 제외하되 X 와 비슷한(같은 부위·동작) 운동을 보여 준다 */
     val similarTo: List<SigKey> = emptyList()
 ) {
+    companion object {
+        /** 이해 계층을 거치지 않고 단어열 그대로 이름 검색하는 계획(질의가 어떤 운동의 이름과 정확히 같을 때) */
+        fun nameOnly(words: List<String>) = QueryPlan(
+            mode = Mode.NAME, concepts = emptyList(), equipments = emptySet(), home = false, stretch = false, level = 0, regress = false,
+            excludeEquip = emptySet(), excludeKeys = emptyList(), injuries = emptySet(), numbers = emptyList(), highReps = false,
+            seeds = listOf(words), hasUnknown = false
+        )
+    }
+
     val hasExclusions: Boolean get() = excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || injuries.isNotEmpty()
     val hasIntentSignal: Boolean get() = concepts.isNotEmpty() || equipments.isNotEmpty() || home
 }
@@ -120,7 +129,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                 val unitOnly = valid.all { it.role == Role.UNIT }
                 // 이름 단어(복합어)는 길수록 비싸다 — "股関節ストレッチ" 같은 복합어보다 부위+스트레칭 분해를 선호
                 val nameOnly = valid.all { it.role == Role.NAME }
-                relax(j, base + SEG_COST + (if (nameOnly) key.length else 0), Seg(i, j, valid), true, unitOnly, 0)
+                // 군더더기 조각은 비싸다 — "good morning"(이름) 이 good + morning(군더더기 둘)로 쪼개지지 않게
+                val noiseOnly = valid.all { it.role == Role.NOISE || it.role == Role.CONJ }
+                relax(j, base + SEG_COST + (if (nameOnly) key.length else 0) + (if (noiseOnly) NOISE_EXTRA_COST else 0), Seg(i, j, valid), true, unitOnly, 0)
             }
             // 모르는 글자 한 개
             relax(i + 1, base + UNKNOWN_COST, Seg(i, i + 1, null), false, false, unkRun[i] + 1)
@@ -545,6 +556,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private const val UNKNOWN_COST = 30
         private const val SEG_COST = 6
         private const val NUM_COST = 2
+        private const val NOISE_EXTRA_COST = 4
         private const val MAX_TERM_LEN = 40
         private const val HIGH_REPS = 20
         private val REP_UNITS = setOf("회", "개", "回", "번", "rep", "time", "個").map { SearchText.strictKey(it) }.toSet()

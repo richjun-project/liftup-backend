@@ -95,6 +95,9 @@ class ExerciseSearchEngine(
     }
 
     private val sigIndex = SigIndex(indexed)
+
+    /** 모든 이름의 strict 키 — 질의가 이름과 정확히 같은지 O(1) 로 본다 */
+    private val exactNames: Set<String> = indexed.flatMapTo(HashSet()) { d -> d.names.map { it.strict } }
     private val vocabulary = Vocabulary(docs.map { it.names.values.filter { n -> n.isNotBlank() } }, synonymTable)
     private val analyzer = QueryAnalyzer(vocabulary, synonymTable)
 
@@ -182,7 +185,8 @@ class ExerciseSearchEngine(
         if (tok.words.isEmpty()) return emptyList()
         if (SearchText.isChoseongQuery(norm)) return searchChoseong(norm, pool)
 
-        val plan = analyzer.analyze(tok).plan
+        // 질의가 어떤 운동의 이름(어느 언어든)과 정확히 같으면 해석할 것 없이 그 이름으로 찾는다 ("AB 턱", "Barbell good morning")
+        val plan = if (tok.strict in exactNames) QueryPlan.nameOnly(tok.words) else analyzer.analyze(tok).plan
         var result = when (plan.mode) {
             Mode.BROWSE -> browseSorted(excludeFrom(pool, plan), locale)
             Mode.INTENT -> searchIntent(plan, pool)
