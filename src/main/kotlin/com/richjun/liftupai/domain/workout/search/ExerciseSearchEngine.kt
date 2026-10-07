@@ -352,15 +352,21 @@ class ExerciseSearchEngine(
         for (h in result) out[h.doc.id] = h
         val best = hits.first().bm25.coerceAtLeast(1e-9)
         val seen = HashSet<Long>()
+        // 부위가 아니라 자세·사물("서서", "의자")만 알아들은 의도 질의는 설명문이 주도한다 — 그 개념에 맞는 후보를 강하게 지키지 않는다
+        val posOnly = intentMotion && plan.concepts.isNotEmpty() && plan.concepts.all { it.id.startsWith("pos-") || it.id.startsWith("obj:") }
+        val newBase = if (posOnly) BAND_INTENT + 20.0 else BAND_INTENT
         for (h in hits) {
             val d = indexed[h.index]
             val rel = 0.5 * h.coverage + 0.5 * (h.bm25 / best)
             val cur = out[d.doc.id]
             seen.add(d.doc.id)
-            out[d.doc.id] = ExerciseSearchHit(d.doc, (cur?.score ?: (BAND_INTENT + d.rank * 0.3)) + DESC_WEIGHT * rel)
+            out[d.doc.id] = ExerciseSearchHit(d.doc, (cur?.score ?: (newBase + d.rank * 0.3)) + DESC_WEIGHT * rel)
         }
-        // 이름 근거가 약한데 설명문이 가리키는 곳이 따로 있으면, 설명문에 안 걸린 약한 이름 후보는 뒤로
-        if (nameWeak) for (h in result) if (h.doc.id !in seen) out[h.doc.id] = ExerciseSearchHit(h.doc, h.score - WEAK_DEMOTE)
+        // 이름 근거가 약한데 설명문이 가리키는 곳이 따로 있으면, 설명문에 안 걸린 약한 후보는 뒤로
+        // (이름 부분 일치 이상으로 찾은 후보는 이름 질의의 근거라 깎지 않는다 — 의도·폴백·퍼지로 찾은 것만)
+        if (nameWeak) for (h in result) if (h.doc.id !in seen && (plan.mode == Mode.INTENT || weak || h.score < BAND_PARTIAL)) {
+            out[h.doc.id] = ExerciseSearchHit(h.doc, h.score - (if (posOnly) WEAK_DEMOTE * 2 else WEAK_DEMOTE))
+        }
         return rankSorted(out.values.toList())
     }
 
@@ -642,7 +648,17 @@ class ExerciseSearchEngine(
                     var sum = 0.0
                     for (e in evals) { val f = e.fit(d); if (f < 0) { sum = -1.0; break }; sum += f }
                     if (sum >= 0) best = sum / evals.size
-                } else for (e in evals) { val f = e.fit(d); if (f > best) best = f }
+                } else {
+                    // 자세 개념("서서", "누워서")은 부위·목표 개념에 대한 가산점이지 후보를 대신하지 않는다 — "서서 하는 유산소" 가 이름에 standing 이 든 운동 전체로 번지지 않게
+                    val mains = evals.filter { !it.c.id.startsWith("pos-") }
+                    if (mains.isNotEmpty() && mains.size < evals.size) {
+                        for (e in mains) { val f = e.fit(d); if (f > best) best = f }
+                        if (best >= 0) {
+                            val pf = evals.filter { it.c.id.startsWith("pos-") }.maxOf { it.fit(d) }
+                            if (pf > 0) best += POSTURE_BONUS * pf
+                        }
+                    } else for (e in evals) { val f = e.fit(d); if (f > best) best = f }
+                }
                 if (best < 0) continue
                 fit = best
             }
@@ -1153,6 +1169,7 @@ class ExerciseSearchEngine(
         private val PATTERN_EQUIPMENT_SUFFIXES = listOf("_BARBELL", "_DUMBBELL", "_MACHINE", "_CABLE")
         private val HOME_OBJECT_WORDS: Set<String> = listOf("椅子", "いす", "イス", "의자", "chair", "壁", "かべ", "벽", "wall", "平行棒", "평행봉", "ベッド", "침대", "bed", "ソファ", "소파", "sofa", "couch", "階段", "계단", "stairs", "table", "테이블", "机", "책상", "desk")
             .map { SearchText.strictKey(it) }.toSet()
+        private const val POSTURE_BONUS = 0.15
         private const val ROLLING_FACTOR = 0.5
         private const val COMBINE_MIN_HITS = 8
         private const val COMBINE_BOTH_BONUS = 12.0
