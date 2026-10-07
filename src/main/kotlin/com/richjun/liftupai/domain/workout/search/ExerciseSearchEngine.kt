@@ -199,8 +199,8 @@ class ExerciseSearchEngine(
 
     /** 질의 해석을 사람이 읽는 문자열로(진단용): 분해된 조각과 계획 */
     internal fun explain(query: String): String {
-        val tok = SearchText.tokenize(query)
-        val a = analyzer.analyze(tok)
+        val a = analyzer.analyze(SearchText.tokenize(query))
+        val tok = a.tok  // 사전 용어 오타를 고친 토큰열
         val p = a.plan
         val segs = a.segs.joinToString(" ") { sg ->
             val text = tok.strict.substring(sg.s, sg.e)

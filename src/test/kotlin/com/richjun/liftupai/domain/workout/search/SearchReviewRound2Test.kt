@@ -880,4 +880,24 @@ class SearchReviewRound2Test {
         assertTrue(engine.analyze("器具なしで背中").excludeEquip.isEmpty())
         assertTrue(top("器具なしで背中", 5).all { it.equipment == Equipment.BODYWEIGHT || it.equipment == null || it.equipment == Equipment.RESISTANCE_BAND || it.equipment == Equipment.OTHER })
     }
+
+    // ═════════════════════════ 19. 사전 용어 오타 교정 ═════════════════════════
+
+    @ParameterizedTest
+    @CsvSource("strecthing, stretching", "stretchng, stretching", "스트래칭, 스트레칭", "ストレチ, ストレッチ", "worm up, warm up", "워밍엎, 워밍업", "ウォームアプ, ウォームアップ", "stretching exersises, stretching")
+    fun `사전에만 있는 용어의 오타도 같은 용어로 읽는다`(typo: String, right: String) {
+        assertEquals(slugs(right, 5), slugs(typo, 5), "$typo vs $right")
+    }
+
+    @Test
+    fun `사전 용어를 이어 붙인 말은 오타로 고치지 않는다`() {
+        val plan = engine.analyze("ホームトレ 胸")
+        assertTrue(plan.home, "ホーム + トレ 는 집 운동이다")
+    }
+
+    @Test
+    fun `짧은 낯선 단어는 사전 용어로 함부로 바꾸지 않는다`() {
+        assertEquals(slugs("cord", 3), slugs("cord", 3))
+        assertFalse(engine.analyze("trxx").hasIntentSignal)
+    }
 }

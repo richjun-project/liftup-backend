@@ -90,8 +90,79 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
     class Analysis(val tok: SearchText.Tokenized, val segs: List<Seg>, val plan: QueryPlan)
 
     fun analyze(tok: SearchText.Tokenized): Analysis {
-        val segs = segment(tok)
-        return Analysis(tok, segs, buildPlan(tok, segs))
+        val fixed = correctLexiconTypos(tok) ?: tok
+        val segs = segment(fixed)
+        return Analysis(fixed, segs, buildPlan(fixed, segs))
+    }
+
+    // ── 사전 용어 오타 교정 ──────────────────────────────────────────────────────────────────
+    // 카탈로그 이름 어휘의 오타는 이름 검색 단계가 고치지만, 부위·장비·스트레칭·웜업 같은 "사전에만 있는 말"의
+    // 오타("strecthing", "워밍엎", "worm up")는 이해 계층이 못 알아들어 이름 검색으로 새 버린다. 한 글자(자모) 오타만 같은 사전 용어로 본다.
+
+    private class Target(val key: String, val loose: String)
+
+    /** 라틴은 6글자 이상, 한글·가나·한자는 자모·가나 기준 4 이상일 때만 오타 교정 대상(짧은 말은 이웃이 너무 많다) */
+    private fun typoEligible(strict: String, loose: String): Boolean =
+        if (strict.isNotEmpty() && strict[0].code < 0x250) strict.length >= TYPO_MIN_LATIN else strict.length >= 3 && loose.length >= TYPO_MIN_LOOSE
+
+    private val typoTargets: Map<Int, List<Target>> by lazy {
+        index.entries.asSequence()
+            .filter { (k, v) -> v.any { it.role in TYPO_ROLES && !it.particle } }
+            .map { (k, _) -> Target(k, SearchText.looseKey(k)) }
+            .filter { typoEligible(it.key, it.loose) }
+            .groupBy { it.loose.length }
+    }
+
+    /** 단어(또는 이웃 두 단어를 붙인 것)가 사전 용어와 오타 한 칸 거리면 그 용어로 바꾼 새 토큰열. 바꿀 것이 없으면 null. */
+    private fun correctLexiconTypos(tok: SearchText.Tokenized): SearchText.Tokenized? {
+        val words = tok.words
+        if (words.isEmpty() || words.size > TYPO_MAX_WORDS) return null
+        // 질의 전체를 나눠 봤을 때 모르는 글자가 걸친 단어만 후보다 — 사전 용어를 이어 붙인 말("ホームトレ")이나 여러 단어로 된 용어("살 빠지는")는 이미 알아들은 것이다
+        val firstPass = segment(tok)
+        val unknownMask = BooleanArray(tok.strict.length)
+        for (sg in firstPass) if (sg.unknown) for (p in sg.s until sg.e) unknownMask[p] = true
+        fun hasUnknown(i: Int): Boolean {
+            val st = tok.starts[i]
+            val end = minOf(unknownMask.size, st + words[i].length)
+            for (p in st until end) if (unknownMask[p]) return true
+            return false
+        }
+        fun unknown(i: Int): Boolean {
+            val w = words[i]
+            return w.length >= 3 && !w.all { it.isDigit() } && w !in vocab.words && !index.containsKey(w) && hasUnknown(i)
+        }
+        fun nearest(w: String): String? {
+            val loose = SearchText.looseKey(w)
+            val k = SearchText.allowedTypos(loose.length)
+            if (!typoEligible(w, loose) || k == 0) return null
+            var best: Target? = null
+            var bestD = k + 1
+            var tie = false
+            for (len in (loose.length - k)..(loose.length + k)) {
+                for (t in typoTargets[len].orEmpty()) {
+                    val d = SearchText.editDistance(loose, t.loose, k)
+                    if (d > k) continue
+                    if (d < bestD) { best = t; bestD = d; tie = false } else if (d == bestD && best != null && best.key != t.key) tie = true
+                }
+            }
+            // 표기만 다른(장음·촉음) 같은 말은 거리 0 이라 어느 쪽이든 같다 — 거리가 있는 후보끼리 동률일 때만 포기한다
+            return if (best != null && (!tie || bestD == 0)) best.key else null
+        }
+        val out = ArrayList<String>(words.size)
+        var changed = false
+        var i = 0
+        while (i < words.size) {
+            val w = words[i]
+            // 이웃 단어와 붙여 쓴 형태("worm up" → warmup)를 먼저 본다 — 두 단어 중 하나라도 모르는 말일 때만
+            if (i + 1 < words.size && (unknown(i) || unknown(i + 1)) && !index.containsKey(w + words[i + 1])) {
+                val joined = nearest(w + words[i + 1])
+                if (joined != null) { out.add(joined); changed = true; i += 2; continue }
+            }
+            val fix = if (unknown(i)) nearest(w) else null
+            if (fix != null) { out.add(fix); changed = true } else out.add(w)
+            i++
+        }
+        return if (changed) SearchText.tokenize(out.joinToString(" ")) else null
     }
 
     // ── 분해 (DP) ────────────────────────────────────────────────────────────────────────────
@@ -633,6 +704,10 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private const val MAX_TERM_LEN = 40
         /** 다른 부위와 겹쳐 쓰는 개념 — "하체 워밍업", "앉아서 하는 복근" 은 두 조건에 모두 맞는 운동을 앞세운다 */
         private val COMBINE_IDS = setOf("warmup", "pos-seated", "pos-lying", "pos-standing")
+        private val TYPO_ROLES = setOf(Role.CONCEPT, Role.STRETCH, Role.EQUIP, Role.NOISE)
+        private const val TYPO_MIN_LOOSE = 4
+        private const val TYPO_MIN_LATIN = 6
+        private const val TYPO_MAX_WORDS = 8
         private const val HIGH_REPS = 20
         private val FREE_NOT_NEG_BEFORE = setOf("weight", "motion", "hand", "style", "form", "flow", "fall", "standing", "range", "running", "lift", "lifting").map { SearchText.strictKey(it) }.toSet()
         private val LESS_NEG_BEFORE = setOf("workout", "exercise", "training", "routine", "program", "plan").map { SearchText.strictKey(it) }.toSet()
