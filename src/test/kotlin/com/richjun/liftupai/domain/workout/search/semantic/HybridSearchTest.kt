@@ -268,6 +268,30 @@ class HybridSearchTest {
         assertFalse(r.semantic)
     }
 
+    @Test
+    fun `기본 설정 - 운동과 무관해 유사도가 낮은 질의는 어휘가 비면 빈 결과로 둔다`() {
+        // 문서 벡터들의 평균 방향과 직교하는 질의 벡터 — 어떤 문서와도 코사인이 낮다
+        val mean = FloatArray(768)
+        for (d in docs) vectors.vector(d.slug)!!.forEachIndexed { i, x -> mean[i] += x }
+        val meanNorm = Math.sqrt(mean.sumOf { it.toDouble() * it }).toFloat()
+        val unitMean = FloatArray(768) { mean[it] / meanNorm }
+        val probe = FloatArray(768) { if (it % 2 == 0) 1f else -1f }
+        val along = probe.indices.sumOf { (probe[it] * unitMean[it]).toDouble() }.toFloat()
+        val q = QueryEmbedder.normalize(FloatArray(768) { probe[it] - along * unitMean[it] })
+        val best = docs.maxOf { vectors.similarity(q, it.slug)!! }
+        assertTrue(best < HybridSearch.Config().emptyLexicalMinSimilarity, "테스트 벡터가 너무 비슷하다: $best")
+        val r = hybrid.search("zxqvbnm", null, null, "en") { q }
+        assertTrue(r.hits.isEmpty())
+        assertFalse(r.semantic)
+    }
+
+    @Test
+    fun `기본 설정 - 어휘가 비어도 의미 유사도가 충분하면 의미 결과를 준다`() {
+        val r = hybrid.search("zxqvbnm", null, null, "en") { like("pigeon-pose") }
+        assertTrue(r.semantic)
+        assertEquals("pigeon-pose", r.hits.first().doc.slug)
+    }
+
     // ── 가중치·보호 ──────────────────────────────────────────────────────────────────────────
 
     @Test
@@ -320,6 +344,49 @@ class HybridSearchTest {
         assertTrue(r.hits.map { it.doc.id }.containsAll(engine.search(q, null, null, "en").map { it.doc.id }))
     }
 
+    @Test
+    fun `정규화되지 않은 질의 벡터도 같은 순위를 준다`() {
+        val q = "good back exercises with dumbbells for beginners"
+        val unit = like("pigeon-pose")
+        val scaled = FloatArray(unit.size) { unit[it] * 7.5f }
+        assertEquals(search(q, "pigeon-pose").hits.map { it.doc.id }, hybrid.search(q, null, null, "en") { scaled }.hits.map { it.doc.id })
+    }
+
+    @Test
+    fun `영벡터는 어휘 결과 그대로`() {
+        val r = hybrid.search("legs using only a wall", null, null, "en") { FloatArray(768) }
+        assertFalse(r.semantic)
+        assertTrue(r.degraded)
+    }
+
+    // ── 이상한 입력 ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `이상한 질의에도 예외 없이 어휘 결과를 포함한 중복 없는 목록을 준다`() {
+        val weird = listOf(
+            "😀😀😀", "!!!???", "   ", "\u0000\u0001 squat", "a".repeat(5000), "스쿼트 ".repeat(100), "ｓｑｕａｔ　ｗｉｔｈ　ｔｈｅ　ｂａｒ",
+            "\uD83D", "ㅋㅋㅋㅋㅋ", "123 456 789", "-- DROP TABLE exercises; --", "<script>alert(1)</script> chest workout please", "胸" + "の".repeat(200)
+        )
+        for (q in weird) {
+            val lexical = engine.search(q, null, null, "en").map { it.doc.id }
+            val r = hybrid.search(q, null, null, "en") { like("pigeon-pose") }
+            val ids = r.hits.map { it.doc.id }
+            assertEquals(ids.size, ids.toSet().size, q.take(20))
+            assertTrue(ids.containsAll(lexical), q.take(20))
+        }
+    }
+
+    @Test
+    fun `질의 벡터가 NaN 이면 어휘 결과 그대로`() {
+        val q = "legs using only a wall"
+        val lexical = engine.search(q, null, null, "en").map { it.doc.id }
+        val nan = FloatArray(768) { Float.NaN }
+        val r = hybrid.search(q, null, null, "en") { nan }
+        assertEquals(lexical, r.hits.map { it.doc.id })
+        assertFalse(r.semantic)
+        assertTrue(r.degraded)
+    }
+
     // ── 합성 문서로 융합 순서를 정확히 고정 ──────────────────────────────────────────────────
 
     private fun d(id: Long, slug: String, en: String, equipment: Equipment = Equipment.BODYWEIGHT, category: ExerciseCategory = ExerciseCategory.LEGS) = ExerciseSearchDoc(
@@ -362,3 +429,4 @@ class HybridSearchTest {
         assertTrue(r.hits.isNotEmpty())
     }
 }
+

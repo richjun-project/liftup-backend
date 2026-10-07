@@ -40,8 +40,12 @@ class HybridSearch(
         val minWords: Int = 3,
         /** 공백 없이 쓴 한·일·중 문장을 자연어로 볼 최소 글자 수 */
         val minCjkLetters: Int = 8,
-        /** 어휘 결과가 비었을 때, 의미 1위 유사도가 이 값보다 낮으면 의미 결과도 버린다(운동과 무관한 질의에 억지 결과를 주지 않는다) */
-        val emptyLexicalMinSimilarity: Double = 0.0,
+        /**
+         * 어휘 결과가 비었을 때, 의미 1위 유사도가 이 값보다 낮으면 의미 결과도 버린다(운동과 무관한 질의에 억지 결과를 주지 않고 0건 대안 경로로 보낸다).
+         * 측정: gemini-embedding-001 에서 운동과 무관한 질의("asdfghjkl", "pizza recipe", "1234567" …)의 1위 코사인은 0.52~0.62,
+         * 어휘가 못 찾았지만 정말 운동을 묻는 자연어 질의의 1위는 0.65 이상이었다.
+         */
+        val emptyLexicalMinSimilarity: Double = 0.63,
         /** 부상 조건이 풀려 있으면 어휘 순위가 의미 검색이 모르는 정보(관절별 권장·주의 동작)를 담고 있어 가중치를 높인다 */
         val injuryLexicalBoost: Double = 2.0
     )
@@ -68,7 +72,7 @@ class HybridSearch(
         if (!lex.complete) return Result(lex.hits, false, false)
         val constraint = engine.semanticConstraint(query, category, equipments) ?: return Result(lex.hits, true, false)
         if (!needsSemantic(query.orEmpty(), lex.hits, constraint)) return Result(lex.hits, true, false)
-        val qv = queryVector()?.takeIf { it.size == vectors.dim } ?: return Result(lex.hits, true, semantic = false, degraded = true)
+        val qv = queryVector()?.let { unitVector(it) } ?: return Result(lex.hits, true, semantic = false, degraded = true)
         val fused = fuse(lex.hits, constraint, qv) ?: return Result(lex.hits, true, false)
         return Result(fused, true, true)
     }
@@ -133,6 +137,16 @@ class HybridSearch(
         var tail = 0
         for (h in lexical) if (seen.add(h.doc.id)) out.add(ExerciseSearchHit(h.doc, floor - (++tail) * 1e-6))
         return out
+    }
+
+    /** 질의 벡터를 점검하고 단위 길이로 맞춘다 — 차원이 다르거나 NaN·무한대·영벡터면 null(의미 검색을 건너뛴다) */
+    private fun unitVector(v: FloatArray): FloatArray? {
+        if (v.size != vectors.dim) return null
+        var n = 0.0
+        for (x in v) { if (!x.isFinite()) return null; n += x.toDouble() * x }
+        if (n <= 1e-12) return null
+        val norm = Math.sqrt(n)
+        return if (Math.abs(norm - 1.0) < 1e-4) v else FloatArray(v.size) { (v[it] / norm).toFloat() }
     }
 
     companion object {

@@ -108,11 +108,15 @@ class QueryEmbedder(
     companion object {
         const val DIM = 768
         private const val MAX_BACKOFF_SHIFT = 4
+        private const val MAX_RAW_CHARS = 1000
+        private const val MAX_KEY_CHARS = 400
+        private val WHITESPACE = Regex("\\s+")
 
         /** 캐시·전송 기준 질의: NFKC·소문자·공백 정리. 비면 null */
         fun cacheKey(query: String): String? {
-            val k = Normalizer.normalize(query, Normalizer.Form.NFKC).lowercase().replace(Regex("\\s+"), " ").trim()
-            return k.ifEmpty { null }?.take(400)
+            // 호출자가 이미 160자로 줄여 오지만, 이 함수만 불려도 비용이 일정하도록 정규화 전에 한 번 더 자른다
+            val k = Normalizer.normalize(query.take(MAX_RAW_CHARS), Normalizer.Form.NFKC).lowercase().replace(WHITESPACE, " ").trim()
+            return k.ifEmpty { null }?.take(MAX_KEY_CHARS)
         }
 
         fun normalize(v: FloatArray): FloatArray {
