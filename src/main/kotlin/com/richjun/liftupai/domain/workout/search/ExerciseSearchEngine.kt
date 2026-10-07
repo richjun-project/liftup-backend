@@ -4,11 +4,14 @@ import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.MuscleGroup
 import com.richjun.liftupai.domain.workout.entity.RecommendationTier
+import com.richjun.liftupai.domain.workout.search.engine.DescriptionIndex
+import com.richjun.liftupai.domain.workout.search.engine.DescriptionLexicon
 import com.richjun.liftupai.domain.workout.search.engine.IDoc
 import com.richjun.liftupai.domain.workout.search.engine.Mode
 import com.richjun.liftupai.domain.workout.search.engine.NameKey
 import com.richjun.liftupai.domain.workout.search.engine.QueryAnalyzer
 import com.richjun.liftupai.domain.workout.search.engine.QueryLexicon
+import com.richjun.liftupai.domain.workout.search.engine.QueryLexicon.Role
 import com.richjun.liftupai.domain.workout.search.engine.QueryPlan
 import com.richjun.liftupai.domain.workout.search.engine.SigIndex
 import com.richjun.liftupai.domain.workout.search.engine.SigKey
@@ -27,7 +30,9 @@ data class ExerciseSearchDoc(
     val movementPattern: String?,
     val tier: RecommendationTier,
     val popularity: Int,
-    val difficulty: Int
+    val difficulty: Int,
+    /** locale → 동작 설명문(instructions + tips). 이름으로 못 찾는 묘사 질의("うつぶせで膝を曲げる")를 위한 보조 재현율 계층에만 쓰인다. */
+    val descriptions: Map<String, String> = emptyMap()
 )
 
 data class ExerciseSearchHit(val doc: ExerciseSearchDoc, val score: Double)
@@ -41,6 +46,9 @@ data class ExerciseSearchHit(val doc: ExerciseSearchDoc, val score: Double)
  * 2. 의도 질의(이름이 아니라 부위/목표를 물은 질의)는 이름 속 "신호 표기"로 운동을 가려 랭킹한다.
  * 3. 이름 질의는 매칭 품질 band(정확 > 단어 경계 토큰 > 부분 토큰 > 일부 토큰 > 표기 변이 > 퍼지)
  *    + 티어/인기도 타이브레이커로 랭킹한다. 오타는 어휘 단위로 먼저 교정한다.
+ * 4. 이름 근거가 없거나 약한 질의, 또는 동작을 풀어 쓴 질의("うつぶせで膝を曲げるマシン")는 운동의 동작 설명문
+ *    (instructions·tips, ExerciseSearchDoc.descriptions)을 BM25 로 검색해 이름보다 낮은 대역에서 섞는다(engine/DescriptionIndex).
+ *    설명문이 없는 문서 집합에서는 이 계층이 아무 일도 하지 않는다.
  * 브라우즈(질의 없음)는 티어 → 인기도 → 로컬라이즈 이름 순.
  *
  * 입력은 상한(160자·14단어)으로 묶고, 같은 질의는 작은 LRU 에 캐시한다. 그래서 어떤 입력도 비용이 일정 범위 안이다.
@@ -110,6 +118,9 @@ class ExerciseSearchEngine(
     }
 
     private val sigIndex = SigIndex(indexed)
+
+    /** 설명문 색인 — 설명문이 없는 문서 집합(테스트·빈 카탈로그)에서는 비어 있어 아무 일도 하지 않는다 */
+    private val descIndex = DescriptionIndex(indexed)
     private val indexById: Map<Long, IDoc> = indexed.associateBy { it.doc.id }
 
     /** 모든 이름의 strict 키 — 질의가 이름과 정확히 같은지 O(1) 로 본다 */
@@ -211,6 +222,13 @@ class ExerciseSearchEngine(
             (if (p.mode == Mode.NAME && p.seeds.isNotEmpty()) "\n   variants=" + buildVariants(p.seeds).first.joinToString(" ") { "${it.words}@${it.penalty}" } else "")
     }
 
+    /** 설명문 검색 결과(진단용) */
+    internal fun explainDesc(query: String): String {
+        val a = analyzer.analyze(SearchText.tokenize(query))
+        val text = descQueryText(a)
+        return "desc[$text] " + descIndex.search(text, null, 8).joinToString(" ") { "${indexed[it.index].doc.slug}(${"%.2f".format(it.coverage)}/${"%.1f".format(it.bm25)})" }
+    }
+
     private fun compute(
         raw: String,
         norm: String,
@@ -228,15 +246,131 @@ class ExerciseSearchEngine(
         if (tok.words.isEmpty()) return emptyList()
 
         // 질의가 어떤 운동의 이름(어느 언어든)과 정확히 같으면 해석할 것 없이 그 이름으로 찾는다 ("AB 턱", "Barbell good morning")
-        val plan = if (tok.strict in exactNames) QueryPlan.nameOnly(tok.words) else analyzer.analyze(tok).plan
+        val analysis = if (tok.strict in exactNames) null else analyzer.analyze(tok)
+        val plan = analysis?.plan ?: QueryPlan.nameOnly(tok.words)
         var result = when (plan.mode) {
             Mode.BROWSE -> browseSorted(excludeFrom(pool, plan), locale)
             Mode.INTENT -> searchIntent(plan, pool)
             Mode.NAME -> searchName(plan, pool, budget)
         }
         // 이름으로는 못 찾았는데 부위·장비를 알아들었다면 그 의도로 보여 준다
-        if (result.isEmpty() && plan.mode == Mode.NAME && plan.hasIntentSignal) result = searchIntent(plan, pool)
+        var weak = false
+        if (result.isEmpty() && plan.mode == Mode.NAME && plan.hasIntentSignal) { result = searchIntent(plan, pool); weak = true }
+        if (analysis != null && descIndex.indexed > 0 && plan.mode != Mode.BROWSE) result = withDescriptions(analysis, plan, pool, result, weak)
         return result
+    }
+
+    // ── 설명문 검색(동작 묘사 질의) ───────────────────────────────────────────────────────────
+
+    /** 질의에서 군더더기·부정·수치 표현을 뺀 설명문 검색용 텍스트(뺀 자리는 공백이라 n-gram 이 이어 붙지 않는다) */
+    private fun descQueryText(a: QueryAnalyzer.Analysis, dropConcepts: Boolean = false): String {
+        val text = a.tok.strict
+        val drop = BooleanArray(text.length)
+        for (sg in a.segs) {
+            val t = sg.terms ?: continue
+            if (dropConcepts && sg.e - sg.s >= 2 && t.any { it.role == Role.CONCEPT }) { for (p in sg.s until sg.e) drop[p] = true; continue }
+            // 장비·장소 표기("マシン", "덤벨", "집에서")는 필터로 따로 쓰므로 설명문 질의에서는 뺀다 — 안 그러면 설명문에 "ケーブルマシン"이 나오는 케이블 운동이 걸려든다
+            if (t.all { it.role == Role.EQUIP || it.role == Role.HOME }) { for (p in sg.s until sg.e) drop[p] = true; continue }
+            if (sg.isNum || t.all { it.role == Role.UNIT || it.role == Role.NEG || it.role == Role.CONJ || it.role == Role.LEVEL || (it.role == Role.NOISE && !it.particle) }) {
+                // "lift"·"持ち上げる" 처럼 이름 검색에서는 군더더기지만 동작 묘사에서는 핵심인 말은 남긴다
+                if (!sg.isNum && t.any { it.role == Role.NOISE } && t.none { it.role == Role.NEG || it.role == Role.UNIT }) {
+                    val keep = HashSet<String>().also { DescriptionLexicon.conceptsIn(DescriptionLexicon.canon(SearchText.fold(text.substring(sg.s, sg.e))), it) }
+                    if (keep.any { it in DescriptionLexicon.MOTION_CONCEPTS }) continue
+                }
+                for (p in sg.s until sg.e) drop[p] = true
+            }
+        }
+        val sb = StringBuilder()
+        for ((wi, w) in a.tok.words.withIndex()) {
+            val st = a.tok.starts[wi]
+            sb.append(' ')
+            for (k in w.indices) if (drop[st + k]) sb.append(' ') else sb.append(w[k])
+        }
+        return sb.toString()
+    }
+
+    /** 설명문으로 찾을 만한 길이의 질의인가 — 내용어(라틴 단어·한글·가나·한자 덩어리)가 둘 이상이거나 CJK 글자가 5자 이상 */
+    private fun descriptive(text: String): Boolean {
+        var units = 0
+        var cjkLetters = 0
+        val sb = StringBuilder()
+        var latin = false
+        fun flush() {
+            if (sb.isNotEmpty()) {
+                // stretch·machine 같은 일반어만으로는 묘사가 아니다("frog stretch" 의 stretch)
+                if (!latin || SearchText.stem(sb.toString()) !in QueryLexicon.fuzzyIgnorable) units++
+                sb.setLength(0)
+            }
+        }
+        for (c in SearchText.fold(text)) {
+            val isLatin = c.code < 0x250 && c.isLetter()
+            val isCjk = c.code >= 0x250 && c.isLetter()
+            if (isLatin || isCjk) {
+                if (sb.isNotEmpty() && latin != isLatin) flush()
+                latin = isLatin
+                sb.append(c)
+                if (isCjk) cjkLetters++
+            } else flush()
+        }
+        flush()
+        return units >= 2 || cjkLetters >= 5
+    }
+
+    /**
+     * 이름 검색이 비었거나 약할 때, 또는 동작을 풀어 쓴 의도 질의일 때 설명문(instructions·tips) 검색을 섞는다.
+     * 이름만으로 찾은 후보는 설명문이 새로 끼워 넣는 후보보다 앞선다(설명문만으로 찾은 운동은 BAND_INTENT 근처에서 시작해 이름 일치 밴드를 넘지 못한다).
+     * 이름 근거가 이미 확실하면(토큰 일치 이상) 설명문은 아무 일도 하지 않는다.
+     */
+    private fun withDescriptions(a: QueryAnalyzer.Analysis, plan: QueryPlan, pool: List<IDoc>, result: List<ExerciseSearchHit>, weak: Boolean): List<ExerciseSearchHit> {
+        val topScore = result.firstOrNull()?.score ?: 0.0
+        val text = descQueryText(a)
+        // 동작 단서는 부위·목표 개념 표기("内ももの引き締め")를 뺀 나머지 말에서 찾는다 — 개념어 속의 動詞 비슷한 글자가 묘사로 오해되지 않게
+        val verbText = descQueryText(a, dropConcepts = true)
+        val concepts = HashSet<String>().also { DescriptionLexicon.conceptsIn(DescriptionLexicon.canon(SearchText.fold(verbText)), it) }
+        // 한·일어는 동사 하나("回す")로도 동작 묘사지만, 영어의 push·lower·raise 는 이름에도 흔해서 둘 이상 겹칠 때만 묘사로 본다
+        val motionCount = concepts.count { it in DescriptionLexicon.MOTION_CONCEPTS }
+        val cjk = verbText.any { it.code >= 0x250 && it.isLetter() }
+        val motion = motionCount >= (if (cjk) 1 else 2)
+        // 이름 근거가 약한가: 비었거나, 이름으로는 못 찾아 의도 폴백으로 갔거나, 부분 일치뿐이다. 동작 묘사 질의는 한 단계 엄격하다(side·arm 같은 흔한 단어가 부분 일치로 걸리기 쉽다).
+        var nameWeak = result.isEmpty() || weak || topScore < BAND_PARTIAL || (motion && plan.mode == Mode.NAME && topScore < BAND_TOKEN_SUB)
+        // 한 단어짜리 질의("squat")는 묘사가 아니라 이름이다 — 필터(카테고리·장비)로 0건이 됐다고 설명문에서 억지로 찾지 않는다(대안은 호출자가 낸다)
+        if (!motion && !descriptive(text)) return result
+        // 필터가 걸린 채 이름으로 0건이면 "그 필터 안에는 그런 운동이 없다"는 뜻이다 — 묘사 질의가 아닌 한 설명문으로 채우지 않는다
+        if (!motion && result.isEmpty() && pool.size < indexed.size) return result
+        // 스트레칭 의도("二の腕を伸ばす")의 伸ばす 나 부정("ジャンプしない")의 대상은 동작 묘사가 아니다
+        val intentMotion = plan.mode == Mode.INTENT && motion && !plan.stretch && plan.excludeKeys.isEmpty() && plan.excludeConcepts.isEmpty()
+        if (!nameWeak && !intentMotion) return result
+        // 장비를 말한 질의("…マシン", "…머신")는 설명문 후보도 그 장비로 좁힌다(그 장비의 운동이 없으면 좁히지 않는다)
+        val equipPool = if (plan.equipments.isEmpty()) pool else pool.filter { it.doc.equipment in plan.equipments }.ifEmpty { pool }
+        val allowed = BitSet(indexed.size).also { b -> equipPool.forEach { b.set(it.index) } }
+        val ex = if (plan.hasExclusions) exclusionSet(plan) else null
+        // 이름 일치가 조금이라도 있는 질의("frog stretch")는 설명문이 그 위에 쏟아져 들어오지 않게 더 엄격하게(coverage 높게) 본다
+        val minCoverage = if (result.isNotEmpty() && !weak && !motion) DESC_MIN_COVERAGE_WITH_NAME else DESC_MIN_COVERAGE
+        val hits = descIndex.search(text, allowed).filter { it.coverage >= minCoverage }
+            .filter { h -> ex == null || !isExcluded(indexed[h.index], plan, ex) }
+        if (hits.isEmpty()) return result
+        // 동작 묘사로 물었고 설명문이 분명하게 가리키는 곳이 있으면(coverage 높음) 부위 의도 후보 중 설명문에 안 걸린 것은 뒤로 — 부위 한 단어가 묘사 전체를 덮지 않게
+        if (intentMotion && hits.first().coverage >= STRONG_DESC_COVERAGE) nameWeak = true
+        val out = HashMap<Long, ExerciseSearchHit>()
+        for (h in result) out[h.doc.id] = h
+        val best = hits.first().bm25.coerceAtLeast(1e-9)
+        val seen = HashSet<Long>()
+        // 부위가 아니라 자세·사물("서서", "의자")만 알아들은 의도 질의는 설명문이 주도한다 — 그 개념에 맞는 후보를 강하게 지키지 않는다
+        val posOnly = intentMotion && plan.concepts.isNotEmpty() && plan.concepts.all { it.id.startsWith("pos-") || it.id.startsWith("obj:") }
+        val newBase = if (posOnly) BAND_INTENT + 20.0 else BAND_INTENT
+        for (h in hits) {
+            val d = indexed[h.index]
+            val rel = 0.5 * h.coverage + 0.5 * (h.bm25 / best)
+            val cur = out[d.doc.id]
+            seen.add(d.doc.id)
+            out[d.doc.id] = ExerciseSearchHit(d.doc, (cur?.score ?: (newBase + d.rank * 0.3)) + DESC_WEIGHT * rel)
+        }
+        // 이름 근거가 약한데 설명문이 가리키는 곳이 따로 있으면, 설명문에 안 걸린 약한 후보는 뒤로
+        // (이름 부분 일치 이상으로 찾은 후보는 이름 질의의 근거라 깎지 않는다 — 의도·폴백·퍼지로 찾은 것만)
+        if (nameWeak) for (h in result) if (h.doc.id !in seen && (plan.mode == Mode.INTENT || weak || h.score < BAND_PARTIAL)) {
+            out[h.doc.id] = ExerciseSearchHit(h.doc, h.score - (if (posOnly) WEAK_DEMOTE * 2 else WEAK_DEMOTE))
+        }
+        return rankSorted(out.values.toList())
     }
 
     // ── 풀/브라우즈 ──────────────────────────────────────────────────────────────────────────
@@ -451,7 +585,7 @@ class ExerciseSearchEngine(
             if (similar.isNotEmpty()) return rankSorted(scoreIntent(plan, similar, emptyList(), soft, prefer, fits))
         }
         var out = scoreIntent(plan, cands, evals, soft, prefer)
-        if (plan.combineAll && out.size < COMBINE_MIN_HITS) {
+        if (plan.combineAll && out.size < COMBINE_MIN_HITS && plan.concepts.none { it.id == "foamroll" }) {
             // 두 조건에 모두 맞는 운동이 적으면("가슴 웜업") 한쪽만 맞는 운동으로 채우되, 둘 다 맞는 것을 위에 둔다
             val both = out.associateBy { it.doc.id }
             out = scoreIntent(plan, cands, evals, soft, prefer, requireAll = false)
@@ -487,17 +621,23 @@ class ExerciseSearchEngine(
         val refDocs = indexed.filter { ref.get(it.index) }
         if (refDocs.isEmpty()) return null
         val category = refDocs.groupingBy { it.doc.category }.eachCount().maxByOrNull { it.value }!!.key
-        val patterns = refDocs.mapNotNull { it.doc.movementPattern }.filter { it != "OTHER" }.toSet()
+        val patterns = refDocs.mapNotNull { it.doc.movementPattern }.filter { it != "OTHER" }.map { patternFamily(it) }.toSet()
         val muscles = refDocs.flatMap { it.doc.muscleGroups }.groupingBy { it }.eachCount().filter { it.value * 2 >= refDocs.size }.keys
         val out = HashMap<Int, Double>()
         for (d in indexed) {
             if (ref.get(d.index) || d.doc.category != category || d.isStretch) continue
-            val patternHit = if (d.doc.movementPattern in patterns) 1.0 else 0.0
+            val patternHit = if (d.doc.movementPattern?.let { patternFamily(it) } in patterns) 1.0 else 0.0
             val union = (d.doc.muscleGroups + muscles).size
             val jaccard = if (union == 0) 0.0 else d.doc.muscleGroups.count { it in muscles }.toDouble() / union
             out[d.index] = 0.3 + 0.35 * patternHit + 0.35 * jaccard
         }
         return out
+    }
+
+    /** 장비 접미사를 뗀 동작 계열(HORIZONTAL_PRESS_BARBELL → HORIZONTAL_PRESS) — 바벨 프레스의 대안으로 머신·덤벨 프레스도 같은 계열이다 */
+    private fun patternFamily(p: String): String {
+        for (suffix in PATTERN_EQUIPMENT_SUFFIXES) if (p.endsWith(suffix)) return p.removeSuffix(suffix)
+        return p
     }
 
     private fun scoreIntent(plan: QueryPlan, cands: List<IDoc>, evals: List<ConceptEval>, soft: BitSet, prefer: BitSet, fits: Map<Int, Double>? = null, requireAll: Boolean = plan.combineAll): List<ExerciseSearchHit> {
@@ -511,12 +651,22 @@ class ExerciseSearchEngine(
                     var sum = 0.0
                     for (e in evals) { val f = e.fit(d); if (f < 0) { sum = -1.0; break }; sum += f }
                     if (sum >= 0) best = sum / evals.size
-                } else for (e in evals) { val f = e.fit(d); if (f > best) best = f }
+                } else {
+                    // 자세 개념("서서", "누워서")은 부위·목표 개념에 대한 가산점이지 후보를 대신하지 않는다 — "서서 하는 유산소" 가 이름에 standing 이 든 운동 전체로 번지지 않게
+                    val mains = evals.filter { !it.c.id.startsWith("pos-") }
+                    if (mains.isNotEmpty() && mains.size < evals.size) {
+                        for (e in mains) { val f = e.fit(d); if (f > best) best = f }
+                        if (best >= 0) {
+                            val pf = evals.filter { it.c.id.startsWith("pos-") }.maxOf { it.fit(d) }
+                            if (pf > 0) best += POSTURE_BONUS * pf
+                        }
+                    } else for (e in evals) { val f = e.fit(d); if (f > best) best = f }
+                }
                 if (best < 0) continue
                 fit = best
             }
             var score = BAND_INTENT + 25.0 * fit + d.rank - 0.5 * (d.wordCount - 3).coerceIn(0, 4)
-            if (plan.home && plan.equipments.isEmpty()) {
+            if ((plan.home || plan.concepts.any { it.id.startsWith("obj:") }) && plan.equipments.isEmpty()) {
                 score += HOME_PREF_WEIGHT * (ExerciseSearchLexicon.homeEquipmentPreference[d.doc.equipment] ?: 0.0)
             }
             score += levelAdjust(d.doc, plan.level) + injuryAdjust(d, plan, soft, prefer)
@@ -554,6 +704,8 @@ class ExerciseSearchEngine(
         val queryRegions = BitSet().also { b -> variants.forEach { b.or(it.regions) } }
         val equipPref = HashSet(equipPref0)
         if (plan.highReps) equipPref.add(Equipment.BODYWEIGHT)
+        // 의자·벽·평행봉 같은 생활 사물을 말했으면 그 사물로 하는 맨몸 운동이 먼저다(케이블·머신 이름에 chair 가 들어 있어도 뒤로)
+        if (seeds.first().any { it in HOME_OBJECT_WORDS }) { equipPref.add(Equipment.BODYWEIGHT); equipPref.add(Equipment.OTHER) }
         val muscleHints = muscleHintsOf(seeds.first())
         val queryStrict = flat
         val unwantedModifiers = ExerciseSearchLexicon.modifierGroups.filter { g -> g.none { queryStrict.contains(it) } }
@@ -998,6 +1150,13 @@ class ExerciseSearchEngine(
         const val BAND_INTENT = 100.0
         const val BAND_FUZZY = 90.0
         const val BAND_BIGRAM = 50.0
+        /** 설명문 검색으로만 찾은 운동의 기준 점수 — 퍼지(90)와 부분 일치(100) 사이 */
+        const val BAND_DESC = 96.0
+        private const val DESC_WEIGHT = 50.0
+        private const val WEAK_DEMOTE = 25.0
+        private const val DESC_MIN_COVERAGE = 0.45
+        private const val DESC_MIN_COVERAGE_WITH_NAME = 0.62
+        private const val STRONG_DESC_COVERAGE = 0.6
 
         private const val COVERAGE_WEIGHT = 1.0
         private const val SIMPLICITY_WEIGHT = 0.15
@@ -1010,6 +1169,10 @@ class ExerciseSearchEngine(
         private const val OCC_EXACT = 3
         private const val EXACT_WORD_BONUS = 4.0
 
+        private val PATTERN_EQUIPMENT_SUFFIXES = listOf("_BARBELL", "_DUMBBELL", "_MACHINE", "_CABLE")
+        private val HOME_OBJECT_WORDS: Set<String> = listOf("椅子", "いす", "イス", "의자", "chair", "壁", "かべ", "벽", "wall", "平行棒", "평행봉", "ベッド", "침대", "bed", "ソファ", "소파", "sofa", "couch", "階段", "계단", "stairs", "table", "테이블", "机", "책상", "desk")
+            .map { SearchText.strictKey(it) }.toSet()
+        private const val POSTURE_BONUS = 0.15
         private const val ROLLING_FACTOR = 0.5
         private const val COMBINE_MIN_HITS = 8
         private const val COMBINE_BOTH_BONUS = 12.0
@@ -1042,7 +1205,7 @@ class ExerciseSearchEngine(
         private const val MAX_COMBO_WORDS = 6
         private const val MAX_SYN_RUN = 4
         private const val CACHE_SIZE = 512
-        private val WARM_QUERIES = listOf("スクワット", "벤치프레스", "bench press", "背中を鍛えたい", "무릎 안 좋을 때 하체운동", "bad knees leg workout", "without deadlifts", "덤벨 컬", "유산소", "ヒップアップ")
+        private val WARM_QUERIES = listOf("スクワット", "벤치프레스", "bench press", "背中を鍛えたい", "무릎 안 좋을 때 하체운동", "bad knees leg workout", "without deadlifts", "덤벨 컬", "유산소", "ヒップアップ", "うつぶせで膝を曲げるマシン", "tight hamstrings", "스쿼트 대신", "raise both arms out to the sides")
         /** 한 질의의 후보 점수 계산 예산 — 넘으면 비싼 보강 단계(퍼지·바이그램)를 건너뛴다 */
         const val DEFAULT_BUDGET_NANOS = 40_000_000L
     }

@@ -47,6 +47,10 @@ object SearchText {
         return if (n.length > MAX_QUERY_CHARS) n.substring(0, MAX_QUERY_CHARS) else n
     }
 
+    /** 길이 상한 없이 NFKC + 소문자 + 가타카나→히라가나 — 긴 설명문 색인용(질의는 [normalize] 의 상한을 따른다) */
+    fun foldLong(raw: String): String =
+        foldNormalized(collapseRuns(Normalizer.normalize(raw, Normalizer.Form.NFKC).lowercase(Locale.ROOT).filter { it != '\'' && it != '\u2019' && it != '`' }))
+
     /** 같은 글자가 3번 이상 이어진 늘임("스쿼트트트트", "squaaat", "ほーーー")을 줄인다: 라틴은 2개, 그 밖은 1개. 숫자는 그대로. */
     private fun collapseRuns(s: String): String {
         if (s.length < 3) return s

@@ -35,7 +35,9 @@ import java.util.concurrent.atomic.AtomicLong
 class ExerciseSearchIndexService(
     private val exerciseRepository: ExerciseRepository,
     private val exerciseTranslationRepository: ExerciseTranslationRepository,
-    private val synonymRepository: SearchSynonymRepository? = null
+    private val synonymRepository: SearchSynonymRepository? = null,
+    /** 동작 설명문(instructions·tips) 투영 — 없거나 읽기에 실패하면 설명문 검색 계층만 꺼지고 이름 검색은 그대로다 */
+    private val descriptionRepository: ExerciseDescriptionRepository? = null
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -329,7 +331,8 @@ class ExerciseSearchIndexService(
             val id = (row[0] as Number).toLong()
             namesByExercise.getOrPut(id) { linkedMapOf() }[(row[1] as String).lowercase()] = row[2] as String
         }
-        val docs = exercises.map { toDoc(it, namesByExercise[it.id].orEmpty()) }
+        val descriptions = loadDescriptions()
+        val docs = exercises.map { toDoc(it, namesByExercise[it.id].orEmpty(), descriptions[it.id].orEmpty()) }
         buildCount.incrementAndGet()
         logger.info("Exercise search index built: {} docs in {}ms", docs.size, System.currentTimeMillis() - started)
         return newEngine(docs, synonymLines)
@@ -339,7 +342,25 @@ class ExerciseSearchIndexService(
     private fun newEngine(docs: List<ExerciseSearchDoc>, synonymLines: List<String>): ExerciseSearchEngine =
         ExerciseSearchEngine(docs, synonymLines, engineBudgetNanos)
 
-    private fun toDoc(e: Exercise, translated: Map<String, String>): ExerciseSearchDoc {
+    /** 운동별 로케일 → 설명문(instructions + tips). 읽기에 실패하면 빈 맵 — 설명문은 보조 계층이라 검색 전체를 막지 않는다. */
+    private fun loadDescriptions(): Map<Long, Map<String, String>> {
+        val repo = descriptionRepository ?: return emptyMap()
+        return try {
+            val out = HashMap<Long, MutableMap<String, String>>()
+            repo.findAllDescriptionRows().forEach { row ->
+                val id = (row[0] as Number).toLong()
+                val locale = (row[1] as String).lowercase()
+                val text = listOfNotNull(row[2] as? String, row[3] as? String).filter { it.isNotBlank() }.joinToString("\n")
+                if (text.isNotEmpty()) out.getOrPut(id) { linkedMapOf() }[locale] = text
+            }
+            out
+        } catch (e: Exception) {
+            logger.warn("Exercise description rows could not be loaded, description search is off: {}", e.message)
+            emptyMap()
+        }
+    }
+
+    private fun toDoc(e: Exercise, translated: Map<String, String>, descriptions: Map<String, String> = emptyMap()): ExerciseSearchDoc {
         val names = LinkedHashMap<String, String>()
         names.putAll(translated)
         // 번역이 없는 로케일을 대비해 기본 이름을 en(없으면 기본 로케일)으로 보존
@@ -354,7 +375,8 @@ class ExerciseSearchIndexService(
             movementPattern = e.movementPattern,
             tier = e.recommendationTier,
             popularity = e.popularity,
-            difficulty = e.difficulty
+            difficulty = e.difficulty,
+            descriptions = descriptions
         )
     }
 
@@ -377,7 +399,7 @@ class ExerciseSearchIndexService(
 
         private val WHITESPACE = Regex("\\s+")
         private val WARM_QUERIES = listOf(
-            "squat", "스쿼트", "ベンチプレス", "bench press", "하체", "胸", "덤벨 가슴", "lat pulldown", "ラットプルダウン", "plank"
+            "squat", "스쿼트", "ベンチプレス", "bench press", "하체", "胸", "덤벨 가슴", "lat pulldown", "ラットプルダウン", "plank", "うつぶせで膝を曲げるマシン", "허벅지 뒤쪽이 땡겨요", "スクワットの代わり"
         )
 
         /** 제어문자 제거·공백 정리·반복 단어 제거·길이(160자)와 단어 수(14개) 제한. 비면 null(브라우즈) */

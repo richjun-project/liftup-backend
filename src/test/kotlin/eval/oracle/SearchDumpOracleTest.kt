@@ -38,6 +38,7 @@ class SearchDumpOracleTest {
                 tier = RecommendationTier.valueOf(n["recommendationTier"].asText()),
                 popularity = n["popularity"]?.asInt(50) ?: 50,
                 difficulty = n["difficulty"]?.asInt(50) ?: 50,
+                descriptions = n["translations"].associate { it["locale"].asText() to listOf(it["instructions"], it["tips"]).mapNotNull { x -> x?.takeIf { v -> !v.isNull }?.asText() }.joinToString("\n") },
             )
         }
         val cases = mapper.readTree(File(input))["cases"]
