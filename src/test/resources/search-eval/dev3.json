@@ -1,0 +1,6210 @@
+{
+ "version": 1,
+ "cases": [
+  {
+   "id": "fh-ja-001",
+   "locale": "ja",
+   "query": "ケーブルフライ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-middle-fly",
+    "cable-low-fly",
+    "flat-bench-cable-fly",
+    "incline-bench-cable-fly",
+    "cable-lying-fly"
+   ],
+   "tags": [
+    "exact",
+    "cable"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-002",
+   "locale": "ja",
+   "query": "チェストプレス",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "chest-press-machine",
+    "machine-chest-press-incline",
+    "landmine-chest-press",
+    "cable-bench-press"
+   ],
+   "tags": [
+    "exact",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-003",
+   "locale": "ja",
+   "query": "スモウデッド",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-sumo-deadlift",
+    "barbell-sumo-romanian-deadlift",
+    "kettlebell-sumo-deadlift"
+   ],
+   "tags": [
+    "partial",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-004",
+   "locale": "ja",
+   "query": "けんすい",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "pull-up-normal-grip",
+    "chin-up",
+    "pull-up-wide-grip",
+    "pull-up-neutral-grip",
+    "assisted-pull-up",
+    "assisted-pull-up-wide-grip",
+    "inverted-row"
+   ],
+   "tags": [
+    "hiragana"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-005",
+   "locale": "ja",
+   "query": "逆手懸垂",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "chin-up",
+    "chin-up-reverse-close-grip",
+    "chin-up-reverse-wide-grip",
+    "reverse-grip-lat-pull-down",
+    "assisted-chin-up-normal-width-reverse-grip"
+   ],
+   "tags": [
+    "kanji",
+    "variant"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-006",
+   "locale": "ja",
+   "query": "アシスト懸垂",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "assisted-pull-up",
+    "assisted-pull-up-wide-grip",
+    "assisted-pull-up-close-grip",
+    "assisted-chin-up-normal-width-reverse-grip"
+   ],
+   "tags": [
+    "machine",
+    "variant"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-007",
+   "locale": "ja",
+   "query": "ベントオーバーロウ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bent-over-row-pronated-grip",
+    "dumbbell-bent-over-row",
+    "dumbbell-single-arm-row",
+    "cable-seated-row",
+    "seated-row-machine",
+    "t-bar-row",
+    "t-bar-row-machine",
+    "cable-low-seated-row",
+    "inverted-row",
+    "barbell-pendlay-row",
+    "landmine-row"
+   ],
+   "tags": [
+    "variant-spelling"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-008",
+   "locale": "ja",
+   "query": "ワンハンドロー",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-single-arm-row",
+    "dumbbell-one-arm-row-rack-support"
+   ],
+   "tags": [
+    "slang",
+    "dumbbell"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-009",
+   "locale": "ja",
+   "query": "シーテッドロウ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "seated-row-machine",
+    "cable-seated-row",
+    "cable-low-seated-row"
+   ],
+   "tags": [
+    "exact",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-010",
+   "locale": "ja",
+   "query": "Tバーロー",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "t-bar-row",
+    "t-bar-row-machine"
+   ],
+   "top1": [
+    "t-bar-row",
+    "t-bar-row-machine"
+   ],
+   "tags": [
+    "staple-new",
+    "mixed-script"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-011",
+   "locale": "ja",
+   "query": "ティーバーロウ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "t-bar-row",
+    "t-bar-row-machine"
+   ],
+   "tags": [
+    "kana",
+    "staple-new"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-012",
+   "locale": "ja",
+   "query": "ミリタリープレス",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-standing-military-press",
+    "barbell-seated-overhead-press",
+    "seated-shoulder-press-barbell",
+    "barbell-standing-close-grip-military-press"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-013",
+   "locale": "ja",
+   "query": "アーノルドプレス",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "arnold-press-dumbbell",
+    "dumbbell-arnold-press-seated"
+   ],
+   "top1": [
+    "arnold-press-dumbbell",
+    "dumbbell-arnold-press-seated"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-014",
+   "locale": "ja",
+   "query": "サイレイ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lateral-raises-dumbbell",
+    "cable-lateral-raises",
+    "machine-lateral-raise",
+    "dumbbell-seated-lateral-raise",
+    "leaning-dumbbell-lateral-raise"
+   ],
+   "tags": [
+    "abbrev",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-015",
+   "locale": "ja",
+   "query": "リアレイズ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bent-over-rear-delt-fly-dumbbell",
+    "cable-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "dumbbell-reverse-fly",
+    "cable-reverse-fly",
+    "seated-dumbbell-rear-delt-fly",
+    "resistance-band-face-pull",
+    "dumbbell-rear-lateral-raise",
+    "barbell-rear-delt-raise"
+   ],
+   "tags": [
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-016",
+   "locale": "ja",
+   "query": "ケーブルフェイスプル",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-face-pull",
+    "resistance-band-face-pull",
+    "dumbbell-bent-over-face-pull",
+    "cable-rear-delt-fly",
+    "reverse-machine-fly"
+   ],
+   "tags": [
+    "exact",
+    "staple-new",
+    "cable"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-017",
+   "locale": "ja",
+   "query": "アームカール",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-curls",
+    "barbell-biceps-curl",
+    "biceps-curl-cable",
+    "dumbbell-hammer-curl",
+    "ez-barbell-curl",
+    "incline-dumbbell-curl",
+    "barbell-preacher-curl",
+    "dumbbell-seated-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "concentration-curls-dumbbell"
+   ],
+   "tags": [
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-018",
+   "locale": "ja",
+   "query": "プリチャーカール",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-preacher-curl",
+    "dumbbell-preacher-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "preacher-curl-ez-bar"
+   ],
+   "tags": [
+    "exact",
+    "spelling-variant"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-019",
+   "locale": "ja",
+   "query": "コンセントレーションカール",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "concentration-curls-dumbbell",
+    "dumbbell-standing-concentration-curl",
+    "barbell-standing-concentration-curl"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-020",
+   "locale": "ja",
+   "query": "トライセプスエクステンション",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pushdown",
+    "cable-triceps-rope-pushdown",
+    "cable-overhead-extension-rope",
+    "barbell-lying-triceps-skull-crusher",
+    "dumbbell-standing-triceps-extension",
+    "dumbbell-lying-triceps-extension",
+    "tricep-extension-machine",
+    "dumbbell-kickback",
+    "barbell-close-grip-bench-press",
+    "triceps-dip-machine",
+    "dumbbell-overhead-extension-seated",
+    "dumbbell-overhead-extension-standing"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-021",
+   "locale": "ja",
+   "query": "フレンチプレス",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-overhead-extension-seated",
+    "dumbbell-overhead-extension-standing",
+    "cable-overhead-extension-rope",
+    "dumbbell-standing-triceps-extension",
+    "barbell-lying-triceps-skull-crusher"
+   ],
+   "tags": [
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-022",
+   "locale": "ja",
+   "query": "プッシュダウン",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pushdown",
+    "cable-triceps-rope-pushdown",
+    "cable-reverse-grip-pushdown",
+    "cable-triceps-push-down-ez-bar-close-grip"
+   ],
+   "tags": [
+    "exact",
+    "cable"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-023",
+   "locale": "ja",
+   "query": "キックバック",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-kickback",
+    "dumbbell-one-arm-kickback",
+    "dumbbell-seated-kickback",
+    "cable-neutral-grip-kickback",
+    "tricep-cable-kickback-on-crossover-machine"
+   ],
+   "tags": [
+    "partial"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-024",
+   "locale": "ja",
+   "query": "リストカール",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "wrist-curl-barbell",
+    "wrist-curl-dumbbell",
+    "dumbbell-reverse-wrist-curl",
+    "cable-wrist-curl",
+    "wrist-extension-barbell",
+    "barbell-reverse-biceps-curl"
+   ],
+   "tags": [
+    "exact",
+    "forearm"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-025",
+   "locale": "ja",
+   "query": "スミススクワット",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "smith-machine-squat"
+   ],
+   "top1": [
+    "smith-machine-squat"
+   ],
+   "tags": [
+    "staple-new",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-026",
+   "locale": "ja",
+   "query": "スミスマシン",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "smith-machine-squat",
+    "smith-machine-bench-press",
+    "smith-machine-shoulder-press",
+    "smith-machine-calf-raise",
+    "smith-machine-press-incline",
+    "smith-machine-press-flat",
+    "inverted-rows-on-smith-machine"
+   ],
+   "tags": [
+    "machine",
+    "partial"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-027",
+   "locale": "ja",
+   "query": "ゴブレットスクワット",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-goblet-squat",
+    "goblet-kettlebell-squats",
+    "dumbbell-goblet-split-squat"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-028",
+   "locale": "ja",
+   "query": "フロントスクワット",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-front-squats",
+    "dumbbell-front-squat",
+    "barbell-clean-grip-front-squat"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-029",
+   "locale": "ja",
+   "query": "レッグエクステ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "leg-extension-machine",
+    "seated-leg-extension-single-leg"
+   ],
+   "tags": [
+    "abbrev",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-030",
+   "locale": "ja",
+   "query": "ウォーキングランジ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "walking-lunge",
+    "dumbbell-walking-lunge"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-031",
+   "locale": "ja",
+   "query": "ヒップスラストマシン",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "hip-thrust-machine"
+   ],
+   "top1": [
+    "hip-thrust-machine"
+   ],
+   "tags": [
+    "staple-new",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-032",
+   "locale": "ja",
+   "query": "グルートブリッジ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bodyweight-glute-bridge",
+    "barbell-glute-bridge",
+    "dumbbell-glute-bridge",
+    "resistance-band-glute-bridge",
+    "glute-bridge-with-abduction-bodyweight"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-033",
+   "locale": "ja",
+   "query": "ヒップアブダクション",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "seated-hip-abductor-machine",
+    "resistance-band-seated-hip-abduction",
+    "glute-bridge-with-abduction-bodyweight",
+    "fire-hydrant-bodyweight"
+   ],
+   "tags": [
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-034",
+   "locale": "ja",
+   "query": "ももの裏",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "barbell-romanian-deadlift",
+    "dumbbell-romanian-deadlift",
+    "barbell-stiff-leg-deadlift",
+    "nordic-hamstring-curl",
+    "barbell-good-morning",
+    "dumbbell-stiff-leg-deadlift"
+   ],
+   "tags": [
+    "bodypart",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-035",
+   "locale": "ja",
+   "query": "太もも前",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "leg-extension-machine",
+    "barbell-full-squat",
+    "leg-press-machine-normal-stance",
+    "hack-squat-machine",
+    "smith-machine-squat",
+    "bodyweight-squat",
+    "dumbbell-goblet-squat"
+   ],
+   "tags": [
+    "bodypart",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-036",
+   "locale": "ja",
+   "query": "腹筋ローラー",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "ab-wheel-all-the-way-out",
+    "ab-wheel-halfway-out",
+    "standing-ab-wheel-rollout",
+    "ab-wheel-plank",
+    "barbell-rollout"
+   ],
+   "tags": [
+    "equipment",
+    "staple"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-037",
+   "locale": "ja",
+   "query": "サイドプランク",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "side-plank",
+    "alternate-single-leg-raise-plank"
+   ],
+   "top1": [
+    "side-plank"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-038",
+   "locale": "ja",
+   "query": "ロシアンツイスト",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "russian-twist",
+    "russian-twist-weighted-ball",
+    "bent-knee-lying-twist"
+   ],
+   "top1": [
+    "russian-twist"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-039",
+   "locale": "ja",
+   "query": "レッグレイズ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "leg-raises-straight-legs",
+    "hanging-knee-raises"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-040",
+   "locale": "ja",
+   "query": "ぶら下がり腹筋",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "hanging-leg-raise",
+    "hanging-knee-raises",
+    "hanging-oblique-crunches"
+   ],
+   "tags": [
+    "natural",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-041",
+   "locale": "ja",
+   "query": "バイシクルクランチ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bicycles",
+    "bicycles-crunches",
+    "bicycle-twisting-crunch",
+    "45-degree-bicycle-twisting"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-042",
+   "locale": "ja",
+   "query": "マウンテンクライマー",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "mountain-climbers",
+    "bridge-mountain-climber-cross-body"
+   ],
+   "top1": [
+    "mountain-climbers"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-043",
+   "locale": "ja",
+   "query": "なわとび",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "jump-rope-basic-jump",
+    "jump-rope-alternating-foot",
+    "jump-rope-double-bounce",
+    "skipping"
+   ],
+   "tags": [
+    "hiragana",
+    "cardio"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-044",
+   "locale": "ja",
+   "query": "ルームランナー",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "treadmill-running",
+    "treadmill-walking",
+    "incline-treadmill-walk",
+    "treadmill-interval-sprints"
+   ],
+   "tags": [
+    "cardio",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-045",
+   "locale": "ja",
+   "query": "ランニングマシン",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "treadmill-running",
+    "treadmill-walking",
+    "incline-treadmill-walk",
+    "treadmill-interval-sprints"
+   ],
+   "tags": [
+    "cardio",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-046",
+   "locale": "ja",
+   "query": "エアロバイク",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "stationary-exercise-bike",
+    "spin-bike",
+    "recumbent-bike",
+    "assault-air-bike",
+    "outdoor-cycling"
+   ],
+   "top1": [
+    "stationary-exercise-bike"
+   ],
+   "tags": [
+    "cardio",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-047",
+   "locale": "ja",
+   "query": "自転車漕ぎ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "stationary-exercise-bike",
+    "spin-bike",
+    "recumbent-bike",
+    "assault-air-bike",
+    "outdoor-cycling"
+   ],
+   "tags": [
+    "cardio",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-048",
+   "locale": "ja",
+   "query": "ボート漕ぎ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "gym-rowing-machine-normal-speed"
+   ],
+   "tags": [
+    "cardio",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-049",
+   "locale": "ja",
+   "query": "クロストレーナー",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "elliptical-trainer"
+   ],
+   "tags": [
+    "cardio",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-050",
+   "locale": "ja",
+   "query": "階段マシン",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "stair-climber",
+    "incline-treadmill-walk"
+   ],
+   "tags": [
+    "cardio",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-051",
+   "locale": "ja",
+   "query": "水泳",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "swimming"
+   ],
+   "tags": [
+    "cardio",
+    "kanji"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-052",
+   "locale": "ja",
+   "query": "ウォーキング",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "treadmill-walking",
+    "incline-treadmill-walk",
+    "briskly-walking"
+   ],
+   "tags": [
+    "cardio"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-053",
+   "locale": "ja",
+   "query": "ランニング",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "running-outdoor",
+    "treadmill-running",
+    "treadmill-interval-sprints"
+   ],
+   "tags": [
+    "cardio"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-054",
+   "locale": "ja",
+   "query": "ケトルベル",
+   "category": null,
+   "equipment": "KETTLEBELL",
+   "acceptable": [
+    "kettlebell-swing",
+    "goblet-kettlebell-squats",
+    "turkish-get-up",
+    "kettlebell-sumo-squat",
+    "kettlebell-sumo-deadlift",
+    "kettlebell-thruster",
+    "good-mornings-kettlebell"
+   ],
+   "tags": [
+    "equipment",
+    "kettlebell"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-055",
+   "locale": "ja",
+   "query": "筋膜ローラー",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "foam-roller-back",
+    "foam-roller-quads",
+    "foam-roller-calves",
+    "foam-roller-it-band-glute",
+    "foam-roller-lats"
+   ],
+   "tags": [
+    "foam",
+    "kanji",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-056",
+   "locale": "ja",
+   "query": "ストレッチポール",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "foam-roller-back",
+    "foam-roller-quads",
+    "foam-roller-calves",
+    "foam-roller-it-band-glute",
+    "foam-roller-lats"
+   ],
+   "tags": [
+    "foam",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-057",
+   "locale": "ja",
+   "query": "バンドスクワット",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "resistance-band-squat",
+    "sumo-squat-in-between-legs-resistance-band",
+    "sumo-squat-over-shoulder-resistance-band"
+   ],
+   "tags": [
+    "band"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-058",
+   "locale": "ja",
+   "query": "チューブトレーニング",
+   "category": null,
+   "equipment": "RESISTANCE_BAND",
+   "acceptable": [
+    "biceps-curl-resistance-band",
+    "resistance-band-glute-bridge",
+    "resistance-band-squat",
+    "resistance-band-face-pull",
+    "side-lateral-raise-resistance-band",
+    "chest-press-front-resistance-band",
+    "band-close-grip-row",
+    "resistance-band-leg-kickback"
+   ],
+   "tags": [
+    "band",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-059",
+   "locale": "ja",
+   "query": "ゴムバンド フェイスプル",
+   "category": null,
+   "equipment": "RESISTANCE_BAND",
+   "acceptable": [
+    "resistance-band-face-pull"
+   ],
+   "tags": [
+    "band",
+    "mixed"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-060",
+   "locale": "ja",
+   "query": "ダンベルショルダープレス",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-seated-shoulder-press",
+    "shoulder-press-machine",
+    "barbell-standing-military-press",
+    "dumbbell-standing-overhead-press",
+    "seated-shoulder-press-barbell",
+    "arnold-press-dumbbell",
+    "smith-machine-shoulder-press",
+    "standing-shoulder-press-dumbbell",
+    "barbell-seated-overhead-press"
+   ],
+   "tags": [
+    "exact",
+    "dumbbell"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-061",
+   "locale": "ja",
+   "query": "ダンベルプレス",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-bench-press",
+    "dumbbell-incline-bench-press",
+    "dumbbell-seated-shoulder-press",
+    "dumbbell-standing-overhead-press",
+    "dumbbell-decline-bench-press"
+   ],
+   "tags": [
+    "partial",
+    "dumbbell"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-062",
+   "locale": "ja",
+   "query": "ハイプランク",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "high-plank",
+    "plank-lunges",
+    "alternate-single-leg-raise-plank"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-063",
+   "locale": "ja",
+   "query": "スーパーマン",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "superman",
+    "bird-dog",
+    "back-extension-machine"
+   ],
+   "tags": [
+    "exact",
+    "lowback"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-064",
+   "locale": "ja",
+   "query": "バックエクステンション",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "back-extension-machine",
+    "resistance-band-floor-hyperextension",
+    "45-degree-twisting-hyperextension",
+    "superman"
+   ],
+   "tags": [
+    "exact",
+    "lowback"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-065",
+   "locale": "ja",
+   "query": "大胸筋",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bench-press",
+    "dumbbell-bench-press",
+    "chest-press-machine",
+    "push-ups-bodyweight",
+    "barbell-incline-bench-press",
+    "dumbbell-incline-bench-press",
+    "pec-deck-fly-machine",
+    "dumbbell-fly-flat-bench",
+    "smith-machine-bench-press",
+    "cable-middle-fly",
+    "cable-low-fly",
+    "dumbbell-incline-fly"
+   ],
+   "tags": [
+    "muscle",
+    "kanji"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-066",
+   "locale": "ja",
+   "query": "ハムストリングス",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "barbell-romanian-deadlift",
+    "dumbbell-romanian-deadlift",
+    "barbell-stiff-leg-deadlift",
+    "nordic-hamstring-curl",
+    "barbell-good-morning",
+    "dumbbell-stiff-leg-deadlift"
+   ],
+   "tags": [
+    "muscle"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-067",
+   "locale": "ja",
+   "query": "下腹",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "reverse-crunch",
+    "leg-raises-straight-legs",
+    "hanging-knee-raises",
+    "dead-bug",
+    "v-crunches"
+   ],
+   "tags": [
+    "bodypart",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-068",
+   "locale": "ja",
+   "query": "脇腹",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "russian-twist",
+    "side-plank",
+    "oblique-crunch",
+    "alternate-oblique-crunch",
+    "standing-oblique-crunch",
+    "cable-twist",
+    "alternating-oblique-sit-ups",
+    "standing-cable-oblique-twist",
+    "bicycles"
+   ],
+   "tags": [
+    "bodypart",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-069",
+   "locale": "ja",
+   "query": "前腕",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "wrist-curl-barbell",
+    "wrist-curl-dumbbell",
+    "dumbbell-reverse-wrist-curl",
+    "cable-wrist-curl",
+    "wrist-extension-barbell",
+    "barbell-reverse-biceps-curl"
+   ],
+   "tags": [
+    "bodypart",
+    "forearm"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-070",
+   "locale": "ja",
+   "query": "三角筋後部",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bent-over-rear-delt-fly-dumbbell",
+    "cable-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "dumbbell-reverse-fly",
+    "cable-reverse-fly",
+    "seated-dumbbell-rear-delt-fly",
+    "resistance-band-face-pull"
+   ],
+   "tags": [
+    "muscle",
+    "kanji"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-071",
+   "locale": "ja",
+   "query": "腰",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "back-extension-machine",
+    "bird-dog",
+    "superman",
+    "resistance-band-floor-hyperextension",
+    "barbell-good-morning",
+    "cat-cow",
+    "barbell-deadlift",
+    "barbell-romanian-deadlift"
+   ],
+   "tags": [
+    "bodypart",
+    "kanji"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-072",
+   "locale": "ja",
+   "query": "お腹を引き締めたい",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "abdominal-crunches",
+    "high-plank",
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "cable-crunch",
+    "russian-twist",
+    "side-plank",
+    "plank-on-elbows",
+    "reverse-crunch",
+    "bicycles",
+    "mountain-climbers",
+    "dead-bug",
+    "hanging-knee-raises",
+    "v-crunches",
+    "hollow-hold",
+    "abdominal-crunches-machine",
+    "leg-raises-straight-legs",
+    "decline-sit-up",
+    "crunch-floor"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-073",
+   "locale": "ja",
+   "query": "お腹痩せ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "abdominal-crunches",
+    "high-plank",
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "cable-crunch",
+    "russian-twist",
+    "side-plank",
+    "plank-on-elbows",
+    "reverse-crunch",
+    "bicycles",
+    "mountain-climbers",
+    "dead-bug",
+    "hanging-knee-raises",
+    "v-crunches",
+    "hollow-hold",
+    "abdominal-crunches-machine",
+    "leg-raises-straight-legs",
+    "decline-sit-up",
+    "crunch-floor"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-074",
+   "locale": "ja",
+   "query": "ぽっこりお腹をへこませる",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "abdominal-crunches",
+    "high-plank",
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "cable-crunch",
+    "russian-twist",
+    "side-plank",
+    "plank-on-elbows",
+    "reverse-crunch",
+    "bicycles",
+    "mountain-climbers",
+    "dead-bug",
+    "hanging-knee-raises",
+    "v-crunches",
+    "hollow-hold",
+    "abdominal-crunches-machine",
+    "leg-raises-straight-legs",
+    "decline-sit-up",
+    "crunch-floor"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-075",
+   "locale": "ja",
+   "query": "肩幅を広くしたい",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lateral-raises-dumbbell",
+    "cable-lateral-raises",
+    "machine-lateral-raise",
+    "dumbbell-seated-lateral-raise",
+    "leaning-dumbbell-lateral-raise",
+    "dumbbell-seated-shoulder-press",
+    "shoulder-press-machine",
+    "barbell-standing-military-press",
+    "dumbbell-standing-overhead-press",
+    "seated-shoulder-press-barbell",
+    "arnold-press-dumbbell",
+    "smith-machine-shoulder-press",
+    "standing-shoulder-press-dumbbell",
+    "barbell-seated-overhead-press"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-076",
+   "locale": "ja",
+   "query": "背中を広くしたい",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "cable-bar-lateral-pulldown",
+    "v-bar-lat-pull-down",
+    "reverse-grip-lat-pull-down",
+    "lat-pull-down-close-grip",
+    "cable-close-grip-front-lat-pulldown",
+    "pull-up-normal-grip",
+    "chin-up",
+    "pull-up-wide-grip",
+    "pull-up-neutral-grip",
+    "assisted-pull-up",
+    "assisted-pull-up-wide-grip",
+    "inverted-row",
+    "barbell-bent-over-row-pronated-grip",
+    "dumbbell-bent-over-row",
+    "dumbbell-single-arm-row",
+    "cable-seated-row",
+    "seated-row-machine",
+    "t-bar-row",
+    "t-bar-row-machine",
+    "cable-low-seated-row",
+    "barbell-pendlay-row",
+    "landmine-row"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-077",
+   "locale": "ja",
+   "query": "胸板を厚くしたい",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bench-press",
+    "dumbbell-bench-press",
+    "chest-press-machine",
+    "push-ups-bodyweight",
+    "barbell-incline-bench-press",
+    "dumbbell-incline-bench-press",
+    "pec-deck-fly-machine",
+    "dumbbell-fly-flat-bench",
+    "smith-machine-bench-press",
+    "cable-middle-fly",
+    "cable-low-fly",
+    "dumbbell-incline-fly"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-078",
+   "locale": "ja",
+   "query": "力こぶを大きくしたい",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-curls",
+    "barbell-biceps-curl",
+    "biceps-curl-cable",
+    "dumbbell-hammer-curl",
+    "ez-barbell-curl",
+    "incline-dumbbell-curl",
+    "barbell-preacher-curl",
+    "dumbbell-seated-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "concentration-curls-dumbbell"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-079",
+   "locale": "ja",
+   "query": "脚を太くしたい",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-full-squat",
+    "leg-press-machine-normal-stance",
+    "leg-extension-machine",
+    "hack-squat-machine",
+    "smith-machine-squat",
+    "bulgarian-split-squat",
+    "dumbbell-goblet-squat",
+    "barbell-front-squats",
+    "barbell-lunge",
+    "dumbbell-lunge",
+    "walking-lunge",
+    "bodyweight-squat",
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-080",
+   "locale": "ja",
+   "query": "脚やせ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "walking-lunge",
+    "bodyweight-squat",
+    "stationary-exercise-bike",
+    "treadmill-walking",
+    "bodyweight-glute-bridge",
+    "incline-treadmill-walk",
+    "bodyweight-rear-lunge"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-081",
+   "locale": "ja",
+   "query": "ふくらはぎを太くしたい",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "seated-calf-machine",
+    "standing-calf-raise-machine",
+    "bodyweight-standing-calf-raise",
+    "dumbbell-standing-calf-raise",
+    "smith-machine-calf-raise",
+    "calf-raise-leg-press-machine",
+    "dumbbell-seated-calf-raise",
+    "calf-raise-with-wall-support"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-082",
+   "locale": "ja",
+   "query": "太もも内側を鍛える",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "hip-adductor-machine",
+    "seated-hip-abductor-machine",
+    "cossack-squat",
+    "side-lunges-bodyweight",
+    "barbell-lateral-lunge"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-083",
+   "locale": "ja",
+   "query": "脂肪燃焼",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "treadmill-running",
+    "treadmill-walking",
+    "incline-treadmill-walk",
+    "stationary-exercise-bike",
+    "spin-bike",
+    "gym-rowing-machine-normal-speed",
+    "elliptical-trainer",
+    "stair-climber",
+    "running-outdoor",
+    "jump-rope-basic-jump",
+    "swimming",
+    "assault-air-bike",
+    "battle-ropes",
+    "burpee",
+    "jumping-jack",
+    "high-knees",
+    "briskly-walking",
+    "recumbent-bike",
+    "outdoor-cycling",
+    "treadmill-interval-sprints"
+   ],
+   "tags": [
+    "goal",
+    "cardio",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-084",
+   "locale": "ja",
+   "query": "全身運動",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "burpee",
+    "jumping-jack",
+    "mountain-climbers",
+    "high-knees",
+    "push-ups-bodyweight",
+    "bodyweight-squat",
+    "high-plank",
+    "jump-squats-bodyweight",
+    "walking-lunge",
+    "bird-dog",
+    "kettlebell-swing",
+    "barbell-deadlift",
+    "turkish-get-up"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-085",
+   "locale": "ja",
+   "query": "ダイエットに効く運動",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "treadmill-running",
+    "treadmill-walking",
+    "incline-treadmill-walk",
+    "stationary-exercise-bike",
+    "spin-bike",
+    "gym-rowing-machine-normal-speed",
+    "elliptical-trainer",
+    "stair-climber",
+    "running-outdoor",
+    "jump-rope-basic-jump",
+    "swimming",
+    "assault-air-bike",
+    "battle-ropes",
+    "burpee",
+    "jumping-jack",
+    "high-knees",
+    "briskly-walking",
+    "recumbent-bike",
+    "outdoor-cycling",
+    "treadmill-interval-sprints",
+    "bodyweight-squat",
+    "walking-lunge"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-086",
+   "locale": "ja",
+   "query": "自宅でできる胸トレ",
+   "category": null,
+   "equipment": "BODYWEIGHT",
+   "acceptable": [
+    "push-ups-bodyweight",
+    "knee-push-up",
+    "incline-push-up",
+    "diamond-push-up",
+    "decline-push-up",
+    "close-grip-push-up",
+    "pike-push-up"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE"
+   ],
+   "tags": [
+    "home",
+    "noequip",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-087",
+   "locale": "ja",
+   "query": "器具なしで背中",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "inverted-row",
+    "superman",
+    "pull-up-normal-grip",
+    "chin-up",
+    "bird-dog",
+    "resistance-band-floor-hyperextension"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE"
+   ],
+   "tags": [
+    "home",
+    "noequip",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-088",
+   "locale": "ja",
+   "query": "器具なし腹筋",
+   "category": null,
+   "equipment": "BODYWEIGHT",
+   "acceptable": [
+    "abdominal-crunches",
+    "high-plank",
+    "lying-leg-raise",
+    "plank-on-elbows",
+    "reverse-crunch",
+    "bicycles",
+    "mountain-climbers",
+    "dead-bug",
+    "v-crunches",
+    "hollow-hold",
+    "leg-raises-straight-legs",
+    "crunch-floor",
+    "side-plank",
+    "russian-twist"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE",
+    "DUMBBELL"
+   ],
+   "tags": [
+    "home",
+    "noequip",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-089",
+   "locale": "ja",
+   "query": "器具なしで脚",
+   "category": null,
+   "equipment": "BODYWEIGHT",
+   "acceptable": [
+    "bodyweight-squat",
+    "bodyweight-rear-lunge",
+    "bodyweight-forward-lunge",
+    "walking-lunge",
+    "bodyweight-wall-squat",
+    "bodyweight-glute-bridge",
+    "jump-squats-bodyweight",
+    "bodyweight-standing-calf-raise",
+    "bulgarian-split-squat",
+    "cossack-squat",
+    "side-lunges-bodyweight",
+    "step-up-on-chair-bodyweight"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE"
+   ],
+   "tags": [
+    "home",
+    "noequip",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-090",
+   "locale": "ja",
+   "query": "自重トレーニング",
+   "category": null,
+   "equipment": "BODYWEIGHT",
+   "acceptable": [
+    "burpee",
+    "jumping-jack",
+    "mountain-climbers",
+    "high-knees",
+    "push-ups-bodyweight",
+    "bodyweight-squat",
+    "high-plank",
+    "jump-squats-bodyweight",
+    "walking-lunge",
+    "bird-dog",
+    "bodyweight-rear-lunge",
+    "bodyweight-forward-lunge",
+    "bodyweight-wall-squat",
+    "bodyweight-glute-bridge",
+    "bodyweight-standing-calf-raise",
+    "bulgarian-split-squat",
+    "cossack-squat",
+    "side-lunges-bodyweight",
+    "step-up-on-chair-bodyweight"
+   ],
+   "tags": [
+    "home",
+    "bodyweight",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-091",
+   "locale": "ja",
+   "query": "家で肩",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lateral-raise-bodyweight",
+    "pike-push-up",
+    "side-lateral-raise-resistance-band",
+    "dumbbell-seated-shoulder-press",
+    "lateral-raises-dumbbell",
+    "dumbbell-standing-overhead-press",
+    "standing-shoulder-press-dumbbell"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE"
+   ],
+   "tags": [
+    "home",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-092",
+   "locale": "ja",
+   "query": "ダンベルだけで背中",
+   "category": null,
+   "equipment": "DUMBBELL",
+   "acceptable": [
+    "dumbbell-bent-over-row",
+    "dumbbell-single-arm-row",
+    "dumbbell-incline-row",
+    "dumbbell-reverse-fly",
+    "dumbbell-renegade-row",
+    "dumbbell-romanian-deadlift",
+    "prone-bench-row-dumbbells"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE"
+   ],
+   "tags": [
+    "home",
+    "dumbbell",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-093",
+   "locale": "ja",
+   "query": "マシンで胸",
+   "category": null,
+   "equipment": "MACHINE",
+   "acceptable": [
+    "chest-press-machine",
+    "pec-deck-fly-machine",
+    "machine-chest-press-incline",
+    "chest-dip-machine"
+   ],
+   "forbid_equipment_top5": [
+    "BODYWEIGHT"
+   ],
+   "tags": [
+    "machine",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-094",
+   "locale": "ja",
+   "query": "ケーブルで肩",
+   "category": null,
+   "equipment": "CABLE",
+   "acceptable": [
+    "cable-lateral-raises",
+    "cable-face-pull",
+    "cable-rear-delt-fly",
+    "cable-reverse-fly",
+    "cable-front-raises-straight-bar",
+    "cable-leaning-lateral-raise",
+    "cable-one-arm-front-raise"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE"
+   ],
+   "tags": [
+    "cable",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-095",
+   "locale": "ja",
+   "query": "バーベル 胸",
+   "category": null,
+   "equipment": "BARBELL",
+   "acceptable": [
+    "barbell-bench-press",
+    "barbell-incline-bench-press",
+    "barbell-wide-bench-press",
+    "barbell-close-grip-bench-press",
+    "barbell-bench-press-decline"
+   ],
+   "tags": [
+    "barbell",
+    "mixed"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-096",
+   "locale": "ja",
+   "query": "ジムで脚の日",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-full-squat",
+    "leg-press-machine-normal-stance",
+    "leg-extension-machine",
+    "hack-squat-machine",
+    "smith-machine-squat",
+    "bulgarian-split-squat",
+    "dumbbell-goblet-squat",
+    "barbell-front-squats",
+    "barbell-lunge",
+    "dumbbell-lunge",
+    "walking-lunge",
+    "bodyweight-squat",
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "barbell-romanian-deadlift",
+    "seated-calf-machine",
+    "standing-calf-raise-machine"
+   ],
+   "tags": [
+    "gym",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-097",
+   "locale": "ja",
+   "query": "プッシュの日",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bench-press",
+    "dumbbell-bench-press",
+    "chest-press-machine",
+    "push-ups-bodyweight",
+    "barbell-incline-bench-press",
+    "dumbbell-incline-bench-press",
+    "pec-deck-fly-machine",
+    "dumbbell-fly-flat-bench",
+    "smith-machine-bench-press",
+    "cable-middle-fly",
+    "cable-low-fly",
+    "dumbbell-incline-fly",
+    "dumbbell-seated-shoulder-press",
+    "shoulder-press-machine",
+    "barbell-standing-military-press",
+    "dumbbell-standing-overhead-press",
+    "seated-shoulder-press-barbell",
+    "arnold-press-dumbbell",
+    "smith-machine-shoulder-press",
+    "standing-shoulder-press-dumbbell",
+    "barbell-seated-overhead-press",
+    "cable-pushdown",
+    "cable-triceps-rope-pushdown",
+    "cable-overhead-extension-rope",
+    "barbell-lying-triceps-skull-crusher",
+    "dumbbell-standing-triceps-extension",
+    "dumbbell-lying-triceps-extension",
+    "tricep-extension-machine",
+    "dumbbell-kickback",
+    "barbell-close-grip-bench-press",
+    "triceps-dip-machine",
+    "dumbbell-overhead-extension-seated",
+    "dumbbell-overhead-extension-standing"
+   ],
+   "tags": [
+    "split",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-098",
+   "locale": "ja",
+   "query": "プルの日",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "pull-up-normal-grip",
+    "seated-row-machine",
+    "cable-seated-row",
+    "barbell-bent-over-row-pronated-grip",
+    "dumbbell-single-arm-row",
+    "dumbbell-bent-over-row",
+    "t-bar-row",
+    "t-bar-row-machine",
+    "chin-up",
+    "barbell-deadlift",
+    "assisted-pull-up",
+    "dumbbell-curls",
+    "barbell-biceps-curl",
+    "biceps-curl-cable",
+    "dumbbell-hammer-curl",
+    "ez-barbell-curl",
+    "incline-dumbbell-curl",
+    "barbell-preacher-curl",
+    "dumbbell-seated-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "concentration-curls-dumbbell",
+    "bent-over-rear-delt-fly-dumbbell",
+    "cable-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "dumbbell-reverse-fly",
+    "cable-reverse-fly",
+    "seated-dumbbell-rear-delt-fly",
+    "resistance-band-face-pull"
+   ],
+   "tags": [
+    "split",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-099",
+   "locale": "ja",
+   "query": "初心者 胸",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "push-ups-bodyweight",
+    "knee-push-up",
+    "chest-press-machine",
+    "dumbbell-bench-press",
+    "incline-push-up",
+    "pec-deck-fly-machine"
+   ],
+   "tags": [
+    "beginner",
+    "mixed"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-100",
+   "locale": "ja",
+   "query": "初心者向け背中マシン",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "seated-row-machine",
+    "assisted-pull-up",
+    "cable-seated-row",
+    "back-extension-machine",
+    "t-bar-row-machine"
+   ],
+   "tags": [
+    "beginner",
+    "machine",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-101",
+   "locale": "ja",
+   "query": "ジム初心者 脚",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "leg-press-machine-normal-stance",
+    "leg-extension-machine",
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "bodyweight-squat",
+    "smith-machine-squat",
+    "dumbbell-goblet-squat",
+    "hack-squat-machine"
+   ],
+   "tags": [
+    "beginner",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-102",
+   "locale": "ja",
+   "query": "腰が痛い人の腹筋",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dead-bug",
+    "bird-dog",
+    "high-plank",
+    "plank-on-elbows",
+    "side-plank",
+    "hollow-hold",
+    "reverse-crunch",
+    "cat-cow"
+   ],
+   "tags": [
+    "injury",
+    "natural",
+    "core"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-103",
+   "locale": "ja",
+   "query": "肩に負担が少ない胸トレ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "chest-press-machine",
+    "pec-deck-fly-machine",
+    "cable-middle-fly",
+    "push-ups-bodyweight",
+    "knee-push-up",
+    "dumbbell-bench-press",
+    "dumbbell-fly-flat-bench"
+   ],
+   "tags": [
+    "injury",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-104",
+   "locale": "ja",
+   "query": "懸垂できない",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "assisted-pull-up",
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "inverted-row",
+    "assisted-pull-up-wide-grip",
+    "assisted-chin-up-normal-width-reverse-grip",
+    "reverse-grip-lat-pull-down"
+   ],
+   "tags": [
+    "beginner",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-105",
+   "locale": "ja",
+   "query": "腕立て1回もできない",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "knee-push-up",
+    "incline-push-up",
+    "chest-press-machine",
+    "push-ups-bodyweight",
+    "dumbbell-bench-press"
+   ],
+   "tags": [
+    "beginner",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-106",
+   "locale": "ja",
+   "query": "ストレッチ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "child-pose",
+    "cat-cow",
+    "neck-stretch",
+    "worlds-greatest-stretch",
+    "kneeling-hip-flexor-stretch",
+    "couch-stretch",
+    "standing-quadriceps-stretch",
+    "seated-single-leg-hamstring-stretch",
+    "pigeon-pose",
+    "thoracic-rotation",
+    "across-chest-shoulder-stretch",
+    "standing-gastrocnemius-stretch",
+    "seated-calf-stretch",
+    "lying-glute-stretch",
+    "seated-cross-leg-glute-stretch",
+    "90-to-90-stretch",
+    "adductor-stretch",
+    "knee-to-chest-stretch",
+    "triceps-light-stretch",
+    "runner-stretch",
+    "standing-overhand-shoulder-stretch",
+    "corner-wall-chest-stretch",
+    "dead-hang-stretch"
+   ],
+   "tags": [
+    "stretch"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-107",
+   "locale": "ja",
+   "query": "ハムストリングスストレッチ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "seated-single-leg-hamstring-stretch",
+    "hamstring-lying-straight-leg-stretch",
+    "hamstring-lying-curl-up-stretch",
+    "standing-leg-elevated-hamstring-stretch",
+    "standing-bow-hamstring-stretch",
+    "runner-stretch",
+    "exercise-ball-seated-hamstring-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "muscle"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-108",
+   "locale": "ja",
+   "query": "太ももストレッチ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "standing-quadriceps-stretch",
+    "lying-quadriceps-stretch",
+    "all-fours-quad-stretch",
+    "couch-stretch",
+    "lying-side-quadriceps-stretch",
+    "exercise-ball-seated-quad-stretch",
+    "seated-single-leg-hamstring-stretch",
+    "hamstring-lying-straight-leg-stretch",
+    "hamstring-lying-curl-up-stretch",
+    "standing-leg-elevated-hamstring-stretch",
+    "standing-bow-hamstring-stretch",
+    "runner-stretch",
+    "exercise-ball-seated-hamstring-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-109",
+   "locale": "ja",
+   "query": "ふくらはぎストレッチ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "standing-gastrocnemius-stretch",
+    "seated-calf-stretch",
+    "calf-stretch-with-hands-against-wall",
+    "calves-stretch-on-stairs",
+    "seated-straight-leg-calf-stretch",
+    "lunging-straight-leg-calf-stretch",
+    "calf-stretch-with-rope",
+    "crouching-heel-back-calf-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "bodypart"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-110",
+   "locale": "ja",
+   "query": "肩甲骨ストレッチ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "thoracic-rotation",
+    "cat-cow",
+    "middle-back-rotation-stretch",
+    "across-chest-shoulder-stretch",
+    "child-pose",
+    "dead-hang-stretch",
+    "cross-over-shoulder-stretch",
+    "back-and-shoulder-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-111",
+   "locale": "ja",
+   "query": "首ストレッチ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "neck-stretch",
+    "backward-forward-turn-to-side-neck-stretch",
+    "ceiling-look-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "bodypart"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-112",
+   "locale": "ja",
+   "query": "胸ストレッチ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "corner-wall-chest-stretch",
+    "standing-one-arm-chest-stretch",
+    "bent-arm-chest-stretch",
+    "above-head-chest-stretch",
+    "back-pec-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "bodypart"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-113",
+   "locale": "ja",
+   "query": "腰回りのストレッチ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "child-pose",
+    "cat-cow",
+    "cat-stretch",
+    "middle-back-rotation-stretch",
+    "thoracic-rotation",
+    "lying-crossover-stretch",
+    "bodyweight-standing-back-stretch",
+    "dead-hang-stretch",
+    "side-lying-floor-stretch",
+    "pigeon-pose",
+    "lying-glute-stretch",
+    "seated-cross-leg-glute-stretch",
+    "90-to-90-stretch",
+    "knee-to-chest-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-114",
+   "locale": "ja",
+   "query": "猫のポーズ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cat-cow",
+    "cat-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "yoga",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-115",
+   "locale": "ja",
+   "query": "チャイルドポーズ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "child-pose",
+    "child-pose-up"
+   ],
+   "tags": [
+    "stretch",
+    "yoga",
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-116",
+   "locale": "ja",
+   "query": "お尻ストレッチ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "pigeon-pose",
+    "lying-glute-stretch",
+    "seated-cross-leg-glute-stretch",
+    "90-to-90-stretch",
+    "knee-to-chest-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "bodypart"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-117",
+   "locale": "ja",
+   "query": "運動前のウォームアップ",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "worlds-greatest-stretch",
+    "jumping-jack",
+    "high-knees",
+    "cat-cow",
+    "thoracic-rotation",
+    "bodyweight-squat",
+    "walking-lunge",
+    "mountain-climbers",
+    "bird-dog",
+    "skipping"
+   ],
+   "tags": [
+    "warmup",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ja-118",
+   "locale": "ja",
+   "query": "猫背改善",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-face-pull",
+    "resistance-band-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "thoracic-rotation",
+    "cat-cow",
+    "superman",
+    "dumbbell-reverse-fly",
+    "corner-wall-chest-stretch",
+    "bent-over-rear-delt-fly-dumbbell"
+   ],
+   "tags": [
+    "goal",
+    "posture",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-001",
+   "locale": "ko",
+   "query": "인클라인",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-incline-bench-press",
+    "dumbbell-incline-bench-press",
+    "smith-machine-press-incline",
+    "machine-chest-press-incline",
+    "incline-push-up",
+    "dumbbell-incline-fly",
+    "incline-bench-cable-fly"
+   ],
+   "tags": [
+    "partial"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-002",
+   "locale": "ko",
+   "query": "덤벨 플라이",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "pec-deck-fly-machine",
+    "dumbbell-fly-flat-bench",
+    "cable-middle-fly",
+    "cable-low-fly",
+    "dumbbell-incline-fly",
+    "flat-bench-cable-fly",
+    "incline-bench-cable-fly",
+    "cable-lying-fly",
+    "dumbbell-floor-fly"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-003",
+   "locale": "ko",
+   "query": "팩덱플라이",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "pec-deck-fly-machine",
+    "reverse-machine-fly"
+   ],
+   "tags": [
+    "typo",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-004",
+   "locale": "ko",
+   "query": "스모데드",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-sumo-deadlift",
+    "barbell-sumo-romanian-deadlift",
+    "kettlebell-sumo-deadlift"
+   ],
+   "tags": [
+    "abbrev"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-005",
+   "locale": "ko",
+   "query": "철봉 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "pull-up-normal-grip",
+    "chin-up",
+    "pull-up-wide-grip",
+    "pull-up-neutral-grip",
+    "assisted-pull-up",
+    "assisted-pull-up-wide-grip",
+    "inverted-row",
+    "hanging-leg-raise",
+    "hanging-knee-raises",
+    "dead-hang-stretch"
+   ],
+   "tags": [
+    "natural",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-006",
+   "locale": "ko",
+   "query": "어시스트 턱걸이",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "assisted-pull-up",
+    "assisted-pull-up-wide-grip",
+    "assisted-pull-up-close-grip",
+    "assisted-chin-up-normal-width-reverse-grip"
+   ],
+   "tags": [
+    "machine",
+    "mixed"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-007",
+   "locale": "ko",
+   "query": "벤트오버로우",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bent-over-row-pronated-grip",
+    "dumbbell-bent-over-row",
+    "dumbbell-single-arm-row",
+    "cable-seated-row",
+    "seated-row-machine",
+    "t-bar-row",
+    "t-bar-row-machine",
+    "cable-low-seated-row",
+    "inverted-row",
+    "barbell-pendlay-row",
+    "landmine-row"
+   ],
+   "tags": [
+    "spelling-variant"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-008",
+   "locale": "ko",
+   "query": "아놀드프레스",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "arnold-press-dumbbell",
+    "dumbbell-arnold-press-seated"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-009",
+   "locale": "ko",
+   "query": "리어델트",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bent-over-rear-delt-fly-dumbbell",
+    "cable-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "dumbbell-reverse-fly",
+    "cable-reverse-fly",
+    "seated-dumbbell-rear-delt-fly",
+    "resistance-band-face-pull"
+   ],
+   "tags": [
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-010",
+   "locale": "ko",
+   "query": "후면삼각근",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bent-over-rear-delt-fly-dumbbell",
+    "cable-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "dumbbell-reverse-fly",
+    "cable-reverse-fly",
+    "seated-dumbbell-rear-delt-fly",
+    "resistance-band-face-pull"
+   ],
+   "tags": [
+    "muscle"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-011",
+   "locale": "ko",
+   "query": "케이블 페이스풀",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-face-pull",
+    "resistance-band-face-pull",
+    "dumbbell-bent-over-face-pull",
+    "cable-rear-delt-fly",
+    "reverse-machine-fly"
+   ],
+   "tags": [
+    "staple-new",
+    "cable"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-012",
+   "locale": "ko",
+   "query": "슈러그",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-shrugs",
+    "dumbbell-shrugs",
+    "trap-bar-shrug",
+    "dumbbell-incline-shrug",
+    "barbell-upright-row"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-013",
+   "locale": "ko",
+   "query": "프리처컬",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-preacher-curl",
+    "dumbbell-preacher-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "preacher-curl-ez-bar"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-014",
+   "locale": "ko",
+   "query": "삼두 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pushdown",
+    "cable-triceps-rope-pushdown",
+    "cable-overhead-extension-rope",
+    "barbell-lying-triceps-skull-crusher",
+    "dumbbell-standing-triceps-extension",
+    "dumbbell-lying-triceps-extension",
+    "tricep-extension-machine",
+    "dumbbell-kickback",
+    "barbell-close-grip-bench-press",
+    "triceps-dip-machine",
+    "dumbbell-overhead-extension-seated",
+    "dumbbell-overhead-extension-standing"
+   ],
+   "tags": [
+    "bodypart",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-015",
+   "locale": "ko",
+   "query": "푸시다운",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pushdown",
+    "cable-triceps-rope-pushdown",
+    "cable-reverse-grip-pushdown",
+    "cable-triceps-push-down-ez-bar-close-grip"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-016",
+   "locale": "ko",
+   "query": "트라이셉스 킥백",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-kickback",
+    "dumbbell-one-arm-kickback",
+    "dumbbell-seated-kickback",
+    "cable-neutral-grip-kickback",
+    "tricep-cable-kickback-on-crossover-machine"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-017",
+   "locale": "ko",
+   "query": "오버헤드 익스텐션",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-overhead-extension-rope",
+    "dumbbell-overhead-extension-seated",
+    "dumbbell-overhead-extension-standing"
+   ],
+   "tags": [
+    "partial"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-018",
+   "locale": "ko",
+   "query": "리스트컬",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "wrist-curl-barbell",
+    "wrist-curl-dumbbell",
+    "dumbbell-reverse-wrist-curl",
+    "cable-wrist-curl",
+    "wrist-extension-barbell",
+    "barbell-reverse-biceps-curl"
+   ],
+   "tags": [
+    "exact",
+    "forearm"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-019",
+   "locale": "ko",
+   "query": "스미스",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "smith-machine-squat",
+    "smith-machine-bench-press",
+    "smith-machine-shoulder-press",
+    "smith-machine-calf-raise",
+    "smith-machine-press-incline",
+    "smith-machine-press-flat",
+    "inverted-rows-on-smith-machine"
+   ],
+   "tags": [
+    "machine",
+    "abbrev"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-020",
+   "locale": "ko",
+   "query": "고블렛 스쿼트",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-goblet-squat",
+    "goblet-kettlebell-squats",
+    "dumbbell-goblet-split-squat"
+   ],
+   "tags": [
+    "spelling-variant"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-021",
+   "locale": "ko",
+   "query": "프론트스쿼트",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-front-squats",
+    "dumbbell-front-squat",
+    "barbell-clean-grip-front-squat"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-022",
+   "locale": "ko",
+   "query": "레그익스",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "leg-extension-machine",
+    "seated-leg-extension-single-leg"
+   ],
+   "tags": [
+    "abbrev",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-023",
+   "locale": "ko",
+   "query": "레그컬",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "kneeling-leg-curl-machine"
+   ],
+   "tags": [
+    "exact",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-024",
+   "locale": "ko",
+   "query": "워킹런지",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "walking-lunge",
+    "dumbbell-walking-lunge"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-025",
+   "locale": "ko",
+   "query": "힙 쓰러스트 머신",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "hip-thrust-machine"
+   ],
+   "tags": [
+    "staple-new",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-026",
+   "locale": "ko",
+   "query": "글루트브릿지",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bodyweight-glute-bridge",
+    "barbell-glute-bridge",
+    "dumbbell-glute-bridge",
+    "resistance-band-glute-bridge",
+    "glute-bridge-with-abduction-bodyweight"
+   ],
+   "tags": [
+    "spelling-variant"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-027",
+   "locale": "ko",
+   "query": "힙어브덕션",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "seated-hip-abductor-machine",
+    "resistance-band-seated-hip-abduction",
+    "fire-hydrant-bodyweight"
+   ],
+   "tags": [
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-028",
+   "locale": "ko",
+   "query": "허벅지 앞",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "leg-extension-machine",
+    "barbell-full-squat",
+    "leg-press-machine-normal-stance",
+    "hack-squat-machine",
+    "smith-machine-squat",
+    "bodyweight-squat",
+    "dumbbell-goblet-squat"
+   ],
+   "tags": [
+    "bodypart"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-029",
+   "locale": "ko",
+   "query": "허벅지 뒤",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "barbell-romanian-deadlift",
+    "dumbbell-romanian-deadlift",
+    "barbell-stiff-leg-deadlift",
+    "nordic-hamstring-curl",
+    "barbell-good-morning",
+    "dumbbell-stiff-leg-deadlift"
+   ],
+   "tags": [
+    "bodypart"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-030",
+   "locale": "ko",
+   "query": "엉덩이 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-hip-thrust",
+    "dumbbell-hip-thrust",
+    "hip-thrust-machine",
+    "bodyweight-glute-bridge",
+    "barbell-glute-bridge",
+    "glute-kickback-machine",
+    "bulgarian-split-squat",
+    "barbell-romanian-deadlift",
+    "donkey-kicks-bodyweight",
+    "dumbbell-glute-bridge",
+    "bodyweight-hip-thrust",
+    "seated-hip-abductor-machine",
+    "fire-hydrant-bodyweight",
+    "barbell-sumo-deadlift"
+   ],
+   "tags": [
+    "bodypart",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-031",
+   "locale": "ko",
+   "query": "윗복근",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "abdominal-crunches",
+    "abdominal-crunches-machine",
+    "cable-crunch",
+    "crunch-floor",
+    "v-crunches",
+    "decline-sit-up",
+    "ab-mat-sit-up"
+   ],
+   "tags": [
+    "bodypart",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-032",
+   "locale": "ko",
+   "query": "아랫복근",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "reverse-crunch",
+    "leg-raises-straight-legs",
+    "hanging-knee-raises",
+    "dead-bug",
+    "v-crunches"
+   ],
+   "tags": [
+    "bodypart",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-033",
+   "locale": "ko",
+   "query": "옆구리",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "russian-twist",
+    "side-plank",
+    "oblique-crunch",
+    "alternate-oblique-crunch",
+    "standing-oblique-crunch",
+    "cable-twist",
+    "alternating-oblique-sit-ups",
+    "standing-cable-oblique-twist",
+    "bicycles"
+   ],
+   "tags": [
+    "bodypart"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-034",
+   "locale": "ko",
+   "query": "복근 휠",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "ab-wheel-all-the-way-out",
+    "ab-wheel-halfway-out",
+    "standing-ab-wheel-rollout",
+    "ab-wheel-plank",
+    "barbell-rollout"
+   ],
+   "tags": [
+    "equipment"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-035",
+   "locale": "ko",
+   "query": "사이드플랭크",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "side-plank",
+    "alternate-single-leg-raise-plank"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-036",
+   "locale": "ko",
+   "query": "레그레이즈",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "leg-raises-straight-legs",
+    "hanging-knee-raises"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-037",
+   "locale": "ko",
+   "query": "행잉 레그레이즈",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "hanging-leg-raise",
+    "hanging-knee-raises",
+    "hanging-oblique-crunches"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-038",
+   "locale": "ko",
+   "query": "바이시클 크런치",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bicycles",
+    "bicycles-crunches",
+    "bicycle-twisting-crunch",
+    "45-degree-bicycle-twisting"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-039",
+   "locale": "ko",
+   "query": "마운틴 클라이머",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "mountain-climbers",
+    "bridge-mountain-climber-cross-body"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-040",
+   "locale": "ko",
+   "query": "버피테스트",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "burpee"
+   ],
+   "tags": [
+    "exact",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-041",
+   "locale": "ko",
+   "query": "사이클",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "stationary-exercise-bike",
+    "spin-bike",
+    "recumbent-bike",
+    "assault-air-bike",
+    "outdoor-cycling"
+   ],
+   "tags": [
+    "cardio",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-042",
+   "locale": "ko",
+   "query": "스피닝",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "spin-bike",
+    "stationary-exercise-bike"
+   ],
+   "tags": [
+    "cardio",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-043",
+   "locale": "ko",
+   "query": "천국의 계단",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "stair-climber",
+    "incline-treadmill-walk"
+   ],
+   "tags": [
+    "cardio",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-044",
+   "locale": "ko",
+   "query": "일립티컬",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "elliptical-trainer"
+   ],
+   "tags": [
+    "cardio",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-045",
+   "locale": "ko",
+   "query": "수영",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "swimming"
+   ],
+   "tags": [
+    "cardio"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-046",
+   "locale": "ko",
+   "query": "인터벌 러닝",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "treadmill-interval-sprints",
+    "treadmill-running",
+    "running-outdoor"
+   ],
+   "tags": [
+    "cardio",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-047",
+   "locale": "ko",
+   "query": "케틀벨 스윙",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "kettlebell-swing"
+   ],
+   "tags": [
+    "exact",
+    "kettlebell"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-048",
+   "locale": "ko",
+   "query": "케틀벨",
+   "category": null,
+   "equipment": "KETTLEBELL",
+   "acceptable": [
+    "kettlebell-swing",
+    "goblet-kettlebell-squats",
+    "turkish-get-up",
+    "kettlebell-sumo-squat",
+    "kettlebell-sumo-deadlift",
+    "kettlebell-thruster",
+    "good-mornings-kettlebell"
+   ],
+   "tags": [
+    "equipment",
+    "kettlebell"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-049",
+   "locale": "ko",
+   "query": "마사지 롤러",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "foam-roller-back",
+    "foam-roller-quads",
+    "foam-roller-calves",
+    "foam-roller-it-band-glute",
+    "foam-roller-lats"
+   ],
+   "tags": [
+    "foam",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-050",
+   "locale": "ko",
+   "query": "밴드 운동",
+   "category": null,
+   "equipment": "RESISTANCE_BAND",
+   "acceptable": [
+    "biceps-curl-resistance-band",
+    "resistance-band-glute-bridge",
+    "resistance-band-squat",
+    "resistance-band-face-pull",
+    "side-lateral-raise-resistance-band",
+    "chest-press-front-resistance-band",
+    "band-close-grip-row",
+    "resistance-band-leg-kickback"
+   ],
+   "tags": [
+    "band"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-051",
+   "locale": "ko",
+   "query": "고무밴드 스쿼트",
+   "category": null,
+   "equipment": "RESISTANCE_BAND",
+   "acceptable": [
+    "resistance-band-squat",
+    "sumo-squat-in-between-legs-resistance-band",
+    "sumo-squat-over-shoulder-resistance-band"
+   ],
+   "tags": [
+    "band"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-052",
+   "locale": "ko",
+   "query": "벤치프래스",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bench-press",
+    "dumbbell-bench-press",
+    "smith-machine-bench-press",
+    "chest-press-machine",
+    "barbell-incline-bench-press",
+    "dumbbell-incline-bench-press",
+    "barbell-wide-bench-press",
+    "barbell-close-grip-bench-press"
+   ],
+   "tags": [
+    "typo"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-053",
+   "locale": "ko",
+   "query": "데드리프드",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-deadlift",
+    "barbell-romanian-deadlift",
+    "barbell-sumo-deadlift",
+    "trap-bar-deadlift",
+    "dumbbell-romanian-deadlift",
+    "barbell-stiff-leg-deadlift"
+   ],
+   "tags": [
+    "typo"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-054",
+   "locale": "ko",
+   "query": "스쿼츠",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-full-squat",
+    "bodyweight-squat",
+    "smith-machine-squat",
+    "dumbbell-goblet-squat",
+    "barbell-front-squats",
+    "dumbbell-squats",
+    "barbell-low-bar-squat",
+    "hack-squat-machine"
+   ],
+   "tags": [
+    "typo"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-055",
+   "locale": "ko",
+   "query": "랫 풀다운 머신",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "cable-bar-lateral-pulldown",
+    "v-bar-lat-pull-down",
+    "reverse-grip-lat-pull-down",
+    "lat-pull-down-close-grip",
+    "cable-close-grip-front-lat-pulldown"
+   ],
+   "tags": [
+    "machine",
+    "spaced"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-056",
+   "locale": "ko",
+   "query": "어깨 넓어지는 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lateral-raises-dumbbell",
+    "cable-lateral-raises",
+    "machine-lateral-raise",
+    "dumbbell-seated-lateral-raise",
+    "leaning-dumbbell-lateral-raise",
+    "dumbbell-seated-shoulder-press",
+    "shoulder-press-machine",
+    "barbell-standing-military-press",
+    "dumbbell-standing-overhead-press",
+    "seated-shoulder-press-barbell",
+    "arnold-press-dumbbell",
+    "smith-machine-shoulder-press",
+    "standing-shoulder-press-dumbbell",
+    "barbell-seated-overhead-press"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-057",
+   "locale": "ko",
+   "query": "등 넓어지는 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "cable-bar-lateral-pulldown",
+    "v-bar-lat-pull-down",
+    "reverse-grip-lat-pull-down",
+    "lat-pull-down-close-grip",
+    "cable-close-grip-front-lat-pulldown",
+    "pull-up-normal-grip",
+    "chin-up",
+    "pull-up-wide-grip",
+    "pull-up-neutral-grip",
+    "assisted-pull-up",
+    "assisted-pull-up-wide-grip",
+    "inverted-row",
+    "barbell-bent-over-row-pronated-grip",
+    "dumbbell-bent-over-row",
+    "dumbbell-single-arm-row",
+    "cable-seated-row",
+    "seated-row-machine",
+    "t-bar-row",
+    "t-bar-row-machine",
+    "cable-low-seated-row",
+    "barbell-pendlay-row",
+    "landmine-row"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-058",
+   "locale": "ko",
+   "query": "가슴 키우는 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bench-press",
+    "dumbbell-bench-press",
+    "chest-press-machine",
+    "push-ups-bodyweight",
+    "barbell-incline-bench-press",
+    "dumbbell-incline-bench-press",
+    "pec-deck-fly-machine",
+    "dumbbell-fly-flat-bench",
+    "smith-machine-bench-press",
+    "cable-middle-fly",
+    "cable-low-fly",
+    "dumbbell-incline-fly"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-059",
+   "locale": "ko",
+   "query": "팔 두꺼워지는 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-curls",
+    "barbell-biceps-curl",
+    "biceps-curl-cable",
+    "dumbbell-hammer-curl",
+    "ez-barbell-curl",
+    "incline-dumbbell-curl",
+    "barbell-preacher-curl",
+    "dumbbell-seated-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "concentration-curls-dumbbell",
+    "cable-pushdown",
+    "cable-triceps-rope-pushdown",
+    "cable-overhead-extension-rope",
+    "barbell-lying-triceps-skull-crusher",
+    "dumbbell-standing-triceps-extension",
+    "dumbbell-lying-triceps-extension",
+    "tricep-extension-machine",
+    "dumbbell-kickback",
+    "barbell-close-grip-bench-press",
+    "triceps-dip-machine",
+    "dumbbell-overhead-extension-seated",
+    "dumbbell-overhead-extension-standing"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-060",
+   "locale": "ko",
+   "query": "이두 키우기",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-curls",
+    "barbell-biceps-curl",
+    "biceps-curl-cable",
+    "dumbbell-hammer-curl",
+    "ez-barbell-curl",
+    "incline-dumbbell-curl",
+    "barbell-preacher-curl",
+    "dumbbell-seated-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "concentration-curls-dumbbell"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-061",
+   "locale": "ko",
+   "query": "힙업 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-hip-thrust",
+    "dumbbell-hip-thrust",
+    "hip-thrust-machine",
+    "bodyweight-glute-bridge",
+    "barbell-glute-bridge",
+    "glute-kickback-machine",
+    "bulgarian-split-squat",
+    "barbell-romanian-deadlift",
+    "donkey-kicks-bodyweight",
+    "dumbbell-glute-bridge",
+    "bodyweight-hip-thrust",
+    "seated-hip-abductor-machine",
+    "fire-hydrant-bodyweight",
+    "barbell-sumo-deadlift"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-062",
+   "locale": "ko",
+   "query": "애플힙 만들기",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-hip-thrust",
+    "dumbbell-hip-thrust",
+    "hip-thrust-machine",
+    "bodyweight-glute-bridge",
+    "barbell-glute-bridge",
+    "glute-kickback-machine",
+    "bulgarian-split-squat",
+    "barbell-romanian-deadlift",
+    "donkey-kicks-bodyweight",
+    "dumbbell-glute-bridge",
+    "bodyweight-hip-thrust",
+    "seated-hip-abductor-machine",
+    "fire-hydrant-bodyweight",
+    "barbell-sumo-deadlift"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-063",
+   "locale": "ko",
+   "query": "하체 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-full-squat",
+    "leg-press-machine-normal-stance",
+    "leg-extension-machine",
+    "hack-squat-machine",
+    "smith-machine-squat",
+    "bulgarian-split-squat",
+    "dumbbell-goblet-squat",
+    "barbell-front-squats",
+    "barbell-lunge",
+    "dumbbell-lunge",
+    "walking-lunge",
+    "bodyweight-squat",
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "barbell-romanian-deadlift",
+    "seated-calf-machine",
+    "standing-calf-raise-machine"
+   ],
+   "tags": [
+    "bodypart",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-064",
+   "locale": "ko",
+   "query": "하체 루틴",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-full-squat",
+    "leg-press-machine-normal-stance",
+    "leg-extension-machine",
+    "hack-squat-machine",
+    "smith-machine-squat",
+    "bulgarian-split-squat",
+    "dumbbell-goblet-squat",
+    "barbell-front-squats",
+    "barbell-lunge",
+    "dumbbell-lunge",
+    "walking-lunge",
+    "bodyweight-squat",
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "barbell-romanian-deadlift"
+   ],
+   "tags": [
+    "split",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-065",
+   "locale": "ko",
+   "query": "허벅지 얇아지는 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "walking-lunge",
+    "bodyweight-squat",
+    "stationary-exercise-bike",
+    "treadmill-walking",
+    "bodyweight-glute-bridge",
+    "incline-treadmill-walk",
+    "bodyweight-rear-lunge",
+    "spin-bike"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-066",
+   "locale": "ko",
+   "query": "복부 지방 태우기",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "abdominal-crunches",
+    "high-plank",
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "cable-crunch",
+    "russian-twist",
+    "side-plank",
+    "plank-on-elbows",
+    "reverse-crunch",
+    "bicycles",
+    "mountain-climbers",
+    "dead-bug",
+    "hanging-knee-raises",
+    "v-crunches",
+    "hollow-hold",
+    "abdominal-crunches-machine",
+    "leg-raises-straight-legs",
+    "decline-sit-up",
+    "crunch-floor",
+    "treadmill-running",
+    "treadmill-walking",
+    "incline-treadmill-walk",
+    "stationary-exercise-bike",
+    "spin-bike",
+    "gym-rowing-machine-normal-speed",
+    "elliptical-trainer",
+    "stair-climber",
+    "running-outdoor",
+    "jump-rope-basic-jump",
+    "swimming",
+    "assault-air-bike",
+    "battle-ropes",
+    "burpee",
+    "jumping-jack",
+    "high-knees",
+    "briskly-walking",
+    "recumbent-bike",
+    "outdoor-cycling",
+    "treadmill-interval-sprints"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-067",
+   "locale": "ko",
+   "query": "11자 복근 만들기",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "abdominal-crunches",
+    "high-plank",
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "cable-crunch",
+    "russian-twist",
+    "side-plank",
+    "plank-on-elbows",
+    "reverse-crunch",
+    "bicycles",
+    "mountain-climbers",
+    "dead-bug",
+    "hanging-knee-raises",
+    "v-crunches",
+    "hollow-hold",
+    "abdominal-crunches-machine",
+    "leg-raises-straight-legs",
+    "decline-sit-up",
+    "crunch-floor"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-068",
+   "locale": "ko",
+   "query": "코어 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "high-plank",
+    "plank-on-elbows",
+    "side-plank",
+    "ab-wheel-plank",
+    "alternate-single-leg-raise-plank",
+    "plank-lunges",
+    "dead-bug",
+    "bird-dog",
+    "hollow-hold",
+    "mountain-climbers",
+    "cable-crunch",
+    "hanging-leg-raise"
+   ],
+   "tags": [
+    "goal",
+    "core",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-069",
+   "locale": "ko",
+   "query": "살빠지는 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "treadmill-running",
+    "treadmill-walking",
+    "incline-treadmill-walk",
+    "stationary-exercise-bike",
+    "spin-bike",
+    "gym-rowing-machine-normal-speed",
+    "elliptical-trainer",
+    "stair-climber",
+    "running-outdoor",
+    "jump-rope-basic-jump",
+    "swimming",
+    "assault-air-bike",
+    "battle-ropes",
+    "burpee",
+    "jumping-jack",
+    "high-knees",
+    "briskly-walking",
+    "recumbent-bike",
+    "outdoor-cycling",
+    "treadmill-interval-sprints"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-070",
+   "locale": "ko",
+   "query": "전신 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "burpee",
+    "jumping-jack",
+    "mountain-climbers",
+    "high-knees",
+    "push-ups-bodyweight",
+    "bodyweight-squat",
+    "high-plank",
+    "jump-squats-bodyweight",
+    "walking-lunge",
+    "bird-dog",
+    "kettlebell-swing",
+    "barbell-deadlift",
+    "turkish-get-up"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-071",
+   "locale": "ko",
+   "query": "승모근 줄이기 스트레칭",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "neck-stretch",
+    "backward-forward-turn-to-side-neck-stretch",
+    "ceiling-look-stretch",
+    "across-chest-shoulder-stretch",
+    "cross-over-shoulder-stretch",
+    "standing-overhand-shoulder-stretch",
+    "reaching-up-shoulder-stretch",
+    "rear-deltoid-stretch",
+    "reverse-shoulder-stretch",
+    "arms-behind-back-shoulder-flexor-stretch",
+    "standing-reverse-shoulder-stretch",
+    "child-pose",
+    "cat-cow"
+   ],
+   "tags": [
+    "goal",
+    "stretch",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-072",
+   "locale": "ko",
+   "query": "거북목 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-face-pull",
+    "resistance-band-face-pull",
+    "neck-stretch",
+    "reverse-machine-fly",
+    "thoracic-rotation",
+    "cat-cow",
+    "superman",
+    "backward-forward-turn-to-side-neck-stretch",
+    "ceiling-look-stretch"
+   ],
+   "tags": [
+    "goal",
+    "posture",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-073",
+   "locale": "ko",
+   "query": "라운드숄더 교정",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-face-pull",
+    "resistance-band-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "corner-wall-chest-stretch",
+    "bent-arm-chest-stretch",
+    "dumbbell-reverse-fly",
+    "thoracic-rotation"
+   ],
+   "tags": [
+    "goal",
+    "posture",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-074",
+   "locale": "ko",
+   "query": "맨몸 운동",
+   "category": null,
+   "equipment": "BODYWEIGHT",
+   "acceptable": [
+    "burpee",
+    "jumping-jack",
+    "mountain-climbers",
+    "high-knees",
+    "push-ups-bodyweight",
+    "bodyweight-squat",
+    "high-plank",
+    "jump-squats-bodyweight",
+    "walking-lunge",
+    "bird-dog",
+    "bodyweight-rear-lunge",
+    "bodyweight-forward-lunge",
+    "bodyweight-wall-squat",
+    "bodyweight-glute-bridge",
+    "bodyweight-standing-calf-raise",
+    "bulgarian-split-squat",
+    "cossack-squat",
+    "side-lunges-bodyweight",
+    "step-up-on-chair-bodyweight"
+   ],
+   "tags": [
+    "home",
+    "bodyweight",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-075",
+   "locale": "ko",
+   "query": "기구 없이 등운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "inverted-row",
+    "superman",
+    "pull-up-normal-grip",
+    "chin-up",
+    "bird-dog",
+    "resistance-band-floor-hyperextension"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE"
+   ],
+   "tags": [
+    "home",
+    "noequip",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-076",
+   "locale": "ko",
+   "query": "집에서 엉덩이 운동",
+   "category": null,
+   "equipment": "BODYWEIGHT",
+   "acceptable": [
+    "bodyweight-glute-bridge",
+    "bodyweight-hip-thrust",
+    "donkey-kicks-bodyweight",
+    "fire-hydrant-bodyweight",
+    "bodyweight-rear-lunge",
+    "bodyweight-squat",
+    "curtsy-lunge-bodyweight",
+    "glute-bridge-with-abduction-bodyweight",
+    "bulgarian-split-squat",
+    "side-lunges-bodyweight"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE"
+   ],
+   "tags": [
+    "home",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-077",
+   "locale": "ko",
+   "query": "머신 등 운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "seated-row-machine",
+    "t-bar-row-machine",
+    "assisted-pull-up",
+    "back-extension-machine",
+    "cable-pulldown",
+    "lat-pull-down-wide-grip"
+   ],
+   "forbid_equipment_top5": [
+    "BODYWEIGHT"
+   ],
+   "tags": [
+    "machine",
+    "mixed"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-078",
+   "locale": "ko",
+   "query": "케이블 운동 삼두",
+   "category": null,
+   "equipment": "CABLE",
+   "acceptable": [
+    "cable-pushdown",
+    "cable-triceps-rope-pushdown",
+    "cable-overhead-extension-rope",
+    "cable-reverse-grip-pushdown",
+    "triceps-rope-extension-on-crossover-machine"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "DUMBBELL"
+   ],
+   "tags": [
+    "cable",
+    "mixed"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-079",
+   "locale": "ko",
+   "query": "바벨 하체",
+   "category": null,
+   "equipment": "BARBELL",
+   "acceptable": [
+    "barbell-full-squat",
+    "barbell-front-squats",
+    "barbell-lunge",
+    "barbell-romanian-deadlift",
+    "barbell-hip-thrust",
+    "barbell-low-bar-squat",
+    "barbell-split-squat"
+   ],
+   "forbid_equipment_top5": [
+    "DUMBBELL"
+   ],
+   "tags": [
+    "barbell",
+    "mixed"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-080",
+   "locale": "ko",
+   "query": "헬스장 가슴 루틴",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bench-press",
+    "dumbbell-bench-press",
+    "chest-press-machine",
+    "push-ups-bodyweight",
+    "barbell-incline-bench-press",
+    "dumbbell-incline-bench-press",
+    "pec-deck-fly-machine",
+    "dumbbell-fly-flat-bench",
+    "smith-machine-bench-press",
+    "cable-middle-fly",
+    "cable-low-fly",
+    "dumbbell-incline-fly"
+   ],
+   "tags": [
+    "gym",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-081",
+   "locale": "ko",
+   "query": "푸쉬데이",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bench-press",
+    "dumbbell-bench-press",
+    "chest-press-machine",
+    "push-ups-bodyweight",
+    "barbell-incline-bench-press",
+    "dumbbell-incline-bench-press",
+    "pec-deck-fly-machine",
+    "dumbbell-fly-flat-bench",
+    "smith-machine-bench-press",
+    "cable-middle-fly",
+    "cable-low-fly",
+    "dumbbell-incline-fly",
+    "dumbbell-seated-shoulder-press",
+    "shoulder-press-machine",
+    "barbell-standing-military-press",
+    "dumbbell-standing-overhead-press",
+    "seated-shoulder-press-barbell",
+    "arnold-press-dumbbell",
+    "smith-machine-shoulder-press",
+    "standing-shoulder-press-dumbbell",
+    "barbell-seated-overhead-press",
+    "cable-pushdown",
+    "cable-triceps-rope-pushdown",
+    "cable-overhead-extension-rope",
+    "barbell-lying-triceps-skull-crusher",
+    "dumbbell-standing-triceps-extension",
+    "dumbbell-lying-triceps-extension",
+    "tricep-extension-machine",
+    "dumbbell-kickback",
+    "barbell-close-grip-bench-press",
+    "triceps-dip-machine",
+    "dumbbell-overhead-extension-seated",
+    "dumbbell-overhead-extension-standing"
+   ],
+   "tags": [
+    "split",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-082",
+   "locale": "ko",
+   "query": "풀데이",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "pull-up-normal-grip",
+    "seated-row-machine",
+    "cable-seated-row",
+    "barbell-bent-over-row-pronated-grip",
+    "dumbbell-single-arm-row",
+    "dumbbell-bent-over-row",
+    "t-bar-row",
+    "t-bar-row-machine",
+    "chin-up",
+    "barbell-deadlift",
+    "assisted-pull-up",
+    "dumbbell-curls",
+    "barbell-biceps-curl",
+    "biceps-curl-cable",
+    "dumbbell-hammer-curl",
+    "ez-barbell-curl",
+    "incline-dumbbell-curl",
+    "barbell-preacher-curl",
+    "dumbbell-seated-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "concentration-curls-dumbbell",
+    "bent-over-rear-delt-fly-dumbbell",
+    "cable-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "dumbbell-reverse-fly",
+    "cable-reverse-fly",
+    "seated-dumbbell-rear-delt-fly",
+    "resistance-band-face-pull"
+   ],
+   "tags": [
+    "split",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-083",
+   "locale": "ko",
+   "query": "헬린이 가슴운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "push-ups-bodyweight",
+    "knee-push-up",
+    "chest-press-machine",
+    "dumbbell-bench-press",
+    "incline-push-up",
+    "pec-deck-fly-machine"
+   ],
+   "tags": [
+    "beginner",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-084",
+   "locale": "ko",
+   "query": "헬린이 하체",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "leg-press-machine-normal-stance",
+    "leg-extension-machine",
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "bodyweight-squat",
+    "smith-machine-squat",
+    "dumbbell-goblet-squat",
+    "hack-squat-machine"
+   ],
+   "tags": [
+    "beginner",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-085",
+   "locale": "ko",
+   "query": "초보자 등운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "seated-row-machine",
+    "assisted-pull-up",
+    "cable-seated-row",
+    "back-extension-machine",
+    "t-bar-row-machine"
+   ],
+   "tags": [
+    "beginner",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-086",
+   "locale": "ko",
+   "query": "허리 아플 때 복근운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dead-bug",
+    "bird-dog",
+    "high-plank",
+    "plank-on-elbows",
+    "side-plank",
+    "hollow-hold",
+    "reverse-crunch",
+    "cat-cow"
+   ],
+   "tags": [
+    "injury",
+    "natural",
+    "core"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-087",
+   "locale": "ko",
+   "query": "무릎 안 아픈 하체운동",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bodyweight-glute-bridge",
+    "leg-extension-machine",
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "bodyweight-hip-thrust",
+    "hip-thrust-machine",
+    "barbell-hip-thrust",
+    "seated-hip-abductor-machine",
+    "hip-adductor-machine",
+    "leg-press-machine-normal-stance",
+    "bodyweight-wall-squat",
+    "seated-calf-machine"
+   ],
+   "tags": [
+    "injury",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-088",
+   "locale": "ko",
+   "query": "턱걸이 못할 때",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "assisted-pull-up",
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "inverted-row",
+    "assisted-pull-up-wide-grip",
+    "assisted-chin-up-normal-width-reverse-grip",
+    "reverse-grip-lat-pull-down"
+   ],
+   "tags": [
+    "beginner",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-089",
+   "locale": "ko",
+   "query": "푸시업 하나도 못해요",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "knee-push-up",
+    "incline-push-up",
+    "chest-press-machine",
+    "push-ups-bodyweight",
+    "dumbbell-bench-press"
+   ],
+   "tags": [
+    "beginner",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-090",
+   "locale": "ko",
+   "query": "스트레칭",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "child-pose",
+    "cat-cow",
+    "neck-stretch",
+    "worlds-greatest-stretch",
+    "kneeling-hip-flexor-stretch",
+    "couch-stretch",
+    "standing-quadriceps-stretch",
+    "seated-single-leg-hamstring-stretch",
+    "pigeon-pose",
+    "thoracic-rotation",
+    "across-chest-shoulder-stretch",
+    "standing-gastrocnemius-stretch",
+    "seated-calf-stretch",
+    "lying-glute-stretch",
+    "seated-cross-leg-glute-stretch",
+    "90-to-90-stretch",
+    "adductor-stretch",
+    "knee-to-chest-stretch",
+    "triceps-light-stretch",
+    "runner-stretch",
+    "standing-overhand-shoulder-stretch",
+    "corner-wall-chest-stretch",
+    "dead-hang-stretch"
+   ],
+   "tags": [
+    "stretch"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-091",
+   "locale": "ko",
+   "query": "종아리 스트레칭",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "standing-gastrocnemius-stretch",
+    "seated-calf-stretch",
+    "calf-stretch-with-hands-against-wall",
+    "calves-stretch-on-stairs",
+    "seated-straight-leg-calf-stretch",
+    "lunging-straight-leg-calf-stretch",
+    "calf-stretch-with-rope",
+    "crouching-heel-back-calf-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "bodypart"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-092",
+   "locale": "ko",
+   "query": "가슴 스트레칭",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "corner-wall-chest-stretch",
+    "standing-one-arm-chest-stretch",
+    "bent-arm-chest-stretch",
+    "above-head-chest-stretch",
+    "back-pec-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "bodypart"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-093",
+   "locale": "ko",
+   "query": "허리 스트레칭",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "child-pose",
+    "cat-cow",
+    "cat-stretch",
+    "middle-back-rotation-stretch",
+    "thoracic-rotation",
+    "lying-crossover-stretch",
+    "bodyweight-standing-back-stretch",
+    "dead-hang-stretch",
+    "side-lying-floor-stretch",
+    "pigeon-pose",
+    "lying-glute-stretch",
+    "seated-cross-leg-glute-stretch",
+    "90-to-90-stretch",
+    "knee-to-chest-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "bodypart"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-094",
+   "locale": "ko",
+   "query": "고양이 자세",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cat-cow",
+    "cat-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "yoga"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-095",
+   "locale": "ko",
+   "query": "아기 자세",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "child-pose",
+    "child-pose-up"
+   ],
+   "tags": [
+    "stretch",
+    "yoga"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-096",
+   "locale": "ko",
+   "query": "운동 전 워밍업",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "worlds-greatest-stretch",
+    "jumping-jack",
+    "high-knees",
+    "cat-cow",
+    "thoracic-rotation",
+    "bodyweight-squat",
+    "walking-lunge",
+    "mountain-climbers",
+    "bird-dog",
+    "skipping"
+   ],
+   "tags": [
+    "warmup",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-ko-097",
+   "locale": "ko",
+   "query": "자기 전 스트레칭",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "child-pose",
+    "cat-cow",
+    "neck-stretch",
+    "worlds-greatest-stretch",
+    "kneeling-hip-flexor-stretch",
+    "couch-stretch",
+    "standing-quadriceps-stretch",
+    "seated-single-leg-hamstring-stretch",
+    "pigeon-pose",
+    "thoracic-rotation",
+    "across-chest-shoulder-stretch",
+    "standing-gastrocnemius-stretch",
+    "seated-calf-stretch",
+    "lying-glute-stretch",
+    "seated-cross-leg-glute-stretch",
+    "90-to-90-stretch",
+    "adductor-stretch",
+    "knee-to-chest-stretch",
+    "triceps-light-stretch",
+    "runner-stretch",
+    "standing-overhand-shoulder-stretch",
+    "corner-wall-chest-stretch",
+    "dead-hang-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-001",
+   "locale": "en",
+   "query": "flat bb bench",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bench-press",
+    "smith-machine-bench-press",
+    "barbell-wide-bench-press"
+   ],
+   "tags": [
+    "abbrev",
+    "barbell"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-002",
+   "locale": "en",
+   "query": "incline db press",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-incline-bench-press",
+    "dumbbell-incline-fly",
+    "dumbbell-incline-hammer-shoulder-press"
+   ],
+   "tags": [
+    "abbrev",
+    "dumbbell"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-003",
+   "locale": "en",
+   "query": "chest fly machine",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "pec-deck-fly-machine"
+   ],
+   "tags": [
+    "machine",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-004",
+   "locale": "en",
+   "query": "press up",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "push-ups-bodyweight",
+    "knee-push-up",
+    "incline-push-up",
+    "diamond-push-up",
+    "decline-push-up",
+    "close-grip-push-up",
+    "pike-push-up"
+   ],
+   "tags": [
+    "spelling-variant"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-005",
+   "locale": "en",
+   "query": "deadlifts",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-deadlift",
+    "barbell-romanian-deadlift",
+    "barbell-sumo-deadlift",
+    "trap-bar-deadlift",
+    "dumbbell-romanian-deadlift",
+    "barbell-stiff-leg-deadlift"
+   ],
+   "tags": [
+    "plural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-006",
+   "locale": "en",
+   "query": "sumo dl",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-sumo-deadlift",
+    "barbell-sumo-romanian-deadlift",
+    "kettlebell-sumo-deadlift"
+   ],
+   "tags": [
+    "abbrev"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-007",
+   "locale": "en",
+   "query": "trap bar",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "trap-bar-deadlift",
+    "trap-bar-shrug"
+   ],
+   "tags": [
+    "equipment",
+    "partial"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-008",
+   "locale": "en",
+   "query": "pull downs",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "cable-bar-lateral-pulldown",
+    "v-bar-lat-pull-down",
+    "reverse-grip-lat-pull-down",
+    "lat-pull-down-close-grip",
+    "cable-close-grip-front-lat-pulldown"
+   ],
+   "tags": [
+    "plural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-009",
+   "locale": "en",
+   "query": "bent over rows",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bent-over-row-pronated-grip",
+    "dumbbell-bent-over-row",
+    "dumbbell-single-arm-row",
+    "cable-seated-row",
+    "seated-row-machine",
+    "t-bar-row",
+    "t-bar-row-machine",
+    "cable-low-seated-row",
+    "inverted-row",
+    "barbell-pendlay-row",
+    "landmine-row"
+   ],
+   "tags": [
+    "plural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-010",
+   "locale": "en",
+   "query": "seated cable row",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-seated-row",
+    "cable-low-seated-row",
+    "cable-seated-row-with-v-bar",
+    "cable-seated-supine-grip-row"
+   ],
+   "tags": [
+    "cable"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-011",
+   "locale": "en",
+   "query": "one arm db row",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-single-arm-row",
+    "dumbbell-one-arm-row-rack-support"
+   ],
+   "tags": [
+    "abbrev",
+    "dumbbell"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-012",
+   "locale": "en",
+   "query": "cable face pull",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-face-pull",
+    "resistance-band-face-pull",
+    "dumbbell-bent-over-face-pull",
+    "cable-rear-delt-fly",
+    "reverse-machine-fly"
+   ],
+   "tags": [
+    "exact",
+    "staple-new",
+    "cable"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-013",
+   "locale": "en",
+   "query": "rear delt",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bent-over-rear-delt-fly-dumbbell",
+    "cable-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "dumbbell-reverse-fly",
+    "cable-reverse-fly",
+    "seated-dumbbell-rear-delt-fly",
+    "resistance-band-face-pull"
+   ],
+   "tags": [
+    "muscle",
+    "slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-014",
+   "locale": "en",
+   "query": "arnold press",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "arnold-press-dumbbell",
+    "dumbbell-arnold-press-seated"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-015",
+   "locale": "en",
+   "query": "bicep curls",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-curls",
+    "barbell-biceps-curl",
+    "biceps-curl-cable",
+    "dumbbell-hammer-curl",
+    "ez-barbell-curl",
+    "incline-dumbbell-curl",
+    "barbell-preacher-curl",
+    "dumbbell-seated-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "concentration-curls-dumbbell"
+   ],
+   "tags": [
+    "staple",
+    "spelling-variant"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-016",
+   "locale": "en",
+   "query": "preacher curl",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-preacher-curl",
+    "dumbbell-preacher-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "preacher-curl-ez-bar"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-017",
+   "locale": "en",
+   "query": "overhead tricep extension",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-overhead-extension-rope",
+    "dumbbell-overhead-extension-seated",
+    "dumbbell-overhead-extension-standing",
+    "dumbbell-standing-triceps-extension"
+   ],
+   "tags": [
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-018",
+   "locale": "en",
+   "query": "forearms",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "wrist-curl-barbell",
+    "wrist-curl-dumbbell",
+    "dumbbell-reverse-wrist-curl",
+    "cable-wrist-curl",
+    "wrist-extension-barbell",
+    "barbell-reverse-biceps-curl"
+   ],
+   "tags": [
+    "bodypart",
+    "forearm"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-019",
+   "locale": "en",
+   "query": "bulgarian split squats",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bulgarian-split-squat",
+    "dumbbell-bulgarian-split-squat",
+    "barbell-bulgarian-split-squat"
+   ],
+   "tags": [
+    "plural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-020",
+   "locale": "en",
+   "query": "goblet squat",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dumbbell-goblet-squat",
+    "goblet-kettlebell-squats",
+    "dumbbell-goblet-split-squat"
+   ],
+   "tags": [
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-021",
+   "locale": "en",
+   "query": "hack squat",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "hack-squat-machine"
+   ],
+   "tags": [
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-022",
+   "locale": "en",
+   "query": "leg extension",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "leg-extension-machine",
+    "seated-leg-extension-single-leg"
+   ],
+   "tags": [
+    "staple-new",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-023",
+   "locale": "en",
+   "query": "quad extension machine",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "leg-extension-machine",
+    "seated-leg-extension-single-leg"
+   ],
+   "tags": [
+    "machine",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-024",
+   "locale": "en",
+   "query": "hip thrust machine",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "hip-thrust-machine"
+   ],
+   "tags": [
+    "staple-new",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-025",
+   "locale": "en",
+   "query": "how to get bigger glutes",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-hip-thrust",
+    "dumbbell-hip-thrust",
+    "hip-thrust-machine",
+    "bodyweight-glute-bridge",
+    "barbell-glute-bridge",
+    "glute-kickback-machine",
+    "bulgarian-split-squat",
+    "barbell-romanian-deadlift",
+    "donkey-kicks-bodyweight",
+    "dumbbell-glute-bridge",
+    "bodyweight-hip-thrust",
+    "seated-hip-abductor-machine",
+    "fire-hydrant-bodyweight",
+    "barbell-sumo-deadlift"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-026",
+   "locale": "en",
+   "query": "hip abductor",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "seated-hip-abductor-machine",
+    "resistance-band-seated-hip-abduction"
+   ],
+   "tags": [
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-027",
+   "locale": "en",
+   "query": "lower abs",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "reverse-crunch",
+    "leg-raises-straight-legs",
+    "hanging-knee-raises",
+    "dead-bug",
+    "v-crunches"
+   ],
+   "tags": [
+    "bodypart",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-028",
+   "locale": "en",
+   "query": "obliques",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "russian-twist",
+    "side-plank",
+    "oblique-crunch",
+    "alternate-oblique-crunch",
+    "standing-oblique-crunch",
+    "cable-twist",
+    "alternating-oblique-sit-ups",
+    "standing-cable-oblique-twist",
+    "bicycles"
+   ],
+   "tags": [
+    "muscle"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-029",
+   "locale": "en",
+   "query": "ab wheel",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "ab-wheel-all-the-way-out",
+    "ab-wheel-halfway-out",
+    "standing-ab-wheel-rollout",
+    "ab-wheel-plank",
+    "barbell-rollout"
+   ],
+   "tags": [
+    "equipment"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-030",
+   "locale": "en",
+   "query": "hanging leg raises",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "hanging-leg-raise",
+    "hanging-knee-raises",
+    "hanging-oblique-crunches"
+   ],
+   "tags": [
+    "plural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-031",
+   "locale": "en",
+   "query": "bicycle crunches",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bicycles",
+    "bicycles-crunches",
+    "bicycle-twisting-crunch",
+    "45-degree-bicycle-twisting"
+   ],
+   "tags": [
+    "plural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-032",
+   "locale": "en",
+   "query": "stairmaster",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "stair-climber",
+    "incline-treadmill-walk"
+   ],
+   "tags": [
+    "cardio",
+    "brand-slang"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-033",
+   "locale": "en",
+   "query": "elliptical",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "elliptical-trainer"
+   ],
+   "tags": [
+    "cardio",
+    "machine"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-034",
+   "locale": "en",
+   "query": "incline walk",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "incline-treadmill-walk",
+    "treadmill-walking",
+    "briskly-walking"
+   ],
+   "tags": [
+    "cardio",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-035",
+   "locale": "en",
+   "query": "kettlebell swings",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "kettlebell-swing"
+   ],
+   "tags": [
+    "kettlebell",
+    "plural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-036",
+   "locale": "en",
+   "query": "foam rolling quads",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "foam-roller-quads"
+   ],
+   "tags": [
+    "foam",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-037",
+   "locale": "en",
+   "query": "battle rope",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "battle-ropes"
+   ],
+   "tags": [
+    "cardio",
+    "equipment"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-038",
+   "locale": "en",
+   "query": "landmine",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "landmine-row",
+    "landmine-chest-press",
+    "barbell-rollout"
+   ],
+   "tags": [
+    "equipment"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-039",
+   "locale": "en",
+   "query": "resistance band back",
+   "category": null,
+   "equipment": "RESISTANCE_BAND",
+   "acceptable": [
+    "band-close-grip-row",
+    "resistance-band-floor-hyperextension",
+    "resistance-band-face-pull",
+    "good-morning-resistance-band"
+   ],
+   "tags": [
+    "band",
+    "mixed"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-040",
+   "locale": "en",
+   "query": "bigger shoulders",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "lateral-raises-dumbbell",
+    "cable-lateral-raises",
+    "machine-lateral-raise",
+    "dumbbell-seated-lateral-raise",
+    "leaning-dumbbell-lateral-raise",
+    "dumbbell-seated-shoulder-press",
+    "shoulder-press-machine",
+    "barbell-standing-military-press",
+    "dumbbell-standing-overhead-press",
+    "seated-shoulder-press-barbell",
+    "arnold-press-dumbbell",
+    "smith-machine-shoulder-press",
+    "standing-shoulder-press-dumbbell",
+    "barbell-seated-overhead-press"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-041",
+   "locale": "en",
+   "query": "wider back",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "cable-bar-lateral-pulldown",
+    "v-bar-lat-pull-down",
+    "reverse-grip-lat-pull-down",
+    "lat-pull-down-close-grip",
+    "cable-close-grip-front-lat-pulldown",
+    "pull-up-normal-grip",
+    "chin-up",
+    "pull-up-wide-grip",
+    "pull-up-neutral-grip",
+    "assisted-pull-up",
+    "assisted-pull-up-wide-grip",
+    "inverted-row",
+    "barbell-bent-over-row-pronated-grip",
+    "dumbbell-bent-over-row",
+    "dumbbell-single-arm-row",
+    "cable-seated-row",
+    "seated-row-machine",
+    "t-bar-row",
+    "t-bar-row-machine",
+    "cable-low-seated-row",
+    "barbell-pendlay-row",
+    "landmine-row"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-042",
+   "locale": "en",
+   "query": "build chest at home",
+   "category": null,
+   "equipment": "BODYWEIGHT",
+   "acceptable": [
+    "push-ups-bodyweight",
+    "knee-push-up",
+    "incline-push-up",
+    "diamond-push-up",
+    "decline-push-up",
+    "close-grip-push-up",
+    "pike-push-up"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE"
+   ],
+   "tags": [
+    "home",
+    "noequip",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-043",
+   "locale": "en",
+   "query": "no equipment abs",
+   "category": null,
+   "equipment": "BODYWEIGHT",
+   "acceptable": [
+    "abdominal-crunches",
+    "high-plank",
+    "lying-leg-raise",
+    "plank-on-elbows",
+    "reverse-crunch",
+    "bicycles",
+    "mountain-climbers",
+    "dead-bug",
+    "v-crunches",
+    "hollow-hold",
+    "leg-raises-straight-legs",
+    "crunch-floor",
+    "side-plank",
+    "russian-twist"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE",
+    "DUMBBELL"
+   ],
+   "tags": [
+    "home",
+    "noequip",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-044",
+   "locale": "en",
+   "query": "bodyweight legs",
+   "category": null,
+   "equipment": "BODYWEIGHT",
+   "acceptable": [
+    "bodyweight-squat",
+    "bodyweight-rear-lunge",
+    "bodyweight-forward-lunge",
+    "walking-lunge",
+    "bodyweight-wall-squat",
+    "bodyweight-glute-bridge",
+    "jump-squats-bodyweight",
+    "bodyweight-standing-calf-raise",
+    "bulgarian-split-squat",
+    "cossack-squat",
+    "side-lunges-bodyweight",
+    "step-up-on-chair-bodyweight"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE"
+   ],
+   "tags": [
+    "home",
+    "bodyweight",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-045",
+   "locale": "en",
+   "query": "dumbbell only back workout",
+   "category": null,
+   "equipment": "DUMBBELL",
+   "acceptable": [
+    "dumbbell-bent-over-row",
+    "dumbbell-single-arm-row",
+    "dumbbell-incline-row",
+    "dumbbell-reverse-fly",
+    "dumbbell-renegade-row",
+    "dumbbell-romanian-deadlift",
+    "prone-bench-row-dumbbells"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE"
+   ],
+   "tags": [
+    "home",
+    "dumbbell",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-046",
+   "locale": "en",
+   "query": "machine only chest",
+   "category": null,
+   "equipment": "MACHINE",
+   "acceptable": [
+    "chest-press-machine",
+    "pec-deck-fly-machine",
+    "machine-chest-press-incline",
+    "chest-dip-machine"
+   ],
+   "forbid_equipment_top5": [
+    "BODYWEIGHT"
+   ],
+   "tags": [
+    "machine",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-047",
+   "locale": "en",
+   "query": "cable biceps",
+   "category": null,
+   "equipment": "CABLE",
+   "acceptable": [
+    "biceps-curl-cable",
+    "cable-preacher-curl",
+    "cable-rope-hammer-curl",
+    "cable-close-grip-curl",
+    "cable-overhead-curl",
+    "biceps-curl-cable-wide-grip"
+   ],
+   "forbid_equipment_top5": [
+    "BARBELL",
+    "DUMBBELL"
+   ],
+   "tags": [
+    "cable",
+    "mixed"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-048",
+   "locale": "en",
+   "query": "burn belly fat",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "abdominal-crunches",
+    "high-plank",
+    "lying-leg-raise",
+    "hanging-leg-raise",
+    "cable-crunch",
+    "russian-twist",
+    "side-plank",
+    "plank-on-elbows",
+    "reverse-crunch",
+    "bicycles",
+    "mountain-climbers",
+    "dead-bug",
+    "hanging-knee-raises",
+    "v-crunches",
+    "hollow-hold",
+    "abdominal-crunches-machine",
+    "leg-raises-straight-legs",
+    "decline-sit-up",
+    "crunch-floor",
+    "treadmill-running",
+    "treadmill-walking",
+    "incline-treadmill-walk",
+    "stationary-exercise-bike",
+    "spin-bike",
+    "gym-rowing-machine-normal-speed",
+    "elliptical-trainer",
+    "stair-climber",
+    "running-outdoor",
+    "jump-rope-basic-jump",
+    "swimming",
+    "assault-air-bike",
+    "battle-ropes",
+    "burpee",
+    "jumping-jack",
+    "high-knees",
+    "briskly-walking",
+    "recumbent-bike",
+    "outdoor-cycling",
+    "treadmill-interval-sprints"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-049",
+   "locale": "en",
+   "query": "core workout",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "high-plank",
+    "plank-on-elbows",
+    "side-plank",
+    "ab-wheel-plank",
+    "alternate-single-leg-raise-plank",
+    "plank-lunges",
+    "dead-bug",
+    "bird-dog",
+    "hollow-hold",
+    "mountain-climbers",
+    "cable-crunch",
+    "hanging-leg-raise"
+   ],
+   "tags": [
+    "core",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-050",
+   "locale": "en",
+   "query": "full body workout",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "burpee",
+    "jumping-jack",
+    "mountain-climbers",
+    "high-knees",
+    "push-ups-bodyweight",
+    "bodyweight-squat",
+    "high-plank",
+    "jump-squats-bodyweight",
+    "walking-lunge",
+    "bird-dog",
+    "kettlebell-swing",
+    "barbell-deadlift",
+    "turkish-get-up"
+   ],
+   "tags": [
+    "goal",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-051",
+   "locale": "en",
+   "query": "leg day",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-full-squat",
+    "leg-press-machine-normal-stance",
+    "leg-extension-machine",
+    "hack-squat-machine",
+    "smith-machine-squat",
+    "bulgarian-split-squat",
+    "dumbbell-goblet-squat",
+    "barbell-front-squats",
+    "barbell-lunge",
+    "dumbbell-lunge",
+    "walking-lunge",
+    "bodyweight-squat",
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "barbell-romanian-deadlift",
+    "seated-calf-machine",
+    "standing-calf-raise-machine"
+   ],
+   "tags": [
+    "split",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-052",
+   "locale": "en",
+   "query": "push day",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bench-press",
+    "dumbbell-bench-press",
+    "chest-press-machine",
+    "push-ups-bodyweight",
+    "barbell-incline-bench-press",
+    "dumbbell-incline-bench-press",
+    "pec-deck-fly-machine",
+    "dumbbell-fly-flat-bench",
+    "smith-machine-bench-press",
+    "cable-middle-fly",
+    "cable-low-fly",
+    "dumbbell-incline-fly",
+    "dumbbell-seated-shoulder-press",
+    "shoulder-press-machine",
+    "barbell-standing-military-press",
+    "dumbbell-standing-overhead-press",
+    "seated-shoulder-press-barbell",
+    "arnold-press-dumbbell",
+    "smith-machine-shoulder-press",
+    "standing-shoulder-press-dumbbell",
+    "barbell-seated-overhead-press",
+    "cable-pushdown",
+    "cable-triceps-rope-pushdown",
+    "cable-overhead-extension-rope",
+    "barbell-lying-triceps-skull-crusher",
+    "dumbbell-standing-triceps-extension",
+    "dumbbell-lying-triceps-extension",
+    "tricep-extension-machine",
+    "dumbbell-kickback",
+    "barbell-close-grip-bench-press",
+    "triceps-dip-machine",
+    "dumbbell-overhead-extension-seated",
+    "dumbbell-overhead-extension-standing"
+   ],
+   "tags": [
+    "split",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-053",
+   "locale": "en",
+   "query": "pull day",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "pull-up-normal-grip",
+    "seated-row-machine",
+    "cable-seated-row",
+    "barbell-bent-over-row-pronated-grip",
+    "dumbbell-single-arm-row",
+    "dumbbell-bent-over-row",
+    "t-bar-row",
+    "t-bar-row-machine",
+    "chin-up",
+    "barbell-deadlift",
+    "assisted-pull-up",
+    "dumbbell-curls",
+    "barbell-biceps-curl",
+    "biceps-curl-cable",
+    "dumbbell-hammer-curl",
+    "ez-barbell-curl",
+    "incline-dumbbell-curl",
+    "barbell-preacher-curl",
+    "dumbbell-seated-curl",
+    "preacher-curl-machine",
+    "cable-preacher-curl",
+    "concentration-curls-dumbbell",
+    "bent-over-rear-delt-fly-dumbbell",
+    "cable-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "dumbbell-reverse-fly",
+    "cable-reverse-fly",
+    "seated-dumbbell-rear-delt-fly",
+    "resistance-band-face-pull"
+   ],
+   "tags": [
+    "split",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-054",
+   "locale": "en",
+   "query": "beginner back exercises",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "seated-row-machine",
+    "assisted-pull-up",
+    "cable-seated-row",
+    "back-extension-machine",
+    "t-bar-row-machine"
+   ],
+   "tags": [
+    "beginner",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-055",
+   "locale": "en",
+   "query": "lower back pain safe core",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "dead-bug",
+    "bird-dog",
+    "high-plank",
+    "plank-on-elbows",
+    "side-plank",
+    "hollow-hold",
+    "reverse-crunch",
+    "cat-cow"
+   ],
+   "tags": [
+    "injury",
+    "natural",
+    "core"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-056",
+   "locale": "en",
+   "query": "knee friendly leg exercises",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bodyweight-glute-bridge",
+    "leg-extension-machine",
+    "lying-leg-curl-machine",
+    "seated-leg-curl-machine",
+    "bodyweight-hip-thrust",
+    "hip-thrust-machine",
+    "barbell-hip-thrust",
+    "seated-hip-abductor-machine",
+    "hip-adductor-machine",
+    "leg-press-machine-normal-stance",
+    "bodyweight-wall-squat",
+    "seated-calf-machine"
+   ],
+   "tags": [
+    "injury",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-057",
+   "locale": "en",
+   "query": "cant do a pull up",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "assisted-pull-up",
+    "cable-pulldown",
+    "lat-pull-down-wide-grip",
+    "inverted-row",
+    "assisted-pull-up-wide-grip",
+    "assisted-chin-up-normal-width-reverse-grip",
+    "reverse-grip-lat-pull-down"
+   ],
+   "tags": [
+    "beginner",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-058",
+   "locale": "en",
+   "query": "fix rounded shoulders",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "cable-face-pull",
+    "resistance-band-face-pull",
+    "reverse-machine-fly",
+    "cable-rear-delt-fly",
+    "corner-wall-chest-stretch",
+    "bent-arm-chest-stretch",
+    "dumbbell-reverse-fly",
+    "thoracic-rotation"
+   ],
+   "tags": [
+    "goal",
+    "posture",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-059",
+   "locale": "en",
+   "query": "stretching",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "child-pose",
+    "cat-cow",
+    "neck-stretch",
+    "worlds-greatest-stretch",
+    "kneeling-hip-flexor-stretch",
+    "couch-stretch",
+    "standing-quadriceps-stretch",
+    "seated-single-leg-hamstring-stretch",
+    "pigeon-pose",
+    "thoracic-rotation",
+    "across-chest-shoulder-stretch",
+    "standing-gastrocnemius-stretch",
+    "seated-calf-stretch",
+    "lying-glute-stretch",
+    "seated-cross-leg-glute-stretch",
+    "90-to-90-stretch",
+    "adductor-stretch",
+    "knee-to-chest-stretch",
+    "triceps-light-stretch",
+    "runner-stretch",
+    "standing-overhand-shoulder-stretch",
+    "corner-wall-chest-stretch",
+    "dead-hang-stretch"
+   ],
+   "tags": [
+    "stretch"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-060",
+   "locale": "en",
+   "query": "hamstring stretch",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "seated-single-leg-hamstring-stretch",
+    "hamstring-lying-straight-leg-stretch",
+    "hamstring-lying-curl-up-stretch",
+    "standing-leg-elevated-hamstring-stretch",
+    "standing-bow-hamstring-stretch",
+    "runner-stretch",
+    "exercise-ball-seated-hamstring-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "exact"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-061",
+   "locale": "en",
+   "query": "neck stretches",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "neck-stretch",
+    "backward-forward-turn-to-side-neck-stretch",
+    "ceiling-look-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "plural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-062",
+   "locale": "en",
+   "query": "lower back stretch",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "child-pose",
+    "cat-cow",
+    "cat-stretch",
+    "middle-back-rotation-stretch",
+    "thoracic-rotation",
+    "lying-crossover-stretch",
+    "bodyweight-standing-back-stretch",
+    "dead-hang-stretch",
+    "side-lying-floor-stretch",
+    "pigeon-pose",
+    "lying-glute-stretch",
+    "seated-cross-leg-glute-stretch",
+    "90-to-90-stretch",
+    "knee-to-chest-stretch"
+   ],
+   "tags": [
+    "stretch",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-063",
+   "locale": "en",
+   "query": "warm up",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "worlds-greatest-stretch",
+    "jumping-jack",
+    "high-knees",
+    "cat-cow",
+    "thoracic-rotation",
+    "bodyweight-squat",
+    "walking-lunge",
+    "mountain-climbers",
+    "bird-dog",
+    "skipping"
+   ],
+   "tags": [
+    "warmup",
+    "natural"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-064",
+   "locale": "en",
+   "query": "bench prss",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-bench-press",
+    "dumbbell-bench-press",
+    "smith-machine-bench-press",
+    "chest-press-machine",
+    "barbell-incline-bench-press",
+    "dumbbell-incline-bench-press",
+    "barbell-wide-bench-press",
+    "barbell-close-grip-bench-press"
+   ],
+   "tags": [
+    "typo"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-065",
+   "locale": "en",
+   "query": "romainian deadlift",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "barbell-romanian-deadlift",
+    "dumbbell-romanian-deadlift",
+    "barbell-stiff-leg-deadlift",
+    "dumbbell-stiff-leg-deadlift",
+    "barbell-sumo-romanian-deadlift"
+   ],
+   "tags": [
+    "typo"
+   ],
+   "k": 5
+  },
+  {
+   "id": "fh-en-066",
+   "locale": "en",
+   "query": "bulgerian split squat",
+   "category": null,
+   "equipment": null,
+   "acceptable": [
+    "bulgarian-split-squat",
+    "dumbbell-bulgarian-split-squat",
+    "barbell-bulgarian-split-squat"
+   ],
+   "tags": [
+    "typo"
+   ],
+   "k": 5
+  }
+ ]
+}

@@ -819,4 +819,65 @@ class SearchReviewRound2Test {
     fun `가나로 쓴 부상 표현도 같은 관절 부상으로 읽힌다`(q: String, joint: String) {
         assertTrue(Joint.valueOf(joint) in engine.analyze(q).injuries, "$q -> ${engine.analyze(q).injuries}")
     }
+
+    // ═════════════════════════ 18. 2차에 공개된 검증셋(dev3, 이제 튜닝용) 점수 ═════════════════════════
+
+    @Test
+    fun `dev3 공개 검증셋 점수와 언어별 하한`() {
+        val mapper = com.fasterxml.jackson.databind.ObjectMapper()
+        val node = mapper.readTree(javaClass.getResourceAsStream("/search-eval/dev3.json") ?: error("search-eval/dev3.json not found"))
+        var n = 0
+        var hit5 = 0
+        var rr = 0.0
+        val perLocale = HashMap<String, MutableList<Boolean>>()
+        val misses = ArrayList<String>()
+        for (c in node["cases"]) {
+            val acceptable = c["acceptable"]?.map { it.asText() }?.toSet().orEmpty()
+            if (acceptable.isEmpty()) continue
+            val locale = c["locale"].asText()
+            val category = c["category"]?.takeIf { !it.isNull && it.asText().isNotBlank() }?.asText()?.let { ExerciseCategory.valueOf(it.uppercase()) }
+            val equipments = c["equipment"]?.takeIf { !it.isNull && it.asText().isNotBlank() }?.asText()?.split(",")?.map { Equipment.valueOf(it.trim().uppercase()) }?.toSet()
+            val slugs = engine.search(c["query"].asText(), category, equipments, locale).take(50).map { it.doc.slug }
+            val rank = slugs.indexOfFirst { it in acceptable }.let { if (it >= 0) it + 1 else null }
+            val ok = rank != null && rank <= 5
+            n++
+            if (ok) hit5++ else misses.add("${c["id"].asText()} ${c["query"].asText()} -> ${slugs.take(5)}")
+            rr += rank?.let { 1.0 / it } ?: 0.0
+            perLocale.getOrPut(locale) { ArrayList() }.add(ok)
+        }
+        assertTrue(n >= 250, "dev3 케이스 수 $n")
+        assertTrue(hit5.toDouble() / n >= 0.97, "dev3 hit@5 ${hit5.toDouble() / n}\n${misses.joinToString("\n")}")
+        assertTrue(rr / n >= 0.90, "dev3 MRR ${rr / n}")
+        perLocale.forEach { (loc, v) -> assertTrue(v.count { it }.toDouble() / v.size >= 0.95, "dev3 $loc hit@5 < 0.95") }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["헬린이", "운동 초보", "ジム初心者", "gym newbie", "new to the gym"])
+    fun `초보 은어는 초보 표현과 같은 목록이다`(q: String) {
+        assertEquals(slugs("beginner", 5).toSet(), slugs(q, 5).toSet(), q)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["벌크업", "린매스업", "バルクアップ", "筋肥大", "3분할", "분할 루틴", "ppl", "bulking"])
+    fun `증량·분할 용어는 군더더기라서 대표 운동 목록이다`(q: String) {
+        assertTrue("barbell-bench-press" in slugs(q, 3), "$q -> ${slugs(q, 5)}")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["컷팅", "감량", "カッティング", "cutting"])
+    fun `감량기 표현은 체중 감량 목록이다`(q: String) {
+        assertTrue(top(q, 5).count { it.category == ExerciseCategory.CARDIO } >= 4, "$q -> ${slugs(q, 5)}")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["筋トレ器具", "ジムの器具", "헬스장 기구", "gym machines"])
+    fun `기구 통칭은 머신 운동이다`(q: String) {
+        assertTrue(top(q, 5).all { it.equipment == Equipment.MACHINE }, "$q -> ${slugs(q, 5)}")
+    }
+
+    @Test
+    fun `器具なし 은 여전히 맨몸이다`() {
+        assertTrue(engine.analyze("器具なしで背中").excludeEquip.isEmpty())
+        assertTrue(top("器具なしで背中", 5).all { it.equipment == Equipment.BODYWEIGHT || it.equipment == null || it.equipment == Equipment.RESISTANCE_BAND || it.equipment == Equipment.OTHER })
+    }
 }
