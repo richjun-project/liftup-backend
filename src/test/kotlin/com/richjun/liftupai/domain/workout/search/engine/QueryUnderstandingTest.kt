@@ -390,6 +390,43 @@ class QueryUnderstandingTest {
         }
     }
 
+    // ── 부정·점유·수량어: 장비를 "쓰기 싫다/꽉 찼다/하나도 없다" 고 말하면 그 장비는 요청이 아니라 제외다 ────────
+
+    @Test
+    fun `일본어 たくない 꼴 부정 - 쓰기 싫은 장비는 제외한다`() {
+        val p = engine.analyze("ケーブルは使いたくない 胸")
+        assertTrue(Equipment.CABLE in p.excludeEquip, engine.explain("ケーブルは使いたくない 胸"))
+        assertFalse(Equipment.CABLE in p.equipments)
+        assertTrue(hits("バーベルは使いたくないです 脚", 10).none { it.equipment == Equipment.BARBELL })
+    }
+
+    @Test
+    fun `한국어 하나도 없이 - 수량어를 건너뛰어 앞의 장비를 부정하거나 맨몸으로 읽는다`() {
+        assertEquals(setOf(Equipment.BODYWEIGHT), engine.analyze("장비 하나도 없이 등 운동").equipments, engine.explain("장비 하나도 없이 등 운동"))
+        assertTrue(hits("아무 기구도 없이 어깨", 10).all { it.equipment == Equipment.BODYWEIGHT || it.equipment == Equipment.RESISTANCE_BAND }, slugs("아무 기구도 없이 어깨", 10).toString())
+        val p = engine.analyze("케틀벨 하나 없이 엉덩이")
+        assertTrue(Equipment.KETTLEBELL in p.excludeEquip, engine.explain("케틀벨 하나 없이 엉덩이"))
+    }
+
+    @Test
+    fun `집중 위주 같은 강조어는 집(홈) 이 아니다`() {
+        assertFalse(engine.analyze("가슴 집중 운동").home, engine.explain("가슴 집중 운동"))
+        assertFalse(engine.analyze("등 위주로 루틴").home)
+        assertFalse(engine.analyze("가슴 집중 운동").hasUnknown)
+        assertTrue(engine.analyze("집에서 가슴").home)
+    }
+
+    @Test
+    fun `장비가 꽉 찼거나 고장이면 그 장비를 빼고 대안을 보여 준다`() {
+        for (q in listOf("chest but the cable stack is busy", "back day, cables are slammed", "케이블 고장나서 삼두", "ケーブルが故障中 背中")) {
+            val p = engine.analyze(q)
+            assertTrue(Equipment.CABLE in p.excludeEquip && Equipment.CABLE !in p.equipments, engine.explain(q))
+            assertTrue(hits(q, 10).none { it.equipment == Equipment.CABLE }, "$q -> ${slugs(q, 10)}")
+        }
+        val legs = engine.analyze("leg press is broken, quads")
+        assertTrue(legs.excludeKeys.isNotEmpty() || legs.excludeEquip.isNotEmpty(), engine.explain("leg press is broken, quads"))
+    }
+
     @Test
     fun `explain 은 해석 결과를 읽을 수 있게 돌려준다`() {
         val text = engine.explain("bad knees leg workout")

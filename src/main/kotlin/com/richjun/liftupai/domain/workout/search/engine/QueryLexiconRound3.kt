@@ -38,6 +38,8 @@ internal object QueryLexiconRound3 {
         |only have|only has|only got|only available|only free|only open|only left|all we have is|nothing but
         |ゆるい|ゆるめ|ゆるく|ゆるやか|ゆったり|穏やか|軽い|軽め|軽く|睡眠前|寝る直前|ベッドの上|ベッドで|布団の上|布団で|さえあれば|があれば|あれば|だけでできる|だけでOK|だけで|だけあれば|のみで|のみ
         |있으면|있으면 되는|있으면되는|만 있으면|만있으면|있어도|있다면|있는|되는|하나만|한개만|만으로|뿐인|가볍게|가벼운|편안한|편안하게|편하게|부드럽게|부드러운|침대에서|침대 위에서|침대 위|이불 위에서|이불 위
+        |하나|하나도|한개도|한 개도|한 개|아무|아무런|一つも|ひとつも|何も|なにも|一切|全く|まったく|ひとつ|一つ
+        |집중|집중적으로|집중해서|집중하는|집중적인|위주|위주로|위주의|중심으로|중점|중점적으로|集中|集中的に|重点|重点的に|中心に|メインで
         |what can i use|what do i use|what should i use|what to use|what else can i use|use instead|can i use|what can i substitute|what can i swap|what to swap|what to replace it with|what do i do instead|what do i do without|what are my options|what are the options|what to do if|what to do when|what do i do if|what can i do if|what if|if|when|whenever|there|theres|is there|are there|there is|there are|どうすれば|どうしたら|どうする|어떻게 해야|어떡하지|어쩌지|something like|anything like|things like|exercises like|exercise like|moves like|workouts like|stuff like|similar exercises to|exercises similar to|similar to|what else|what other|something else|anything else|other options|other option|what can i do|what do i do|what should i do|i have|i got|have a|have an|has a|my gym|available|補助種目|補助トレ|補助運動|サブ種目|보조 운동|보조운동|보조 종목|보조 동작|accessory exercises|accessory exercise|accessory work|accessory lifts|accessories|accessory|assistance exercises|assistance exercise|assistance work|supplemental exercises|supplementary exercises|auxiliary exercises|気分|きぶん|기분|기분이야|기분이다|in the mood|feel like|feeling like|feeling|mood|gentler|gentlest|softer|easier|lighter|less intense|something gentler|something easier|something lighter|something softer|gentle|gently|easy going|light|lightly|relaxing|relaxed|calm|calming|before bed|before sleep|before sleeping|bedtime|at bedtime|at night|in bed|in the bed|on the bed|all you need|all i need|only need|just need|only requires|just a|is all|need only|requires only|using only|with only
     """.trimIndent()
 
@@ -49,6 +51,8 @@ internal object QueryLexiconRound3 {
         |が怖い|が怖くて|が怖いので|が怖いから|は怖い|は怖くて|が苦手|は苦手|が嫌い|は嫌い|が嫌|が不安|が心配|が苦手で|が苦手なので|が嫌で|が嫌なので|怖くて|怖いので|怖い|苦手で|苦手なので|嫌いで|嫌なので
         |무서워|무서운|무서워서|무섭|무섭다|무서워요|겁나|겁나는|겁나서|싫어|싫은|싫어서|싫다|부담스러운|부담스러워|부담돼|꺼려지|꺼려져
         |없을 때|없을때|없는데|없어서|없으면|없는 경우|없는경우|없을 땐|없을땐|없을경우|없을 경우|못 쓰는|못쓰는|못 쓸 때|못쓸때|못 쓰면|없다면|없고|없어
+        |使いたくない|使いたくないです|使いたくなくて|使いたくないので|使いたくないから|つかいたくない|使わずに|使わないで|使いません|使用しない|使用せず|使用せずに|やりたくない|やりたくなくて|したくない|したくなくて|は嫌|が嫌い|はいや
+        |쓰기 싫어|쓰기싫어|쓰기 싫은|쓰기싫은|쓰기 싫고|쓰고 싶지 않아|쓰고싶지않아|쓰고 싶지 않은|안 쓰고|안 쓰는|안 써|안써|안 쓸|안쓸|하기 싫어|하기싫어|하기 싫은|하기싫은
         |not available|isnt available|isn't available|unavailable|not accessible|dont have|don't have|do not have|doesnt have|doesn't have|havent got|haven't got|missing|lacking
     """.trimIndent()
 
@@ -58,10 +62,13 @@ internal object QueryLexiconRound3 {
         |대신|대신에|대신할|대신으로|대신하는|대신 할|대체품|대체 운동|대체운동|대체할|대체로|대체하는|대용|대용품|대안|대안으로|대안 운동|말고 다른|말고다른|말고 대체|말고 비슷한|말고 다른 거|말고 다른 운동|말고 비슷한 운동|대신 할 수 있는|대신 할수있는|대신 하는
         |what else|what other exercise|what other exercises|what can i do instead|what can i do|what can i use|what do i use|what should i use|what to use|what else can i use|what can i substitute|what can i swap|what to swap|what to replace it with|what do i do instead|what do i do without|alternative|alternatives|alternate for|substitute|substitutes|substitution|substituting|replacement|replacements|equivalent|equivalents|stand in for|standin
             |all busy|all taken|all occupied|all in use|all full|all being used|all booked|are all busy|are all taken|are all full
+            |is packed|are packed|packed|is slammed|are slammed|slammed|is swamped|swamped|is jammed|is mobbed|mobbed|is hogged|are hogged|hogged|being hogged|has a line|has a queue|have a line|has a waitlist|is booked|are booked|is reserved|are reserved|is broken|are broken|broken|out of order|is out of order|are out of order|under maintenance|is down|not working|isnt working|isn't working|arent working|aren't working|is closed|are closed
             |is taken|are taken|is occupied|are occupied|is being used|are being used|is in use|are in use|is busy|are busy|is full|is crowded|are crowded|is not free|are not free|being used|taken|occupied|in use
         |が使用中|が使われている|が埋まっている|が空いてない|が空いていない|が混んでいる|が混雑|使用中|埋まっている|空いてない|空いていない|混んでいる
         |が空かない|が空かなくて|が空かないので|が空かないから|が空いてなくて|が空いてないので|が空いてないから|が空いていなくて|が空いていないので|が埋まってて|が埋まっていて|が埋まってる|が使えなくて|が使えないので|が混んでて|が混んでいて|が混んでる|が混雑していて|が占領されて|が全部埋まって|が取られて|が取られていて|が使われてて|が使われていて|が空かず|空かなくて|空かないので|空いてなくて|空いてないので|埋まってて|埋まっていて|混んでて|混んでいて
         |가 꽉 차|가 다 차|가 만석|이 꽉 차|이 다 차|이 만석|가 비지 않|이 비지 않|가 안 비|이 안 비|가 안 비어|이 안 비어|가 비질 않|줄 서 있|줄 서있|줄이 길|대기 줄|대기가 많|웨이팅|차지하고 있|차지하고있|점령당|누가 차지
+        |故障中|故障して|故障してて|故障している|壊れてる|壊れていて|壊れてて|が壊れて|メンテ中|メンテナンス中|点検中|混み合って|混みあって|混雑してて|混雑している|が混雑して|人が多い|人が多くて|満員|満席
+        |사람 많아|사람이 많아|사람 많을 때|사람이 많을 때|사람 많아서|사람이 많아서|붐벼|붐벼서|붐비고|고장|고장나서|고장 나서|고장났|고장 났|고장난|고장 난|점검 중|점검중|수리 중|수리중
         |가 사용 중|이 사용 중|사용 중이면|사용중이면|사용 중일 때|사용중일 때|사용 중|사용중|누가 쓰고 있|누가 쓰고있|자리가 없|자리 없|다 찼|꽉 찼|꽉 차 있|붐빌 때|붐비는
     """.trimIndent()
 

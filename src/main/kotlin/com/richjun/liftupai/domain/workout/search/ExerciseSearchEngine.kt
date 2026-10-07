@@ -243,7 +243,10 @@ class ExerciseSearchEngine(
         return object : SemanticConstraint {
             override fun allows(doc: ExerciseSearchDoc): Boolean = byId[doc.id]?.let { allowed.get(it.index) } ?: false
             override val goalLiftIds: Set<Long> = goalLifts
-            override val requestedEquipment: Set<Equipment> = if (SUBSTITUTE_OBJECT_KEYS.any { tok.strict.contains(it) }) emptySet() else plan.equipments
+            // 사전이 질의를 남김없이 알아들었고(모르는 말 없음) 부정·제외·부상 표현도 없을 때만 "요청한 장비"로 믿는다 —
+            // "マシンは使いたくない", "cable station is packed" 처럼 사전이 놓친 부정 속 장비를 요청으로 오인하면 LLM 의 올바른 제외를 풀어 버린다
+            override val requestedEquipment: Set<Equipment> =
+                if (SUBSTITUTE_OBJECT_KEYS.any { tok.strict.contains(it) } || plan.hasUnknown || plan.hasExclusions) emptySet() else plan.equipments
             override fun wholeTokenNameMatch(doc: ExerciseSearchDoc): Boolean = byId[doc.id]?.let { d -> wholeTokenMatch(d, contentTokens) } ?: false
             override val unrecognized: Boolean = plan.hasUnknown
             override val injuryAware: Boolean = plan.injuries.isNotEmpty()

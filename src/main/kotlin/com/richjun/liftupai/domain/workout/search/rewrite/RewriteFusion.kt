@@ -25,7 +25,8 @@ object RewriteFusion {
     )
 
     /** 힌트 하나의 후보 — [exact] 는 힌트 문자열이 운동 이름과 정확히 같은가(그러면 [hits] 첫째가 그 운동) */
-    class HintHits(val hits: List<ExerciseSearchHit>, val exact: Boolean = false)
+    /** [intended]: 조건을 걸기 전 그 힌트의 1위 — LLM 이 실제로 가리킨 운동 */
+    class HintHits(val hits: List<ExerciseSearchHit>, val exact: Boolean = false, val intended: ExerciseSearchDoc? = null)
 
     private const val SCORE_SCALE = 1000.0
 

@@ -212,6 +212,19 @@ class HintPrecisionTest {
     }
 
     @Test
+    fun `사전이 모르는 말이 낀 질의의 장비는 요청으로 믿지 않는다 - LLM 이 읽은 점유·부정을 따른다`() {
+        // "swarmed" 는 사전에 없는 점유 표현이다 — 사전은 이름(pushdown)과 cable 만 알아듣지만 LLM 은 케이블을 쓸 수 없다고 읽는다.
+        // (의도 질의에서 사전이 읽은 장비는 하드 조건이라 LLM 이 뒤집지 않는다 — 실제 해석 2,530건에서 둘이 엇갈린 6건 중 LLM 이 틀린 경우도 있었다)
+        val q = "triceps pushdown but the cable is swarmed"
+        assertTrue(engine.semanticConstraint(q)!!.requestedEquipment.isEmpty(), engine.explain(q))
+        val rw = QueryRewrite(listOf("Dumbbell Overhead Triceps Extension", "Bench Dip", "Close-Grip Push-Up"), setOf(Equipment.CABLE, Equipment.MACHINE))
+        val out = hybrid.search(q, null, null, "en", { rw }) { null }.hits.take(5)
+        assertTrue(out.none { it.doc.equipment == Equipment.CABLE || it.doc.equipment == Equipment.MACHINE }, out.map { it.doc.slug }.toString())
+        // 사전이 남김없이 알아들은 요청("케이블로 하는 가슴 운동 알려줘")은 그대로 요청 장비다
+        assertEquals(setOf(Equipment.CABLE), engine.semanticConstraint("케이블로 하는 가슴 운동 알려줘")!!.requestedEquipment)
+    }
+
+    @Test
     fun `집에서 일반 장비를 말하면 힌트의 장비 범위를 넓히지 않는다 - 수건 같은 대용 사물만 넓힌다`() {
         val e = ExerciseSearchEngine(docs, emptyList(), 10_000_000_000L)
         val dumbbell = e.semanticConstraint("집에서 덤벨로 하는 가슴 운동", forHints = true)!!

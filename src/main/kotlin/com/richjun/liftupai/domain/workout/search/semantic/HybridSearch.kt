@@ -222,13 +222,15 @@ class HybridSearch(
                 val intendedAllowed = !config.rewriteConstrainHints || constraint.allows(intended)
                 val hits = (if (config.rewriteConstrainHints) out.hits.filter { constraint.allows(it.doc) } else out.hits)
                     .filter { intendedAllowed || hintAgrees(intended, it.doc) }.take(config.rewrite.perHint)
-                RewriteFusion.HintHits(hits, hits.isNotEmpty() && hits.first() === out.hits.first() && (engine.isExactName(hint) || (config.rewriteStrongHintScore?.let { out.hits.first().score >= it } ?: false)))
+                RewriteFusion.HintHits(hits, hits.isNotEmpty() && hits.first() === out.hits.first() && (engine.isExactName(hint) || (config.rewriteStrongHintScore?.let { out.hits.first().score >= it } ?: false)), intended)
             }
         }
         val pinned = if (config.rewriteKeepProtected) config.protectScore?.let { p -> lexical.firstOrNull()?.takeIf { it.score >= p && constraint.wholeTokenNameMatch(it.doc) }?.doc?.id } else null
         // LLM 의 제외 장비는 호출자가 고른 장비 필터와 부딪히면 따르지 않는다(필터는 하드 조건이다). 질의 속 장비 말은 사전이 틀릴 수 있어("수건"→밴드) 여기서는 LLM 을 믿는다.
-        // 질의가 직접 요청한 장비("cable fly without the cable stack" 의 cable)도 LLM 의 제외 장비에서 뺀다 — 사용자가 방금 찾은 것을 지우지 않는다
-        val forbid = rw.forbidEquipment - (equipments ?: emptySet()) - constraint.requestedEquipment
+        // 질의가 직접 요청한 장비를 LLM 이 제외 장비로도 냈다면, LLM 자신의 힌트가 그 장비 운동을 가리킬 때만(스스로 모순일 때만) 제외를 따르지 않는다.
+        // 힌트가 그 장비를 피했다면 LLM 의 해석("케이블이 꽉 찼다")이 일관된 것이라 그대로 거른다.
+        val hintEquipment = hintHits.mapNotNullTo(HashSet()) { it.intended?.equipment }
+        val forbid = rw.forbidEquipment - (equipments ?: emptySet()) - (constraint.requestedEquipment intersect hintEquipment)
         if (hintHits.all { it.hits.isEmpty() } && forbid.isEmpty()) return null
         return RewriteFusion.fuse(base, hintHits, forbid, pinned, config.rewrite)
     }

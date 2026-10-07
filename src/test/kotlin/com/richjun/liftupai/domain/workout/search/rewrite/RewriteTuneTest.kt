@@ -26,6 +26,16 @@ class RewriteTuneTest {
     fun sweep() {
         val root = System.getenv("RW_TUNE_ROOT")?.takeIf { it.isNotBlank() } ?: return
         val docs = ExerciseSearchEvalTest.loadCatalogDocs()
+        // LLM 제외 장비와 사전이 읽은 요청 장비가 겹치는 질의 목록(누가 맞는지 사람이 본다)
+        System.getenv("RW_DEBUG_OVERLAP")?.takeIf { it.isNotBlank() }?.let { cache ->
+            val e = ExerciseSearchEngine(docs)
+            mapper.readTree(File(cache)).fields().forEach { (q, n) ->
+                val rwq = QueryRewrite.parse(n.toString(), mapper) ?: return@forEach
+                val p = e.analyze(q)
+                val overlap = rwq.forbidEquipment intersect p.equipments
+                if (overlap.isNotEmpty()) println("RWOVERLAP ${overlap.sorted()} unk=${p.hasUnknown} ex=${p.hasExclusions} mode=${p.mode} | $q | hints=${rwq.hints.take(3)}")
+            }
+        }
         System.getenv("RW_DEBUG_Q")?.takeIf { it.isNotBlank() }?.let { dq ->
             val e = ExerciseSearchEngine(docs)
             println("RWDEBUG explain: " + e.explain(dq))
