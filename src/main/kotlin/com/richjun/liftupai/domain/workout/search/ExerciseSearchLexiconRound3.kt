@@ -16,7 +16,7 @@ internal object ExerciseSearchLexiconRound3 {
         "~壁|かべ|壁際|壁沿い|壁の前|壁面|벽|벽면|벽 앞 =>>> wall|ウォール|월",
         "~椅子|いす|イス|의자 =>>> chair|チェア|체어",
         // 철봉에 매달리는 동작 = 데드 행
-        "~ぶら下がる|ぶらさがる|ぶら下がって|ぶら下がった|ぶら下がれる|ぶら下がるだけ|鉄棒にぶら下がる|鉄棒にぶら下がり|鉄棒にぶら下がって|鉄棒でぶら下がる|鉄棒ぶら下がり|철봉에 매달려|철봉에 매달리|철봉에 매달리기|철봉에 매달려서|매달려서 버티기|매달려 버티기|매달리기 운동|dead hang|deadhang|bar hang|passive hang|hanging hold|hang from a pull up bar|hang from pull up bar =>>> 데드 행 스트레칭|dead hang stretch|デッドハングストレッチ|dead hang",
+        "~ぶら下がる|ぶらさがる|ぶら下がるだけ|鉄棒ぶら下がり|철봉에 매달리기|매달려서 버티기|매달려 버티기|매달리기 운동|dead hang|deadhang|bar hang|passive hang|hanging hold|hang from a pull up bar|hang from pull up bar =>>> 데드 행 스트레칭|dead hang stretch|デッドハングストレッチ|dead hang",
         // 철봉에 매달려 척추를 늘리는 것 = 데드 행 스트레칭
         "~decompress|decompress spine|decompress my spine|spine decompression|spinal decompression|척추 감압|척추 늘리기|척추 늘려|척추 이완|척추 펴기|背骨を伸ばす|背骨を伸ばしたい|脊椎を伸ばす|背骨のストレッチ|脊椎ストレッチ|背骨の圧迫を取る|腰の圧迫を取る|腰を牽引|牽引ストレッチ =>>> dead hang stretch|데드 행 스트레칭|デッドハングストレッチ|dead hang",
         // 흉추 가동성

@@ -84,6 +84,7 @@ internal object QueryLexiconRound3 {
         pooch|belly pooch|lower belly pooch|lower tummy|lower tummy pooch|lower belly fat|lower abs fat|apron belly|apron fat|下腹の脂肪|下腹のお肉|下っ腹のお肉|하복부살|아랫배살|아랫뱃살|아랫배 군살|아랫배 나온|아랫배가 나온 => lowerabs
         back rolls|back roll|bra fat|bra strap fat|bra line fat|ブラ肉|ブラジャー肉|ブラ脂肪|背中の贅肉|背中のたるみ|背中のぜい肉|등 군살|등 처짐|등살 군살|브라 라인|브라라인|뒷구리살|뒷구리 => backfat
         thigh gap|inner thigh gap|thighgap|太ももの隙間|太もも隙間|太ももの間の隙間|허벅지 틈|허벅지 사이 틈|허벅지 사이 공간 => innerthigh
+        マッサージ|自分でマッサージ|自分でできるマッサージ|マッサージローラー|マッサージボール|마사지|마사지 롤러|massage|massages|massage tool|massage roller|self massage tool|deep tissue massage => foamroll
         stamina|build stamina|improve stamina|more stamina|endurance|build endurance|improve endurance|cardio endurance|aerobic base|get fit|get in shape|getting in shape|get into shape|out of shape|lack of exercise|sedentary lifestyle|move more|get moving|get active|improve fitness|fitness level|cardio fitness => cardio
     """.trimIndent()
 

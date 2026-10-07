@@ -267,7 +267,7 @@ class ExerciseSearchEngine(
             val t = sg.terms ?: continue
             if (dropConcepts && sg.e - sg.s >= 2 && t.any { it.role == Role.CONCEPT }) { for (p in sg.s until sg.e) drop[p] = true; continue }
             // 장비·장소 표기("マシン", "덤벨", "집에서")는 필터로 따로 쓰므로 설명문 질의에서는 뺀다 — 안 그러면 설명문에 "ケーブルマシン"이 나오는 케이블 운동이 걸려든다
-            if (t.all { it.role == Role.EQUIP || it.role == Role.HOME || it.role == Role.NOISE }) { for (p in sg.s until sg.e) drop[p] = true; continue }
+            if (t.all { it.role == Role.EQUIP || it.role == Role.HOME }) { for (p in sg.s until sg.e) drop[p] = true; continue }
             if (sg.isNum || t.all { it.role == Role.UNIT || it.role == Role.NEG || it.role == Role.CONJ || it.role == Role.LEVEL || (it.role == Role.NOISE && !it.particle) }) {
                 // "lift"·"持ち上げる" 처럼 이름 검색에서는 군더더기지만 동작 묘사에서는 핵심인 말은 남긴다
                 if (!sg.isNum && t.any { it.role == Role.NOISE } && t.none { it.role == Role.NEG || it.role == Role.UNIT }) {
@@ -290,17 +290,26 @@ class ExerciseSearchEngine(
     private fun descriptive(text: String): Boolean {
         var units = 0
         var cjkLetters = 0
-        var inRun = false
+        val sb = StringBuilder()
         var latin = false
-        for (c in text) {
+        fun flush() {
+            if (sb.isNotEmpty()) {
+                // stretch·machine 같은 일반어만으로는 묘사가 아니다("frog stretch" 의 stretch)
+                if (!latin || SearchText.stem(sb.toString()) !in QueryLexicon.fuzzyIgnorable) units++
+                sb.setLength(0)
+            }
+        }
+        for (c in SearchText.fold(text)) {
             val isLatin = c.code < 0x250 && c.isLetter()
             val isCjk = c.code >= 0x250 && c.isLetter()
             if (isLatin || isCjk) {
-                if (!inRun || latin != isLatin) units++
-                inRun = true; latin = isLatin
+                if (sb.isNotEmpty() && latin != isLatin) flush()
+                latin = isLatin
+                sb.append(c)
                 if (isCjk) cjkLetters++
-            } else inRun = false
+            } else flush()
         }
+        flush()
         return units >= 2 || cjkLetters >= 5
     }
 
@@ -1125,7 +1134,7 @@ class ExerciseSearchEngine(
         const val BAND_DESC = 96.0
         private const val DESC_WEIGHT = 50.0
         private const val WEAK_DEMOTE = 25.0
-        private const val DESC_MIN_COVERAGE = 0.5
+        private const val DESC_MIN_COVERAGE = 0.45
         private const val DESC_MIN_COVERAGE_WITH_NAME = 0.62
         private const val STRONG_DESC_COVERAGE = 0.6
 

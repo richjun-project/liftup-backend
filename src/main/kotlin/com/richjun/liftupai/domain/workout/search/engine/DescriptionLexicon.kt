@@ -20,6 +20,7 @@ internal object DescriptionLexicon {
     private val SURFACE_CANON: List<Pair<String, String>> = listOf(
         "うつ伏せ|俯せ|うつ伏|腹ばい|腹這い|腹這|伏臥" to "うつぶせ",
         "あおむけ|仰臥|仰向き" to "仰向け",
+        "鉄棒|てつぼう" to "バー",
         "側臥" to "横向き",
         "よつんばい|四つんばい|四つ這い|四つん這い" to "四つん這い",
         "구부리|구부려|구부린|구부러|구부" to "굽히",
