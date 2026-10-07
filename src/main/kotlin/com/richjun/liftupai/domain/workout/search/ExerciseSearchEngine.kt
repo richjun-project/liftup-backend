@@ -238,6 +238,8 @@ class ExerciseSearchEngine(
             override fun allows(doc: ExerciseSearchDoc): Boolean = byId[doc.id]?.let { allowed.get(it.index) } ?: false
             override val unrecognized: Boolean = plan.hasUnknown
             override val injuryAware: Boolean = plan.injuries.isNotEmpty()
+            override val broadKeyword: Boolean = plan.mode == Mode.INTENT && !plan.hasUnknown && plan.concepts.isNotEmpty() && plan.concepts.all { it.id.startsWith("muscle:") } &&
+                !plan.hasExclusions && !plan.home && !plan.stretch && plan.level == 0 && !plan.regress && plan.similarTo.isEmpty() && plan.numbers.isEmpty() && !plan.highReps
             override val lexicalInformative: Boolean = plan.hasIntentSignal || plan.stretch || plan.level != 0 || plan.regress || plan.injuries.isNotEmpty() ||
                 plan.seeds.any { it.isNotEmpty() } || plan.hasUnknown || plan.similarTo.isNotEmpty() || plan.numbers.isNotEmpty() || plan.highReps || plan.combineAll
         }

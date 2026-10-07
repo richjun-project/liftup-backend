@@ -63,6 +63,16 @@ class RewriteTuneTest {
             Variant("ex2+depth7", base.copy(rewrite = RewriteFusion.Config(exactBoost = 2.0, baseDepth = 7), rewriteKeepProtected = true)),
             Variant("ex2+k30", base.copy(rewrite = RewriteFusion.Config(exactBoost = 2.0, rrfK = 30), rewriteKeepProtected = true)),
             Variant("ex2+k120", base.copy(rewrite = RewriteFusion.Config(exactBoost = 2.0, rrfK = 120), rewriteKeepProtected = true)),
+            Variant("nobroad", base.copy(rewriteSkipBroadMaxWords = 0)),
+            Variant("strong160", base.copy(rewriteStrongHintScore = 160.0)),
+            Variant("strong180", base.copy(rewriteStrongHintScore = 180.0)),
+            Variant("strong170", base.copy(rewriteStrongHintScore = 170.0)),
+            Variant("strong190", base.copy(rewriteStrongHintScore = 190.0)),
+            Variant("strong200", base.copy(rewriteStrongHintScore = 200.0)),
+            Variant("strong180ex3", base.copy(rewriteStrongHintScore = 180.0, rewrite = RewriteFusion.Config(exactBoost = 3.0))),
+            Variant("strong160ex3", base.copy(rewriteStrongHintScore = 160.0, rewrite = RewriteFusion.Config(exactBoost = 3.0))),
+            Variant("nlonly", base.copy(rewriteOnlyNaturalLanguage = true)),
+            Variant("nlonly-noskip", base.copy(rewriteOnlyNaturalLanguage = true, rewriteSkipScore = null)),
             Variant("noconstr", base.copy(rewriteConstrainHints = false)),
             Variant("noconstr-pin", base.copy(rewriteConstrainHints = false, rewriteKeepProtected = true)),
             Variant("skip160w2", base.copy(rewriteSkipScore = 160.0, rewriteSkipMaxWords = 2)),
@@ -92,6 +102,7 @@ class RewriteTuneTest {
                 var calls = 0; var n = 0; var h5 = 0; var rr = 0.0; var fv = 0; var sv = 0
                 val locs = HashMap<String, IntArray>()
                 val misses = ArrayList<String>()
+                val ranks = ArrayList<String>()
                 fun run(q: String, locale: String?, category: ExerciseCategory?, equipments: Set<Equipment>?) =
                     hs.search(q, category, equipments, locale, if (v.config == null) null else ({ calls++; rws[q] })) { qvec[q]?.let(QueryEmbedder::normalize) }.hits.take(10)
                 for (c in cases) {
@@ -103,6 +114,7 @@ class RewriteTuneTest {
                     val top = run(q, c["locale"]?.asText(), category, equipments)
                     val rank = top.indexOfFirst { it.doc.slug in acc }
                     val k = c["k"]?.asInt(5) ?: 5
+                    ranks.add("${c["id"].asText()}\t$rank\t$q\t${top.take(3).joinToString(",") { it.doc.slug }}")
                     n++; if (rank in 0 until k) h5++; if (rank >= 0) rr += 1.0 / (rank + 1)
                     val loc = locs.getOrPut(c["locale"].asText()) { IntArray(2) }; loc[0]++; if (rank in 0 until k) loc[1]++
                     if (rank !in 0 until k) {
@@ -130,6 +142,7 @@ class RewriteTuneTest {
                     if (empty || top.any { (re != null && re.containsMatchIn(it.doc.slug)) || it.doc.equipment?.name in fe }) sv++
                 }
                 line.append("%-30s".format("%.3f/%.3f f%d s%d c%.2f".format(h5.toDouble() / n, rr / n, fv, sv, calls.toDouble() / (n + (safety?.size() ?: 0))) + locs.entries.sortedBy { it.key }.joinToString("") { " " + "%.2f".format(it.value[1].toDouble() / it.value[0]) }))
+                if (System.getenv("RW_TUNE_RANKS") == v.name) File(dir, "ranks-${v.name}.tsv").writeText(ranks.joinToString("\n"))
                 if (System.getenv("RW_TUNE_MISSES") == v.name) File(dir, "misses-${v.name}.txt").writeText(misses.joinToString("\n"))
             }
             println("RWTUNE $line")

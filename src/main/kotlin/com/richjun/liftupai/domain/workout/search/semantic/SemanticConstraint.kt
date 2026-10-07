@@ -23,4 +23,10 @@ interface SemanticConstraint {
      * false 면 질의가 부정·군더더기뿐이라("no ab wheel, similar effect") 어휘 순위는 인기 순 목록일 뿐 질의와 상관이 없다 — 융합에서 어휘 순위를 믿지 않는다.
      */
     val lexicalInformative: Boolean get() = true
+
+    /**
+     * 사전이 다 알아들은 부위(·장비) 키워드 질의("어깨", "バーベル 背中", "bodyweight back") — 부정·부상·집·난이도·모르는 말이 없다.
+     * 이런 질의는 어휘 엔진이 큐레이션한 순서가 이미 정답에 가깝고 LLM 힌트는 순서를 흔들기만 한다 — LLM 을 부르지 않는다.
+     */
+    val broadKeyword: Boolean get() = false
 }

@@ -73,7 +73,13 @@ class HybridSearch(
         val rewriteWaitMillis: Long = 3000,
         /** 정확·단어 경계 이름 일치 1위([protectScore])를 LLM 힌트가 밀어내지 못하게 지킨다 */
         val rewriteKeepProtected: Boolean = true,
-        val rewriteConstrainHints: Boolean = true
+        val rewriteConstrainHints: Boolean = true,
+        /** true 면 의미 검색 대상(자연어·사전이 못 알아들은 덩어리가 있는 질의)일 때만 LLM 을 부른다 — 사전이 다 알아들은 짧은 키워드 질의는 큐레이션된 어휘 순서를 지킨다 */
+        val rewriteOnlyNaturalLanguage: Boolean = false,
+        /** 부위·장비 키워드뿐인 짧은 질의([SemanticConstraint.broadKeyword], 이 단어 수 이하)는 LLM 을 부르지 않는다. 0 이면 끈다 */
+        val rewriteSkipBroadMaxWords: Int = 3,
+        /** 힌트의 어휘 1위가 이 점수 이상이면(이름과 거의 같다: 정확 이름 205 안팎, 단어 경계 이름 일치 170~185) 정확한 이름 힌트처럼 다룬다. null 이면 이름이 정확히 같을 때만. 170~180 에서 5개 평가셋이 같은 고원이다 */
+        val rewriteStrongHintScore: Double? = 175.0
     )
 
     /** [hits] 는 어휘 검색과 같은 길이의 전체 순서. [semantic] 은 의미 검색이 실제로 섞였는가. [degraded] 는 의미 검색이나 LLM 해석이 필요했는데 질의 벡터·해석을 못 구해 그만큼 빠진 결과를 낸 경우(호출자는 이 결과를 오래 캐시하지 않는다). [complete] 는 어휘 검색이 시간 예산 안에 끝났는가. */
@@ -126,6 +132,8 @@ class HybridSearch(
 
     /** LLM 해석을 부를 가치가 있는 질의인가 — 정확한 이름·브라우즈는 [semanticConstraint] 가 null 로 이미 걸렀다. 짧은 정식 이름 질의도 설정으로 건너뛸 수 있다. */
     fun needsRewrite(query: String, lexical: List<ExerciseSearchHit>, constraint: SemanticConstraint): Boolean {
+        if (config.rewriteOnlyNaturalLanguage && !needsSemantic(query, lexical, constraint)) return false
+        if (config.rewriteSkipBroadMaxWords > 0 && constraint.broadKeyword && query.trim().split(WHITESPACE).count { it.isNotEmpty() } <= config.rewriteSkipBroadMaxWords) return false
         val skip = config.rewriteSkipScore ?: return true
         if (constraint.unrecognized) return true
         val top = lexical.firstOrNull() ?: return true
@@ -146,7 +154,7 @@ class HybridSearch(
             if (!out.complete) RewriteFusion.HintHits(emptyList())
             else {
                 val hits = (if (config.rewriteConstrainHints) out.hits.filter { constraint.allows(it.doc) } else out.hits).take(config.rewrite.perHint)
-                RewriteFusion.HintHits(hits, hits.isNotEmpty() && engine.isExactName(hint) && hits.first() === out.hits.first())
+                RewriteFusion.HintHits(hits, hits.isNotEmpty() && hits.first() === out.hits.first() && (engine.isExactName(hint) || (config.rewriteStrongHintScore?.let { out.hits.first().score >= it } ?: false)))
             }
         }
         val pinned = if (config.rewriteKeepProtected) config.protectScore?.let { p -> lexical.firstOrNull()?.takeIf { it.score >= p }?.doc?.id } else null

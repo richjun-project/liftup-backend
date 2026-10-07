@@ -281,6 +281,33 @@ class RewriteFusionTest {
     }
 
     @Test
+    fun `부위·장비 키워드뿐인 짧은 질의는 큐레이션된 어휘 순서를 지키려고 LLM 을 건너뛴다`() {
+        for (q in listOf("shoulders", "어깨", "バーベル 背中", "barbell back", "bodyweight back")) {
+            val calls = AtomicInteger()
+            val r = search(q, rw("Push-up"), calls = calls)
+            assertEquals(0, calls.get(), q)
+            assertFalse(r.rewritten, q)
+        }
+    }
+
+    @Test
+    fun `부위 키워드라도 부정·부상·집이 붙으면 건너뛰지 않는다`() {
+        for (q in listOf("shoulders but no barbell", "sore elbows arms", "home shoulders", "beginner shoulders")) {
+            val calls = AtomicInteger()
+            search(q, rw("Face Pull"), calls = calls)
+            assertEquals(1, calls.get(), q)
+        }
+    }
+
+    @Test
+    fun `건너뛰기 설정을 끄면 짧은 부위 키워드도 부른다`() {
+        val always = HybridSearch(engine, vectors, HybridSearch.Config(rewriteSkipBroadMaxWords = 0, rewriteSkipScore = null))
+        val calls = AtomicInteger()
+        search("shoulders", rw("Face Pull"), h = always, calls = calls)
+        assertEquals(1, calls.get())
+    }
+
+    @Test
     fun `자연어 질의는 부른다`() {
         val calls = AtomicInteger()
         search("something to protect my throwing arm during the season", rw("Face Pull"), calls = calls)
