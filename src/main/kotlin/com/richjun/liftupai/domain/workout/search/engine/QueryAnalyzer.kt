@@ -256,6 +256,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         if (t.role == Role.NEG && latin && (key == "free" || key == "less")) {
             val next = nextWord(tok, j)
             if (key == "free" && next in FREE_NOT_NEG_BEFORE) return false
+            // "cables are free" — 비어 있다는 뜻이다(장비가 없다는 "equipment free" 와 다르다): 바로 앞 단어가 be 동사·부사면 부정이 아니다
+            if (key == "free" && prevWord(tok, i) in FREE_VACANT_BEFORE) return false
             if (key == "less" && next.isNotEmpty() && next !in LESS_NEG_BEFORE) return false
         }
         // 가타카나 낱말 속 부정어("チェストパス" 의 パス)는 부정이 아니다 — 가타카나로 시작하는 부정 표지는 앞 글자가 가타카나가 아닐 때만
@@ -275,6 +277,15 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             if (!(tok.isWordEnd(j) || nextStartsKnown(tok, j))) return false
         }
         return true
+    }
+
+    /** i 위치 바로 앞 단어(없으면 빈 문자열) */
+    private fun prevWord(tok: SearchText.Tokenized, i: Int): String {
+        val text = tok.strict
+        if (i <= 0) return ""
+        var s = i - 1
+        while (s > 0 && !tok.isWordStart(s)) s--
+        return text.substring(s, i)
     }
 
     /** j 위치에서 시작하는 다음 단어(없으면 빈 문자열) */
@@ -413,7 +424,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         }
 
         // 1) 부정: 표지 + 대상
-        fun negAt(idx: Int, neg: Term, avail: Boolean): Boolean {
+        fun negAt(idx: Int, neg: Term, avail: Boolean, dislike: Boolean = false): Boolean {
             // "the gym is crowded", "ジムが混んでる" — 헬스장 자체가 붐빈다는 말은 어떤 장비도 쓸 수 없다는 말이 아니다(건너뛰는 군더더기 뒤의 장비를 대상으로 잡지 않는다)
             if (avail && neg.targetBefore) {
                 var j = idx - 1
@@ -541,7 +552,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             // "pull up alternatives for home / for bad knees" — "alternatives for" 뒤의 말이 운동·장비가 아니라 상황(집·부상)이면 대안을 물은 대상은 앞에 있다
             if (!resolved && neg.instead && !neg.targetBefore) resolved = resolveAll(collectTargets(-1))
             // "덤벨 있는 곳이 꽉 차서", "ダンベル置き場が取り合いで使えない" — 쓸 수 없다는 말 앞에 장비를 꾸미는 모르는 말이 끼어 대상이 이름 없는 덩어리뿐이면, 같은 절의 가까운 장비가 쓸 수 없는 대상이다
-            if (avail && !realTarget) equipmentInClause(idx, neg.targetBefore)?.let { i ->
+            if ((avail || dislike) && !realTarget) equipmentInClause(idx, neg.targetBefore)?.let { i ->
                 segs[i].terms!!.firstOrNull { it.role == Role.EQUIP }?.let { t -> excludeEquip.addAll(if (t.equipment.size > 1) t.equipment - Equipment.MACHINE else t.equipment) }
                 consumed[i] = true
                 unavailableEquipment = true
@@ -559,7 +570,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             val tries = if (negs.isNotEmpty()) orderedNegs(idx, listOf(negs.first()))
                 else if (terms.any { it.role == Role.LEVEL && it.regress }) listOfNotNull(cantDoAsNeg(idx)) else continue
             val avail = negs.any { it.avail } || (negs.isEmpty() && tries.isNotEmpty())
-            for (neg in tries) if (negAt(idx, neg, avail)) break
+            val dislike = negs.any { it.dislike }
+            for (neg in tries) if (negAt(idx, neg, avail, dislike)) break
         }
 
         // 1.2) 장비가 점유·고장·금지라서 쓸 수 없고 어떤 운동의 "대신"을 물었으면("바벨 다 쓰고 있어서 데드리프트 대신") 대안은 그 운동을 다른 장비로 하는 것이다.
@@ -1083,6 +1095,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private val ONLY_PARTICLES = listOf("만", "로만", "으로만", "만으로", "만가지고").map { SearchText.strictKey(it) }.toSet()
         private val NOT_ONLY = Regex("notonly|뿐만아니라|だけでなく|だけじゃなく|만이아니라|만아니라|뿐아니라|だけではなく")
         private val GYM_WORDS = listOf("gym", "gyms", "헬스장", "헬스", "체육관", "ジム", "ジムが", "fitness center", "weight room", "weightroom").map { SearchText.strictKey(it) }.toSet()
+        private val FREE_VACANT_BEFORE = setOf("is", "are", "be", "was", "were", "been", "still", "currently", "totally", "completely", "also", "now", "today", "all", "really", "pretty", "mostly", "plenty").map { SearchText.strictKey(it) }.toSet()
         private val FREE_WEIGHT_SET = setOf(Equipment.DUMBBELL, Equipment.BARBELL, Equipment.KETTLEBELL)
         private val PREFIX_EQUIPMENT = setOf(Equipment.BARBELL, Equipment.DUMBBELL, Equipment.CABLE, Equipment.KETTLEBELL, Equipment.RESISTANCE_BAND)
         /** 장비이지만 장비 사전에는 없는 기구 이름 — 이게 점유·고장이라는 말은 장비를 쓸 수 없다는 말이다 */

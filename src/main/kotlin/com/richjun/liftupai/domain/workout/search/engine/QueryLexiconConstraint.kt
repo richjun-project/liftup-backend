@@ -42,6 +42,15 @@ internal object QueryLexiconConstraint {
         |ないです|ないので|ないんで|ないんです|ないんだ|ないんだよ|ないんだよね|ありません|ありませんので|ないけど|ないんですが|ないのですが|ないんだけど|ないですが|なくなった|なくなって|なくなっちゃった|無いです|無いので
         |はちょっと|ちょっと苦手|はちょっと苦手|はちょっと無理|はちょっと遠慮|はちょっと嫌|はちょっとね|はちょっとなあ|は勘弁|勘弁|勘弁して|勘弁してほしい|は勘弁して|は結構です|結構です|はけっこうです|はいらない|はいりません
         |nope|nah|meh|uh no|hard pass|hard no|no no|nono|hell no|nuh uh|nuh-uh
+        |쓰지 말고|쓰지말고|사용하지 말고|사용하지말고|하지 말고|하지말고|쓰지 마|쓰지마|쓰지 마세요|쓰지마세요|쓰지 마요|쓰지 않게|쓰지 않도록|사용하지 않게|사용하지 않도록|사용하지 마|사용하지마|쓰지 않는|쓰지 않으면|쓰지 않으면서
+        |노노|노우|놉|놉놉|x|×|✕|✗|❌|엑스|아니야|아님|아니에요
+        |arent available|aren't available|are not available|arent accessible|aren't accessible|are not accessible|are unavailable|arent usable|aren't usable|are not usable|arent working|aren't working|are not working
+        |쓰지 않을래|쓰지 않을 거야|쓰지 않을거야|쓰지 않을게|쓰지 않겠|안 쓰겠|안 쓸게|안쓸게|안 쓸 거야|안쓸거야|안 쓸래요
+        |順番が回ってこない|順番が来ない|順番が回ってこなくて|順番が回ってこず|順番が全然来ない|順番が回ってこないので
+        |has a long wait|have a long wait|has a long line|have a long line|has a long queue|have a long queue|has a wait|have a wait|has a huge line|have a huge line|has a massive line|has a big line|has a crazy line|has a huge queue|has a big queue
+        |사양|사양할게|사양합니다|사양이야|사양이에요|사양하겠습니다|사양할래|사양해요
+        |쓸 수 없어|쓸 수 없어서|쓸 수 없는|쓸 수 없음|쓸 수 없네|쓸 수가 없어|쓸수없어|쓸 수 없는데|쓸 수 없고|쓸 수 없다|쓸 수 없는 상황|사용할 수 없어|사용할 수 없어서|사용할 수 없는|사용할 수 없음|사용할 수가 없어|이용할 수 없어|이용할 수 없는|이용할 수 없음|이용할 수 없어서
+        |excluded|excluded please|exclude please|removed|removed please|skipped|skip please|dropped|nixed|off the list|not wanted|unwanted|not needed|isnt needed|arent needed|isn't needed|aren't needed|isnt wanted|isn't wanted|arent wanted|aren't wanted
         |はいやだ|はイヤだ|がいやだ|は嫌だ|が嫌だ|はいやです|はいやなんだ|はいやだな|はいやなので|がいやです|いやだ|嫌だ|イヤだ|やだ|ヤダ|嫌なんだ|嫌なの|いやなの|いやなんだ|いやだな|嫌だな|嫌かな|嫌だから|いやだから|やだから|嫌だし|いやだし
         |嫌いで|嫌いです|嫌いだ|嫌いなので|いやで|いやです|苦手です|苦手で|苦手なので|やめたい|やめたくて|やめとく|やめとき|やめておく|やめておきたい|やめとこう|やめよう|避けたいです|避けたいので|避けたいんだ|避けたいんですが|控えたい|控えたくて|控える|控えて|控えます|遠慮したい|遠慮して|遠慮します|遠慮する|敬遠したい|敬遠して|敬遠してる
         |除きたい|除いて|除いてください|除いてほしい|除外してください|除外してほしい|外して|外してください|外してほしい|外したい|外したくて|はずして|はずしてください|はずしたい|抜いて|抜いてください|抜いてほしい|抜きたい|抜きたくて|消して|消してください|消したい
@@ -90,7 +99,9 @@ internal object QueryLexiconConstraint {
 
     /** 대상이 표지 뒤에 오는 영어 표지 */
     val NEG_BEFORE = """
-        hard pass on|hard pass for|no to|nope to|nah to|say no to|saying no to|a no to|pass on|passing on|im good without|i'm good without|good without|never|never use|never using|never do|never doing|never touch|never ever|no longer use|no longer using|not using|not touching|not gonna use|not going to use|not planning to use|not interested in|no interest in|not into|not a fan of|no fan of|not keen on|not comfortable with|not comfortable using
+        line for|lines for|a line for|queue for|a queue for|long line for|long queue for|long wait for|waiting for|waiting forever for|waiting on|everyone is on|everyone's on|everybody is on|everyone is at|crowd at|crowd on|mob at|mob on|rush on|rush for
+        |doesnt need|doesn't need|does not need|dont need|don't need|do not need|didnt need|without needing|without requiring|no need for|needs no|needing no|that need no|that needs no|requiring no|requires no|doesnt require|doesn't require|does not require|dont require|don't require|not requiring|not needing|not involving|nothing involving|nothing that needs|nothing with|nothing using|nothing that uses|nothing needing|no use of|zero use of|avoid using|avoiding any|avoid any|avoid all|non
+        |hard pass on|hard pass for|no to|nope to|nah to|say no to|saying no to|a no to|pass on|passing on|im good without|i'm good without|good without|never|never use|never using|never do|never doing|never touch|never ever|no longer use|no longer using|not using|not touching|not gonna use|not going to use|not planning to use|not interested in|no interest in|not into|not a fan of|no fan of|not keen on|not comfortable with|not comfortable using
         |dont want|don't want|do not want|dont wanna|don't wanna|dont like|don't like|do not like|dont feel like|don't feel like|dont want to use|don't want to use|dont wanna use|don't wanna use|didnt want|didn't want|wont use|won't use|wouldnt use|wouldn't use|shouldnt use|shouldn't use|should not use|must not use|refuse to use|refuse|refusing to use
         |cant use|can't use|cannot use|can not use|cant stand|can't stand|couldnt use|couldn't use|unable to use|not able to use|not allowed to use|not permitted to use|not supposed to use|banned from|barred from|prohibited from
         |hate|hates|hating|dislike|dislikes|disliking|despise|loathe|detest|allergic to|afraid of|scared of|terrified of
@@ -104,6 +115,10 @@ internal object QueryLexiconConstraint {
     val NOISE = """
         器具を使った|器具を使って|器具を使う|器具を|器具で|道具を使った|道具を使って|道具を使う|道具を|道具で|用具を|用具で|길어서|길어|길어요|길음|길다|길고
         |둘 다|둘다|둘 모두|양쪽 다|양쪽 모두|두 개 다|두개 다|세 개 다|どちらも|両方|両方とも|どっちも|ふたつとも|二つとも|both of them|both|each|all of them
+        |쓰는 건|쓰는건|쓰는 거|쓰는거|쓰는 게|쓰는게|쓰는 걸|쓰는걸|쓰는 것|쓰는것|하는 건|하는건|하는 게|하는게|하는 걸|하는걸|하는 것|하는것|쓰기는|쓰기가|쓰기도|사용하는 건|사용하는건|사용하는 거|사용하는 게|사용하는게|사용하기는|사용하기가
+        |all i have is|all i have|all i got|all i got is|all ive got|all i own|all we have|all we have is|all we got|all that i have|all that we have|all there is|all that is available|all thats available|all they have is|all my gym has|all my gym has is|all my home has|all i can use is|all i can use|all i can get is
+        |fine|great|cool|awesome|perfect|alright|sweet
+        |needing|requiring|involving|needs|need|needed|require|requires|required|involve|involves|that need|that needs|that require|that requires|that involve|that involves|that use|that uses|which need|which needs|which use|which uses|having
         |bored|boring|ideas|idea|variation|variations|variety|switch up|mix up
         |라서|이라서|라서요|이라서요|라니까|이라니까|이니까|이니까요|니까요|여서|이어서|인데|인데요|이라고|이라는|라는|이었|였는데|이었는데|였어|이었어|였고|이었고
         |있음|있네|있네요|있습니다|있어서|있지만|있으니|있으니까|있거든|있거든요|있는데요|있었어|있었는데|있는 거|있는거|있는 것|있는건|있는 건|あります|あるだけ|あるのは|あるのが|あるくらい|ありまして|ありますが|あるが|あるけど|あるけれど|あるので|あるから|あるんだ|あるんです|あるんだけど|持ってる|持ってます|持っている|持っていて|持ってて|持ってるのは|having|only have|only has|only got|i have|i got|ive got|i've got|we have|we got|weve got|we've got|just have|got a|have a|have an|have some|there is|there's
@@ -135,5 +150,15 @@ internal object QueryLexiconConstraint {
         pinch|pinches|pinching|pinched|twinge|twinges|clicking|grinding|grinds|bothers|bothering|bothered|nags|nagging|acts up|flares up|flaring up|tweaked|tweak|killing me|kills me|aches when|hurts when|hurts if|painful when|pain when|pain during|pain while|sore when|uncomfortable when
         |찌릿|찌릿해|찌릿해요|찌릿찌릿|찌릿하|뜨끔|콕콕|쑤셔|쑤셔요|쑤시|욱신|욱신거려|욱신거리|삐끗|삐었|접질|저릿|저릿해|무리가 와|무리 와
         |ズキズキ|ずきずき|ピキッ|ぴきっ|チクチク|ちくちく|ビリビリ|ぎくっ|ギクッ|捻挫|捻った|ひねった|痛みがある|痛みが出る|痛みが出て|痛みが走る|調子が悪い|調子悪い|引っかかる|ひっかかる
+    """.trimIndent()
+
+    /**
+     * 싫다·무섭다·苦手 — 취향 표현이라 대상이 부위·개념이어도 빼지만("가슴 운동은 싫어"), 대상이 이름 없는 덩어리("쓰는 건")면 같은 절의 장비를 뺀다.
+     * 이미 [QueryLexiconRound3] 의 부정 표지로 있는 말에 dislike 표지를 하나 더 단다.
+     */
+    val DISLIKE_EXTRA = """
+        싫어|싫은|싫어서|싫다|싫네|싫음|싫은데|싫고|무서워|무서운|무서워서|무섭다|무섭|겁나|겁나서|겁나는|부담스러워|부담스러운|부담돼|꺼려져|꺼려져서|꺼려
+        |嫌い|嫌|嫌だ|嫌で|が嫌い|は嫌い|が嫌|は嫌|が苦手|は苦手|怖い|怖くて|怖いので|が怖い|は怖い|いや|いやで
+        |scared of|afraid of|nervous about|worried about|uncomfortable with|intimidated by
     """.trimIndent()
 }

@@ -72,10 +72,12 @@ internal object QueryLexicon {
         /** JOINT: 부위 단어(back/背中/등)를 겸하는 약한 관절 — 다른 관절이 가까이 있으면 그쪽이 부상 관절이다 */
         val weakJoint: Boolean = false,
         /** NEG: 취향·제외 요청("~ 말고")이 아니라 쓸 수 없다는 말(점유·고장·금지·못 씀) — 그 대상이 "X 크로스오버"처럼 장비를 앞세운 이름이면 그 장비도 쓸 수 없다는 뜻이다 */
-        val avail: Boolean = false
+        val avail: Boolean = false,
+        /** NEG: 취향 표현(싫다·무섭다·苦手) — 대상이 이름 없는 덩어리면 같은 절의 장비를 뺀다. 부위 개념 대상은 그대로 뺀다 */
+        val dislike: Boolean = false
     )
 
-    private fun Term.asIsolated() = Term(role, concept, equipment, joint, level, targetBefore, particle, true, move, mod, instead, regress, weakJoint, avail)
+    private fun Term.asIsolated() = Term(role, concept, equipment, joint, level, targetBefore, particle, true, move, mod, instead, regress, weakJoint, avail, dislike)
 
     class MoveGroup(val id: String, val keys: List<SigKey>)
 
@@ -182,7 +184,7 @@ internal object QueryLexicon {
     val nameMasks: List<String> = listOf("胸椎", "胸骨").map { key(it) }
 
     /** 영어에서 부정 뒤에 오면 새 절이 시작되는 말 — "without barbell with dumbbells" 의 dumbbells 는 긍정이다 */
-    val chainBreakers: Set<String> = "with|using|use|but|instead|however|though|while|yet|only|just|and then|then|yes|yeah|yep|yup|ok|okay|fine|allowed|permitted|have|got|있고|있지만|있는데|있어도|있으나|있으며|있어요|있음|있다|되고|되는데|되지만|가능하고|가능한데|あるが|あるけど|あるけれど|あるものの|あって|はあるが|はあるけど|だけど|だが|ですが|けど|けれど|けれども|ものの|使う|使える|使えます|使って|使います|使いたい|使用する|使っている|使ってる|使ってて|쓸 거고|쓸거고|쓰고|쓸래|쓰는데|쓸 수 있고|쓸 수 있는데|써도 되고|써도 되는데|가능하고|가능한데|가능하지만".split("|").map { key(it) }.toSet()
+    val chainBreakers: Set<String> = "with|using|use|but|instead|however|though|while|yet|only|just|and then|then|yes|yeah|yep|yup|ok|okay|fine|great|cool|awesome|perfect|nice|alright|available|accessible|usable|open|allowed|permitted|have|got|있고|있지만|있는데|있어도|있으나|있으며|있어요|있음|있다|되고|되는데|되지만|가능하고|가능한데|あるが|あるけど|あるけれど|あるものの|あって|はあるが|はあるけど|だけど|だが|ですが|けど|けれど|けれども|ものの|使う|使える|使えます|使って|使います|使いたい|使用する|使っている|使ってる|使ってて|쓸 거고|쓸거고|쓰고|쓸래|쓰는데|쓸 수 있고|쓸 수 있는데|써도 되고|써도 되는데|가능하고|가능한데|가능하지만".split("|").map { key(it) }.toSet()
 
     val adjectiveCues: Set<String> = ("bad|sore|weak|injured|painful|tender|stiff|damaged|hurt|hurting|strained|sprained|pulled|inflamed|" +
         "easy on|gentle on|kind to|safe for|good for|protect|protecting|careful with|careful|doesnt hurt|wont hurt|hurt my|hurts my|aggravate|aggravating|irritate|irritating").split("|").map { key(it) }.toSet()
@@ -473,6 +475,7 @@ internal object QueryLexicon {
         // 장비 제약 문형(쓸 수 없다는 말) — avail 표지. 대안 표지와 같은 말이면 대안 표지가 먼저 시도된다
         for (k in splitRules(QueryLexiconConstraint.NEG_AFTER) + splitRules(QueryLexiconConstraint.AVAIL_EXTRA) + splitRules(QueryLexiconConstraint.CROWD_AFTER)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k), avail = true))
         for (k in splitRules(QueryLexiconConstraint.NEG_BEFORE)) add(key(k), Term(Role.NEG, targetBefore = false, avail = true))
+        for (k in splitRules(QueryLexiconConstraint.DISLIKE_EXTRA)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k), dislike = true))
         for (k in splitRules(CUES) + QueryLexiconRound3.CUES.split("|")) add(key(k), Term(Role.CUE))
         for (k in splitRules(QueryLexiconConstraint.CUES_EXTRA)) add(key(k), Term(Role.CUE))
         for (k in splitRules(QUIET)) add(key(k), Term(Role.QUIET))
@@ -600,7 +603,7 @@ internal object QueryLexicon {
                 index.getOrPut(v) { mutableListOf() }.addAll(fresh.map { t ->
                     when {
                         // 가나로 풀어 쓴 부정 표지("いがい", "ぬき")는 한자 표기와 달리 조사처럼 앞말에 붙어야 한다
-                        t.role == Role.NEG -> Term(Role.NEG, targetBefore = t.targetBefore, particle = isKana(v), instead = t.instead, avail = t.avail)
+                        t.role == Role.NEG -> Term(Role.NEG, targetBefore = t.targetBefore, particle = isKana(v), instead = t.instead, avail = t.avail, dislike = t.dislike)
                         short && !t.isolated -> t.asIsolated()
                         else -> t
                     }
