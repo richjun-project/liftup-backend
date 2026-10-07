@@ -45,6 +45,8 @@ class UserPlanService(
     companion object {
         /** 템플릿 하루 운동 수 목표. 부상으로 빠진 만큼 여기까지 채운다. */
         const val TARGET_EXERCISES_PER_DAY = TemplatePlanAdapter.TARGET_EXERCISES_PER_DAY
+        /** 초보·노비스 보호 처방을 적용하는 처음 몇 주 — PlanWorkoutEnricher 와 같은 값이어야 대시보드·상세의 시간이 일치한다 */
+        const val BEGINNER_PROTECT_WEEKS = 4
     }
 
     @org.springframework.beans.factory.annotation.Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
@@ -119,6 +121,10 @@ class UserPlanService(
         // 날마다 운동 목록과 개인화된 추정 시간(getDayWorkout 과 같은 세트·휴식 맞춤)을 함께 읽는다
         val dayRows = days.associate { day -> day.id to userPlanDayExerciseRepository.findByPlanDayIdWithExerciseOrderByOrderInDay(day.id) }
         val dayExerciseCounts = dayRows.mapValues { it.value.size }
+        // 하루 상세(enrich)와 같은 주차·디로드 판정 — 두 화면이 같은 분을 보여 주게 한다
+        val weekNumber = (days.sumOf { it.totalCompletions } / plan.totalDays.coerceAtLeast(1)) + 1
+        val deloadWeek = plan.deloadEveryNWeeks > 0 && weekNumber > 1 && (weekNumber % plan.deloadEveryNWeeks == 0)
+        val beginnerProtected = ctx.level != null && RecoRules.isBeginnerBand(ctx.level) && weekNumber <= BEGINNER_PROTECT_WEEKS
 
         return PlanDashboardResponse(
             planId = plan.id,
@@ -135,7 +141,7 @@ class UserPlanService(
                     dayNumber = day.dayNumber,
                     dayName = translatedPlanDayName(plan, day.dayNumber, day.dayName, locale),
                     workoutType = day.workoutType.name,
-                    estimatedDuration = personalizedMinutes(dayRows[day.id].orEmpty(), ctx) ?: day.estimatedDurationMinutes,
+                    estimatedDuration = personalizedMinutes(dayRows[day.id].orEmpty(), ctx, deloadWeek, beginnerProtected) ?: day.estimatedDurationMinutes,
                     exerciseCount = dayExerciseCounts[day.id] ?: 0,
                     totalCompletions = day.totalCompletions,
                     lastCompletedAt = day.lastCompletedAt?.toString(),
@@ -149,18 +155,29 @@ class UserPlanService(
     }
 
     /**
-     * 하루 운동 목록의 추정 시간(분). 세션 시간이 저장돼 있으면 getDayWorkout 과 같은 세트·휴식 맞춤을 거친 값,
-     * 없으면 저장된 처방 그대로의 값. 목록이 비면 null.
+     * 하루 운동 목록의 추정 시간(분). getDayWorkout(PlanWorkoutEnricher)가 화면에 보이는 값과 같아야 한다 —
+     * 세션 시간이 저장돼 있으면 같은 세트·휴식 맞춤(디로드 주간은 줄이기만, 초보 첫 4주는 주력 복합 보호 반영)을 거친 값,
+     * 없으면 enrich 가 그대로 두는 저장값을 쓰도록 null 을 돌려준다. 목록이 비어도 null.
      */
-    internal fun personalizedMinutes(rows: List<UserPlanDayExercise>, ctx: UserTrainingContextResolver.Context): Int? {
+    internal fun personalizedMinutes(
+        rows: List<UserPlanDayExercise>,
+        ctx: UserTrainingContextResolver.Context,
+        deloadWeek: Boolean = false,
+        beginnerProtected: Boolean = false,
+    ): Int? {
         if (rows.isEmpty()) return null
+        val target = ctx.sessionMinutes?.takeIf { it > 0 } ?: return null
         val level = ctx.level
         val slots = rows.map { r ->
-            val src = TemplatePlanAdapter.SourceExercise(r.exercise, r.sets, r.minReps, r.maxReps, r.restSeconds, r.isCompound, r.targetRPE, r.notes)
-            TemplatePlanAdapter.slotOf(src, RecoRules.maxSetsFor(r.exercise, level, ctx.age, r.isCompound, ctx.sessionMinutes).coerceAtLeast(r.sets), null, true)
+            var sets = r.sets; var lo = r.minReps; var hi = r.maxReps; var rest = r.restSeconds
+            if (beginnerProtected) {
+                val rx = RecoRules.beginnerRx(r.exercise, RecoRules.Rx(sets, lo, hi, rest), r.isCompound)
+                sets = rx.sets; lo = rx.minReps; hi = rx.maxReps; rest = rx.restSeconds
+            }
+            val src = TemplatePlanAdapter.SourceExercise(r.exercise, sets, lo, hi, rest, r.isCompound, r.targetRPE, r.notes)
+            TemplatePlanAdapter.slotOf(src, RecoRules.maxSetsFor(r.exercise, level, ctx.age, r.isCompound, ctx.sessionMinutes).coerceAtLeast(sets), null, true)
         }
-        val target = ctx.sessionMinutes ?: return SessionFit.minutes(slots)
-        return SessionFit.minutes(SessionFit.fit(slots, target).slots)
+        return SessionFit.minutes(SessionFit.fit(slots, target, allowGrow = !deloadWeek).slots)
     }
 
     fun getDayWorkout(userId: Long, dayNumber: Int, subjectiveReadiness: Int? = null, locale: String = "ko"): DayWorkoutResponse {

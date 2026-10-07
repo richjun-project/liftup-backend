@@ -483,7 +483,7 @@ class PTRecommendationEngine(
         // 첫 세션(PR·최근 이력 모두 없음)은 플랜 화면·하루 운동과 같은 단일 출처 무게에서 출발한다.
         // 예전엔 가상의 PR(= 기본값 × 1.2)의 65~75% 밴드로 눌러 같은 사람에게 화면마다 다른 무게(기본값의 90%)를 줬다.
         val isFirstSession = !hasPersonalRecord && recentHistory.isEmpty()
-        val firstSessionWeight = if (isFirstSession) weightRecommendationService.firstSessionWeight(profile, exercise, targetRepsForStart) else null
+        // 무게는 아래에서 최종 처방 반복수(초보 보정·목표 창 반영 후)의 상한에 맞춰 정한다. 반복수를 올린 뒤에도 옛 반복수의 무게를 쓰면 6RM 하중으로 8~10회를 시키게 된다.
 
         // 최종 무게 계산 (NaN 방지 + 안전 마진 강화)
         var targetWeight = if (lastWeight > 0 && lastWeight.isFinite()) {
@@ -499,9 +499,8 @@ class PTRecommendationEngine(
         }
 
         // 안전 마진 적용 (과학적 근거: NSCA Guidelines)
-        if (firstSessionWeight != null) {
-            targetWeight = firstSessionWeight
-        } else if (prWeight > 0) {
+        // (첫 세션 무게는 최종 반복수가 정해진 뒤 아래에서 확정한다.)
+        if (!isFirstSession && prWeight > 0) {
             // 1. 주기화 범위 내로 제한
             targetWeight = targetWeight.coerceIn(
                 prWeight * intensityRange.start,
@@ -581,6 +580,17 @@ class PTRecommendationEngine(
                 finalReps = if (rx.minReps == rx.maxReps) "${rx.minReps}" else "${rx.minReps}-${rx.maxReps}"
                 finalRest = rx.restSeconds
             }
+        }
+
+        if (isFirstSession) {
+            val startReps = parseUpperReps(finalReps) ?: targetRepsForStart
+            var first = weightRecommendationService.firstSessionWeight(profile, exercise, startReps)
+            // 미성년·고령 강도 상한(%1RM)은 첫 세션에도 적용한다. 1RM 을 아는 경우에만 비교 기준이 있다(기본값 경로는 이미 나이로 줄어 있다).
+            val ageIntensityCap = RecommendationConstants.getAgeIntensityCap(age)
+            if (ageIntensityCap < 1.0 && estimated1RM != null && estimated1RM > 0) {
+                first = first.coerceAtMost(estimated1RM * ageIntensityCap)
+            }
+            targetWeight = first
         }
 
         // intensity 계산 시 NaN 방지

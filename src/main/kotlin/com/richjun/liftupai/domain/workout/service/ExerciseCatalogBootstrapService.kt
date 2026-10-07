@@ -151,9 +151,27 @@ class ExerciseCatalogBootstrapService(
         val missingSlugs = missing.mapTo(HashSet()) { it.slug }
         var created = 0
         if (missing.isNotEmpty()) {
-            val saved = exerciseRepository.saveAllAndFlush(missing.map { newExercise(it) })
+            val saved = try {
+                exerciseRepository.saveAllAndFlush(missing.map { newExercise(it) })
+            } catch (e: Exception) {
+                // 배치 전체가 한 건(동시에 뜬 다른 인스턴스가 먼저 넣은 slug, 컬럼 길이 초과 등) 때문에 실패했다.
+                // 한 건이 나머지를 막지 않도록 행마다 다시 시도하고, 이미 들어간 slug 는 다시 읽어 이어간다.
+                logger.warn("Catalog sync: batch insert failed ({}), retrying per record", e.message)
+                missing.mapNotNull { record ->
+                    try {
+                        exerciseRepository.saveAndFlush(newExercise(record))
+                    } catch (inner: Exception) {
+                        logger.error("Catalog exercise insert failed: slug={} — {}", record.slug, inner.message)
+                        null
+                    }
+                }
+            }
             saved.forEach { existingBySlug[it.slug] = it }
             created = saved.size
+            if (saved.size < missing.size) {
+                // 동시에 삽입된 행은 다음 단계(번역)가 쓸 수 있게 다시 읽는다
+                exerciseRepository.findAll().filter { it.slug in missingSlugs }.forEach { existingBySlug.putIfAbsent(it.slug, it) }
+            }
         }
 
         // 2) 기존 slug 의 큐레이션 필드·이름·설명 갱신

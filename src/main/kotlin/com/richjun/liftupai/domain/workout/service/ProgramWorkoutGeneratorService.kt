@@ -61,6 +61,9 @@ class ProgramWorkoutGeneratorService(
     private val injuryFilterService: InjuryFilterService? = null,
     @Autowired(required = false)
     private val localizationService: ExerciseCatalogLocalizationService? = null,
+    /** 안전 대체 후보 풀 — 카테고리 풀을 매번 DB 에서 읽지(그리고 근육 컬렉션을 하나씩 지연 로딩하지) 않도록 메모리 스냅샷을 쓴다 */
+    @Autowired(required = false)
+    private val catalogCache: ExerciseCatalogCache? = null,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -124,7 +127,11 @@ class ProgramWorkoutGeneratorService(
 
         // 7 & 8. Build exercise list applying overrides, SEVERE auto-substitution, weights, warmups
         val keptDayExercises = mutableListOf<com.richjun.liftupai.domain.workout.entity.ProgramDayExercise>()
-        val generatedExercises = dayExercises.mapNotNull { pde ->
+        // 이름 현지화는 운동마다 번역 조회를 하지 않고, 루프가 끝난 뒤 한 번에 묶어 읽는다
+        val namedExercises = LinkedHashMap<Long, com.richjun.liftupai.domain.workout.entity.Exercise>()
+        // 안전 대체 후보 풀은 카테고리별로 한 번만 읽는다
+        val poolByCategory = HashMap<com.richjun.liftupai.domain.workout.entity.ExerciseCategory, List<com.richjun.liftupai.domain.workout.entity.Exercise>>()
+        val rawGenerated = dayExercises.mapNotNull { pde ->
             val override = overrideMap[pde.exercise.id]
             var actualExercise = override?.substituteExercise ?: pde.exercise
 
@@ -163,7 +170,7 @@ class ProgramWorkoutGeneratorService(
             // 예전엔 비어 있는 제한 표로만 걸러 무릎 부상 사용자의 프로그램에 스쿼트가 그대로 나갔고,
             // 장비 오버라이드는 문자열 비교라 맨몸·기타 운동까지 "장비 없음" 으로 보았다.
             if (!allowed(actualExercise) || actualExercise.id in usedInDay) {
-                val replacement = pickSafeReplacement(actualExercise, pde.exercise, usedInDay, allowed)
+                val replacement = pickSafeReplacement(actualExercise, pde.exercise, usedInDay, allowed, poolByCategory)
                 if (replacement != null) {
                     logger.info("Program safety layer: ${actualExercise.name} → ${replacement.name} (injury/equipment/level rules)")
                     actualExercise = replacement
@@ -258,10 +265,12 @@ class ProgramWorkoutGeneratorService(
             val adjustedRest = (baseRest * phaseRestMultiplier * ageRestMultiplier).roundToInt()
 
             // Build substitute list (injury-aware) — reuse already-fetched substitutes
+            namedExercises[actualExercise.id] = actualExercise
             val substituteResponses = substitutes.filter { allowed(it.substituteExercise) }.map { sub ->
+                namedExercises.putIfAbsent(sub.substituteExercise.id, sub.substituteExercise)
                 ProgramSubstituteExercise(
                     exerciseId = sub.substituteExercise.id,
-                    name = localizedName(sub.substituteExercise, locale),
+                    name = sub.substituteExercise.name,
                     reason = sub.reason.name,
                     category = sub.substituteExercise.category.name,
                     equipment = sub.substituteExercise.equipment?.name
@@ -270,7 +279,7 @@ class ProgramWorkoutGeneratorService(
 
             ProgramGeneratedExercise(
                 exerciseId = actualExercise.id,
-                name = localizedName(actualExercise, locale),
+                name = actualExercise.name,
                 category = actualExercise.category.name,
                 equipment = actualExercise.equipment?.name,
                 sets = rxSets,
@@ -283,6 +292,14 @@ class ProgramWorkoutGeneratorService(
                 warmupSets = warmupSets,
                 substitutes = substituteResponses
             )
+        }
+
+        val translations = if (locale == "en" || localizationService == null || namedExercises.isEmpty()) emptyMap()
+            else try { localizationService.translationMap(namedExercises.values, locale) } catch (e: Exception) { emptyMap() }
+        fun display(id: Long, fallback: String): String =
+            namedExercises[id]?.let { localizationService?.displayName(it, locale, translations) } ?: fallback
+        val generatedExercises = rawGenerated.map { g ->
+            g.copy(name = display(g.exerciseId, g.name), substitutes = g.substitutes.map { it.copy(name = display(it.exerciseId, it.name)) })
         }
 
         // 9. Check graduation status
@@ -443,12 +460,6 @@ class ProgramWorkoutGeneratorService(
         return exercises.zip(fitted).map { (e, slot) -> e.copy(sets = slot.sets, restSeconds = slot.restSeconds) }
     }
 
-    private fun localizedName(ex: com.richjun.liftupai.domain.workout.entity.Exercise, locale: String): String {
-        val loc = localizationService ?: return ex.name
-        if (locale == "en") return ex.name
-        return try { loc.displayName(ex, locale, loc.translationMap(listOf(ex), locale)) } catch (e: Exception) { ex.name }
-    }
-
     /**
      * 부상·장비·수준 규칙을 어기는(또는 이미 그날에 있는) 운동의 안전한 대체. 같은 카테고리의 플랜 후보 중 동작 패턴·근육이
      * 가장 비슷한 것을 고른다(SubstituteRanker). 후보가 없으면 null — 호출자는 원래 운동을 그대로 둔다.
@@ -458,6 +469,7 @@ class ProgramWorkoutGeneratorService(
         original: com.richjun.liftupai.domain.workout.entity.Exercise,
         usedInDay: Set<Long>,
         allowed: (com.richjun.liftupai.domain.workout.entity.Exercise) -> Boolean,
+        poolByCategory: MutableMap<com.richjun.liftupai.domain.workout.entity.ExerciseCategory, List<com.richjun.liftupai.domain.workout.entity.Exercise>> = HashMap(),
     ): com.richjun.liftupai.domain.workout.entity.Exercise? {
         // 같은 부위를 우선하고, 그 부위의 후보가 부상·장비로 전부 막히면(어깨 부상의 가슴 운동 등) 다른 부위의 안전한 운동으로 바꾼다
         val categories = (listOf(current.category, original.category) + listOf(
@@ -466,7 +478,9 @@ class ProgramWorkoutGeneratorService(
             com.richjun.liftupai.domain.workout.entity.ExerciseCategory.SHOULDERS, com.richjun.liftupai.domain.workout.entity.ExerciseCategory.ARMS,
         )).distinct()
         for (category in categories) {
-            val pool = exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category)
+            val pool = poolByCategory.getOrPut(category) {
+                catalogCache?.get()?.planPool?.get(category) ?: exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category)
+            }
             val ranked = SubstituteRanker.rank(
                 original = current, pool = pool, curatedIds = emptySet(),
                 isAllowed = { ex -> ex.id !in usedInDay && allowed(ex) }, limit = 1,

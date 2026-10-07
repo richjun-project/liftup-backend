@@ -3749,19 +3749,19 @@
       {
         "locale": "en",
         "name": "Assisted close grip underhand chin up",
-        "instructions": "1. Kneel on the platform pad of an assisted chin-up machine and grasp the handles with a reverse grip (palms facing you) at shoulder-width apart.\n2. Begin the movement by pulling your body upward until your chin is above the bar.\n3. Slowly lower your body back to the starting position with control, fully extending your arms.\n4. Repeat the movement for the desired number of repetitions, maintaining proper form throughout the exercise.",
+        "instructions": "1. Kneel on the platform pad of an assisted chin-up machine and grasp the handles with an underhand grip (palms facing you) set closer than shoulder width, with your hands about a fist apart from the center.\n2. Pull your body upward until your chin is above the bar, keeping your elbows tucked in front of your ribs.\n3. Slowly lower your body back to the starting position with control, fully extending your arms.\n4. Repeat for the desired number of repetitions, using the least assistance you can control.",
         "tips": "1. Keep your elbows close to your body and avoid flaring them out.\n2. Use an appropriate level of assistance on the machine to ensure you can perform the exercise correctly.\n3. Exhale as you pull your body upward and inhale as you lower it back down."
       },
       {
         "locale": "ko",
         "name": "어시스트 클로즈 그립 언더핸드 친업",
-        "instructions": "1. 어시스티드 친업 머신의 발판 패드에 무릎을 대고 올라서서 어깨너비의 언더그립(손바닥이 몸을 향하는 그립)으로 손잡이를 잡는다.\n2. 턱이 바 위로 올라올 때까지 몸을 위로 당겨 동작을 시작한다.\n3. 팔을 완전히 펴며 통제된 동작으로 몸을 천천히 시작 자세로 내린다.\n4. 운동 내내 올바른 자세를 유지하며 원하는 횟수만큼 반복한다.",
+        "instructions": "1. 어시스티드 친업 머신의 발판 패드에 무릎을 대고 올라서서, 어깨너비보다 좁은 간격의 언더그립(손바닥이 몸을 향하는 그립)으로 손잡이를 잡는다.\n2. 팔꿈치를 갈비뼈 앞쪽에 붙인 채 턱이 바 위로 올라올 때까지 몸을 당겨 올린다.\n3. 팔을 완전히 펴며 통제된 동작으로 몸을 천천히 시작 자세로 내린다.\n4. 조절할 수 있는 가장 적은 보조 중량으로 목표 횟수만큼 반복한다.",
         "tips": "1. 팔꿈치를 몸통 가까이에 유지하고 바깥으로 벌어지지 않도록 한다.\n2. 올바른 자세로 운동을 수행할 수 있도록 머신의 보조 중량을 적절히 설정한다.\n3. 몸을 위로 당기면서 숨을 내쉬고, 내리면서 들이마신다."
       },
       {
         "locale": "ja",
         "name": "アシステッド クローズグリップ アンダーハンド チンアップ",
-        "instructions": "1. アシストチンアップマシンのパッドに膝を乗せ、肩幅の逆手（手のひらが自分を向く向き）でハンドルを握る。\n2. 顎がバーを越えるまで体を引き上げて動作を開始する。\n3. コントロールを保ちながら、腕が完全に伸びるまでゆっくりと体を元の位置に戻す。\n4. 適切なフォームを維持しながら、目標の回数を繰り返す。",
+        "instructions": "1. アシストチンアップマシンのパッドに膝を乗せ、肩幅より狭い手幅の逆手（手のひらが自分を向く向き）でハンドルを握る。\n2. 肘を肋骨の前に引きつけたまま、顎がバーを越えるまで体を引き上げる。\n3. コントロールを保ちながら、腕が完全に伸びるまでゆっくりと体を元の位置に戻す。\n4. 制御できる最小のアシスト重量で、目標の回数を繰り返す。",
         "tips": "1. 肘は体幹の近くに保ち、外側に開かないようにする。\n2. 正しい動作を行えるよう、マシンで適切なアシスト重量を設定する。\n3. 体を引き上げるときに息を吐き、体を下ろすときに息を吸う。"
       }
     ],
@@ -5075,7 +5075,7 @@
   {
     "slug": "band-incline-t-raise",
     "defaultLocale": "en",
-    "category": "BACK",
+    "category": "SHOULDERS",
     "equipment": "RESISTANCE_BAND",
     "equipmentDetail": null,
     "sourceCategory": "Resistance",
@@ -7224,20 +7224,20 @@
       {
         "locale": "en",
         "name": "Barbell muscle clean",
-        "instructions": "1. Begin in a squatted position with your feet hip-width apart, holding a barbell with an overhand grip (palms facing your body), hands slightly wider than shoulder-width apart. The barbell should be resting on the floor.\n2. Explosively extend your hips and knees while pulling the barbell up towards your chest, keeping it close to your body. As the barbell passes your knees, shrug your shoulders and continue to pull the barbell upward.\n3. Quickly rotate your elbows under the bar and catch it in a front rack position with your elbows pointing forward. Stand up straight to complete the lift.\n4. Lower the barbell back to the starting position with control. Repeat for the desired number of repetitions.",
-        "tips": "1. Keep the barbell close to your body to ensure an efficient and powerful lift.\n2. Focus on an explosive hip extension to generate the necessary force for the clean.\n3. Engage your shoulders and traps during the shrug to assist in lifting the barbell.\n4. Use your legs and hips rather than relying solely on your arms to lift the barbell."
+        "instructions": "1. Stand with your feet hip-width apart and the barbell on the floor over mid-foot. Hinge down and grip the bar slightly wider than shoulder width with an overhand grip.\n2. Pull the bar off the floor and explosively extend your hips and knees, keeping the bar close to your body. Shrug and keep pulling the bar up toward your chest.\n3. Without re-bending your knees and without any catch dip, rotate your elbows around and under the bar and finish in the front rack position while standing tall.\n4. Lower the bar with control to the hips, then to the floor. Repeat for the desired number of repetitions.",
+        "tips": "1. Keep the bar close to your body throughout the pull.\n2. Because there is no catch dip, pull the bar higher and drive the elbows up fast to get under it.\n3. Use a lighter load than a power clean and focus on a violent hip extension.\n4. Practice with a light bar or an empty barbell first."
       },
       {
         "locale": "ko",
         "name": "바벨 머슬 클린",
-        "instructions": "1. 골반 너비로 발을 벌리고 스쿼트 자세로 시작한다. 바벨은 어깨너비보다 약간 넓게 오버핸드 그립(손바닥이 몸을 향함)으로 잡는다. 바벨은 바닥에 놓여 있어야 한다.\n2. 바벨을 몸에 가깝게 붙인 상태로 가슴 쪽으로 끌어올리면서 고관절과 무릎을 폭발적으로 편다. 바벨이 무릎을 지날 때 승모근을 으쓱(슈러그)하며 바벨을 계속 위로 당긴다.\n3. 재빨리 팔꿈치를 바 아래로 회전시켜 팔꿈치가 정면을 향하도록 프론트 랙 자세로 바벨을 받는다. 곧게 일어서서 동작을 완성한다.\n4. 바벨을 통제하며 시작 자세로 내린다. 목표 반복 횟수만큼 반복한다.",
-        "tips": "1. 효율적이고 강력한 리프팅을 위해 바벨을 몸에 최대한 밀착시킨다.\n2. 클린에 필요한 힘을 만들어내기 위해 폭발적인 고관절 신전(힙 익스텐션)에 집중한다.\n3. 바벨을 들어 올릴 때 슈러그 동작을 통해 어깨와 승모근을 적극적으로 활용한다.\n4. 팔 힘으로만 바벨을 당기지 말고 다리와 둔근의 힘을 사용한다."
+        "instructions": "1. 발을 골반 너비로 벌리고 바벨이 발 중앙 위에 오도록 선다. 힙을 접어 내려가 오버핸드 그립으로 어깨너비보다 약간 넓게 바를 잡는다.\n2. 바를 바닥에서 떼며 고관절과 무릎을 폭발적으로 펴고, 바를 몸에 붙인 채 슈러그하며 가슴 쪽으로 계속 끌어올린다.\n3. 무릎을 다시 굽히거나 받는 동작(캐치 딥) 없이 팔꿈치를 바 아래로 돌려 넣어 곧게 선 채로 프론트 랙 자세를 만든다.\n4. 바를 통제하며 골반 높이까지, 이어서 바닥까지 내린다. 목표 횟수만큼 반복한다.",
+        "tips": "1. 끌어올리는 내내 바를 몸에 가깝게 유지한다.\n2. 캐치 딥이 없으므로 바를 더 높이 끌어올리고 팔꿈치를 빠르게 위로 돌려 바 아래로 들어간다.\n3. 파워 클린보다 가벼운 중량을 쓰고 강한 고관절 신전에 집중한다.\n4. 먼저 빈 바나 가벼운 바로 동작을 연습한다."
       },
       {
         "locale": "ja",
         "name": "バーベル・マッスルクリーン",
-        "instructions": "1. 足を腰幅に開いてしゃがんだ姿勢になり、肩幅よりやや広い手幅のオーバーハンドグリップ（手のひらが体に向く向き）でバーベルを握る。バーベルは床に置いた状態から始める。\n2. 股関節と膝を爆発的に伸ばしながら、バーベルを体に沿わせたまま胸に向かって引き上げる。バーベルが膝を通過したら肩をすくめ（シュラッグ）、さらに上方へと引き続ける。\n3. 素早く肘をバーの下に潜り込ませ、肘を前に突き出してフロントラックポジションでキャッチする。直立してリフトを完了する。\n4. コントロールしながらバーベルをスタートポジションに下ろす。必要な回数を繰り返す。",
-        "tips": "1. 効率的かつ力強く引き上げるため、バーベルは常に体の近くを通す。\n2. クリーンに必要な力を生み出すため、爆発的な股関節の伸展（ヒップドライブ）に集中する。\n3. バーベルの引き上げを助けるため、シュラッグ動作で肩と僧帽筋をしっかり関与させる。\n4. 腕の力だけに頼らず、脚と股関節を使ってバーベルを持ち上げる。"
+        "instructions": "1. 足を腰幅に開き、バーベルが足の中央の真上に来るように立つ。股関節を折ってしゃがみ、肩幅よりやや広い順手でバーを握る。\n2. バーを床から引き上げ、股関節と膝を爆発的に伸ばす。バーを体に沿わせ、シュラッグしながら胸に向かって引き続ける。\n3. 膝を曲げ直したりキャッチのために沈み込んだりせず、肘をバーの下に回し入れ、直立したままフロントラックポジションを作る。\n4. コントロールしながらバーを腰の高さ、続いて床へ下ろす。目標回数繰り返す。",
+        "tips": "1. 引き上げの間、バーは常に体の近くを通す。\n2. キャッチで沈み込まないため、バーをより高く引き、肘を素早く上げてバーの下に入る。\n3. パワークリーンより軽い重量を使い、強い股関節の伸展に集中する。\n4. まず空のバーや軽いバーで動作を練習する。"
       }
     ],
     "isPlanEligible": false,
@@ -7550,19 +7550,19 @@
       {
         "locale": "en",
         "name": "Barbell power clean",
-        "instructions": "1. Begin in a squatted position with your feet hip-width apart, holding a barbell with an overhand grip (palms facing your body), hands slightly wider than shoulder-width apart. The barbell should be resting on the floor.\n2. Explosively extend your hips and knees while pulling the barbell up towards your chest, keeping it close to your body. As the barbell passes your knees, shrug your shoulders and continue to pull the barbell upward.\n3. Quickly rotate your elbows under the bar and catch it in a front rack position with your elbows pointing forward. Stand up straight to complete the lift.\n4. Lower the barbell back to the starting position with control. Repeat for the desired number of repetitions.",
+        "instructions": "1. Stand with your feet hip-width apart and the barbell on the floor over mid-foot. Hinge down and grip the bar slightly wider than shoulder width with an overhand grip.\n2. Pull the bar off the floor and explosively extend your hips and knees while keeping the bar close, then shrug and pull it toward your chest.\n3. Drop under the bar by re-bending your knees into a quarter squat (thighs above parallel) and catch it in the front rack position with your elbows pointing forward.\n4. Stand up fully to finish the lift, then lower the bar with control. Repeat for the desired number of repetitions.",
         "tips": "1. Focus on an explosive hip extension to generate the necessary force for the clean.\n2. Engage your shoulders and traps during the shrug to assist in lifting the barbell.\n3. Use your legs and hips rather than relying solely on your arms to lift the barbell.\n4. Practice the movement with lighter weights to perfect your form before progressing to heavier loads."
       },
       {
         "locale": "ko",
         "name": "바벨 파워 클린",
-        "instructions": "1. 발을 골반 너비로 벌리고 스쿼트 자세를 취한 뒤, 오버핸드 그립(손바닥이 몸을 향함)으로 어깨너비보다 약간 넓게 바벨을 잡아라. 바벨은 바닥에 놓여 있어야 한다.\n2. 바벨을 몸 가까이 붙인 채 고관절과 무릎을 폭발적으로 펴며 가슴 쪽으로 끌어올려라. 바벨이 무릎을 지날 때 어깨를 으쓱(슈러그)하며 바벨을 계속 위로 당겨라.\n3. 팔꿈치를 바 아래로 재빨리 회전시켜 팔꿈치가 앞을 향하도록 프론트 랙 자세로 바벨을 받아내라. 몸을 곧게 펴고 일어서서 리프팅을 완성하라.\n4. 통제력을 유지하며 바벨을 시작 자세로 내려놓아라. 목표 횟수만큼 반복하라.",
+        "instructions": "1. 발을 골반 너비로 벌리고 바벨이 발 중앙 위에 오도록 선다. 힙을 접어 내려가 오버핸드 그립으로 어깨너비보다 약간 넓게 바를 잡는다.\n2. 바를 바닥에서 떼며 몸에 붙인 채 고관절과 무릎을 폭발적으로 펴고, 슈러그하며 가슴 쪽으로 끌어올린다.\n3. 무릎을 다시 굽혀 쿼터 스쿼트(허벅지가 평행보다 높은 자세)로 바 아래로 내려앉으며 팔꿈치를 앞으로 향한 프론트 랙 자세로 받는다.\n4. 완전히 일어서서 동작을 마친 뒤 바를 통제하며 내린다. 목표 횟수만큼 반복한다.",
         "tips": "1. 클린에 필요한 힘을 만들기 위해 폭발적인 고관절 신전(힙 익스텐션)에 집중하라.\n2. 슈러그 동작 시 어깨와 승모근을 적극적으로 개입시켜 바벨을 들어 올리는 동작을 보조하라.\n3. 팔 힘에만 의존하지 말고 다리와 고관절을 사용하여 바벨을 들어 올려라.\n4. 고중량을 다루기 전에 가벼운 무게로 완벽한 자세를 먼저 연습하라."
       },
       {
         "locale": "ja",
         "name": "バーベル・パワークリーン",
-        "instructions": "1. 足を腰幅に開いたスクワットの姿勢から開始する。順手（手のひらが体側）で肩幅よりやや広めの手幅でバーベルを持つ。バーベルは床に置いた状態にする。\n2. バーベルを体に引きつけながら胸に向かって引き上げ、同時に股関節と膝を爆発的に伸展させる。バーベルが膝を通過したら肩をすくめ（シュラッグ）、さらにバーベルを上方に引き上げる。\n3. 素早く肘をバーの下へと回転させて前方に突き出し、フロントラックポジションでバーベルをキャッチする。直立してリフトを完了する。\n4. コントロールしながらバーベルを開始位置まで下ろす。目標回数繰り返す。",
+        "instructions": "1. 足を腰幅に開き、バーベルが足の中央の真上に来るように立つ。股関節を折ってしゃがみ、肩幅よりやや広い順手でバーを握る。\n2. バーを床から引き上げ、体に沿わせたまま股関節と膝を爆発的に伸ばし、シュラッグして胸に向かって引く。\n3. 膝を曲げ直してクォータースクワット（太ももが平行より高い位置）でバーの下に入り、肘を前に向けたフロントラックポジションでキャッチする。\n4. 完全に立ち上がってリフトを完了し、コントロールしながらバーを下ろす。目標回数繰り返す。",
         "tips": "1. クリーンに必要な力を生み出すため、爆発的な股関節の伸展（ヒップエクステンション）に意識を集中する。\n2. バーベルの引き上げをサポートするため、シュラッグ動作で肩と僧帽筋をしっかり関与させる。\n3. 腕の力だけに頼るのではなく、脚と股関節を使ってバーベルを持ち上げる。\n4. 高重量に移行する前に、軽い重量で動作を練習してフォームを完成させる。"
       }
     ],
@@ -11196,7 +11196,7 @@
     "slug": "bicep-curl-low-cable-machine-normal-grip",
     "defaultLocale": "en",
     "category": "ARMS",
-    "equipment": "MACHINE",
+    "equipment": "CABLE",
     "equipmentDetail": "Crossover machine",
     "sourceCategory": "Resistance",
     "movementPattern": "BICEP_CURL_CABLE",
@@ -14283,7 +14283,7 @@
   {
     "slug": "bridge-with-alternating-leg-raise",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "LEGS",
     "equipment": "BODYWEIGHT",
     "equipmentDetail": "None",
     "sourceCategory": "Bodyweight",
@@ -17486,7 +17486,7 @@
   {
     "slug": "cable-twisting-pull",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "BACK",
     "equipment": "CABLE",
     "equipmentDetail": "Cable Pulley Machine",
     "sourceCategory": "Resistance",
@@ -24700,7 +24700,7 @@
   {
     "slug": "dumbbell-external-rotation",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "SHOULDERS",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -26760,7 +26760,7 @@
   {
     "slug": "dumbbell-leaning-fly",
     "defaultLocale": "en",
-    "category": "CHEST",
+    "category": "SHOULDERS",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -27006,7 +27006,7 @@
   {
     "slug": "dumbbell-lying-external-shoulder-rotation",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "SHOULDERS",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -27124,7 +27124,7 @@
   {
     "slug": "dumbbell-lying-pronation-rotation-on-floor",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "SHOULDERS",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -30285,7 +30285,7 @@
   {
     "slug": "dumbbell-side-plank-with-rear-fly",
     "defaultLocale": "en",
-    "category": "CHEST",
+    "category": "SHOULDERS",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -32111,7 +32111,7 @@
   {
     "slug": "dumbbell-step-up-with-knee-raise",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "LEGS",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -32595,7 +32595,7 @@
   {
     "slug": "dumbbell-upright-shoulder-external-rotation",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "SHOULDERS",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -38864,7 +38864,7 @@
   {
     "slug": "lying-bench-external-shoulder-rotation",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "SHOULDERS",
     "equipment": "BODYWEIGHT",
     "equipmentDetail": "None",
     "sourceCategory": "Bodyweight",
@@ -39772,7 +39772,7 @@
   {
     "slug": "one-arm-reverse-dumbbell-fly",
     "defaultLocale": "en",
-    "category": "CHEST",
+    "category": "SHOULDERS",
     "equipment": "DUMBBELL",
     "equipmentDetail": "Dumbbells",
     "sourceCategory": "Free Weights",
@@ -40054,7 +40054,7 @@
   {
     "slug": "palm-up-palm-down-rotation",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "SHOULDERS",
     "equipment": "BODYWEIGHT",
     "equipmentDetail": "None",
     "sourceCategory": "Bodyweight",
@@ -42909,7 +42909,7 @@
   {
     "slug": "resistance-band-standing-external-rotation",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "SHOULDERS",
     "equipment": "RESISTANCE_BAND",
     "equipmentDetail": "Resistance Band",
     "sourceCategory": "Resistance",
@@ -43153,8 +43153,8 @@
   {
     "slug": "reverse-cable-fly-on-crossover",
     "defaultLocale": "en",
-    "category": "CHEST",
-    "equipment": "RESISTANCE_BAND",
+    "category": "SHOULDERS",
+    "equipment": "CABLE",
     "equipmentDetail": "Resistance Band",
     "sourceCategory": "Resistance",
     "movementPattern": "FLY",
@@ -46591,7 +46591,7 @@
   {
     "slug": "standing-side-leg-raises",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "LEGS",
     "equipment": "BODYWEIGHT",
     "equipmentDetail": "None",
     "sourceCategory": "Bodyweight",
@@ -47334,7 +47334,7 @@
   {
     "slug": "supine-push-up",
     "defaultLocale": "en",
-    "category": "CHEST",
+    "category": "CORE",
     "equipment": "BODYWEIGHT",
     "equipmentDetail": "None",
     "sourceCategory": "Bodyweight",
@@ -48214,7 +48214,7 @@
   {
     "slug": "upward-rotation-bent-arms",
     "defaultLocale": "en",
-    "category": "CORE",
+    "category": "SHOULDERS",
     "equipment": "BODYWEIGHT",
     "equipmentDetail": "None",
     "sourceCategory": "Bodyweight",
