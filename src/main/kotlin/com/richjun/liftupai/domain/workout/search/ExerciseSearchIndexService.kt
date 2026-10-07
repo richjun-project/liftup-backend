@@ -399,7 +399,7 @@ class ExerciseSearchIndexService(
 
         private val WHITESPACE = Regex("\\s+")
         private val WARM_QUERIES = listOf(
-            "squat", "스쿼트", "ベンチプレス", "bench press", "하체", "胸", "덤벨 가슴", "lat pulldown", "ラットプルダウン", "plank"
+            "squat", "스쿼트", "ベンチプレス", "bench press", "하체", "胸", "덤벨 가슴", "lat pulldown", "ラットプルダウン", "plank", "うつぶせで膝を曲げるマシン", "허벅지 뒤쪽이 땡겨요", "スクワットの代わり"
         )
 
         /** 제어문자 제거·공백 정리·반복 단어 제거·길이(160자)와 단어 수(14개) 제한. 비면 null(브라우즈) */

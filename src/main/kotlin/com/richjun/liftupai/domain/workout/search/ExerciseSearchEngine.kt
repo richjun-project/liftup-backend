@@ -286,9 +286,28 @@ class ExerciseSearchEngine(
         return sb.toString()
     }
 
+    /** 설명문으로 찾을 만한 길이의 질의인가 — 내용어(라틴 단어·한글·가나·한자 덩어리)가 둘 이상이거나 CJK 글자가 5자 이상 */
+    private fun descriptive(text: String): Boolean {
+        var units = 0
+        var cjkLetters = 0
+        var inRun = false
+        var latin = false
+        for (c in text) {
+            val isLatin = c.code < 0x250 && c.isLetter()
+            val isCjk = c.code >= 0x250 && c.isLetter()
+            if (isLatin || isCjk) {
+                if (!inRun || latin != isLatin) units++
+                inRun = true; latin = isLatin
+                if (isCjk) cjkLetters++
+            } else inRun = false
+        }
+        return units >= 2 || cjkLetters >= 5
+    }
+
     /**
      * 이름 검색이 비었거나 약할 때, 또는 동작을 풀어 쓴 의도 질의일 때 설명문(instructions·tips) 검색을 섞는다.
-     * 이름 일치는 언제나 설명문보다 앞선다 — 설명문 점수는 이름 밴드보다 낮은 대역(BAND_DESC)에서만 더해진다.
+     * 이름만으로 찾은 후보는 설명문이 새로 끼워 넣는 후보보다 앞선다(설명문만으로 찾은 운동은 BAND_INTENT 근처에서 시작해 이름 일치 밴드를 넘지 못한다).
+     * 이름 근거가 이미 확실하면(토큰 일치 이상) 설명문은 아무 일도 하지 않는다.
      */
     private fun withDescriptions(a: QueryAnalyzer.Analysis, plan: QueryPlan, pool: List<IDoc>, result: List<ExerciseSearchHit>, weak: Boolean): List<ExerciseSearchHit> {
         val topScore = result.firstOrNull()?.score ?: 0.0
@@ -300,11 +319,15 @@ class ExerciseSearchEngine(
         val motionCount = concepts.count { it in DescriptionLexicon.MOTION_CONCEPTS }
         val cjk = verbText.any { it.code >= 0x250 && it.isLetter() }
         val motion = motionCount >= (if (cjk) 1 else 2)
-        // 이름 근거가 약한가: 비었거나, 이름로는 못 찾아 의도 폴백으로 갔거나, 부분 일치뿐이다. 동작 묘사 질의는 한 단계 엄격하다(side·arm 같은 흔한 단어가 부분 일치로 걸리기 쉽다).
+        // 이름 근거가 약한가: 비었거나, 이름으로는 못 찾아 의도 폴백으로 갔거나, 부분 일치뿐이다. 동작 묘사 질의는 한 단계 엄격하다(side·arm 같은 흔한 단어가 부분 일치로 걸리기 쉽다).
         var nameWeak = result.isEmpty() || weak || topScore < BAND_PARTIAL || (motion && plan.mode == Mode.NAME && topScore < BAND_TOKEN_SUB)
+        // 한 단어짜리 질의("squat")는 묘사가 아니라 이름이다 — 필터(카테고리·장비)로 0건이 됐다고 설명문에서 억지로 찾지 않는다(대안은 호출자가 낸다)
+        if (!motion && !descriptive(text)) return result
+        // 필터가 걸린 채 이름으로 0건이면 "그 필터 안에는 그런 운동이 없다"는 뜻이다 — 묘사 질의가 아닌 한 설명문으로 채우지 않는다
+        if (!motion && result.isEmpty() && pool.size < indexed.size) return result
         val intentMotion = plan.mode == Mode.INTENT && motion
         if (!nameWeak && !intentMotion) return result
-        // 장비를 말한 질의("…마신")는 설명문 후보도 그 장비로 좁힌다(그 장비의 운동이 없으면 좁히지 않는다)
+        // 장비를 말한 질의("…マシン", "…머신")는 설명문 후보도 그 장비로 좁힌다(그 장비의 운동이 없으면 좁히지 않는다)
         val equipPool = if (plan.equipments.isEmpty()) pool else pool.filter { it.doc.equipment in plan.equipments }.ifEmpty { pool }
         val allowed = BitSet(indexed.size).also { b -> equipPool.forEach { b.set(it.index) } }
         val ex = if (plan.hasExclusions) exclusionSet(plan) else null
@@ -1152,7 +1175,7 @@ class ExerciseSearchEngine(
         private const val MAX_COMBO_WORDS = 6
         private const val MAX_SYN_RUN = 4
         private const val CACHE_SIZE = 512
-        private val WARM_QUERIES = listOf("スクワット", "벤치프레스", "bench press", "背中を鍛えたい", "무릎 안 좋을 때 하체운동", "bad knees leg workout", "without deadlifts", "덤벨 컬", "유산소", "ヒップアップ")
+        private val WARM_QUERIES = listOf("スクワット", "벤치프레스", "bench press", "背中を鍛えたい", "무릎 안 좋을 때 하체운동", "bad knees leg workout", "without deadlifts", "덤벨 컬", "유산소", "ヒップアップ", "うつぶせで膝を曲げるマシン", "tight hamstrings", "스쿼트 대신", "raise both arms out to the sides")
         /** 한 질의의 후보 점수 계산 예산 — 넘으면 비싼 보강 단계(퍼지·바이그램)를 건너뛴다 */
         const val DEFAULT_BUDGET_NANOS = 40_000_000L
     }
