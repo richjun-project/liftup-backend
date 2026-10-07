@@ -1,5 +1,7 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.auth.entity.UserLevel

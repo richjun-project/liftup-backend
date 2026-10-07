@@ -1,4 +1,4 @@
-package com.richjun.liftupai.domain.workout.service
+package com.richjun.liftupai.domain.workout.service.new
 
 import com.richjun.liftupai.domain.workout.util.SessionDurationFitter
 

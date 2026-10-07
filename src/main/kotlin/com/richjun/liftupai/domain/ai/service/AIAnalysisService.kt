@@ -1,5 +1,8 @@
 package com.richjun.liftupai.domain.ai.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+import com.richjun.liftupai.domain.workout.service.new.SessionFit
+
 import com.richjun.liftupai.domain.ai.dto.*
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.chat.entity.ChatAction
@@ -28,8 +31,6 @@ import com.richjun.liftupai.domain.ai.service.GeminiAIService
 import com.richjun.liftupai.domain.workout.service.AutoProgramSelector
 import com.richjun.liftupai.domain.workout.service.ExerciseCatalogLocalizationService
 import com.richjun.liftupai.domain.workout.service.FocusArea
-import com.richjun.liftupai.domain.workout.service.RecoRules
-import com.richjun.liftupai.domain.workout.service.SessionFit
 import com.richjun.liftupai.domain.workout.service.TemplatePlanAdapter
 import com.richjun.liftupai.domain.workout.service.UserTrainingContextResolver
 import com.richjun.liftupai.domain.workout.service.RecommendationConstants

@@ -1,5 +1,8 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+import com.richjun.liftupai.domain.workout.service.new.SessionFit
+
 /**
  * 온보딩 답변으로 프리셋 템플릿을 고르는 순수 로직 (DB·Spring 비의존).
  *

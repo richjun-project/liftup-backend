@@ -1,8 +1,10 @@
-package com.richjun.liftupai.domain.workout.service
+package com.richjun.liftupai.domain.workout.service.new
 
 import com.richjun.liftupai.domain.user.entity.ExperienceLevel
 import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.Exercise
+import com.richjun.liftupai.domain.workout.service.FocusArea
+import com.richjun.liftupai.domain.workout.service.RecommendationConstants
 import com.richjun.liftupai.domain.workout.util.ExerciseSuitability
 import kotlin.math.roundToInt
 

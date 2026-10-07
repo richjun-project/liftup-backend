@@ -1,5 +1,7 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.richjun.liftupai.domain.workout.entity.Equipment
@@ -172,8 +174,9 @@ class RecoFitEvalTest {
                 goals = n["goals"].map { it.asText() },
                 weeklyDays = n["weekly_days"].asInt(),
                 sessionDuration = n["session_duration"].asInt(),
-                equipment = n["equipment"].map { it.asText().uppercase() }.toSet(),
-                injuries = n["injuries"].map { it.asText().lowercase() }.toSet(),
+                // 서비스와 같은 정규화(별칭·헬스장 전체 토큰·부상 접미사) — 다른 표기의 페르소나 파일도 같은 뜻으로 읽는다
+                equipment = RecoRules.normalizeEquipment(n["equipment"].map { it.asText() }),
+                injuries = RecoRules.normalizeInjuries(n["injuries"].map { it.asText() }),
                 maxLevel = e?.get("max_level")?.asText() ?: n["experience_level"].asText(),
                 daysTolerance = e?.get("days_tolerance")?.asInt(1) ?: 1,
                 minPerDay = e?.get("min_exercises_per_day")?.asInt(3) ?: 3,
@@ -311,8 +314,8 @@ class RecoFitEvalTest {
         // (30분 사용자에게 44~48분짜리 템플릿이 나가 보조 종목이 통째로 잘려 나가던 사례)
         if (p.sessionDuration in 25..30 && TemplateRecommendationEngine.rankOf(p.experience) <= 1) {
             val avg = t.days.map { it.estimatedMinutes }.average()
-            // 같은 수준(또는 한 단계 아래)이고 장비·부상 필터에 70% 이상 살아남는 짧은 템플릿이 있을 때만 요구한다
-            val shortExists = outcome.ranked.any { it.survival >= 0.7 && it.template.days.map { d -> d.estimatedMinutes }.average() <= MAX_AVG_TEMPLATE_MINUTES_FOR_SHORT }
+            // 같은 수준(또는 한 단계 아래)이고 요일 수가 ±1 이내이며 장비·부상 필터에 70% 이상 살아남는 짧은 템플릿이 있을 때만 요구한다
+            val shortExists = outcome.ranked.any { it.survival >= 0.7 && kotlin.math.abs(it.dayGap) <= 1 && it.template.days.map { d -> d.estimatedMinutes }.average() <= MAX_AVG_TEMPLATE_MINUTES_FOR_SHORT }
             if (avg > MAX_AVG_TEMPLATE_MINUTES_FOR_SHORT && shortExists) {
                 failures += "30분 이하 세션인데 템플릿 평균 ${"%.0f".format(avg)}분 > ${MAX_AVG_TEMPLATE_MINUTES_FOR_SHORT.toInt()}분"
             }

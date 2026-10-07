@@ -1,5 +1,8 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+import com.richjun.liftupai.domain.workout.service.new.SessionFit
+
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.workout.dto.GeneratedWorkout
 import com.richjun.liftupai.domain.workout.dto.GraduationStatusDto

@@ -1,5 +1,7 @@
 package com.richjun.liftupai.domain.ai.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.richjun.liftupai.domain.ai.dto.AIWorkoutRecommendationResponse
