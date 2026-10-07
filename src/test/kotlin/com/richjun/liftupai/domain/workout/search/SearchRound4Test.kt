@@ -137,6 +137,15 @@ class SearchRound4Test {
     }
 
     @Test
+    fun `모르는 말로 쓴 맥락 활동도 덩어리째 맥락이다 - サッカー前の脚の準備`() {
+        val plan = engine.analyze("サッカー前の脚の準備")
+        assertEquals("INTENT", plan.mode.name)
+        assertTrue(plan.concepts.any { it.id == "warmup" }, plan.concepts.map { it.id }.toString())
+        assertTrue(plan.concepts.any { it.id.startsWith("muscle:") }, plan.concepts.map { it.id }.toString())
+        assertFalse(plan.hasUnknown, "맥락 활동이 모르는 덩어리로 남으면 안 된다")
+    }
+
+    @Test
     fun `몸 데우기·예열 은 웜업이다`() {
         for (q in listOf("ベンチプレスの前に肩を温めたい", "벤치 하기 전에 어깨 예열", "get my shoulders ready before lifting")) {
             assertTrue(engine.analyze(q).concepts.any { it.id == "warmup" || it.id.startsWith("mob:") }, q)

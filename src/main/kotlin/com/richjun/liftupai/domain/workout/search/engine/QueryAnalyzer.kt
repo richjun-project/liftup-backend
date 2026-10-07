@@ -490,7 +490,15 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                 var guard = 0
                 while (j in segs.indices && guard++ < 3 && (skippable(segs[j]) || consumed[j])) j += step
                 var taken = 0
-                while (contextOnly(j) && taken < 3) { consumed[j] = true; taken++; j += step }
+                while (contextOnly(j) && taken < 3) {
+                    if (segs[j].unknown) {
+                        // 모르는 덩어리는 글자 단위 조각이라 덩어리 전체를 한 번에 맥락으로 돌린다("サッカー前の脚の準備" 의 サッカー)
+                        val (a, b) = chunkAt(j)
+                        for (i in a..b) consumed[i] = true
+                        j = if (step > 0) b + 1 else a - 1
+                    } else { consumed[j] = true; j += step }
+                    taken++
+                }
                 if (taken > 0) consumed[idx] = true
             }
         }
@@ -839,7 +847,6 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private const val NUM_COST = 2
         private const val NOISE_EXTRA_COST = 4
         private const val MAX_TERM_LEN = 40
-        /** 다른 부위와 겹쳐 쓰는 개념 — "하체 워밍업", "앉아서 하는 복근" 은 두 조건에 모두 맞는 운동을 앞세운다 */
         /** 맥락 표지: 영어는 뒤에 운동이 오고("before bench day"), 한·일어는 앞에 온다("벤치 하기 전에", "ランニング前に") */
         private val BEFORE_LATIN = listOf("before", "ahead of", "prior to").map { SearchText.strictKey(it) }.toSet()
         private val BEFORE_CJK = listOf("前に", "前の", "前には", "前で", "前から", "전에", "전엔", "이전에", "하기 전에", "하기전에").map { SearchText.strictKey(it) }.toSet()
@@ -850,6 +857,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private val FAT_GOAL_IDS = setOf("backfat", "legslim", "hipdip", "armpit", "fatloss", "belly")
         private val BENCHLESS_EXCLUDED_EQUIPMENT = setOf(Equipment.BARBELL, Equipment.MACHINE, Equipment.CABLE)
         private val plainBenchKeys: Set<String> = listOf("bench", "benches", "ベンチ", "ベンチ台", "벤치", "벤치대", "flat bench").map { SearchText.strictKey(it) }.toSet()
+        /** 다른 부위와 겹쳐 쓰는 개념 — "하체 워밍업", "앉아서 하는 복근" 은 두 조건에 모두 맞는 운동을 앞세운다 */
         private val COMBINE_IDS = setOf("warmup", "pos-seated", "pos-lying", "pos-standing", "foamroll", "obj:chair", "obj:wall")
         private val TYPO_ROLES = setOf(Role.CONCEPT, Role.STRETCH, Role.EQUIP, Role.NOISE)
         private const val TYPO_MIN_LOOSE = 4
