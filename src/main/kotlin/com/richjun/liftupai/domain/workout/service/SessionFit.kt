@@ -55,6 +55,8 @@ object SessionFit {
         slots: List<Slot>,
         targetMinutes: Int,
         minExercises: Int = 3,
+        /** false 면 모자라도 세트·휴식을 늘리지 않는다(디로드 주간: 줄인 볼륨을 시간 맞춤이 되돌리면 안 된다) */
+        allowGrow: Boolean = true,
         pickDrop: ((keptIndices: List<Int>, slots: List<Slot>) -> Int?)? = null,
     ): Result {
         if (slots.isEmpty() || targetMinutes <= 0) return Result(slots, slots.indices.toList())
@@ -90,6 +92,8 @@ object SessionFit {
             if (!over()) break
             if (cur[i].restSeconds > SHORT_SESSION_MIN_REST) cur[i] = cur[i].copy(restSeconds = SHORT_SESSION_MIN_REST, minRestSeconds = minOf(cur[i].minRestSeconds, SHORT_SESSION_MIN_REST))
         }
+
+        if (!allowGrow) return Result(cur, kept)
 
         // 5. 모자라면 세트 → 휴식 순으로 상한까지 늘린다
         growSets(cur, lower, upper)

@@ -100,7 +100,7 @@ class PlanWorkoutEnricher(
         val protectedExercises = if (beginner && weekNumber <= BEGINNER_PROTECT_WEEKS) {
             goalAdjusted.map { ex -> exerciseMap[ex.exerciseId]?.let { protectBeginner(ex, it) } ?: ex }
         } else goalAdjusted
-        val (finalExercises, estimated) = fitToSessionDuration(protectedExercises, ctx.sessionMinutes, exerciseMap, level, effectiveAge)
+        val (finalExercises, estimated) = fitToSessionDuration(protectedExercises, ctx.sessionMinutes, exerciseMap, level, effectiveAge, isDeloadWeek)
 
         // 7-c. 대체 운동: 대체 후보 API(C3)와 같은 순위·같은 장비/부상/수준 규칙, 사용자 언어 이름
         val withSubstitutes = finalExercises.map { ex ->
@@ -155,6 +155,7 @@ class PlanWorkoutEnricher(
         exerciseMap: Map<Long, Exercise>,
         level: com.richjun.liftupai.domain.user.entity.ExperienceLevel?,
         age: Int?,
+        deload: Boolean = false,
     ): Pair<List<DayExerciseDetail>, Int?> {
         if (targetMinutes == null || targetMinutes <= 0 || exercises.isEmpty()) return exercises to null
         val slots = exercises.map { ex ->
@@ -167,7 +168,8 @@ class PlanWorkoutEnricher(
                 maxRestSeconds = restUp.coerceAtLeast(ex.restSeconds), maxSets = cap.coerceAtLeast(ex.sets),
             )
         }
-        val fitted = SessionFit.fit(slots, targetMinutes).slots
+        // 디로드 주간은 줄이기만 한다 — 줄여 놓은 세트를 시간 맞춤이 다시 늘리면 디로드가 아니다
+        val fitted = SessionFit.fit(slots, targetMinutes, allowGrow = !deload).slots
         val adjusted = exercises.zip(fitted).map { (ex, slot) -> ex.copy(sets = slot.sets, restSeconds = slot.restSeconds) }
         return adjusted to SessionFit.minutes(fitted)
     }
@@ -320,16 +322,18 @@ class PlanWorkoutEnricher(
         // Adjust sets based on phase
         val adjustedSets = (ex.sets * phaseAdj.setsMultiplier).roundToInt().coerceAtLeast(2)
 
-        // Adjust reps based on phase (BLOCK model overrides)
-        val adjustedMinReps = phaseAdj.repRangeLow ?: ex.minReps
-        val adjustedMaxReps = phaseAdj.repRangeHigh ?: ex.maxReps
+        // Adjust reps based on phase (BLOCK model overrides) — 복합운동에만. 고립 운동의 3-5회나 플랭크 시간(30-60초)을 BLOCK 반복 창으로 덮어쓰지 않는다
+        val timedOrCore = prefetchedExercise?.category == ExerciseCategory.CORE || prefetchedExercise?.category == ExerciseCategory.CARDIO
+        val applyRepWindow = ex.isCompound && !timedOrCore
+        val adjustedMinReps = if (applyRepWindow) phaseAdj.repRangeLow ?: ex.minReps else ex.minReps
+        val adjustedMaxReps = if (applyRepWindow) phaseAdj.repRangeHigh ?: ex.maxReps else ex.maxReps
 
         // Adjust rest with phase + age
         val adjustedRest = (ex.restSeconds * phaseAdj.restMultiplier * ageRestMultiplier).roundToInt()
 
         // Regenerate warmups with adjusted weight
-        val warmups = if (ex.isCompound && adjustedWeight != null && adjustedWeight > 20.0) {
-            generateEnrichedWarmupSets(adjustedWeight, userAge)
+        val warmups = if (ex.isCompound && adjustedWeight != null && adjustedWeight > 0.0 && prefetchedExercise != null) {
+            RecoRules.warmups(prefetchedExercise, adjustedWeight, userAge).map { (w, reps) -> WarmupSetDto(weight = w, reps = reps) }
         } else {
             ex.warmupSets
         }
@@ -342,25 +346,6 @@ class PlanWorkoutEnricher(
             restSeconds = adjustedRest,
             warmupSets = warmups,
         )
-    }
-
-    private fun generateEnrichedWarmupSets(workingWeight: Double, age: Int?): List<WarmupSetDto> {
-        val sets = mutableListOf<WarmupSetDto>()
-        // Extra warmup for 50+ users
-        if (age != null && age >= 50) {
-            sets.add(WarmupSetDto(weight = (workingWeight * 0.20).roundToNearest(2.5), reps = 15))
-        }
-        sets.add(WarmupSetDto(weight = 20.0, reps = 10)) // Empty bar
-        if (workingWeight > 40.0) {
-            sets.add(WarmupSetDto(weight = (workingWeight * 0.50).roundToNearest(2.5), reps = 8))
-        }
-        if (workingWeight > 60.0) {
-            sets.add(WarmupSetDto(weight = (workingWeight * 0.70).roundToNearest(2.5), reps = 5))
-        }
-        if (workingWeight > 80.0) {
-            sets.add(WarmupSetDto(weight = (workingWeight * 0.85).roundToNearest(2.5), reps = 3))
-        }
-        return sets.sortedBy { it.weight }
     }
 
     private fun Double.roundToNearest(step: Double): Double {

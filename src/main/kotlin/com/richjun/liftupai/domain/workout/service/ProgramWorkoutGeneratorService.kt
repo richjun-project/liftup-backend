@@ -230,17 +230,11 @@ class ProgramWorkoutGeneratorService(
             rxSets = rxSets.coerceAtMost(RecoRules.maxSetsFor(actualExercise, level, userAge, compoundNow)).coerceAtLeast(1)
 
             // Generate warmup sets for compound exercises and heavy isolation exercises
-            val shouldWarmup = pde.isCompound && suggestedWeight > 20.0 || suggestedWeight > 30.0
-            var warmupSets = if (shouldWarmup) {
-                generateWarmupSets(suggestedWeight)
+            // 웜업은 모든 경로가 같은 규칙(RecoRules.warmups) — 바벨만 빈 봉에서 시작하고, 50세 이상은 아주 가벼운 첫 세트가 더해진다
+            val warmupSets = if (compoundNow || suggestedWeight > 30.0) {
+                RecoRules.warmups(actualExercise, suggestedWeight, userAge).map { (w, reps) -> ProgramWarmupSet(weight = w, reps = reps) }
             } else {
                 emptyList()
-            }
-
-            // FIX 5: Add extra warmup set for users 50+
-            if (userAge != null && userAge >= 50 && warmupSets.isNotEmpty()) {
-                val extraWarmupWeight = (suggestedWeight * 0.20).coerceAtLeast(5.0)
-                warmupSets = listOf(ProgramWarmupSet(weight = roundToNearest(extraWarmupWeight, 2.5), reps = 15)) + warmupSets
             }
 
             // GAP 6.1: Phase-adjusted rest periods
@@ -535,29 +529,6 @@ class ProgramWorkoutGeneratorService(
                 status = status
             )
         }.sortedBy { it.muscleGroup }
-    }
-
-    private fun generateWarmupSets(workingWeight: Double): List<ProgramWarmupSet> {
-        val sets = mutableListOf<ProgramWarmupSet>()
-
-        // Empty bar (20kg) × 10 — always included when working weight > 20
-        sets.add(ProgramWarmupSet(weight = 20.0, reps = 10))
-
-        if (workingWeight > 40.0) {
-            sets.add(ProgramWarmupSet(weight = roundToNearest25(workingWeight * 0.40), reps = 8))
-        }
-        if (workingWeight > 60.0) {
-            sets.add(ProgramWarmupSet(weight = roundToNearest25(workingWeight * 0.60), reps = 5))
-        }
-        if (workingWeight > 80.0) {
-            sets.add(ProgramWarmupSet(weight = roundToNearest25(workingWeight * 0.75), reps = 3))
-        }
-
-        return sets
-    }
-
-    private fun roundToNearest25(weight: Double): Double {
-        return (weight / 2.5).toLong() * 2.5
     }
 
     private fun roundToNearest(value: Double, increment: Double): Double {

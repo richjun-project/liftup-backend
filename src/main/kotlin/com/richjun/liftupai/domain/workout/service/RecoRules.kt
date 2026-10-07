@@ -139,6 +139,32 @@ object RecoRules {
         return if (ex.equipment == Equipment.BARBELL) rounded.coerceAtLeast(BAR_WEIGHT) else rounded
     }
 
+    /**
+     * 작업 무게 앞의 웜업 세트 (무게, 반복) — 모든 경로가 같은 규칙을 쓴다.
+     *  - 바벨: 빈 봉(20kg)×10 에서 시작해 50%·70%·85% 로 올린다
+     *  - 덤벨·머신·케이블 등: 빈 봉이 없다 — 가벼운 무게(40%·65%)로 두 세트
+     *  - 50세 이상은 아주 가벼운 첫 세트(20%×15)를 더한다. 무게는 2.5kg 단위.
+     * 작업 무게가 가벼우면(바벨 20kg 이하, 그 외 10kg 이하) 웜업 세트는 없다.
+     */
+    fun warmups(ex: Exercise, workingWeight: Double, age: Int?): List<Pair<Double, Int>> {
+        fun r(w: Double) = ((w / 2.5).roundToInt() * 2.5).coerceAtLeast(2.5)
+        val out = mutableListOf<Pair<Double, Int>>()
+        if (ex.equipment == Equipment.BARBELL) {
+            if (workingWeight <= BAR_WEIGHT) return emptyList()
+            if (age != null && age >= 50) out += r(workingWeight * 0.20) to 15
+            out += BAR_WEIGHT to 10
+            if (workingWeight > 40.0) out += r(workingWeight * 0.50) to 8
+            if (workingWeight > 60.0) out += r(workingWeight * 0.70) to 5
+            if (workingWeight > 80.0) out += r(workingWeight * 0.85) to 3
+        } else {
+            if (workingWeight <= 10.0) return emptyList()
+            if (age != null && age >= 50) out += r(workingWeight * 0.20) to 15
+            out += r(workingWeight * 0.40) to 10
+            if (workingWeight > 25.0) out += r(workingWeight * 0.65) to 6
+        }
+        return out.distinct().sortedBy { it.first }
+    }
+
     // ── 초보 처방 ────────────────────────────────────────────────────
 
     data class Rx(val sets: Int, val minReps: Int, val maxReps: Int, val restSeconds: Int)

@@ -168,8 +168,9 @@ class UserPlanService(
             ?: throw ResourceNotFoundException("Day $dayNumber not found in plan")
 
         val exercises = userPlanDayExerciseRepository.findByPlanDayIdWithExerciseOrderByOrderInDay(day.id)
+        val ctx = trainingContext.resolve(userId)
 
-        // 한글 이름 일괄 조회
+        // 이름 일괄 조회(사용자 언어)
         val exerciseIds = exercises.map { it.exercise.id }
         val translatedNames = if (locale != "en") {
             exerciseTranslationRepository.findByExerciseIdInAndLocale(exerciseIds, locale)
@@ -207,8 +208,8 @@ class UserPlanService(
                 )
                 // 모든 경로가 같은 마지막 관문(2.5kg 단위·바벨 20kg 하한)을 거친다
                 val finalWeight = RecoRules.finalizeWeight(ex.exercise, suggestedWeight)
-                val warmupSets = if (ex.isCompound && finalWeight > 20.0) {
-                    generateWarmupSets(finalWeight)
+                val warmupSets = if (ex.isCompound) {
+                    RecoRules.warmups(ex.exercise, finalWeight, ctx.age).map { (w, reps) -> WarmupSetDto(weight = w, reps = reps) }
                 } else {
                     emptyList()
                 }
@@ -234,8 +235,7 @@ class UserPlanService(
         )
 
         // Enrich with advanced features
-        val userAge = userProfileRepository.findByUser_Id(userId).orElse(null)?.age
-        return planWorkoutEnricher.enrich(baseResponse, plan, userAge, subjectiveReadiness, locale)
+        return planWorkoutEnricher.enrich(baseResponse, plan, ctx.age, subjectiveReadiness, locale)
     }
 
     @Transactional
@@ -623,22 +623,6 @@ class UserPlanService(
             canUseAIPlan = true, // Will be checked by subscription on frontend
             currentPlan = currentPlan
         )
-    }
-
-    private fun generateWarmupSets(workingWeight: Double): List<WarmupSetDto> {
-        val sets = mutableListOf<WarmupSetDto>()
-        // Empty bar
-        sets.add(WarmupSetDto(weight = 20.0, reps = 10))
-        if (workingWeight > 40.0) {
-            sets.add(WarmupSetDto(weight = (workingWeight * 0.50).roundToNearest(2.5), reps = 8))
-        }
-        if (workingWeight > 60.0) {
-            sets.add(WarmupSetDto(weight = (workingWeight * 0.70).roundToNearest(2.5), reps = 5))
-        }
-        if (workingWeight > 80.0) {
-            sets.add(WarmupSetDto(weight = (workingWeight * 0.85).roundToNearest(2.5), reps = 3))
-        }
-        return sets
     }
 
     private fun Double.roundToNearest(step: Double): Double {

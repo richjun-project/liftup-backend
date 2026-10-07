@@ -617,7 +617,7 @@ class AIAnalysisService(
         val userAge = profile?.age
         val userBodyWeight = profile?.bodyInfo?.weight
         // 프롬프트도 후처리와 같은 부상 집합(프로필 ∪ 설정)을 본다 — 예전엔 설정이 비어 있으면 "Injuries: none" 이 나갔다
-        val userInjuries = ctx.injuries.ifEmpty { resolveUserInjuries(settings, profile) }
+        val userInjuries = if (ctx === UserTrainingContextResolver.Context.EMPTY) resolveUserInjuries(settings, profile) else ctx.injuries
         val focusAreasText = ctx.focusAreas.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.name.lowercase() }
 
         val profileInfo = """
