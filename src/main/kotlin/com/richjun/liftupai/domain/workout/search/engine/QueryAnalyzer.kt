@@ -29,7 +29,9 @@ internal class QueryPlan(
     /** 이름 검색용 단어열 후보(군더더기를 뗀 것 → 애매한 군더더기를 남긴 것) */
     val seeds: List<List<String>>,
     /** 이름으로 보이지만 어휘에 없는 덩어리(오타 가능성) 존재 */
-    val hasUnknown: Boolean
+    val hasUnknown: Boolean,
+    /** "X 대신/alternative to X" 의 X — 제외하되 X 와 비슷한(같은 부위·동작) 운동을 보여 준다 */
+    val similarTo: List<SigKey> = emptyList()
 ) {
     val hasExclusions: Boolean get() = excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || injuries.isNotEmpty()
     val hasIntentSignal: Boolean get() = concepts.isNotEmpty() || equipments.isNotEmpty() || home
@@ -194,6 +196,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         val consumed = BooleanArray(segs.size)
         val excludeEquip = LinkedHashSet<Equipment>()
         val excludeKeys = ArrayList<SigKey>()
+        val similarKeys = ArrayList<SigKey>()
         var cueFlag = false
 
         fun chunkAt(idx: Int): Pair<Int, Int> {
@@ -233,7 +236,11 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             }
             var any = false
             for (r in targets) {
-                if (resolveTarget(segs, r, text, excludeEquip, excludeKeys, consumed)) any = true
+                val before = excludeKeys.size
+                if (resolveTarget(segs, r, text, excludeEquip, excludeKeys, consumed)) {
+                    any = true
+                    if (neg.instead) similarKeys.addAll(excludeKeys.subList(before, excludeKeys.size))
+                }
                 else if (r.any { segs[it].has(Role.JOINT) || segs[it].has(Role.CUE) }) { cueFlag = true; any = true }
             }
             if (any) consumed[idx] = true
@@ -335,7 +342,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         var effectiveConcepts: List<Concept> = distinctConcepts
 
         // 부상만 있고 목표 부위가 없으면: 그 관절에 안전한 운동 전반
-        if (effectiveConcepts.isEmpty() && injuries.isNotEmpty() && !positiveName) {
+        if (effectiveConcepts.isEmpty() && injuries.isNotEmpty() && !positiveName && similarKeys.isEmpty()) {
             val prefer = injuries.flatMap { lex.injuryProfiles[it]?.prefer.orEmpty() }
             if (prefer.isNotEmpty()) {
                 effectiveConcepts = listOf(Concept("injury-safe:" + injuries.joinToString(","), emptySet(), emptySet(), prefer, emptyList(), emptySet(), emptyList(), true, false, false))
@@ -349,7 +356,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         val seeds = buildSeeds(tok, segs, consumed)
 
         // 모르는 덩어리가 남았는데 부위·장비·집 같은 내용 신호가 없으면(수준·제외 표현뿐) 그 덩어리가 운동 이름이다
-        val onlyModifiers = !hasContentSignal && unknownChunks.isNotEmpty()
+        val grammarRemnantsOnly = (injuries.isNotEmpty() || excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || similarKeys.isNotEmpty()) && unknownChunks.all { it.length <= 3 }
+        val onlyModifiers = !hasContentSignal && unknownChunks.isNotEmpty() && !grammarRemnantsOnly
         var mode = when {
             !positiveName && !nameLikeUnknown && !onlyModifiers && (hasContentSignal || level != 0 || excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || injuries.isNotEmpty()) -> Mode.INTENT
             !positiveName && !nameLikeUnknown && unknownChunks.isEmpty() -> Mode.BROWSE
@@ -359,7 +367,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         var finalSeeds = seeds
         if (mode == Mode.BROWSE) {
             // 이름에도 쓰이는 군더더기("lift", "set")만 남은 질의는 그 단어 자체로 이름 검색한다
-            val keepAmbiguous = seeds.lastOrNull().orEmpty()
+            val keepAmbiguous = seeds.firstOrNull().orEmpty()
             if (keepAmbiguous.isNotEmpty()) { mode = Mode.NAME; finalSeeds = listOf(keepAmbiguous) }
             else if (numbers.isNotEmpty() || text.length <= 2) { mode = Mode.NAME; finalSeeds = listOf(tok.words) }
         }
@@ -367,7 +375,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         return QueryPlan(
             mode = mode, concepts = effectiveConcepts, equipments = equipments, home = home, stretch = stretch, level = level,
             excludeEquip = excludeEquip, excludeKeys = excludeKeys, injuries = injuries, numbers = numbers, highReps = highReps,
-            seeds = finalSeeds, hasUnknown = unknownChunks.isNotEmpty()
+            seeds = finalSeeds, hasUnknown = unknownChunks.isNotEmpty(), similarTo = similarKeys
         )
     }
 
@@ -463,7 +471,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
 
     /**
      * 질의에서 군더더기·수치·부정·부상 표현을 뗀 단어열 후보.
-     * 첫째: 군더더기를 모두 뗀 것. 둘째: 이름에도 쓰이는 군더더기("up", "with")를 남긴 것(원문 단어 경계는 유지).
+     * 이름에도 쓰이는 군더더기("up", "with")가 있으면 그것을 남긴 후보가 먼저, 군더더기를 모두 뗀 후보가 그다음(원문 단어 경계는 유지).
      * 아무것도 뗄 게 없으면 원문 단어열과 같다.
      */
     private fun buildSeeds(tok: SearchText.Tokenized, segs: List<Seg>, consumed: BooleanArray): List<List<String>> {
@@ -502,8 +510,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         val a = build(false)
         val b = build(true)
         val out = ArrayList<List<String>>()
-        if (a.isNotEmpty()) out.add(a)
+        // 이름에도 쓰이는 군더더기를 남긴 쪽이 더 구체적이라 먼저, 모두 뗀 쪽은 그다음(엔진이 약간 감점한다)
         if (b.isNotEmpty() && b != a) out.add(b)
+        if (a.isNotEmpty()) out.add(a)
         return out
     }
 

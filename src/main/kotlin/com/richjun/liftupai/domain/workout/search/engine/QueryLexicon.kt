@@ -63,7 +63,9 @@ internal object QueryLexicon {
         /** 1글자 CJK 내용어 — 단어 경계에서만 인정 */
         val isolated: Boolean = false,
         val move: MoveGroup? = null,
-        val mod: Mod? = null
+        val mod: Mod? = null,
+        /** NEG: "대신/instead of/代わりに" — 제외하되 그 운동과 비슷한 운동을 대신 보여 준다 */
+        val instead: Boolean = false
     )
 
     class MoveGroup(val id: String, val keys: List<SigKey>)
@@ -95,7 +97,7 @@ internal object QueryLexicon {
     /** 순수 조사 — 앞 내용어에 붙어야 하고, 일본어는 히라가나일 때만 인정한다(가타카나 속 글자와 혼동 방지). */
     private val PURE_PARTICLES = """
         を|で|に|が|は|も|の|と|へ|や|から|まで|より|だけ|のみ|しか|など|って|とか|には|では|でも|なら|ね|よ|な|か
-        |이|가|은|는|을|를|에|에서|로|으로|의|도|만|과|와|하고|랑|이랑|에게|한테|부터|까지|보다|처럼|이나|나|에는|에서는|으로는|로는|밖에|만으로|으로만
+        |요|이|가|은|는|을|를|에|에서|로|으로|의|도|만|과|와|하고|랑|이랑|에게|한테|부터|까지|보다|처럼|이나|나|에는|에서는|으로는|로는|밖에|만으로|으로만
     """.trimIndent()
 
     /** 군더더기·어미·요청 표현 (문장 어디에나 올 수 있다) */
@@ -107,14 +109,15 @@ internal object QueryLexicon {
         |割りたい|割る|割れる|割って|広げたい|広げる|広く|広げ方|治したい|治す|治る|治し方|直したい|直す|直し方|改善|改善したい|改善する|改善方法|解消|解消したい|解消する|解消法|矯正|矯正したい|予防|強化|強化したい|強化する|ほぐす|ほぐしたい
         |やりたい|やる|やり方|やって|やった|やり|する|したい|した|して|してる|しています|しながら|でき|できる|できて|できない|出来る|やれる|したいとき|したい時|したいです|するには|するとき|するなら|したら|したり|なりたい|なる|なれる|なって|なった|なります
         |効く|効かせたい|効果的|効果的な|効率的|効率的に|おすすめ|お勧め|お薦め|人気|定番|簡単|簡単な|楽な|楽に|手軽|手軽な|基本|基本の|基本的な|正しい|正しく|メニュー|方法|のやり方|教えて|教えてください|ください|知りたい|探して|探してる|ありますか|あります|ある|ありませんか|いい|良い|よい|ほしい|欲しい|もの|こと|とき|時|ついて|について|向け|向けの|専用
-        |そして|あと|また|さらに|もっと|とても|すごく|かなり|少し|ちょっと|なるべく|できるだけ|毎日|毎朝|寝る前|短時間|時短|ながら
+        |できますか|いいですか|良いですか|いいでしょうか|おすすめは|はありますか|ってありますか|知りたいです|教えてほしい|教えてください|お願いします|お願い|そして|あと|また|さらに|もっと|とても|すごく|かなり|少し|ちょっと|なるべく|できるだけ|毎日|毎朝|寝る前|短時間|時短|ながら
         |하고싶어|하고싶다|하고싶은|하고싶네|하고싶은데|하고싶어요|하고싶습니다|하고싶음|싶어|싶다|싶은|싶어요|싶은데|싶습니다|하는|하기|하면|할때|할|하자|해서|해줘|해주세요|해요|합니다|한다|하는법|하는방법|하는거|하는건|하는데|하려면|하려고|하면서|할수있는|할수있도록|가능한
-        |알려줘|알려주세요|알려줄래|추천|추천해줘|추천해주세요|추천해줄래|추천좀|추천해|추천하는|좀|제발|그냥|진짜|정말|매우|아주|너무|조금|많이|빠르게|쉽게|효과적인|효과적으로|효율적인|효율적으로|좋은|좋아요|좋다|괜찮은|제일|가장|최고|인기|기본|기본적인|간단한|간단하게|방법|법|있는데|있어|있어요|있는|있다|있고|있을때|있으면|없는데|뭐|뭐가|뭘|무슨|어떤|어떻게|어디|자세|폼
+        |있나요|있을까요|있나|있을까|있습니까|가능해요|가능한가요|가능한지|되나요|될까요|해도되나요|해도될까요|돼요|괜찮나요|괜찮을까요|해야돼요|해야하나요|해야할까요|할까요|하나요|합니까|인가요|일까요|뭐가좋을까요|뭐가좋아요|무슨|알려줘|알려주세요|알려줄래|추천|추천해줘|추천해주세요|추천해줄래|추천좀|추천해|추천하는|좀|제발|그냥|진짜|정말|매우|아주|너무|조금|많이|빠르게|쉽게|효과적인|효과적으로|효율적인|효율적으로|좋은|좋아요|좋다|괜찮은|제일|가장|최고|인기|기본|기본적인|간단한|간단하게|방법|법|있는데|있어|있어요|있는|있다|있고|있을때|있으면|없는데|뭐|뭐가|뭘|무슨|어떤|어떻게|어디|자세|폼
         |빼기|빼는|빼고싶어|빼고싶다|빼고싶은|빼려면|빼는법|빼는방법|뺄래|뺀|만들기|만드는|만들고싶어|만들고싶다|만들고싶은|만들려면|만들어|만드는법|키우기|키우는|키우고싶어|키우고싶다|키우고싶은|키우려면|키워|늘리기|늘리는|늘리고싶어|늘리고싶은|찌우기|찌우는|줄이기|줄이는|줄이고싶어|풀기|풀어주는|풀어줘|풀고싶어|교정|교정하는|교정하기|교정하고싶어|개선|개선하는|개선하기|해소|해소하는|해소하기|강화|강화하는|강화하기|단련|단련하는|단련하기|다지기|다지는|잡기|잡는|잡아주는|살리기|올리기|올리는|넓히기|넓히는|넓게|굵게|굵은|두껍게|두꺼운|얇게|가늘게|탄탄하게|탄탄한|예쁘게|예쁜|슬림하게|슬림한|날씬하게|날씬한|단단하게|단단한|크게|작게|길게|짧게|높게|강하게|튼튼하게|튼튼한
         |워크아웃|트레이닝|트레|루틴|프로그램|운동법|운동|부위|헬스|헬스장|헬스장에서|체육관|짐|웨이트|근력운동|근력|근육
         |ジムで|ジムの|ジム|トレーニング|トレ|筋トレ|筋力トレーニング|ワークアウト|エクササイズ|体操|運動|種目|ルーティン|プログラム|コース|部位|パーツ|筋肉|筋|ジムトレ|ウエイトトレーニング|ウェイトトレーニング|オススメ|フォーム
-        |라인|line|ライン|몸매|바디|ボディ|スタイル|ごつい|がっしり|太い|でかい|ムキムキ|マッチョ|逞しい|우람한|근육질|bulky|buff|jacked|ripped|swole|defined|definition|shredded|sculpt|sculpted|美しい|綺麗な|きれいな|예쁜|이쁜|beautiful|nice|人|方|人向け|人用|人も|ひと|場合|lift|lifting|lifts|alternatives|alternative|substitute|substitutes|substitution|variations|variation|options|option|similar|types|アレンジ|バリエーション|代わり|代替|代用|種類|대신|대체|응용|변형|종류|비슷한|workout|workouts|exercise|exercises|training|train|routine|routines|program|programs|plan|plans|day|days|session|sessions|movement|movements|move|moves|drill|drills|gym|gyms|set|sets|rep|reps
-        |for|at|in|on|to|the|a|an|of|with|and|or|my|your|our|me|i|im|ive|want|wanna|need|do|does|how|can|could|should|would|some|any|get|getting|got|make|making|build|building|improve|improving|increase|increasing|grow|growing|gain|gaining|tone|toning|toned|strengthen|strengthening|stronger|strong|bigger|big|large|huge|massive|thick|thicker|wide|wider|broad|broader|slim|slimmer|lean|leaner|tight|tighter|firm|firmer|round|rounder|small|smaller|best|good|great|top|effective|efficient|quick|fast|short|simple|basic|basics|tips|tip|ideas|idea|help|helps|please|just|really|very|kind|types|type|ways|way|what|which|where|when|that|this|these|those|it|its|is|are|be|been|am|was|were|by|from|out|about|into|onto|per|using|use|used|them|you|we|they|he|she|will|also|more|most|less|least|much|many|lot|lots|only|work|working|worked|hit|hitting|target|targeting|targets|focus|focused|focusing|specific|specifically|proper|properly|correct|correctly|right|form|technique
+        |朝|夜|通勤|仕事|休憩|昼休み|最強|最速|最短|ランキング|ベスト|トップ|やるべき|必須|やってみた|オススメ|아침|저녁|밤|새벽|오전|오후|출근 전|퇴근 후|점심시간|최강|효과 좋은|필수|베스트|랭킹|순위|꿀팁|비법|꿀|morning|evening|night|before bed|after work|lunch break|ultimate|must do|ranking|favorite|famous|popular|secret|hack|guide|tutorial|cheat sheet|how-to|howto|top 10|top10
+        |라인|line|ライン|몸매|바디|ボディ|スタイル|ごつい|がっしり|太い|でかい|ムキムキ|マッチョ|逞しい|우람한|근육질|bulky|buff|jacked|ripped|swole|defined|definition|shredded|sculpt|sculpted|美しい|綺麗な|きれいな|예쁜|이쁜|beautiful|nice|人|方|人向け|人用|人も|ひと|場合|lift|lifting|lifts|muscle|muscles|muscular|hypertrophy|bulk|bulking|mass|gains|gain|growth|size|strength|variations|variation|options|option|similar|types|アレンジ|バリエーション|代用|種類|응용|변형|종류|비슷한|workout|workouts|exercise|exercises|training|train|routine|routines|program|programs|plan|plans|day|days|session|sessions|movement|movements|move|moves|drill|drills|gym|gyms|set|sets|rep|reps
+        |recommend|recommended|recommendation|recommendations|suggest|suggestion|suggestions|show|give|tell|list|find|looking|look|trying|try|for|at|in|on|to|the|a|an|of|with|and|or|my|your|our|me|i|im|ive|want|wanna|need|do|does|how|can|could|should|would|some|any|get|getting|got|make|making|build|building|improve|improving|increase|increasing|grow|growing|gain|gaining|tone|toning|toned|strengthen|strengthening|stronger|strong|bigger|big|large|huge|massive|thick|thicker|wide|wider|broad|broader|slim|slimmer|lean|leaner|tight|tighter|firm|firmer|round|rounder|small|smaller|best|good|great|top|effective|efficient|quick|fast|short|simple|basic|basics|tips|tip|ideas|idea|help|helps|please|just|really|very|kind|types|type|ways|way|what|which|where|when|that|this|these|those|it|its|is|are|be|been|am|was|were|by|from|out|about|into|onto|per|using|use|used|them|you|we|they|he|she|will|also|more|most|less|least|much|many|lot|lots|only|work|working|worked|hit|hitting|target|targeting|targets|focus|focused|focusing|specific|specifically|proper|properly|correct|correctly|right|form|technique
     """.trimIndent()
 
     /** 수치 단위 — 숫자 바로 뒤에서만 인정 */
@@ -132,12 +135,19 @@ internal object QueryLexicon {
         |free|less|-free|-less
     """.trimIndent()
 
-    private val NEG_BEFORE = "without|w/o|no|not|avoid|avoiding|except|excluding|exclude|excluded|skip|skipping|minus|besides|nothing|don't|dont|do not"
+    /** "X 대신 / Xの代わりに / Xの代替" — 대상 뒤에 오는 대체 표지 */
+    private val INSTEAD_AFTER = """
+        alternative|alternatives|substitute|substitutes|substitution|replacement|replacements|대신|대신에|대신할|대신 할|대체|대체할|대체 운동|대안|대안으로|대체로|말고 다른|代わりに|代わり|の代わり|の代替|代替|代替案|代用|代わりの|代わるもの
+    """.trimIndent()
+
+    private val INSTEAD_BEFORE = "instead of|insteadof|alternative to|alternatives to|alternative for|alternatives for|substitute for|substitutes for|replacement for|replace|rather than|in place of|swap for|swap out|other than|besides|something other than"
+
+    private val NEG_BEFORE = "without|w/o|no|not|avoid|avoiding|except|excluding|exclude|excluded|skip|skipping|minus|nothing|don't|dont|do not"
 
     // ── 부상 단서 ────────────────────────────────────────────────────────────────────────────
     private val CUES = """
         痛い|痛み|痛めた|痛めている|痛めてる|痛くない|痛くならない|痛めない|痛くなる|優しい|やさしい|負担がかからない|負担がかからず|負担がない|負担の少ない|負担少ない|負担を減らす|負担をかけない|負担をかけずに|負担軽減|負担が少ない|負担が小さい|負担にならない|怪我|ケガ|けが|故障|違和感|悪い|不安|庇う|保護|リハビリ|痛む|傷める|傷めた|炎症|痛くて|痛くても|大丈夫|安全|安全な|安心|弱い|弱め|軽め|無理なく|無理のない
-        |안좋을때|안좋을 때|안좋은|안좋아|안좋다|안좋을|안 좋을 때|아픈|아플|아플때|아프|아파|아프지않은|아프지않게|아프지않는|안아픈|안아프게|통증|부담|부담없는|부담적은|부담이적은|부담을줄이는|부담안되는|부담이안되는|약한|약할|약해|부상|재활|보호|다쳤|다친|다쳐서|조심|조심해서|무리없는|무리없이|염증|불편|불편한|불안|안전한|안전하게|안전|괜찮은|괜찮게|편한|편하게|디스크|시큰|시큰거리는|뻐근|뻐근한
+        |안좋은데|안좋은데도|아픈데|아프지만|안좋을때|안좋을 때|안좋은|안좋아|안좋다|안좋을|안 좋을 때|아픈|아플|아플때|아프|아파|아프지않은|아프지않게|아프지않는|안아픈|안아프게|통증|부담|부담없는|부담적은|부담이적은|부담을줄이는|부담안되는|부담이안되는|약한|약할|약해|부상|재활|보호|다쳤|다친|다쳐서|조심|조심해서|무리없는|무리없이|염증|불편|불편한|불안|안전한|안전하게|안전|괜찮은|괜찮게|편한|편하게|디스크|시큰|시큰거리는|뻐근|뻐근한
         |bad|sore|weak|injured|injury|injuries|pain|painful|painless|hurt|hurts|hurting|friendly|safe|safely|gentle|gently|rehab|rehabilitation|protect|protecting|careful|carefully|issues|issue|problems|problem|trouble|troubles|ache|aches|aching|stiff|tender|inflamed|pulled|strained|strain|sprain|sprained|surgery|recovering|recovery|post-op|easy-on|easy on|easyon|kind to|gentle on|low-stress
     """.trimIndent()
 
@@ -151,7 +161,7 @@ internal object QueryLexicon {
     val adjectiveCues: Set<String> = "bad|sore|weak|injured|painful|tender|stiff|damaged|hurt|hurting|strained|sprained|pulled|inflamed".split("|").map { key(it) }.toSet()
 
     // ── 수준 ─────────────────────────────────────────────────────────────────────────────────
-    private val BEGINNER = "easy|쉬운|楽な|初心者|初心者向け|入門|入門者|ビギナー|初級|初級者|ビギナー向け|はじめて|初めて|초보|초보자|초보자용|초보용|초심자|입문|입문자|왕초보|처음|처음하는|beginner|beginners|beginner-friendly|novice|newbie|starter|starters|entry level|entrylevel|first time|first-time|noob|rookie|beginning"
+    private val BEGINNER = "beginner friendly|beginners friendly|newbie friendly|novice friendly|初心者にやさしい|初心者に優しい|초보자 친화|초보도 쉬운|easy|쉬운|楽な|初心者|初心者向け|入門|入門者|ビギナー|初級|初級者|ビギナー向け|はじめて|初めて|초보|초보자|초보자용|초보용|초심자|입문|입문자|왕초보|처음|처음하는|beginner|beginners|beginner-friendly|novice|newbie|starter|starters|entry level|entrylevel|first time|first-time|noob|rookie|beginning"
     private val ADVANCED = "上級者|上級|上級者向け|中上級|ハード|きつい|エキスパート|고급|고급자|상급|상급자|고수|상급자용|하드|힘든|advanced|expert|hardcore|intense|challenging|elite|pro|harder|hardest"
 
     // ── 세부 부위 수식어 (부위 + 수식어 → 세부 개념) ─────────────────────────────────────────
@@ -206,16 +216,16 @@ internal object QueryLexicon {
     // ── 개념 정의 ────────────────────────────────────────────────────────────────────────────
     // 형식: 트리거|트리거 => id; muscles=A,B; cats=X; sig=..|..; sig2=..; pat=..; avoid=..; flags=strict,stretch,cardio
     private val CONCEPT_RULES = """
-        잘록한 허리|잘록한허리|잘록 허리|허리 잘록|くびれ|ウエスト|ウェスト|腹斜筋|脇腹|わき腹|옆구리|옆구리살|옆구리 라인|복사근|허리라인|허리 라인|오블리크|love handles|oblique|waist|waistline|side abs|muffin top|waist slimming|slim waist|side fat|옆구리 군살|脇腹の肉 => oblique; muscles=ABS,CORE; cats=CORE; sig=oblique|side bend|twist|wood chop|woodchop|windmill|bicycle|side plank|russian|オブリーク|斜め|サイドベント|ツイスト|ウッドチョップ|ウィンドミル|バイシクル|サイドプランク|ロシアン|옆구리|오블리크|사이드 벤드|트위스트|우드 찹|윈드밀|바이시클|사이드 플랭크|러시안; pat=ROTATION; flags=strict
+        허리살|허릿살|허리 군살|러브핸들|러브 핸들|腰回りの肉|腰回りのお肉|腰肉|浮き輪肉|ウエストの肉|ウエストシェイプ|waist trimming|trim waist|slim down waist|side belly|side belly fat|small waist|tiny waist|narrow waist|hourglass|잘록한 허리|잘록한허리|잘록 허리|허리 잘록|くびれ|ウエスト|ウェスト|腹斜筋|脇腹|わき腹|옆구리|옆구리살|옆구리 라인|복사근|허리라인|허리 라인|오블리크|love handles|oblique|waist|waistline|side abs|muffin top|waist slimming|slim waist|side fat|옆구리 군살|脇腹の肉 => oblique; muscles=ABS,CORE; cats=CORE; sig=oblique|side bend|twist|wood chop|woodchop|windmill|bicycle|side plank|russian|オブリーク|斜め|サイドベント|ツイスト|ウッドチョップ|ウィンドミル|バイシクル|サイドプランク|ロシアン|옆구리|오블리크|사이드 벤드|트위스트|우드 찹|윈드밀|바이시클|사이드 플랭크|러시안; pat=ROTATION; flags=strict
         下腹部|下腹|下っ腹|ぽっこり下腹|하복부|하복|아랫배|아랫배살|lower abs|lower ab|lower belly|lower stomach|belly pooch|pooch|infra abs => lowerabs; muscles=ABS,CORE; cats=CORE; sig=leg raise|knee raise|reverse crunch|flutter|scissor|v up|bicycle|toe touch|hanging|レッグレイズ|ニーレイズ|リバースクランチ|フラッター|シザース|バイシクル|ハンギング|Vアップ|ブイアップ|레그 레이즈|니 레이즈|리버스 크런치|플러터|시저스|바이시클|행잉|브이업; pat=LEG_RAISE; flags=strict
         背中の厚み|背中の厚さ|背中を厚く|背中を分厚く|背中 厚み|등 두께|등 두껍게|두꺼운 등|등 두껍|등 볼륨|背中のボリューム|thick back|back thickness|back thick|back mass|thick lats|thicker back => backthick; muscles=BACK,LATS,TRAPS; cats=BACK; sig=row~|ロー~|ロウ~|로우~|ベントオーバー|벤트 오버|ベントオーバーロー; sig2=pulldown|pull up|rack pull|shrug|プルダウン|プルアップ|풀다운|풀업
         広い背中|背中の広がり|背中を広く|背中を広げ|逆三角形|逆三角|넓은 등|등 넓히기|광배 넓히기|광배근 넓히기|v 라인|v taper|vtaper|v shape|vshape|wide back|broad back|lat width|wide lats|bigger lats|wider back|등 날개|등 넓게|광배 키우기 => backwide; muscles=LATS,BACK; cats=BACK; sig=pulldown|pull down|pull up|pullup|chin up|lat pull|straight arm|プルダウン|プルアップ|懸垂|チンアップ|チンニング|ラットプル|풀다운|풀업|친업|턱걸이|랫풀|랫 풀; pat=LAT_PULLDOWN,PULLUP_CHINUP
         脊柱起立筋|척추기립근|척추 기립근|erector spinae|erectors|erector|腰|腰回り|腰まわり|허리|허리 근육|허리 운동|허리근육|下背部|하부 등|lower back|lowerback|low back|腰の筋肉|back extensor|spinal erectors|spine => lowerback; muscles=BACK,CORE; sig=back extension|hyperextension|superman|bird dog|reverse hyper|バックエクステンション|バックエクステ|ハイパーエクステンション|スーパーマン|バードドッグ|백 익스텐션|백익스텐션|하이퍼 익스텐션|슈퍼맨|버드 독; sig2=good morning|rack pull|deadlift|グッドモーニング|ラックプル|デッドリフト|굿모닝|랙 풀|데드리프트; flags=strict
-        猫背|巻き肩|巻肩|姿勢|姿勢改善|姿勢矯正|姿勢を良く|いい姿勢|良い姿勢|ストレートネック|スマホ首|スマホ猫背|デスクワーク|라운드숄더|라운드 숄더|거북목|일자목|굽은 등|굽은등|말린 어깨|말린어깨|둥근 어깨|자세 교정|바른 자세|바른자세|posture|bad posture|poor posture|good posture|rounded shoulders|rounded shoulder|round shoulders|hunchback|hunched back|hunched|forward head|slouch|slouching|kyphosis|tech neck|text neck|desk job|desk worker|스마트폰 목|사무직|체형|체형교정|체형 교정|체형 교정 운동|체형 개선|日本人体型 => posture; muscles=BACK,SHOULDERS; sig=face pull|rear delt|reverse fly|reverse pec|row~|superman|pull apart|y raise|w raise|wall angel|chin tuck|bird dog|dead bug|neck|chest stretch|pec stretch|scapula|フェイスプル|リアデルト|リバースフライ|ロー~|ロウ~|スーパーマン|プルアパート|Yレイズ|ウォールエンジェル|バードドッグ|デッドバグ|ネック|チェストストレッチ|ペックストレッチ|肩甲骨|페이스풀|리어 델트|리버스 플라이|로우~|슈퍼맨|풀 어파트|Y 레이즈|월 엔젤|버드 독|데드 버그|넥|체스트 스트레칭|견갑; sig2=plank|stretch|プランク|ストレッチ|플랭크|스트레칭; flags=strict,stretch
-        肩こり|肩凝り|肩コリ|首こり|首凝り|어깨 뭉침|어깨 결림|어깨뭉침|목 뭉침|목 결림|stiff shoulders|stiff neck|tight shoulders|tight neck|neck tension|trap tension|neck and shoulder pain => stiffshoulder; muscles=TRAPS,SHOULDERS,NECK; cats=SHOULDERS; sig=shrug|neck|shoulder stretch|trap stretch|scapula|シュラッグ|ネック|ショルダーストレッチ|肩甲骨|슈러그|넥|숄더 스트레칭|견갑; sig2=rear delt|face pull|リアデルト|フェイスプル|리어 델트|페이스풀; flags=strict,stretch
-        美尻|뒤태|뒷태|뒤태 만들기|후면 라인|ヒップライン|힙라인|엉덩이 라인|엉덩이 모양|小尻|스몰 힙|smaller butt|butt shape|glute shape|ヒップアップ|ヒップ アップ|힙업|힙 업|엉짱|애플힙|bubble butt|big butt|bigger butt|round butt|round glutes|rounder glutes|peach butt|booty|booty gains|butt lift|glute growth|bigger glutes|glute gains|hipup|hip up|お尻を大きく|お尻を引き上げ|桃尻|お尻 引き締め|尻上げ|bum|bigger bum => glutegoal; muscles=GLUTES; sig=hip thrust|glute bridge|donkey kick|glute kickback|leg kickback|bent leg kickback|fire hydrant|ヒップスラスト|グルートブリッジ|ドンキーキック|キックバック|ファイヤーハイドラント|힙 쓰러스트|글루트 브리지|동키 킥|킥백|파이어 하이드란트; sig2=glute|bulgarian|romanian|sumo|good morning|abduction|squat|グルート|ブルガリアン|ルーマニアン|スモウ|グッドモーニング|スクワット|글루트|불가리안|루마니안|스모|굿모닝|스쿼트|브리지|ブリッジ|bridge
-        内もも|内腿|内転筋|내전근|안쪽 허벅지|내허벅지|허벅지 안쪽|inner thigh|inner thighs|adductor|adductors|thigh gap|太もも内側|ももの内側|ももの内|内ももの引き締め|inner leg => innerthigh; muscles=QUADRICEPS,GLUTES,LEGS; cats=LEGS; sig=adductor|adduction|inner thigh|sumo|curtsy|cossack|side lunge|lateral lunge|squeeze|アダクター|アダクション|内もも|スモウ|スモー|相撲|カーツィ|コサック|サイドランジ|ラテラルランジ|スクイーズ|어덕터|어덕션|내전|이너 싸이|스모|커시|코사크|사이드 런지|래터럴 런지|스퀴즈; flags=strict
-        外もも|外腿|外転筋|외전근|바깥쪽 허벅지|바깥 허벅지|허벅지 바깥쪽|outer thigh|outer thighs|abductor|abductors|hip abductors|中臀筋|중둔근|gluteus medius|side glute|saddlebags|saddle bags|승마살|太もも外側|ももの外側 => outerthigh; muscles=GLUTES,LEGS; cats=LEGS; sig=abduct|fire hydrant|clamshell|side leg raise|side kick|band walk|monster walk|crab walk|lateral walk|アブダクション|アブダクター|ファイヤーハイドラント|クラムシェル|サイドレッグレイズ|サイドキック|モンスターウォーク|어브덕션|어브덕터|파이어 하이드란트|클램쉘|사이드 레그 레이즈|사이드 킥|몬스터 워크; flags=strict
+        猫背|巻き肩|巻肩|姿勢|姿勢改善|姿勢矯正|姿勢を良く|いい姿勢|良い姿勢|ストレートネック|スマホ首|スマホ猫背|デスクワーク|라운드숄더|라운드 숄더|거북목|일자목|굽은 등|굽은등|말린 어깨|말린어깨|둥근 어깨|자세 교정|바른 자세|바른자세|posture|bad posture|poor posture|good posture|rounded shoulders|rounded shoulder|round shoulders|hunchback|hunched back|hunched|forward head|slouch|slouching|kyphosis|tech neck|text neck|desk job|desk worker|스마트폰 목|사무직|굽은 어깨|굽은어깨|새우등|등 굽음|등이 굽은|어깨 말림|어깨가 말린|둥근 등|둥근등|골격 교정|몸 틀어짐|척추 측만|척추측만|자세가 나쁜|자세 안 좋은|姿勢が悪い|姿勢を直す|猫背矯正|巻き肩矯正|骨格矯正|体の歪み|身体の歪み|歪み矯正|背中が丸い|背中の丸み|丸まった背中|丸まった肩|頭が前に|肩が前に|hunched shoulders|slouched shoulders|forward shoulders|shoulders rounded forward|rounded back|round back|upper cross syndrome|scoliosis|fix posture|improve posture|straighten back|체형|체형교정|체형 교정|체형 교정 운동|체형 개선|日本人体型 => posture; muscles=BACK,SHOULDERS; sig=face pull|rear delt|reverse fly|reverse pec|row~|superman|pull apart|y raise|w raise|wall angel|chin tuck|bird dog|dead bug|neck|chest stretch|pec stretch|scapula|フェイスプル|リアデルト|リバースフライ|ロー~|ロウ~|スーパーマン|プルアパート|Yレイズ|ウォールエンジェル|バードドッグ|デッドバグ|ネック|チェストストレッチ|ペックストレッチ|肩甲骨|페이스풀|리어 델트|리버스 플라이|로우~|슈퍼맨|풀 어파트|Y 레이즈|월 엔젤|버드 독|데드 버그|넥|체스트 스트레칭|견갑; sig2=plank|stretch|プランク|ストレッチ|플랭크|스트레칭; flags=strict,stretch
+        肩こり|肩凝り|肩コリ|首こり|首凝り|목 뻐근|목뻐근|목 뻣뻣|뻣뻣한 목|목이 뻐근|어깨 뻐근|어깨 뻣뻣|어깨가 뻐근|뻐근한 어깨|어깨 담|목 담|neck stiffness|shoulder stiffness|肩の張り|首の張り|首のこり|어깨 뭉침|어깨 결림|어깨뭉침|목 뭉침|목 결림|stiff shoulders|stiff neck|tight shoulders|tight neck|neck tension|trap tension|neck and shoulder pain => stiffshoulder; muscles=TRAPS,SHOULDERS,NECK; cats=SHOULDERS; sig=shrug|neck|shoulder stretch|trap stretch|scapula|シュラッグ|ネック|ショルダーストレッチ|肩甲骨|슈러그|넥|숄더 스트레칭|견갑; sig2=rear delt|face pull|リアデルト|フェイスプル|리어 델트|페이스풀; flags=strict,stretch
+        美尻|납작한 엉덩이|납작 엉덩이|엉덩이 볼륨|엉덩이 업|힙 볼륨|힙볼륨|엉덩이 올리|ヒップ上げ|お尻を持ち上げ|垂れ尻|下がったお尻|ぺたんこ尻|perky butt|lift glutes|sagging butt|flat butt|build glutes|glute building|glute activation|뒤태|뒷태|뒤태 만들기|후면 라인|ヒップライン|힙라인|엉덩이 라인|엉덩이 모양|小尻|스몰 힙|smaller butt|butt shape|glute shape|ヒップアップ|ヒップ アップ|힙업|힙 업|엉짱|애플힙|bubble butt|big butt|bigger butt|round butt|round glutes|rounder glutes|peach butt|booty|booty gains|butt lift|glute growth|bigger glutes|glute gains|hipup|hip up|お尻を大きく|お尻を引き上げ|桃尻|お尻 引き締め|尻上げ|bum|bigger bum => glutegoal; muscles=GLUTES; sig=hip thrust|glute bridge|donkey kick|glute kickback|leg kickback|bent leg kickback|fire hydrant|ヒップスラスト|グルートブリッジ|ドンキーキック|キックバック|ファイヤーハイドラント|힙 쓰러스트|글루트 브리지|동키 킥|킥백|파이어 하이드란트; sig2=glute|bulgarian|romanian|sumo|good morning|abduction|squat|グルート|ブルガリアン|ルーマニアン|スモウ|グッドモーニング|スクワット|글루트|불가리안|루마니안|스모|굿모닝|스쿼트|브리지|ブリッジ|bridge
+        内もも|内腿|内転筋|허벅지 틈|허벅지 갭|허벅지갭|허벅지 사이 틈|脚の隙間|太ももの隙間|ももの隙間|내전근|안쪽 허벅지|내허벅지|허벅지 안쪽|inner thigh|inner thighs|adductor|adductors|thigh gap|太もも内側|ももの内側|ももの内|内ももの引き締め|inner leg => innerthigh; muscles=QUADRICEPS,GLUTES,LEGS; cats=LEGS; sig=adductor|adduction|inner thigh|sumo|curtsy|cossack|side lunge|lateral lunge|squeeze|アダクター|アダクション|内もも|スモウ|スモー|相撲|カーツィ|コサック|サイドランジ|ラテラルランジ|スクイーズ|어덕터|어덕션|내전|이너 싸이|스모|커시|코사크|사이드 런지|래터럴 런지|스퀴즈; flags=strict
+        glute medius|glute med|glute minimus|中殿筋|외둔근|外もも|外腿|外転筋|외전근|바깥쪽 허벅지|바깥 허벅지|허벅지 바깥쪽|outer thigh|outer thighs|abductor|abductors|hip abductors|中臀筋|중둔근|gluteus medius|side glute|saddlebags|saddle bags|승마살|太もも外側|ももの外側 => outerthigh; muscles=GLUTES,LEGS; cats=LEGS; sig=abduct|fire hydrant|clamshell|side leg raise|side kick|band walk|monster walk|crab walk|lateral walk|アブダクション|アブダクター|ファイヤーハイドラント|クラムシェル|サイドレッグレイズ|サイドキック|モンスターウォーク|어브덕션|어브덕터|파이어 하이드란트|클램쉘|사이드 레그 레이즈|사이드 킥|몬스터 워크; flags=strict
         腕を太く|腕太く|腕を大きく|굵은 팔|팔 키우기|팔 근육|腕の筋肉|ぶっとい腕|big arms|bigger arms|huge arms|arm size|arm mass|arm growth|thicker arms|massive arms|腕周り|腕まわり|팔둘레|팔 굵게 => bigarms; muscles=BICEPS,TRICEPS,FOREARMS; cats=ARMS; sig=curl|extension|pushdown|push down|skull|close grip|カール|エクステンション|プッシュダウン|スカル|컬|익스텐션|푸시다운|스컬
         肩幅|肩幅を広げ|넓은 어깨|어깨 넓히기|어깨 깡패|어깨 볼륨|어깨 라인|boulder shoulders|boulder shoulder|cannonball delts|3d shoulders|3d delts|broad shoulders|wide shoulders|capped delts|肩を大きく|丸い肩|肩 丸く|어깨 뽕|肩の丸み|肩幅広げる => bouldershoulder; muscles=SHOULDERS; cats=SHOULDERS; sig=lateral raise|side raise|サイドレイズ|ラテラルレイズ|레터럴 레이즈|사이드 레이즈|래터럴 레이즈; sig2=shoulder press|overhead press|military press|arnold|upright row|ショルダープレス|オーバーヘッドプレス|ミリタリープレス|アーノルド|숄더프레스|오버헤드 프레스|밀리터리 프레스|아놀드
         전면 어깨|전면 삼각근|전면삼각근|前肩|肩の前|肩の前側|front delts|front delt|anterior delts|anterior deltoid|front shoulder => frontdelt; muscles=SHOULDERS; cats=SHOULDERS; sig=front raise|フロントレイズ|프론트 레이즈; sig2=shoulder press|overhead press|incline|ショルダープレス|オーバーヘッドプレス|숄더프레스|오버헤드 프레스; flags=strict
@@ -290,7 +300,7 @@ internal object QueryLexicon {
     /** 병명·부상명 — 말하는 순간 그 관절의 부상 단서다 */
     private val CONDITION_RULES = """
         KNEE: 膝痛持ち|bad knee|weak knee|sore knee|knee injury|knee issues|knee problems|膝が悪い|膝を痛め|무릎이 안 좋|膝痛|무릎통증|무릎 통증|knee pain|半月板|meniscus|반월상연골|십자인대|前十字靭帯|acl|슬개건|runner's knee|ランナーズニー|무릎연골|膝蓋腱炎
-        LOWER_BACK: 腰痛持ち|bad back|weak back|sore back|back injury|back issues|back problems|bad lower back|腰が悪い|腰が弱い|허리가 안 좋|허리 안 좋|腰痛|요통|허리통증|허리 통증|back pain|backpain|low back pain|lower back pain|디스크|허리디스크|椎間板ヘルニア|ヘルニア|herniated disc|slipped disc|disc|sciatica|좌골신경통|협착증|脊柱管狭窄症|ぎっくり腰|坐骨神経痛
+        LOWER_BACK: hurt my back|hurts my back|hurting my back|hurt back|aggravate my back|aggravating my back|bad for my back|腰痛持ち|bad back|weak back|sore back|back injury|back issues|back problems|bad lower back|腰が悪い|腰が弱い|허리가 안 좋|허리 안 좋|腰痛|요통|허리통증|허리 통증|back pain|backpain|low back pain|lower back pain|디스크|허리디스크|椎間板ヘルニア|ヘルニア|herniated disc|slipped disc|disc|sciatica|좌골신경통|협착증|脊柱管狭窄症|ぎっくり腰|坐骨神経痛
         SHOULDER: 肩痛|肩の痛み|어깨통증|어깨 통증|shoulder pain|오십견|五十肩|frozen shoulder|rotator cuff|회전근개|肩関節周囲炎|インピンジメント|impingement
         ELBOW: 肘痛|팔꿈치통증|팔꿈치 통증|elbow pain|テニス肘|tennis elbow|golfer's elbow|골프엘보|테니스엘보|ゴルフ肘
         WRIST: 手首痛|손목통증|손목 통증|wrist pain|腱鞘炎|carpal tunnel|손목터널|손목 터널
@@ -301,7 +311,7 @@ internal object QueryLexicon {
 
     private val JOINT_RULES = """
         KNEE: 膝|ひざ|ヒザ|무릎|knee|knees|膝関節|무릎 관절
-        LOWER_BACK: 腰|腰痛|허리|요통|허리통증|허리 통증|lower back|lowerback|low back|back pain|backpain|spine|척추|背骨|脊椎|腰椎
+        LOWER_BACK: back|背中|등|腰|腰痛|허리|요통|허리통증|허리 통증|lower back|lowerback|low back|back pain|backpain|spine|척추|背骨|脊椎|腰椎
         SHOULDER: 肩|肩関節|어깨|shoulder|shoulders|어깨 관절
         WRIST: 手首|손목|wrist|wrists
         ELBOW: 肘|팔꿈치|elbow|elbows
@@ -378,6 +388,8 @@ internal object QueryLexicon {
         // 2) 부정/단서/수준/스트레칭/소음
         for (k in splitRules(NEG_AFTER)) add(key(k.removePrefix("-")), Term(Role.NEG, targetBefore = true, particle = isKana(k)))
         for (k in NEG_BEFORE.split("|")) add(key(k), Term(Role.NEG, targetBefore = false))
+        for (k in splitRules(INSTEAD_AFTER)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k), instead = true))
+        for (k in splitRules(INSTEAD_BEFORE)) add(key(k), Term(Role.NEG, targetBefore = false, instead = true))
         for (k in splitRules(CUES)) add(key(k), Term(Role.CUE))
         for (k in splitRules(QUIET)) add(key(k), Term(Role.QUIET))
         for (k in BEGINNER.split("|")) add(key(k), Term(Role.LEVEL, level = -1))

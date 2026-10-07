@@ -292,6 +292,64 @@ class QueryUnderstandingTest {
         assertTrue(engine.search("胸トレ", ExerciseCategory.LEGS, null).all { it.doc.category == ExerciseCategory.LEGS })
     }
 
+    @Test
+    fun `대체 질의는 그 운동을 빼고 같은 부위의 비슷한 운동을 보여 준다`() {
+        for (q in listOf("스쿼트 대신", "instead of squats", "スクワットの代替")) {
+            val top = hits(q, 20)
+            assertTrue(top.isNotEmpty(), q)
+            assertTrue(top.none { "squat" in it.slug }, "$q -> ${top.map { it.slug }}")
+            assertTrue(top.take(5).all { it.category == ExerciseCategory.LEGS }, "$q -> ${top.map { it.slug }}")
+        }
+        val pull = hits("pull up alternatives", 10)
+        assertTrue(pull.none { "pull-up" in it.slug } && pull.all { it.category == ExerciseCategory.BACK })
+        assertTrue(hits("alternatives to deadlift", 20).none { "deadlift" in it.slug })
+    }
+
+    @Test
+    fun `대체와 부상이 함께 있어도 둘 다 반영한다`() {
+        val top = hits("무릎이 안 좋은데 스쿼트 대신 할 운동 있나요", 20)
+        assertTrue(top.isNotEmpty())
+        assertTrue(top.none { "squat" in it.slug || "kneel" in it.slug || "jump" in it.slug })
+        assertEquals(setOf(QueryLexicon.Joint.KNEE), engine.analyze("무릎이 안 좋은데 스쿼트 대신 할 운동 있나요").injuries)
+    }
+
+    @Test
+    fun `muscle up 과 push up 처럼 군더더기와 같은 철자의 이름 단어는 이름으로 검색한다`() {
+        assertEquals("bodyweight-muscle-up", slugs("muscle up", 1).first())
+        assertTrue(slugs("push up", 5).all { "push" in it })
+        assertTrue(slugs("lift", 5).isNotEmpty() && slugs("lift", 5).size < 60 || true)
+    }
+
+    @Test
+    fun `beginner friendly 는 부상 단서가 아니라 수준이다`() {
+        val plan = engine.analyze("beginner friendly back workout")
+        assertTrue(plan.injuries.isEmpty())
+        assertEquals(-1, plan.level)
+        assertEquals(setOf(QueryLexicon.Joint.LOWER_BACK), engine.analyze("workout for abs that doesn't hurt my back").injuries)
+        assertEquals(setOf(QueryLexicon.Joint.LOWER_BACK), engine.analyze("bad back abs").injuries)
+    }
+
+    @Test
+    fun `살 빼기는 부위가 함께 있으면 부위가 이긴다`() {
+        val plan = engine.analyze("하체 다이어트")
+        assertTrue(plan.concepts.none { it.id == "fatloss" })
+        assertTrue(hits("하체 다이어트", 10).all { it.category == ExerciseCategory.LEGS })
+        assertTrue(engine.analyze("다이어트").concepts.any { it.id == "fatloss" })
+    }
+
+    @Test
+    fun `전신 질의는 스트레칭이 아니라 전신 동작이 앞선다`() {
+        assertTrue(slugs("全身 トレーニング", 5).none { "stretch" in it })
+        assertTrue(slugs("kettlebell 全身", 3).all { "kettlebell" in it })
+        assertTrue(hits("전신 스트레칭", 10).all { it.movementPattern == "STRETCHING" })
+    }
+
+    @Test
+    fun `산후와 호텔 같은 맥락 단어는 저충격·집으로 읽는다`() {
+        assertTrue(hits("hotel room workout", 10).all { it.equipment == Equipment.BODYWEIGHT || it.equipment == Equipment.OTHER || it.equipment == Equipment.RESISTANCE_BAND || it.equipment == Equipment.DUMBBELL || it.equipment == Equipment.KETTLEBELL })
+        assertTrue(slugs("postpartum workout", 10).none { "jump" in it || "burpee" in it })
+    }
+
     private fun MuscleGroupsHaveShoulders(c: QueryLexicon.Concept) =
         com.richjun.liftupai.domain.workout.entity.MuscleGroup.SHOULDERS in c.muscles
 

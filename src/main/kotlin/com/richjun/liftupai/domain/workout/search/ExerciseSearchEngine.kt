@@ -355,6 +355,10 @@ class ExerciseSearchEngine(
             } else cands = byEquip
         }
         var evals = plan.concepts.map { ConceptEval(it, plan.stretch) }
+        if (plan.concepts.isEmpty() && plan.similarTo.isNotEmpty()) similarFits(plan)?.let { fits ->
+            val similar = cands.filter { fits.containsKey(it.index) }
+            if (similar.isNotEmpty()) return rankSorted(scoreIntent(plan, similar, emptyList(), soft, prefer, fits))
+        }
         var out = scoreIntent(plan, cands, evals, soft, prefer)
         if (out.isEmpty() && evals.any { it.c.strict }) {
             // 신호 표기가 하나도 안 맞으면(카탈로그가 바뀐 경우) 부위·카테고리만으로라도 보여 준다
@@ -377,10 +381,32 @@ class ExerciseSearchEngine(
         c.id + "~relaxed", c.muscles, c.categories, c.sig, c.sig2, c.patterns, c.avoid, false, c.stretch, c.cardio, c.nameWords
     )
 
-    private fun scoreIntent(plan: QueryPlan, cands: List<IDoc>, evals: List<ConceptEval>, soft: BitSet, prefer: BitSet): List<ExerciseSearchHit> {
+    /**
+     * "스쿼트 대신" 처럼 대체를 물은 질의: 제외 대상과 이름이 맞는 운동들의 대표 카테고리·동작·근육을 읽어,
+     * 같은 카테고리의 다른 운동을 동작·근육이 비슷한 순으로 돌려준다. 기준 운동이 없으면 null.
+     */
+    private fun similarFits(plan: QueryPlan): Map<Int, Double>? {
+        val ref = sigIndex.anyOf(plan.similarTo)
+        val refDocs = indexed.filter { ref.get(it.index) }
+        if (refDocs.isEmpty()) return null
+        val category = refDocs.groupingBy { it.doc.category }.eachCount().maxByOrNull { it.value }!!.key
+        val patterns = refDocs.mapNotNull { it.doc.movementPattern }.filter { it != "OTHER" }.toSet()
+        val muscles = refDocs.flatMap { it.doc.muscleGroups }.groupingBy { it }.eachCount().filter { it.value * 2 >= refDocs.size }.keys
+        val out = HashMap<Int, Double>()
+        for (d in indexed) {
+            if (ref.get(d.index) || d.doc.category != category || d.isStretch) continue
+            val patternHit = if (d.doc.movementPattern in patterns) 1.0 else 0.0
+            val union = (d.doc.muscleGroups + muscles).size
+            val jaccard = if (union == 0) 0.0 else d.doc.muscleGroups.count { it in muscles }.toDouble() / union
+            out[d.index] = 0.3 + 0.35 * patternHit + 0.35 * jaccard
+        }
+        return out
+    }
+
+    private fun scoreIntent(plan: QueryPlan, cands: List<IDoc>, evals: List<ConceptEval>, soft: BitSet, prefer: BitSet, fits: Map<Int, Double>? = null): List<ExerciseSearchHit> {
         val out = ArrayList<ExerciseSearchHit>()
         for (d in cands) {
-            var fit = 1.0
+            var fit = fits?.get(d.index) ?: 1.0
             if (evals.isNotEmpty()) {
                 var best = -1.0
                 for (e in evals) { val f = e.fit(d); if (f > best) best = f }
@@ -402,6 +428,15 @@ class ExerciseSearchEngine(
     private fun searchName(plan: QueryPlan, rawPool: List<IDoc>, deadline: Long): List<ExerciseSearchHit> {
         val seeds = plan.seeds.filter { it.isNotEmpty() }
         if (seeds.isEmpty()) return emptyList()
+        if (seeds.size > 1) {
+            // 이름에도 쓰이는 군더더기를 남긴 후보로 확실한 일치가 있으면 그것만, 없을 때만 군더더기를 뗀 후보까지 본다
+            val primary = searchNameWith(plan, rawPool, deadline, seeds.take(1))
+            if (primary.any { it.score >= BAND_TOKEN_SUB }) return primary
+        }
+        return searchNameWith(plan, rawPool, deadline, seeds)
+    }
+
+    private fun searchNameWith(plan: QueryPlan, rawPool: List<IDoc>, deadline: Long, seeds: List<List<String>>): List<ExerciseSearchHit> {
         val ex = if (plan.hasExclusions) exclusionSet(plan) else null
         val pool = if (ex != null) rawPool.filter { !isExcluded(it, plan, ex) } else rawPool
         val soft = if (plan.injuries.isNotEmpty()) softBits(plan) else null
@@ -720,7 +755,7 @@ class ExerciseSearchEngine(
         fun put(v: Variant): Boolean = all.size < MAX_VARIANTS_TOTAL && all.putIfAbsent(v.strict + "|" + v.words.size, v) == null
 
         val bases = ArrayList<Variant>()
-        for (s in seeds) { val v = Variant(s, 0.0, BAND_EXACT); if (put(v)) bases.add(v) }
+        for ((i, sd) in seeds.withIndex()) { val v = Variant(sd, if (i == 0) 0.0 else SEED_ALT_PENALTY, if (i == 0) BAND_EXACT else BAND_EXACT_VARIANT); if (put(v)) bases.add(v) }
         // 오타 교정 변형 (정확 일치 band 바로 아래)
         for (b in bases.toList()) for (c in typoCorrections(b.words)) {
             val v = Variant(c, TYPO_PENALTY, BAND_EXACT_VARIANT)
@@ -868,6 +903,7 @@ class ExerciseSearchEngine(
 
         private const val SYN_PENALTY = 2.0
         private const val TYPO_PENALTY = 3.0
+        private const val SEED_ALT_PENALTY = 12.0
         private const val STRONG_SYN_BONUS = 6.0
         private const val MODIFIER_PENALTY = 6.0
         private const val EQUIP_STRIP_PENALTY = 2.0
