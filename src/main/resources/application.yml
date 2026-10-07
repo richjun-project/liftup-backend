@@ -59,6 +59,16 @@ gemini:
   temperature: 0.7
   plan-temperature: 0.4
 
+# 운동 검색 — 의미(임베딩) 검색 보강. 기본은 꺼짐(어휘 검색만), prod·local 프로파일에서 켠다.
+# 질의 임베딩이 실패하면(시간 초과·차단기·키 문제) 조용히 어휘 검색만으로 동작한다. 키는 위 gemini.api-key 를 그대로 쓴다.
+search:
+  semantic:
+    enabled: ${SEMANTIC_SEARCH_ENABLED:false}
+    timeout-ms: 1200
+    cache-size: 2048
+    breaker-failures: 5
+    breaker-open-ms: 30000
+
 # OAuth2 소셜 로그인 설정
 oauth:
   google:

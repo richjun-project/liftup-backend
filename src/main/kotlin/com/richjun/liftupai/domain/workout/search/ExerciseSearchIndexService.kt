@@ -9,6 +9,9 @@ import com.richjun.liftupai.domain.workout.repository.ExerciseTranslationReposit
 import com.richjun.liftupai.domain.workout.search.engine.QueryLexicon
 import com.richjun.liftupai.domain.workout.search.ops.SearchSynonymRepository
 import com.richjun.liftupai.domain.workout.search.ops.SynonymLines
+import com.richjun.liftupai.domain.workout.search.semantic.ExerciseVectorStore
+import com.richjun.liftupai.domain.workout.search.semantic.HybridSearch
+import com.richjun.liftupai.domain.workout.search.semantic.QueryVectorSource
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
@@ -29,6 +32,9 @@ import java.util.concurrent.atomic.AtomicLong
  * - 재빌드가 실패하면 이전 인덱스를 계속 쓰고 WARN 만 남긴다(DB 순단으로 검색이 500 이 되지 않게). 이전 것이 없을 때만 예외.
  * - TTL 이 지나면 요청 스레드가 막히지 않게 백그라운드에서 갱신하고 그동안은 이전 인덱스를 쓴다.
  * - 질의는 길이·단어 수를 제한하고 중복 단어를 빼서(엔진 비용 폭주 방지) 넘기고, 같은 (질의·필터·로케일) 결과는 작은 LRU 로 재사용한다(페이지 넘김).
+ * - 의미(임베딩) 검색: search.semantic.enabled 이고 문서 임베딩 리소스가 있으면 스냅샷마다 [HybridSearch] 를 얹는다. 자연어 질의일 때만 질의 임베딩을 부르고
+ *   (짧은 시간 제한·캐시·차단기는 QueryEmbedder), 벡터를 못 구하면 어휘 결과 그대로 내되 그 결과는 잠깐(30초)만 캐시해 장애가 풀리면 다시 시도한다.
+ *   꺼져 있거나 리소스가 없거나 API 가 실패해도 결과는 오늘의 어휘 검색과 같다.
  * - 런타임 동의어(search_synonyms)를 짧은 TTL 로 읽어 [activeSynonymLines] 로 제공한다. 줄이 바뀌면 인덱스를 다시 만든다.
  */
 @Service
@@ -37,7 +43,11 @@ class ExerciseSearchIndexService(
     private val exerciseTranslationRepository: ExerciseTranslationRepository,
     private val synonymRepository: SearchSynonymRepository? = null,
     /** 동작 설명문(instructions·tips) 투영 — 없거나 읽기에 실패하면 설명문 검색 계층만 꺼지고 이름 검색은 그대로다 */
-    private val descriptionRepository: ExerciseDescriptionRepository? = null
+    private val descriptionRepository: ExerciseDescriptionRepository? = null,
+    /** 질의 임베딩 — 없거나 꺼져 있거나 실패하면 어휘 검색만 쓴다(의미 검색은 어휘 결과를 보강할 뿐 대체하지 않는다) */
+    private val queryVectors: QueryVectorSource? = null,
+    /** 운동 문서 임베딩(리소스) */
+    private val vectorStore: ExerciseVectorStore? = null
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -45,7 +55,9 @@ class ExerciseSearchIndexService(
         val engine: ExerciseSearchEngine,
         val builtAtMillis: Long,
         val generation: Long,
-        val synonymVersion: Int
+        val synonymVersion: Int,
+        /** 의미 검색을 섞을 수 있으면(설정 켜짐 + 문서 임베딩 있음) 하이브리드, 아니면 null(어휘 전용) */
+        val hybrid: HybridSearch? = null
     ) {
         /** 이 스냅샷 전용 결과 캐시 — 스냅샷이 바뀌면 함께 사라진다 */
         val results = ResultCache(RESULT_CACHE_SIZE)
@@ -62,16 +74,19 @@ class ExerciseSearchIndexService(
         val locale: String?
     )
 
+    /** 캐시된 결과 id 목록. [degradedAtMillis] 가 있으면 의미 검색이 필요했는데 질의 벡터를 못 구해 어휘 결과만 담은 것 — 잠깐만 쓴다. */
+    private class CachedIds(val ids: List<Long>, val degradedAtMillis: Long? = null)
+
     private class ResultCache(private val max: Int) {
-        private val map = object : LinkedHashMap<ResultKey, List<Long>>(64, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<ResultKey, List<Long>>?) = size > max
+        private val map = object : LinkedHashMap<ResultKey, CachedIds>(64, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<ResultKey, CachedIds>?) = size > max
         }
 
         @Synchronized
-        fun get(key: ResultKey): List<Long>? = map[key]
+        fun get(key: ResultKey): CachedIds? = map[key]
 
         @Synchronized
-        fun put(key: ResultKey, value: List<Long>) {
+        fun put(key: ResultKey, value: CachedIds) {
             map[key] = value
         }
 
@@ -189,7 +204,8 @@ class ExerciseSearchIndexService(
             val built: Snapshot
             try {
                 val lines = loadSynonyms(force = forceSynonymReload || synonyms == null).lines
-                built = Snapshot(build(lines), clock(), gen, synonyms?.version ?: 0)
+                val engine = build(lines)
+                built = Snapshot(engine, clock(), gen, synonyms?.version ?: 0, hybridFor(engine))
             } catch (e: Exception) {
                 val prev = snapshot
                 if (prev == null) throw e
@@ -219,11 +235,23 @@ class ExerciseSearchIndexService(
         val snap = current()
         val q = normalizeQuery(query)
         val key = ResultKey(q.orEmpty(), category, equipments?.toSet(), locale?.lowercase())
-        snap.results.get(key)?.let { return it }
+        snap.results.get(key)?.let { cached ->
+            // 의미 검색 없이 낸(벡터를 못 구한) 결과는 잠깐만 재사용하고, 그 뒤에는 다시 시도한다 — 순간 장애가 TTL 동안 품질을 깎지 않게
+            val degradedAt = cached.degradedAtMillis
+            if (degradedAt == null || clock() - degradedAt < DEGRADED_RESULT_TTL_MILLIS) return cached.ids
+        }
+        val hybrid = snap.hybrid
+        if (hybrid != null && q != null) {
+            // 질의 임베딩이 어떤 이유로든 예외를 던져도 검색은 어휘 결과로 계속된다
+            val result = hybrid.search(q, category, equipments, locale) { runCatching { queryVectors?.embed(q) }.getOrNull() }
+            val ids = result.hits.map { it.doc.id }
+            if (result.complete) snap.results.put(key, CachedIds(ids, if (result.degraded) clock() else null))
+            return ids
+        }
         val outcome = snap.engine.searchOutcome(q, category, equipments, locale)
         val ids = outcome.hits.map { it.doc.id }
         // 시간 예산을 넘겨 일부만 훑은 결과는 캐시하지 않는다 — 한 번 느렸다고 TTL 동안 잘린 결과가 남지 않게
-        if (outcome.complete) snap.results.put(key, ids)
+        if (outcome.complete) snap.results.put(key, CachedIds(ids))
         return ids
     }
 
@@ -338,6 +366,16 @@ class ExerciseSearchIndexService(
         return newEngine(docs, synonymLines)
     }
 
+    /** 의미 검색이 켜져 있고 문서 임베딩이 있으면 엔진 위에 하이브리드 검색을 얹는다. 아니면 null — 어휘 검색만(오늘과 같다). */
+    private fun hybridFor(engine: ExerciseSearchEngine): HybridSearch? {
+        val source = queryVectors ?: return null
+        if (!source.enabled) return null
+        val vectors = try { vectorStore?.get() } catch (e: Exception) { logger.warn("Exercise embeddings unavailable, semantic search is off: {}", e.message); null } ?: return null
+        val hybrid = HybridSearch(engine, vectors)
+        logger.info("Semantic search enabled: {} of {} exercises have embeddings", hybrid.coveredDocs, engine.size)
+        return hybrid
+    }
+
     /** DB 동의어(search_synonyms)를 내장 사전 뒤에 붙여 엔진을 만든다 — 재배포 없이 검색 결과를 조정하는 경로 */
     private fun newEngine(docs: List<ExerciseSearchDoc>, synonymLines: List<String>): ExerciseSearchEngine =
         ExerciseSearchEngine(docs, synonymLines, engineBudgetNanos)
@@ -386,6 +424,7 @@ class ExerciseSearchIndexService(
         private const val FAILURE_BACKOFF_MILLIS = 30 * 1000L
         private const val MAX_REBUILD_ATTEMPTS = 3
         private const val RESULT_CACHE_SIZE = 512
+        private const val DEGRADED_RESULT_TTL_MILLIS = 30 * 1000L
         private const val FALLBACK_LIMIT = 10
         private const val FALLBACK_PER_TOKEN = 30
         private const val MAX_FALLBACK_TOKENS = 5

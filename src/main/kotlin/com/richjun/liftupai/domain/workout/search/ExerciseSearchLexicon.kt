@@ -107,7 +107,7 @@ internal object ExerciseSearchLexicon {
                 "프리쳐 컬|프리처 컬|프리쳐컬|프리처컬|프리쳐|프리처|preacher curl|preacher|プリーチャーカール|プリーチャー|プリチャーカール => 프리처 컬|preacher curl|プリーチャーカール",
         "와이드 스쿼트|와이드스쿼트|wide squat|wide stance squat|wide stance|ワイドスクワット|ワイドスタンススクワット|ワイドスタンス => 스모 스쿼트|sumo squat|スモウスクワット|와이드 스탠스",
         "hex bar deadlift|hex bar|hexbar|헥스바 데드리프트|헥스바|헥스 바|ヘックスバー|ヘックスバーデッドリフト|트랩바 => 트랩 바 데드리프트|trap bar deadlift|トラップバーデッドリフト",
-        "리버스 펙덱|리버스펙덱|reverse pec deck|reverse fly machine|reverse machine fly|rear delt machine| リバースペックデック|リバースフライマシン|리어델트 머신|リアデルトマシン =>> 리어 델트 플라이|rear delt fly|reverse fly|リアデルトフライ|リバースフライ",
+        "리버스 펙덱|리버스펙덱|reverse pec deck|reverse fly machine|reverse machine fly|rear delt machine| リバースペックデック|リバースフライマシン|리어델트 머신|リアデルトマシン =>> 리어 델트 플라이|rear delt fly|reverse fly|리버스 머신 플라이|reverse machine fly|リバースマシンフライ|リアデルトフライ|リバースフライ",
         "sldl|싱글 레그 데드리프트|single leg deadlift|ワンレッグデッドリフト|シングルレッグデッドリフト => 싱글 레그 데드리프트|single leg deadlift|stiff leg deadlift|スティッフレッグ",
         "자전거|싸이클|사이클|사이클링|サイクル|サイクリング|自転車|エアロバイク|에어로바이크|바이크|バイク|bike|cycling|cycle|stationary bike|exercise bike|spin bike|스피닝|spinning|スピンバイク|エクササイズバイク|스테이셔너리 바이크 =>> 스테이셔너리 바이크|stationary exercise bike|エクササイズバイク|stationary bike|spin bike|recumbent bike|outdoor cycling|실내 자전거",
         "케틀벨 스윙|kettlebell swing|ケトルベルスイング => 케틀벨 스윙|kettlebell swing|ケトルベルスイング",
@@ -134,7 +134,7 @@ internal object ExerciseSearchLexicon {
     )
 
     /** 내장 동의어 전체: 기본 사전 + 2차 확장(은어·브랜드·그립 조합) */
-    val SYNONYM_RULES: List<String> = BASE_SYNONYM_RULES + ExerciseSearchLexiconRound2.ALL + ExerciseSearchLexiconRound3.RULES
+    val SYNONYM_RULES: List<String> = BASE_SYNONYM_RULES + ExerciseSearchLexiconRound2.ALL + ExerciseSearchLexiconRound3.RULES + ExerciseSearchLexiconRound4.RULES
 
     /** "트리거|트리거 => 확장|확장" 한 줄을 해석한다. 형식이 틀리면 null (런타임 DB 동의어 줄이 서버를 깨뜨리지 않게). */
     fun parseSynonymRule(rule: String): Synonym? {
@@ -206,7 +206,7 @@ internal object ExerciseSearchLexicon {
         addAll(muscle("엉덩이|둔근|대둔근|중둔근|소둔근|gluteus maximus|gluteus|glutes max|힙|お尻|おしり|尻|ヒップ|臀筋|大臀筋|殿筋|グルート|글루트|大殿筋|둔부|glutes|glute|butt|bum|hip|hips|엉덩이살|お尻痩せ", setOf(G.GLUTES), emptySet()))
         addAll(muscle("등|등운동|광배|광배근|latissimus dorsi|lat dorsi|バック|背中|広背筋|広背|背筋|背|背部|등근육|등 근육|back muscles|back|lats|lat|upper back|上背部|등 윗부분|윗등|ラット|랫", setOf(G.BACK, G.LATS, G.TRAPS), setOf(C.BACK)))
         addAll(muscle("man boobs|moobs|manboobs|male breast fat|chest fat|gynecomastia|남자 가슴살|가슴살|젖살|胸の脂肪|男の胸の脂肪|가슴|대흉근|胸|大胸筋|大胸|pectoralis major|pectoralis|pec major|チェスト|체스트|胸板|가슴근육|chest|pecs|pec|pectorals|pectoral|胸筋", setOf(G.CHEST), setOf(C.CHEST)))
-        addAll(muscle("어깨|삼각근|肩|三角筋|ショルダー|숄더|肩の筋肉|shoulders|shoulder|delts|delt|deltoids|deltoid", setOf(G.SHOULDERS), setOf(C.SHOULDERS)))
+        addAll(muscle("어깨|삼각근|肩|肩まわり|肩周り|肩廻り|肩周辺|肩の周り|肩のまわり|어깨 주변|어깨 주위|어깨 쪽|어깨쪽|shoulder area|shoulder region|around the shoulders|around my shoulders|三角筋|ショルダー|숄더|肩の筋肉|shoulders|shoulder|delts|delt|deltoids|deltoid", setOf(G.SHOULDERS), setOf(C.SHOULDERS)))
         addAll(muscle("팔|腕|アーム|arms|arm|상완|팔운동|腕トレ|upper arm|upper arms", setOf(G.BICEPS, G.TRICEPS, G.FOREARMS), setOf(C.ARMS)))
         addAll(muscle("이두|이두근|brachialis|brachioradialis|上腕筋|腕橈骨筋|상완근|bis|bi|biceps brachii|上腕二頭筋|二頭筋|二頭|上腕二頭|力こぶ|バイセップス|바이셉스|biceps|bicep", setOf(G.BICEPS), setOf(C.ARMS)))
         addAll(muscle("팔 뒷살|팔뒷살|팔 뒤쪽 살|팔 뒤쪽|팔뚝 뒤|뒷팔|뒷팔뚝|팔 뒷쪽|back of my arms|back of the arms|back of arms|back of upper arms|backs of my arms|underside of my arms|二の腕の裏|腕の裏側|腕の裏|二の腕の後ろ|上腕の裏|振り袖|振りそで|振袖|ふりそで|二の腕のたるみ|二の腕のぷよぷよ|二の腕ぷよぷよ|ぷよぷよ二の腕|二の腕が気になる|二の腕のお肉|二の腕を細く|팔뚝 군살|팔뚝 처짐|팔뚝 늘어짐|팔 처짐|팔뚝살 빼기|처진 팔뚝|처진 팔|흔들리는 팔뚝|나비 팔뚝|나비팔|삼두|삼두근|tris|tri|long head triceps|triceps long head|삼두 장두|삼두장두|三頭筋長頭|上腕三頭筋長頭|三頭筋の長頭|triceps brachii|上腕三頭筋|三頭筋|三頭|上腕三頭|二の腕|二の腕痩せ|振袖肉|トライセプス|트라이셉스|팔뚝살|팔뚝|underarm flab|underarm fat|arm flab|arm fat|flabby arms|upper arm fat|bat wings|batwings|arm jiggle|triceps|tricep", setOf(G.TRICEPS), setOf(C.ARMS)))
@@ -252,11 +252,12 @@ internal object ExerciseSearchLexicon {
     val equipmentTerms: Map<String, Set<Equipment>> = buildList {
         addAll(equip(ExerciseSearchLexiconRound3.DUMBBELL_EXTRA + "|덤벨|아령|dumbbell|dumbbells|db|ダンベル|one dumbbell|single dumbbell|a dumbbell|1 dumbbell|two dumbbells|a pair of dumbbells|pair of dumbbells|ダンベル1個|ダンベル一個|ダンベル一つ|ダンベル2個|덤벨 하나|덤벨 한개|덤벨 한 개|덤벨 1개|덤벨 두 개|덤벨 2개|덤벨 두개", Equipment.DUMBBELL))
         addAll(equip("바벨|barbell|bb|バーベル", Equipment.BARBELL))
-        addAll(equip("머신|기구|machine|マシン|筋トレ器具|ジム器具|ジムの器具|トレーニング器具|トレーニングマシン|運動器具|헬스 기구|운동 기구|헬스장 기구", Equipment.MACHINE))
+        addAll(equip("머신|기구|기계|machine|machines|マシン|マシーン|機械|器械|筋トレ器具|ジム器具|ジムの器具|トレーニング器具|トレーニングマシン|運動器具|헬스 기구|운동 기구|헬스장 기구", Equipment.MACHINE))
         addAll(equip("케이블|cable|ケーブル", Equipment.CABLE))
         addAll(equip("맨몸|맨몸운동|bodyweight|body weight|no equipment|noequipment|calisthenics|自重|器具なし|道具なし|徒手|장비없이|기구없이|without equipment|without any equipment|without equipments|no equipments|no equipment needed|equipment free|equipmentless|w/o equipment|no gear|without gear|no weights|without weights|no gym|without gym|gym free|no gym needed|器具を使わない|器具を使わずに|道具を使わない|道具を使わずに|器具無し|道具無し|器具不要|道具不要|장비 안 쓰는|장비 안 쓰고|기구 안 쓰는|기구 안 쓰고|장비 없는|기구 없는|도구 없이|도구 없는", Equipment.BODYWEIGHT))
         addAll(equip(ExerciseSearchLexiconRound3.TOWEL + "|밴드|저항밴드|저항 밴드|고무밴드|band|bands|resistance band|バンド|チューブ|レジスタンスバンド", Equipment.RESISTANCE_BAND))
         addAll(equip("케틀벨|kettlebell|ケトルベル", Equipment.KETTLEBELL))
+        addAll(equip("프리웨이트|프리 웨이트|フリーウェイト|フリーウエイト|フリーウェート", Equipment.DUMBBELL, Equipment.BARBELL, Equipment.KETTLEBELL))
     }.toMap()
 
     /** 오타 허용 매칭 대상 장비 어휘 (자모 기준 6자 이상인 것만 — 짧은 단어는 오탐이 많다) */

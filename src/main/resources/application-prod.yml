@@ -22,6 +22,11 @@ spring:
         jdbc:
           time_zone: UTC
 
+# 의미(임베딩) 검색 — 운영 서버 IP 에서만 Gemini 키가 동작한다. 끄려면 SEMANTIC_SEARCH_ENABLED=false
+search:
+  semantic:
+    enabled: ${SEMANTIC_SEARCH_ENABLED:true}
+
 # Qdrant (production)
 qdrant:
   host: ${QDRANT_HOST}

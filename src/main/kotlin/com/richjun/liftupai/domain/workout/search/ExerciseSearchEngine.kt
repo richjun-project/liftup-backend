@@ -16,6 +16,7 @@ import com.richjun.liftupai.domain.workout.search.engine.QueryPlan
 import com.richjun.liftupai.domain.workout.search.engine.SigIndex
 import com.richjun.liftupai.domain.workout.search.engine.SigKey
 import com.richjun.liftupai.domain.workout.search.engine.Vocabulary
+import com.richjun.liftupai.domain.workout.search.semantic.SemanticConstraint
 import java.util.BitSet
 import java.util.concurrent.ConcurrentHashMap
 
@@ -138,6 +139,9 @@ class ExerciseSearchEngine(
 
     val size: Int get() = indexed.size
 
+    /** 색인된 운동 문서(등록 순서) — 하이브리드 검색이 문서 벡터와 짝지을 때 쓴다 */
+    fun documents(): List<ExerciseSearchDoc> = indexed.map { it.doc }
+
     /** 대표 질의 몇 개를 미리 돌려 클래스 로딩·JIT 비용을 첫 요청이 아니라 빌드 시점에 치른다 */
     fun warmUp() {
         runCatching {
@@ -194,6 +198,46 @@ class ExerciseSearchEngine(
         if (!plan.hasExclusions) return null
         val ex = exclusionSet(plan)
         return { doc -> indexById[doc.id]?.let { isExcluded(it, plan, ex) } ?: false }
+    }
+
+    /**
+     * 의미 검색(임베딩) 후보에 적용할 하드 조건 — 어휘 검색이 같은 질의에 거는 조건과 똑같다.
+     * 질의가 없거나(브라우즈)·초성이거나·어떤 운동 이름과 정확히 같으면 의미 검색 대상이 아니라 null.
+     * - 카테고리·장비 필터(호출자가 넘긴 것)
+     * - 부정한 운동·동작·장비·부위, 부상 관절의 금지 동작([exclusionSet]·[isExcluded])
+     * - 부상 관절의 "조심할" 동작(어휘 검색은 뒤로 미루지만, 의미 검색 후보는 아예 쓰지 않는다 — 안전 쪽으로 보수적으로)
+     * - 의도 질의에서 말한 장비·집·생활 사물의 장비 범위(어휘 검색의 [searchIntent] 와 같은 범위)
+     */
+    fun semanticConstraint(
+        query: String?,
+        category: ExerciseCategory? = null,
+        equipments: Set<Equipment>? = null
+    ): SemanticConstraint? {
+        val raw = query.orEmpty()
+        val norm = if (raw.isBlank()) "" else SearchText.normalize(raw).trim()
+        if (norm.isEmpty() || SearchText.isChoseongQuery(norm)) return null
+        val tok = SearchText.tokenize(raw)
+        if (tok.words.isEmpty() || tok.strict in exactNames) return null
+        val plan = analyzer.analyze(tok).plan
+        if (plan.mode == Mode.BROWSE) return null
+        val pool = filtered(category, equipments)
+        val ex = if (plan.hasExclusions) exclusionSet(plan) else null
+        val soft = if (plan.injuries.isNotEmpty()) softBits(plan) else null
+        var cands = pool.filter { ex == null || !isExcluded(it, plan, ex) }
+        if (plan.mode == Mode.INTENT) {
+            val allowedEquip = intentEquipment(plan)
+            // 스트레칭·모빌리티 의도에서 장비는 "있으면 좋은" 조건 — 그 장비의 스트레칭이 몇 개 없으면 의미 후보를 장비로 거르지 않는다
+            if (allowedEquip != null) cands.filter { it.doc.equipment in allowedEquip }
+                .takeIf { it.isNotEmpty() && !(mobilityIntent(plan) && it.count { d -> d.isStretch } < SOFT_EQUIP_MIN_HITS) }?.let { cands = it }
+        }
+        val allowed = BitSet(indexed.size)
+        for (d in cands) if (soft == null || !soft.get(d.index)) allowed.set(d.index)
+        val byId = indexById
+        return object : SemanticConstraint {
+            override fun allows(doc: ExerciseSearchDoc): Boolean = byId[doc.id]?.let { allowed.get(it.index) } ?: false
+            override val unrecognized: Boolean = plan.hasUnknown
+            override val injuryAware: Boolean = plan.injuries.isNotEmpty()
+        }
     }
 
     /** 브라우즈 순서: 티어 → 인기도 → 로컬라이즈 이름 */
@@ -566,18 +610,18 @@ class ExerciseSearchEngine(
         val ex = exclusionSet(plan)
         val soft = softBits(plan)
         val prefer = preferBits(plan)
-        val allowed: Set<Equipment>? = when {
-            plan.equipments.isNotEmpty() -> plan.equipments
-            plan.home -> ExerciseSearchLexicon.homeEquipmentPreference.keys
-            else -> null
-        }
+        val allowed: Set<Equipment>? = intentEquipment(plan)
         var cands = pool.filter { !isExcluded(it, plan, ex) }
+        var unrestricted: List<IDoc>? = null
         if (allowed != null) {
             val byEquip = cands.filter { it.doc.equipment in allowed }
             if (byEquip.isEmpty()) {
                 // 장비만 물은 질의("kettlebell")인데 필터 안에 그 장비가 없으면 결과 없음 — 전체를 돌려주면 무관한 운동이 쏟아진다
                 if (plan.concepts.isEmpty()) return emptyList()
-            } else cands = byEquip
+            } else {
+                unrestricted = cands
+                cands = byEquip
+            }
         }
         var evals = plan.concepts.map { ConceptEval(it, plan.stretch) }
         if (plan.concepts.isEmpty() && plan.similarTo.isNotEmpty()) similarFits(plan)?.let { fits ->
@@ -585,6 +629,8 @@ class ExerciseSearchEngine(
             if (similar.isNotEmpty()) return rankSorted(scoreIntent(plan, similar, emptyList(), soft, prefer, fits))
         }
         var out = scoreIntent(plan, cands, evals, soft, prefer)
+        // 스트레칭·모빌리티 의도에서 장비는 "있으면 좋은" 조건이다("수건으로 어깨 풀기"의 수건은 밴드 대용일 뿐) — 장비로 거르면 결과가 너무 적을 때는 장비 조건을 풀어서 다시 찾는다
+        if (unrestricted != null && out.size < SOFT_EQUIP_MIN_HITS && mobilityIntent(plan)) out = scoreIntent(plan, unrestricted, evals, soft, prefer)
         if (plan.combineAll && out.size < COMBINE_MIN_HITS && plan.concepts.none { it.id == "foamroll" }) {
             // 두 조건에 모두 맞는 운동이 적으면("가슴 웜업") 한쪽만 맞는 운동으로 채우되, 둘 다 맞는 것을 위에 둔다
             val both = out.associateBy { it.doc.id }
@@ -606,6 +652,16 @@ class ExerciseSearchEngine(
             out = cands.filter { it.isStretch }.map { ExerciseSearchHit(it.doc, BAND_INTENT + 6.0 + it.rank - (if (it.isRolling) ROLLING_FALLBACK_PENALTY else 0.0)) }
         }
         return rankSorted(out)
+    }
+
+    private fun mobilityIntent(plan: QueryPlan): Boolean = plan.stretch || plan.concepts.any { it.stretch || it.id.startsWith("mob:") }
+
+    /** 의도 질의가 말한 장비 범위: 장비를 직접 말했으면 그것, 집이면 홈 장비, 벽·의자·테이블 같은 생활 사물이면 맨몸·밴드(바벨·머신·케이블·덤벨은 "사물만 쓰는" 운동이 아니다) */
+    private fun intentEquipment(plan: QueryPlan): Set<Equipment>? = when {
+        plan.equipments.isNotEmpty() -> plan.equipments
+        plan.home -> ExerciseSearchLexicon.homeEquipmentPreference.keys
+        plan.concepts.any { it.id.startsWith("obj:") } -> OBJECT_EQUIPMENT
+        else -> null
     }
 
     private fun relax(c: QueryLexicon.Concept) = QueryLexicon.Concept(
@@ -1140,6 +1196,9 @@ class ExerciseSearchEngine(
 
     companion object {
         // band 간격(20)은 장비 우선 가중치(15)·타이브레이커(<=9)보다 크게 유지
+        private const val SOFT_EQUIP_MIN_HITS = 6
+        /** 생활 사물(벽·의자·테이블…)만 쓰는 운동에 허용하는 장비 */
+        internal val OBJECT_EQUIPMENT: Set<Equipment> = setOf(Equipment.BODYWEIGHT, Equipment.OTHER, Equipment.RESISTANCE_BAND)
         const val BAND_EXACT = 200.0
         const val BAND_EXACT_VARIANT = 170.0
         const val BAND_TOKEN_WB = 160.0
