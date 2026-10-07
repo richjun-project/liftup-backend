@@ -93,6 +93,23 @@ class HybridSearchTest {
     // ── 하드 조건 공유 ────────────────────────────────────────────────────────────────────────
 
     @Test
+    fun `집에서 장비 언급이 없으면 의미 1위가 밴드여도 맨몸이 먼저다`() {
+        // 의미 벡터를 밴드 글루트 브릿지로 몰아도, '집에서' 의도면 상위권은 맨몸 → 그 다음 밴드 순서
+        val r = search("ヒップアップしたい 家で", "resistance-band-glute-bridge")
+        // 사용자에게 보이는 첫 화면(상위 5)은 모두 맨몸이어야 한다
+        assertTrue(r.hits.take(5).all { it.doc.equipment == Equipment.BODYWEIGHT }, slugs(r, 10).toString())
+        // 의미 검색까지 섞인 경로에서도 같은지 — 문장형 질의로 의미 검색을 강제한다
+        val nl = search("家で道具を使わずにお尻を丸く引き上げたいです", "resistance-band-glute-bridge")
+        assertTrue(nl.hits.take(5).all { it.doc.equipment == Equipment.BODYWEIGHT }, slugs(nl, 10).toString())
+    }
+
+    @Test
+    fun `집에서여도 밴드를 직접 말하면 밴드가 앞에 올 수 있다`() {
+        val r = search("家で チューブ お尻", "resistance-band-glute-bridge")
+        assertTrue(slugs(r, 5).any { "band" in it }, slugs(r).toString())
+    }
+
+    @Test
     fun `부정한 운동은 의미상 가장 가까워도 결과에 없다 - deadlift`() {
         val r = search("leg workout without deadlifts please", near = "barbell-deadlift")
         assertTrue(r.semantic)

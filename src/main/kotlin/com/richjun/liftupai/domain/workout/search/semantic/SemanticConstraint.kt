@@ -29,4 +29,7 @@ interface SemanticConstraint {
      * 이런 질의는 어휘 엔진이 큐레이션한 순서가 이미 정답에 가깝고 LLM 힌트는 순서를 흔들기만 한다 — LLM 을 부르지 않는다.
      */
     val broadKeyword: Boolean get() = false
+
+    /** 집에서(장비 언급·필터 없음) — 섞은 결과에서도 맨몸 운동을 먼저 보여 준다(밴드·덤벨은 그 뒤) */
+    val homeBodyweightFirst: Boolean get() = false
 }

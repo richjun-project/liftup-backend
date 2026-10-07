@@ -119,7 +119,20 @@ class HybridSearch(
         val base = hybrid ?: lex.hits
         val degraded = (wantSemantic && qv == null) || (wantRewrite && rw == null)
         val withRewrite = if (rw != null && !rw.isEmpty) applyRewrite(base, lex.hits, rw, hintConstraint, category, equipments) else null
-        return Result(withRewrite ?: base, true, semantic = hybrid != null, degraded = degraded, rewritten = withRewrite != null)
+        val fused = withRewrite ?: base
+        val ordered = if (constraint.homeBodyweightFirst && (hybrid != null || withRewrite != null)) bodyweightFirst(fused) else fused
+        return Result(ordered, true, semantic = hybrid != null, degraded = degraded, rewritten = withRewrite != null)
+    }
+
+    /**
+     * '집에서' 의도(장비 언급 없음)는 대부분 맨몸을 뜻한다. 어휘 엔진은 이미 맨몸을 앞에 두지만 의미·LLM 후보를 섞으면
+     * 밴드·덤벨 종목이 위로 올라온다 — 상위 [HOME_REORDER_DEPTH] 안에서만 맨몸을 먼저 두고 나머지 순서는 그대로 둔다.
+     */
+    private fun bodyweightFirst(hits: List<ExerciseSearchHit>): List<ExerciseSearchHit> {
+        if (hits.size < 2) return hits
+        val head = hits.take(HOME_REORDER_DEPTH)
+        val (bw, rest) = head.partition { it.doc.equipment == Equipment.BODYWEIGHT }
+        return bw + rest + hits.drop(HOME_REORDER_DEPTH)
     }
 
     private fun startRewrite(call: () -> QueryRewrite?): CompletableFuture<QueryRewrite?> {
@@ -238,6 +251,8 @@ class HybridSearch(
     }
 
     companion object {
+        /** '집에서' 맨몸 우선 재정렬을 적용할 상위 범위 */
+        const val HOME_REORDER_DEPTH = 20
         private const val SCORE_SCALE = 1000.0
         private val WHITESPACE = Regex("\\s+")
     }
