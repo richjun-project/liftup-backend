@@ -130,6 +130,12 @@ object SearchText {
             }
         }
         flush()
+        // "ス ク ワ ッ ト", "s q u a t" 처럼 글자마다 띄어 쓴 입력은 한 단어로 합친다 (모든 단어가 1글자이고 3개 이상일 때만)
+        if (words.size >= 3 && words.all { it.length == 1 }) {
+            val joined = words.joinToString("")
+            val keptKata = kata.toBooleanArray()
+            return Tokenized(listOf(joined), joined, keptKata, intArrayOf(0))
+        }
         val strict = words.joinToString("")
         return Tokenized(words, strict, kata.toBooleanArray(), starts.toIntArray())
     }
@@ -194,10 +200,12 @@ object SearchText {
         return sb.toString()
     }
 
-    /** 초성만으로 이루어진 질의인가 (공백 제외 2자 이상) */
+    /** 초성만으로 이루어진 질의인가 (공백 제외 2자 이상). 완성 글자와 초성이 섞인 입력("스ㅋㅌ")은 초성이 2개 이상일 때 초성 질의로 본다. */
     fun isChoseongQuery(raw: String): Boolean {
         val letters = fold(raw).filter { !it.isWhitespace() }
-        return letters.length >= 2 && letters.all { isCompatConsonant(it) }
+        if (letters.length < 2) return false
+        if (letters.all { isCompatConsonant(it) }) return true
+        return letters.all { isCompatConsonant(it) || isHangulSyllable(it) } && letters.count { isCompatConsonant(it) } >= 2
     }
 
     /**

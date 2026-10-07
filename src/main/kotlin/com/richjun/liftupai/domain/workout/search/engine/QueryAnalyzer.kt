@@ -162,8 +162,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             if (needsPrev) {
                 val ok = prevKnown || (prevUnkRun >= 2 && i > 0 && !isHiragana(tok, i - 1))
                 if (!ok) return false
-                // 조사 뒤에는 단어 끝이거나 사전 용어가 이어져야 한다 ("바벨 로오" 의 로 는 조사가 아니다)
-                if (!(tok.isWordEnd(j) || startsKnown(tok, j))) return false
+                // 조사 뒤에는 단어 끝이거나 사전 용어가 이어져야 한다 ("바벨 로오" 의 로 는 조사가 아니다). 나열 조사(も·도·や·と)는 뒤가 무엇이든 인정한다.
+                if (t.role != Role.CONJ && !(tok.isWordEnd(j) || startsKnown(tok, j))) return false
             }
         }
         if (t.isolated) {
@@ -220,7 +220,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             return a to b
         }
 
-        fun skippable(sg: Seg) = !sg.unknown && !sg.isNum && sg.onlyRoles(Role.NOISE)
+        fun skippable(sg: Seg) = !sg.unknown && !sg.isNum && sg.onlyRoles(Role.NOISE, Role.CONJ)
 
         // 1) 부정: 표지 + 대상
         for (idx in segs.indices) {
@@ -229,23 +229,28 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             val targets = ArrayList<IntRange>()
             var cursor = idx
             val step = if (neg.targetBefore) -1 else 1
-            var chainLeft = 3
+            var chainLeft = 4
             while (chainLeft-- > 0) {
                 var j = cursor + step
-                while (j in segs.indices && (skippable(segs[j]))) j += step
+                var sawConj = false
+                while (j in segs.indices && skippable(segs[j])) { if (segs[j].has(Role.CONJ)) sawConj = true; j += step }
                 if (j !in segs.indices) break
                 val sg = segs[j]
                 if (sg.has(Role.NEG) || sg.has(Role.UNIT) || sg.isNum) break
                 val range = if (sg.unknown) {
-                    val (a, b) = chunkAt(j); a..b
+                    val (a2, b2) = chunkAt(j); a2..b2
                 } else j..j
+                if (targets.isNotEmpty()) {
+                    // 이어지는 대상은 접속어(や·と·도·and)가 있거나, 쉼표·공백으로 나열된 별개 단어일 때만 (스쿼트, 런지 없이)
+                    val laterStart = if (step < 0) segs[cursor].s else segs[range.first].s
+                    val resolvable = sg.unknown || (!sg.has(Role.CONCEPT) && (sg.has(Role.NAME) || sg.has(Role.EQUIP)))
+                    if (!resolvable) break
+                    // 접속어 없이 나열만 된 경우는 같은 종류끼리만 이어 붙인다 ("ベンチプレス ダンベル以外" 의 벤치프레스는 제외 대상이 아니다)
+                    val sameKind = segs[targets.last().first].has(Role.EQUIP) == sg.has(Role.EQUIP)
+                    if (!sawConj && !(tok.isWordStart(laterStart) && sameKind)) break
+                }
                 targets.add(range)
                 cursor = if (step < 0) range.first else range.last
-                // 접속어로 이어지는 다음 대상
-                val k = cursor + step
-                if (k in segs.indices && segs[k].has(Role.CONJ)) {
-                    cursor = k
-                } else break
             }
             var any = false
             for (r in targets) {

@@ -61,7 +61,9 @@ class SearchTextTest {
         assertEquals("ㅂㅊㅍㄹㅅ", SearchText.choseong("벤치프레스"))
         assertTrue(SearchText.isChoseongQuery("ㅅㅋㅌ"))
         assertTrue(SearchText.isChoseongQuery("ㄷㄷ ㄹㅍㅌ"))
-        assertFalse(SearchText.isChoseongQuery("스ㅋㅌ"))
+        assertTrue(SearchText.isChoseongQuery("스ㅋㅌ"))  // 완성 글자 + 초성 2개 이상은 초성 질의
+        assertFalse(SearchText.isChoseongQuery("스ㅋ"))  // 초성 1개뿐이면 일반 검색
+        assertFalse(SearchText.isChoseongQuery("스쿼트"))
         assertFalse(SearchText.isChoseongQuery("ㅅ"))
     }
 
