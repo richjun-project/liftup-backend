@@ -16,7 +16,8 @@ internal object QueryLexiconRound3 {
     val STRETCH = """
         硬い|硬く|硬くて|硬くなって|硬くなった|硬くなる|硬かった|固い|固く|固くて|固くなって|固くなった|固くなる|かたい|かたくて|カタイ|こわばり|こわばる|こわばって|こわばった|張る|張って|張ってる|張っている|張ってて|張り|張った|張ります|張りがある|張りを取る|凝る|凝って|凝ってる|凝っている|凝った|凝り|凝りが|凝りを|凝り固まった|凝り固まって|こる|こって|こり|コリ|コリを|だるい|だるく|だるくて|だるさ|だる重い|重だるい|重だるくて|むくみ|むくんで|むくむ|むくんだ|つる|つって|つった|攣る|攣った|ほぐし方|ほぐれる|ほぐして|はがし|はがす|剥がし|剥がす|解く|解きたい|ゆるめたい|ゆるめる|緩めたい|リリース|やわらげ|和らげ|楽にしたい|楽になりたい|がバキバキ|ガチガチ|がちがち|カチカチ|かちかち|がゴリゴリ|ゴリゴリする|ゴリゴリして|ギシギシ|ぎしぎし|疲労回復|疲れを取|疲れをとり|ケア|ケアしたい|セルフケア|メンテナンス|リカバリー|可動域|可動性|柔軟性|可動域を広げ|동작 범위|가동 범위|가동범위|가동성|유연성|케어|셀프 케어|회복 스트레칭|range of motion|rom|self care|selfcare|recovery|recover|flexibility|mobility work|mobilize|mobilise
         |땡겨|땡겨요|땡기|땡기는|땡긴다|땡길|땡기면|땡겨서|당겨요|당기는|당긴다|당길|당기면|당겨서|뭉쳤|뭉쳤어|뭉쳤어요|뭉쳐|뭉쳐서|뭉쳐요|뭉쳐있|뭉쳐 있|뭉침|뭉친|뭉칠|뭉치면|뭉치는|결려|결려요|결려서|결리|결리는|결릴|결리면|결림|결렸|뻐근|뻐근해|뻐근해요|뻐근해서|뻐근한|뻐근할|뻐근하면|뻐근하다|뻐근하네|뻣뻣|뻣뻣해|뻣뻣해요|뻣뻣해서|뻣뻣한|뻣뻣할|뻣뻣하면|굳었|굳었어|굳었어요|굳어|굳어서|굳은|굳을|굳으면|굳음|굳는|피로 풀|피로풀|피로 회복|풀어주기|풀어주세요|풀어요|풀고|풀어줄|풀어주고|풀기|풀어주는|풀어줘|풀어|뭉친 근육|근육 풀|근육풀|쥐가|쥐나|쥐난|쥐 날|쥐날|저려|저리|저린|부었|부어|부어서|붓는|붓기|부종
-        |tight|tightness|tighten up|tightened|stiff|stiffness|stiffen|knot|knots|knotted|achy|aching|cramp|cramped|cramps|cramping|relief|relieve|relieving|release|releasing|loosen|loosen up|loosening|unwind|decompress|decompression|ease|easing|soothe|soothing|tension|tense|sore|soreness|kinks|kink|crick|locked up|locked|seized up|seized|rigid|tender|puffy|swollen|inflexible
+        |違和感を取|痛みを取|痛みを和らげ|痛みを緩和|痺れを取|痺れを和らげ|しびれを取|しびれ|痺れ|凝りを取|コリを取|張りを取|疲れを取|だるさを取|だるさを解消|こりを解消|凝りを解消|こりの解消|凝りの解消|통증 완화|통증을 줄이|통증 줄이|저림 완화|저릴 때|저려요|저리다|저림|저린|뻐근함 완화|뻐근함을 풀|결림을 풀|피로를 풀|근육통 완화|근육통 줄이|근육통
+        |numb|numbness|tingling|tingly|pins and needles|tight|tightness|tighten up|tightened|stiff|stiffness|stiffen|knot|knots|knotted|achy|aching|cramp|cramped|cramps|cramping|relief|relieve|relieving|release|releasing|loosen|loosen up|loosening|unwind|decompress|decompression|ease|easing|soothe|soothing|tension|tense|sore|soreness|kinks|kink|crick|locked up|locked|seized up|seized|rigid|tender|puffy|swollen|inflexible
     """.trimIndent()
 
     /** 부상 단서의 부정·연결형 — "肩を痛めずに胸"(어깨를 다치지 않고 가슴) */
@@ -34,12 +35,14 @@ internal object QueryLexiconRound3 {
     /** 이미 NEG_AFTER 에 있는 "없이" 류에 더하는 "~가 없을 때/없으면" 표현 */
     val NEG_AFTER = """
         が無いとき|が無い時|が無い場合|が無いなら|が無ければ|がないとき|がない時|がない場合|がないなら|がなければ|が無くて|がなくて|が無い|がない|無いとき|無い時|無い場合|無ければ|ないとき|ない時|ない場合|なければ|無くて|なしの|使えない|使えないとき|使えない時|使えなくて|持ってない|持っていない|持ってないとき|持ってない時
+        |외에|외엔|이외|이외에|이외의|외의|제외하고 다른|빼고 다른
         |없을 때|없을때|없는데|없어서|없으면|없는 경우|없는경우|없을 땐|없을땐|없을경우|없을 경우|못 쓰는|못쓰는|못 쓸 때|못쓸때|못 쓰면|없다면|없고|없어
         |not available|isnt available|isn't available|unavailable|not accessible|dont have|don't have|do not have|doesnt have|doesn't have|havent got|haven't got|missing|lacking
     """.trimIndent()
 
     val INSTEAD_AFTER = """
         かわり|カワリ|代わりに|代わりの|代わりになる|代わりになるもの|代わり運動|の代わり|代替品|代用品|代用で|代用の|代わるもの|代わりにできる|代わりになる運動|代えて|に代えて|のかわり|のカワリ|にかわる
+        |とは別の|とは別|とは違う|とは違った|とは異なる|ではない別の|以外の別の
         |대신|대신에|대신할|대신으로|대신하는|대신 할|대체품|대체 운동|대체운동|대체할|대체로|대체하는|대용|대용품|대안|대안으로|대안 운동|말고 다른|말고다른|말고 대체|말고 비슷한|말고 다른 거|말고 다른 운동|말고 비슷한 운동|대신 할 수 있는|대신 할수있는|대신 하는
         |what else|what other exercise|what other exercises|what can i do instead|what can i do|what can i use|what do i use|what should i use|what to use|what else can i use|what can i substitute|what can i swap|what to swap|what to replace it with|what do i do instead|what do i do without|alternative|alternatives|alternate for|substitute|substitutes|substitution|substituting|replacement|replacements|equivalent|equivalents|stand in for|standin
             |is taken|are taken|is occupied|are occupied|is being used|are being used|is in use|are in use|is busy|are busy|is full|is crowded|are crowded|is not free|are not free|being used|taken|occupied|in use

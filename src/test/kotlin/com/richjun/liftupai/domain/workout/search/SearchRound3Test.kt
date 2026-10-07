@@ -186,6 +186,31 @@ class SearchRound3Test {
             row("one kettlebell full body", "en", "kettlebell"),
         )
 
+
+        @JvmStatic
+        fun situationCases(): Stream<Arguments> = Stream.of(
+            row("運動前にやる動き", "ja", "warm|circle|swing|jack|cat-cow|worlds|dynamic|band|march|high-knees|lunge|squat"),
+            row("운동 전에 하는 동작", "ko", "warm|circle|swing|jack|cat-cow|worlds|dynamic|band|march|high-knees|lunge|squat"),
+            row("movements before a workout", "en", "warm|circle|swing|jack|cat-cow|worlds|dynamic|band|march|high-knees|lunge|squat"),
+            row("運動後にやる動き", "ja", "stretch|child|cat-cow|pose|couch|pigeon|roller|worlds"),
+            row("운동 후에 하는 동작", "ko", "stretch|child|cat-cow|pose|couch|pigeon|roller|worlds"),
+            row("what to do after a workout", "en", "stretch|child|cat-cow|pose|couch|pigeon|roller|worlds"),
+            row("寝起きに体が固い", "ja", "cat-cow|child|stretch|worlds|pose|rotation"),
+            row("일어나자마자 하는 스트레칭", "ko", "cat-cow|child|stretch|worlds|pose|rotation"),
+            row("5 minutes before bed", "en", "stretch|cat-cow|child|pose|plank|bridge"),
+            row("자기 전에 5분 운동", "ko", "stretch|cat-cow|child|pose|plank|bridge"),
+            row("やる気が出ない日の運動", "ja", "walk|stretch|plank|bridge|squat|push-up|cat-cow|bike"),
+            row("의욕 없는 날 할 운동", "ko", "walk|stretch|plank|bridge|squat|push-up|cat-cow|bike"),
+            row("low motivation day workout", "en", "walk|stretch|plank|bridge|squat|push-up|cat-cow|bike"),
+            row("引き締まった体になりたい", "ja", "squat|push-up|plank|lunge|burpee|row|deadlift|crunch|bridge"),
+            row("get toned", "en", "squat|push-up|plank|lunge|burpee|row|deadlift|crunch|bridge"),
+            row("懸垂バーがない時の背中", "ja", "row|pulldown|inverted|band|dumbbell|cable|machine"),
+            row("no pull up bar back workout", "en", "row|pulldown|inverted|band|dumbbell|cable|machine"),
+            row("体力をつけたい", "ja", "treadmill|bike|row|run|elliptical|stair|jump|walk|swim|burpee"),
+            row("체력을 기르고 싶다", "ko", "treadmill|bike|row|run|elliptical|stair|jump|walk|swim|burpee"),
+            row("軽い運動がしたい", "ja", "walk|stretch|bike|bridge|squat|cat-cow|child|plank|elliptical")
+        )
+
         @JvmStatic
         fun exclusionCases(): Stream<Arguments> = Stream.of(
             Arguments.of("スクワットの代わりになる脚トレ", "squat"),
@@ -550,6 +575,68 @@ class SearchRound3Test {
     fun `시간만 말한 수치는 이름 검색이 아니다`() {
         assertTrue(engine.search("朝5分でできる運動").isNotEmpty())
         assertTrue(engine.search("10 minute workout").isNotEmpty())
+    }
+
+
+    // ═════════════════════════ 8. 상황 표현·대안 해석 보강 ═════════════════════════
+
+    @ParameterizedTest(name = "[{1}] {0}")
+    @MethodSource("situationCases")
+    fun `운동 전·후·기상·자기 전 같은 상황 표현은 그에 맞는 목록이다`(q: String, locale: String, anySlug: String) {
+        val re = Regex(anySlug)
+        val got = engine.search(q, null, null, locale).take(5).map { it.doc.slug }
+        assertTrue(got.any { re.containsMatchIn(it) }, "$q -> $got (기대 /$anySlug/)")
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["데드리프트 외에 등 운동", "벤치프레스 이외 가슴", "スクワット以外で脚を鍛えたい", "other than squats leg exercises", "chest exercises besides bench press"])
+    fun `외에·이외·以外·besides 는 그 운동을 빼고 같은 부위를 보여 준다`(q: String) {
+        val got = engine.search(q).take(8).map { it.doc.slug }
+        val named = Regex("deadlift|bench-press|squat")
+        assertTrue(got.isNotEmpty() && got.none { named.containsMatchIn(it) && !it.contains("press-machine") }, "$q -> $got")
+    }
+
+    @Test
+    fun `대안을 물은 대상 앞에 부상 표현이 끼어도 그 운동이 대상이다`() {
+        val got = slugs("스쿼트 하면 무릎 아픈데 대체 운동", 8)
+        assertTrue(got.none { it.contains("squat") }, got.toString())
+        assertTrue(got.isNotEmpty())
+    }
+
+    @Test
+    fun `앞에 대상이 있는 alternatives for 는 상황이 뒤에 와도 앞의 운동을 뺀다`() {
+        val got = slugs("pull up alternatives for home", 8)
+        assertTrue(got.none { it.contains("pull-up") }, got.toString())
+    }
+
+    @Test
+    fun `자세 개념은 부위 목표의 가산점이라 서서 하는 유산소가 standing 이름 운동 전체로 번지지 않는다`() {
+        val d = top("立ったままできる有酸素", 5)
+        assertTrue(d.any { it.category == ExerciseCategory.CARDIO }, d.map { it.slug }.toString())
+    }
+
+    @Test
+    fun `자세 개념은 구체적인 부위가 함께 있으면 그 부위가 목표다`() {
+        val got = slugs("座りっぱなしでお尻が痛い", 5)
+        assertTrue(got.none { it.contains("rear-delt") || it.contains("face-pull") }, got.toString())
+    }
+
+    @Test
+    fun `부상 부정형은 단서라서 아픈 관절 운동을 피한다`() {
+        val got = slugs("肩を痛めずに胸", 3)
+        assertTrue(got.none { it.contains("lateral-raise") || it.contains("shoulder-press") }, got.toString())
+    }
+
+    @Test
+    fun `무릎이 안 좋으면 유산소는 달리기보다 자전거·걷기가 앞이다`() {
+        val got = slugs("膝に優しい有酸素", 3)
+        assertTrue(got.none { it.contains("running") }, got.toString())
+    }
+
+    @Test
+    fun `짐볼 별칭은 카탈로그의 exercise ball 운동으로 연결된다`() {
+        assertTrue(slugs("짐볼 복근", 5).any { it.contains("ball") })
+        assertTrue(slugs("バランスボール 腹筋", 5).any { it.contains("ball") })
     }
 
     // ═════════════════════════ 7. 색인 서비스: 설명문 로딩 ═════════════════════════

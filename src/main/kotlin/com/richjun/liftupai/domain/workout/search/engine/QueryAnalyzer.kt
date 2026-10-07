@@ -350,6 +350,16 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                         j += step
                     }
                     if (broken || j !in segs.indices) break
+                    // "스쿼트 하면 무릎 아픈데 대체 운동" — 대안을 물은 대상 앞에 부상 표현(아픈데·무릎)이 끼어 있으면 그것을 건너뛰고 운동을 찾는다(부상은 따로 해석된다)
+                    if (insteadHere && targets.isEmpty()) {
+                        var guard = 0
+                        while (j in segs.indices && guard++ < 6 && !segs[j].unknown && !segs[j].isNum &&
+                            segs[j].terms!!.any { it.role == Role.CUE || it.role == Role.JOINT } && segs[j].terms!!.none { it.role == Role.NAME || it.role == Role.EQUIP }) {
+                            j += step
+                            while (j in segs.indices && skippable(segs[j])) j += step
+                        }
+                        if (j !in segs.indices) break
+                    }
                     val sg = segs[j]
                     if (sg.has(Role.NEG) || sg.has(Role.UNIT) || sg.isNum) break
                     var range = if (sg.unknown) {
