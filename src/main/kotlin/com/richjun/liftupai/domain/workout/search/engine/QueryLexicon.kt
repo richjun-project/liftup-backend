@@ -308,6 +308,10 @@ internal object QueryLexicon {
         3대|3대운동|삼대|big 3|big three|big3|三大|ビッグ3|ビッグスリー|power lifting|powerlifting|パワーリフティング|파워리프팅 => big3; sig=full squat|back squat|bench press|deadlift~|フルスクワット|バックスクワット|ベンチプレス|デッドリフト~|풀 스쿼트|백 스쿼트|벤치프레스|데드리프트~; flags=strict
         11자|11자 복근|왕자|왕자 복근|식스팩|6팩|six pack|sixpack|six-pack|abs line|abs lines|腹筋を割|割れた腹筋|シックスパック|腹筋バキバキ|腹筋割る|flat stomach|flat belly|flat abs|flat tummy|납작한 배|平らなお腹|お腹ぺたんこ => sixpack; muscles=ABS,CORE; cats=CORE
         뱃살|똥배|뱃살빼기|お腹周り|お腹まわり|ぽっこりお腹|お腹痩せ|腹周り|tummy|belly fat|belly|stomach fat|abdominal fat|midsection|mid section|belly bulge|beer belly|pot belly|ぽっこり|下腹ぽっこり|お腹の脂肪|내장지방|뱃살 빼는|肚子 => sixpack
+        足首|あしくび|足首の運動|足首トレ|足首 強化|足首を鍛える|발목|발목 운동|발목 강화|발목 근력|ankle|ankles|ankle mobility|ankle strength|ankle exercises|ankle stability => anklecare; muscles=CALVES; cats=LEGS; sig=ankle|dorsal flexion|plantar flexion|アンクル|발목; sig2=calf stretch|gastrocnemius|soleus|achilles|calf raise|toe raise|tibialis|カーフストレッチ|カーフレイズ|카프 스트레칭|카프 레이즈; flags=strict
+        手首|てくび|手首の運動|手首を鍛える|손목|손목 운동|손목 강화|손목 근력|wrist|wrists|wrist mobility|wrist strength|wrist exercises => wristcare; muscles=FOREARMS; cats=ARMS; sig=wrist|forearm stretch|リスト|手首|손목|리스트; sig2=reverse curl|farmer|forearm|リバースカール|ファーマー|전완|리버스 컬; flags=strict
+        膝|ひざ|ヒザ|膝の運動|膝周り|膝を鍛える|무릎|무릎 운동|무릎 강화|무릎 주변|무릎 근력|knee strengthening|knee exercises|knee strength|knee stability|strong knees|healthy knees => kneecare; muscles=QUADRICEPS,HAMSTRINGS,GLUTES; cats=LEGS; sig=leg extension|leg curl|step up|wall sit|glute bridge|straight leg raise|terminal knee|knee extension|レッグエクステンション|レッグカール|ステップアップ|ウォールシット|グルートブリッジ|레그 익스텐션|레그 컬|스텝업|월 싯|글루트 브리지; flags=strict
+        肘|ひじ|ヒジ|肘の運動|肘周り|팔꿈치|팔꿈치 운동|팔꿈치 강화|elbow|elbows|elbow strength|elbow exercises => elbowcare; muscles=BICEPS,TRICEPS,FOREARMS; cats=ARMS; sig=elbow|hammer curl|reverse curl|forearm|エルボー|ハンマーカール|リバースカール|팔꿈치|해머 컬|리버스 컬|전완; flags=strict
         ヨガ|ヨーガ|ヨガポーズ|ヨガのポーズ|ヨガ ポーズ|요가|요가 자세|요가 포즈|요가 동작|요가 스트레칭|yoga|yoga pose|yoga poses|yoga flow|yoga stretches|yoga stretch|asana|asanas|アーサナ|아사나 => yoga; sig=yoga|pose~|cat cow|child pose|pigeon|crab pose|ヨガ|キャットアンドカウ|チャイルドポーズ|ピジョンポーズ|요가|캣 카우|차일드 포즈|비둘기 자세; flags=strict,stretch
         러닝 후|런닝 후|러닝 끝나고|런닝 끝나고|달리기 후|달리기 끝나고|뛰고 나서|조깅 후|마라톤 후|ランニング後|ランニングの後|ランニング後の|ジョギング後|走った後|走った後の|マラソン後|after running|after a run|after jogging|post run|post-run|postrun|runners|runner|for runners|runner stretch|running recovery => postrun; muscles=LEGS,QUADRICEPS,HAMSTRINGS,CALVES,GLUTES; sig=runner stretch|calf stretch|gastrocnemius|hamstring stretch|quadriceps stretch|hip flexor stretch|glute stretch|it band|couch stretch|pigeon|ランナー|カーフストレッチ|ふくらはぎ ストレッチ|ハムストリング ストレッチ|大腿四頭筋ストレッチ|ヒップフレクサー|러너|종아리 스트레칭|햄스트링 스트레칭|쿼드 스트레칭|힙 플렉서; flags=strict,stretch
         座ってできる|座ってできる運動|座って|座ったまま|座りながら|イスに座って|椅子に座って|椅子で|앉아서 하는|앉아서하는|앉아서|앉은 채로|의자에 앉아|의자 운동|seated workout|seated exercises|seated|sitting down|sitting|sit down workout|chair exercises|chair workout|on a chair|from a chair|while sitting|desk chair|chair => pos-seated; sig=seated|sitting|chair|シーテッド|イス|椅子|시티드|의자; flags=strict
@@ -577,12 +581,23 @@ internal object QueryLexicon {
 
         // 9) 한자 표기의 가나 읽기 변형 — "けんすい"·"ふっきん" 도 "懸垂"·"腹筋" 과 같은 용어다. 짧은 읽기(あし·かた)는 단어 경계에서만 쓴다.
         for ((k, terms) in index.entries.toList()) {
-            val readable = terms.filter { t -> t.role != Role.NEG && t.role != Role.CUE && t.role != Role.CONJ && t.role != Role.UNIT && !t.particle }
+            val readable = terms.filter { t -> t.role != Role.CONJ && t.role != Role.UNIT && !t.particle }
             if (readable.isEmpty()) continue
             for (v in KanjiReadings.variants(k)) {
-                if (v.isEmpty() || index.containsKey(v) && index[v]!!.any { it.role != Role.NAME }) continue
+                if (v.isEmpty()) continue
                 val short = v.length <= 2
-                index.getOrPut(v) { mutableListOf() }.addAll(readable.map { t -> if (short && !t.isolated) t.asIsolated() else t })
+                val existing = index[v].orEmpty()
+                // 이미 같은 역할·같은 대상으로 등록된 읽기("てくび" 를 개념 표에 가나로 직접 적은 경우)는 건너뛴다
+                val fresh = readable.filter { t -> existing.none { e -> e.role == t.role && e.concept === t.concept && e.joint == t.joint && e.move === t.move && e.equipment == t.equipment } }
+                if (fresh.isEmpty()) continue
+                index.getOrPut(v) { mutableListOf() }.addAll(fresh.map { t ->
+                    when {
+                        // 가나로 풀어 쓴 부정 표지("いがい", "ぬき")는 한자 표기와 달리 조사처럼 앞말에 붙어야 한다
+                        t.role == Role.NEG -> Term(Role.NEG, targetBefore = t.targetBefore, particle = isKana(v), instead = t.instead)
+                        short && !t.isolated -> t.asIsolated()
+                        else -> t
+                    }
+                })
             }
         }
 

@@ -779,4 +779,44 @@ class SearchReviewRound2Test {
         assertTrue("chin-up" in slugs("reverse grip pull up", 3))
         assertTrue("reverse-grip-lat-pull-down" in slugs("reverse grip lat pulldown", 3))
     }
+
+    @ParameterizedTest
+    @CsvSource(
+        "足首, ankle",
+        "あしくび, ankle",
+        "발목, ankle",
+        "발목 운동, ankle",
+        "手首, wrist",
+        "손목, wrist",
+        "wrist, wrist",
+        "手首 ストレッチ, wrist",
+        "손목 스트레칭, wrist",
+        "足首 ストレッチ, calf|gastrocnemius",
+        "발목 스트레칭, calf|gastrocnemius"
+    )
+    fun `작은 관절 이름만 써도 그 관절 운동이다`(q: String, fragment: String) {
+        val re = Regex(fragment)
+        assertTrue(slugs(q, 3).any { re.containsMatchIn(it) }, "$q -> ${slugs(q, 5)}")
+    }
+
+    @ParameterizedTest
+    @CsvSource("膝, leg-extension|leg-curl|glute-bridge", "무릎, leg-extension|leg-curl|glute-bridge", "knee strengthening, leg-extension|leg-curl|glute-bridge")
+    fun `무릎만 말하면 무릎 주변 근력 운동이고 무릎 푸시업이 아니다`(q: String, fragments: String) {
+        val re = Regex(fragments)
+        assertTrue(slugs(q, 3).any { re.containsMatchIn(it) }, "$q -> ${slugs(q, 5)}")
+        assertFalse("knee-push-up" in slugs(q, 5))
+    }
+
+    @Test
+    fun `관절 돌봄 개념을 부정해도 하체 전체를 빼지 않는다`() {
+        val got = top("하체운동 무릎 빼고", 10)
+        assertEquals(10, got.size)
+        assertTrue(got.all { it.category == ExerciseCategory.LEGS })
+    }
+
+    @ParameterizedTest
+    @CsvSource("ようつう, LOWER_BACK", "ひざがいたい, KNEE", "てくびがいたい, WRIST", "かたがいたい, SHOULDER", "ひざいがい 下半身, KNEE")
+    fun `가나로 쓴 부상 표현도 같은 관절 부상으로 읽힌다`(q: String, joint: String) {
+        assertTrue(Joint.valueOf(joint) in engine.analyze(q).injuries, "$q -> ${engine.analyze(q).injuries}")
+    }
 }

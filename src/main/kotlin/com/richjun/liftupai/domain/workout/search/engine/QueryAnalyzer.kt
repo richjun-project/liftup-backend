@@ -514,7 +514,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             // 관절: 무릎·손목처럼 부위 개념이 없으면 부상 프로필, 어깨·허리처럼 부위이기도 하면 그 부위 운동도 뺀다. 등·back 은 부위로만 쓴다.
             var done = false
             terms.firstOrNull { it.role == Role.JOINT && it.joint != null && !it.weakJoint }?.joint?.let { negJoints.add(it); done = true }
-            if (concept != null) { negConcepts.add(concept); done = true }
+            // 관절 돌봄 개념(무릎·발목·손목 운동)은 부위 전체가 아니라 그 관절 주변이라서, 부정하면 부상 프로필만 건다
+            if (concept != null && !concept.id.endsWith("care")) { negConcepts.add(concept); done = true }
             if (done) for (i in range) consumed[i] = true
             return done
         }
