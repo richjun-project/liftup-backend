@@ -235,7 +235,6 @@ class ExerciseSearchEngine(
         val byId = indexById
         return object : SemanticConstraint {
             override fun allows(doc: ExerciseSearchDoc): Boolean = byId[doc.id]?.let { allowed.get(it.index) } ?: false
-            override val intent: Boolean = plan.mode == Mode.INTENT
             override val unrecognized: Boolean = plan.hasUnknown
             override val injuryAware: Boolean = plan.injuries.isNotEmpty()
         }

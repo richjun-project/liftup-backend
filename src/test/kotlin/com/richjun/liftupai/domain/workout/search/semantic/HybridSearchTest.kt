@@ -172,7 +172,6 @@ class HybridSearchTest {
         assertNotNull(c)
         assertFalse(c!!.allows(docs.first { it.slug == "barbell-deadlift" }))
         assertTrue(c.allows(docs.first { it.slug == "barbell-full-squat" }))
-        assertTrue(c.intent)
     }
 
     @Test

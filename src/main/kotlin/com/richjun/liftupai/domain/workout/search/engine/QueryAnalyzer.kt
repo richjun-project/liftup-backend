@@ -394,6 +394,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                         val resolvable = sg.unknown || (!sg.has(Role.CONCEPT) && (sg.has(Role.NAME) || sg.has(Role.EQUIP))) ||
                             (sawConj && (sg.has(Role.CONCEPT) || sg.has(Role.JOINT)))
                         if (!resolvable) break
+                        // 이미 아는 운동을 대상으로 잡은 뒤, 접속어 없이 이어지는 모르는 말("knees cave forward on squats alternatives" 의 cave forward)은 운동 이름이 아니라 문장의 다른 부분이다
+                        if (sg.unknown && !sawConj && targets.none { r -> segs[r.first].unknown }) break
                         // 접속어 없이 나열만 된 경우는 같은 종류끼리만 이어 붙인다 ("ベンチプレス ダンベル以外" 의 벤치프레스는 제외 대상이 아니다)
                         val sameKind = segs[targets.last().first].has(Role.EQUIP) == sg.has(Role.EQUIP)
                         if (!sawConj && !(tok.isWordStart(laterStart) && sameKind)) break
@@ -725,7 +727,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         if (terms.any { it.role == Role.NAME } || compound) {
             excludeKeys.add(SigKey(key, false))
             // 같은 동작의 다른 언어 표기도 함께 제외 (데드리프트 → deadlift, 데드리프트)
-            synonyms.index[key].orEmpty().forEach { g ->
+            synonyms.index[key].orEmpty().filter { !it.approx }.forEach { g ->
                 g.expansions.forEach { exp -> SearchText.strictKey(exp).takeIf { it.length >= 3 }?.let { excludeKeys.add(SigKey(it, false)) } }
             }
             for (i in range) consumed[i] = true

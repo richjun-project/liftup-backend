@@ -12,9 +12,6 @@ interface SemanticConstraint {
     /** 이 운동을 의미 검색 후보로 써도 되는가. false 면 어떤 유사도여도 결과에 넣지 않는다. */
     fun allows(doc: ExerciseSearchDoc): Boolean
 
-    /** 이름이 아니라 부위·목표·장비·상황을 물은 질의인가(의도 질의). 이름 질의는 어휘 일치가 더 믿을 만하다. */
-    val intent: Boolean
-
     /** 질의에 어휘 사전이 못 알아들은 덩어리(별칭·오타·새 표현)가 있는가 — 이름 일치가 확실하지 않다는 신호 */
     val unrecognized: Boolean get() = false
 

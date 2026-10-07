@@ -18,7 +18,7 @@ internal object ExerciseSearchLexicon {
     class MuscleTerm(val muscles: Set<MuscleGroup>, val categories: Set<ExerciseCategory>)
 
     /** strong 이면 확장 표현이 원 질의보다 우선한다(카탈로그가 다른 이름으로 부르는 운동 — 별칭이 정답 이름을 가리키는 경우) */
-    class Synonym(val triggers: Set<String>, val expansions: List<List<String>>, val strong: Boolean = false, val noTypo: Boolean = false)
+    class Synonym(val triggers: Set<String>, val expansions: List<List<String>>, val strong: Boolean = false, val noTypo: Boolean = false, val approx: Boolean = false)
 
     private fun key(raw: String) = SearchText.strictKey(raw)
 
@@ -140,7 +140,9 @@ internal object ExerciseSearchLexicon {
     fun parseSynonymRule(rule: String): Synonym? {
         // 줄 맨 앞의 "~" 는 이 줄의 트리거를 오타 교정 어휘에 넣지 않는다 — 동작을 풀어 쓴 긴 구절이 비슷한 다른 말의 "교정 후보"가 되지 않게
         val noTypo = rule.trim().startsWith("~")
-        val trimmed = rule.trim().removePrefix("~").trim()
+        // "~^" 는 어림 별칭 — 확장은 같은 운동이 아니라 비슷한(더 쉬운) 운동이다("물구나무 푸시업 → 파이크 푸시업"). 그래서 "X 대신" 질의에서 확장을 제외 대상으로 삼지 않는다.
+        val approx = rule.trim().removePrefix("~").startsWith("^")
+        val trimmed = rule.trim().removePrefix("~").removePrefix("^").trim()
         if (trimmed.isEmpty() || trimmed.startsWith("#") || !trimmed.contains("=>")) return null
         val strong = trimmed.contains("=>>")
         // "=>>>" 는 한 방향 강한 별칭 — 왼쪽만 트리거다(확장에 일반어("chin up")가 있어도 그 단어 질의가 이 규칙으로 번지지 않는다)
@@ -155,7 +157,7 @@ internal object ExerciseSearchLexicon {
         // 한자 표기의 가나 읽기("懸垂" → "けんすい")도 같은 그룹의 트리거로 — 일본 사용자는 둘 다 쓴다
         val triggers = (base + base.flatMap { KanjiReadings.variants(it) }).toSet()
         if (expansions.isEmpty() || triggers.isEmpty()) return null
-        return Synonym(triggers = triggers, expansions = expansions, strong = strong, noTypo = noTypo)
+        return Synonym(triggers = triggers, expansions = expansions, strong = strong, noTypo = noTypo, approx = approx)
     }
 
     /** 동의어 사전과 그 색인. 엔진마다 기본 사전 + 런타임 추가분(extraSynonyms)으로 만든다. */
