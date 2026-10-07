@@ -199,7 +199,7 @@ class ExerciseSearchEvalTest {
             val forbidEquip = rule["forbid_equipment"]?.map { it.asText() }?.toSet().orEmpty()
             val bad = top.filter { h -> (re != null && re.containsMatchIn(h.doc.slug)) || h.doc.equipment?.name in forbidEquip }
             val empty = rule["require_nonempty"]?.asBoolean() == true && top.isEmpty()
-            if (bad.isNotEmpty() || empty) violations.add("$query -> ${if (empty) "(empty)" else bad.map { it.doc.slug }}")
+            if (bad.isNotEmpty() || empty) violations.add("$query -> ${if (empty) "(empty)" else bad.map { it.doc.slug }.toString()}")
         }
         assertTrue(violations.isEmpty(), "안전 규칙 위반 ${violations.size}건\n${violations.joinToString("\n")}")
     }

@@ -43,8 +43,29 @@ object SearchText {
     fun normalize(raw: String): String {
         val head = if (raw.length > MAX_QUERY_CHARS * 2) raw.substring(0, MAX_QUERY_CHARS * 2) else raw
         // 아포스트로피는 단어를 가르지 않고 지운다 (captain's → captains)
-        val n = Normalizer.normalize(head, Normalizer.Form.NFKC).lowercase(Locale.ROOT).filter { it != '\'' && it != '\u2019' && it != '`' }
+        val n = collapseRuns(Normalizer.normalize(head, Normalizer.Form.NFKC).lowercase(Locale.ROOT).filter { it != '\'' && it != '\u2019' && it != '`' })
         return if (n.length > MAX_QUERY_CHARS) n.substring(0, MAX_QUERY_CHARS) else n
+    }
+
+    /** 같은 글자가 3번 이상 이어진 늘임("스쿼트트트트", "squaaat", "ほーーー")을 줄인다: 라틴은 2개, 그 밖은 1개. 숫자는 그대로. */
+    private fun collapseRuns(s: String): String {
+        if (s.length < 3) return s
+        val sb = StringBuilder(s.length)
+        var i = 0
+        while (i < s.length) {
+            val c = s[i]
+            var j = i
+            while (j < s.length && s[j] == c) j++
+            val run = j - i
+            val keep = when {
+                run < 3 || c.isDigit() || !c.isLetter() && c != 'ー' -> run
+                c.code < 0x250 -> 2
+                else -> 1
+            }
+            repeat(keep) { sb.append(c) }
+            i = j
+        }
+        return sb.toString()
     }
 
     /** NFKC + 소문자 + 가타카나→히라가나. NFKC 가 호환 자모를 conjoining 자모로 바꾸므로 호환 자모로 되돌린다. */
@@ -71,6 +92,7 @@ object SearchText {
 
     private fun scriptOf(c: Char): Script = when {
         !c.isLetterOrDigit() && c != 'ー' -> Script.OTHER
+        c.code in 0x3131..0x3163 -> Script.OTHER  // 낱자 자모(ㅋㅋ, ㅎㅎ, 깨진 IME 조각)는 단어가 아니다 — 초성 질의는 tokenize 이전에 따로 처리한다
         c.code < 0x250 -> Script.LATIN
         else -> Script.CJK
     }
@@ -205,7 +227,10 @@ object SearchText {
         val letters = fold(raw).filter { !it.isWhitespace() }
         if (letters.length < 2) return false
         if (letters.all { isCompatConsonant(it) }) return true
-        return letters.all { isCompatConsonant(it) || isHangulSyllable(it) } && letters.count { isCompatConsonant(it) } >= 2
+        if (!letters.all { isCompatConsonant(it) || isHangulSyllable(it) }) return false
+        val jamo = letters.filter { isCompatConsonant(it) }
+        // 웃음(ㅋㅋ·ㅎㅎ)을 초성 질의로 오해하지 않게: 서로 다른 초성 2개 이상, 완성 글자는 2개 이하
+        return jamo.toSet().size >= 2 && letters.count { isHangulSyllable(it) } <= 2
     }
 
     /**

@@ -180,10 +180,10 @@ class ExerciseSearchEngine(
         if (norm.isEmpty()) return browseSorted(pool, locale)
         val deadline = System.nanoTime() + BUDGET_NANOS
 
-        val tok = SearchText.tokenize(raw)
-        // 글자·숫자가 하나도 없는(기호·이모지뿐인) 질의는 결과 없음
-        if (tok.words.isEmpty()) return emptyList()
         if (SearchText.isChoseongQuery(norm)) return searchChoseong(norm, pool)
+        val tok = SearchText.tokenize(raw)
+        // 글자·숫자가 하나도 없는(기호·이모지·낱자 자모뿐인) 질의는 결과 없음
+        if (tok.words.isEmpty()) return emptyList()
 
         // 질의가 어떤 운동의 이름(어느 언어든)과 정확히 같으면 해석할 것 없이 그 이름으로 찾는다 ("AB 턱", "Barbell good morning")
         val plan = if (tok.strict in exactNames) QueryPlan.nameOnly(tok.words) else analyzer.analyze(tok).plan

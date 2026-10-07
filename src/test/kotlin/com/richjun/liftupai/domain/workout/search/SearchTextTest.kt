@@ -132,7 +132,7 @@ class SearchTextTest {
 
     @Test
     fun `입력 상한 - 160자 14단어 이후는 버린다`() {
-        assertEquals(SearchText.MAX_QUERY_CHARS, SearchText.normalize("a".repeat(10_000)).length)
+        assertEquals(SearchText.MAX_QUERY_CHARS, SearchText.normalize("ab".repeat(5_000)).length)
         assertEquals(SearchText.MAX_QUERY_WORDS, SearchText.words((1..100).joinToString(" ") { "w$it" }).size)
         assertTrue(SearchText.normalize("\uFDFA".repeat(10_000)).length <= SearchText.MAX_QUERY_CHARS)
     }
@@ -151,5 +151,15 @@ class SearchTextTest {
         val loose = { s: String -> SearchText.looseKey(SearchText.strictKey(s)) }
         assertEquals(loose("バーティカル"), loose("ヴァーティカル"))
         assertEquals(loose("スクワット"), loose("スクワァット"))
+    }
+
+    @Test
+    fun `늘임 표기와 낱자 자모(웃음)는 단어를 해치지 않는다`() {
+        assertEquals("squaat", SearchText.normalize("squaaaat"))
+        assertEquals(SearchText.strictKey("스쿼트"), SearchText.strictKey("스쿼트트트트"))
+        assertEquals(SearchText.strictKey("스쿼트"), SearchText.strictKey("스쿼트ㅋㅋㅋ"))
+        assertEquals("1000", SearchText.normalize("1000"))
+        assertFalse(SearchText.isChoseongQuery("스쿼트ㅋㅋ"))
+        assertFalse(SearchText.isChoseongQuery("ㅎ"))
     }
 }

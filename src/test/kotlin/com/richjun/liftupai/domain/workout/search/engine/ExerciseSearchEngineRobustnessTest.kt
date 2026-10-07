@@ -31,7 +31,7 @@ class ExerciseSearchEngineRobustnessTest {
         docs = ExerciseSearchEvalTest.loadCatalogDocs()
         engine = ExerciseSearchEngine(docs)
         // 클래스 로딩·JIT 를 미리 치른다
-        listOf("squat", "スクワット", "하체운동", "without deadlifts", "chest at home", "a".repeat(300)).forEach { engine.search(it) }
+        listOf("squat", "スクワット", "하체운동", "without deadlifts", "chest at home", "ab".repeat(150)).forEach { engine.search(it) }
     }
 
     private fun bestMillis(base: String, category: ExerciseCategory? = null, equipments: Set<Equipment>? = null): Double {
@@ -54,10 +54,10 @@ class ExerciseSearchEngineRobustnessTest {
     fun `8000자 영문 동의어 반복은 100ms 안에 끝난다`() = assertFast("curl row", "dumbbell curl row ".repeat(450))
 
     @Test
-    fun `8000자 한 글자 반복은 100ms 안에 끝난다`() = assertFast("a", "a".repeat(8000))
+    fun `8000자 두 글자 반복은 100ms 안에 끝난다`() = assertFast("ab", "ab".repeat(4000))
 
     @Test
-    fun `10만 자 한 글자 반복도 100ms 안에 끝난다`() = assertFast("x", "x".repeat(100_000))
+    fun `10만 자 두 글자 반복도 100ms 안에 끝난다`() = assertFast("xy", "xy".repeat(50_000))
 
     @Test
     fun `8000자 한국어 문장 반복은 100ms 안에 끝난다`() = assertFast("ko", "하체 운동하고 싶어 ".repeat(800))
