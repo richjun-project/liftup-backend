@@ -8,6 +8,9 @@ import com.richjun.liftupai.domain.workout.entity.MuscleGroup
 import com.richjun.liftupai.domain.workout.entity.RecommendationTier
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchDoc
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchEngine
+import com.richjun.liftupai.domain.workout.search.semantic.ExerciseVectors
+import com.richjun.liftupai.domain.workout.search.semantic.HybridSearch
+import com.richjun.liftupai.domain.workout.search.semantic.QueryEmbedder
 import org.junit.jupiter.api.Test
 import java.io.File
 
@@ -16,6 +19,7 @@ import java.io.File
  * 채점은 저장소 밖의 독립 스크립트가 한다(튜닝하는 쪽이 채점 기준을 바꿀 수 없게).
  *
  * 실행: ./gradlew test --tests 'eval.oracle.SearchDumpOracleTest' -DsearchDump.in=<eval.json> -DsearchDump.out=<out.json>
+ * -DsearchDump.qvec=(질의 원문 → 실수 배열 JSON 파일) 을 주면 어휘 엔진 위에 의미 검색을 섞은 하이브리드 결과를 내고 출력에 "semantic": true 를 적는다.
  * 속성이 없으면 아무것도 하지 않는다(일반 테스트 실행에서는 no-op).
  */
 class SearchDumpOracleTest {
@@ -47,16 +51,31 @@ class SearchDumpOracleTest {
         val warm = ExerciseSearchEngine(docs)
         repeat(3) { cases.forEach { c -> warm.search(c["query"].asText(), null, null, c["locale"]?.asText()) } }
         val engine = ExerciseSearchEngine(docs)
+        // 질의 임베딩 파일이 있으면 하이브리드(어휘 + 의미) 경로로 낸다
+        val qvec: Map<String, FloatArray>? = System.getProperty("searchDump.qvec")?.takeIf { it.isNotBlank() }?.let { path ->
+            val node = mapper.readTree(File(path))
+            node.fields().asSequence().associate { (k, v) -> k to FloatArray(v.size()) { i -> v[i].floatValue() } }
+        }
+        val hybrid = qvec?.let {
+            val vectors = ExerciseVectors.loadDefault() ?: error("exercise embeddings resource not found")
+            val warmHybrid = HybridSearch(warm, vectors)
+            repeat(3) { cases.forEach { c -> val q = c["query"].asText(); warmHybrid.search(q, null, null, c["locale"]?.asText()) { qvec[q]?.let(QueryEmbedder::normalize) } } }
+            HybridSearch(engine, vectors)
+        }
         val f = JsonNodeFactory.instance
         val out = f.objectNode()
         out.put("catalog_size", docs.size)
+        if (hybrid != null) out.put("semantic", true)
         val rows = out.putArray("results")
         for (c in cases) {
             val category = c["category"]?.takeIf { !it.isNull && it.asText().isNotBlank() }?.asText()?.let { ExerciseCategory.valueOf(it) }
             val equipments = c["equipment"]?.takeIf { !it.isNull && it.asText().isNotBlank() }?.asText()
                 ?.split(",")?.map { Equipment.valueOf(it.trim()) }?.toSet()
             val started = System.nanoTime()
-            val hits = engine.search(c["query"].asText(), category, equipments, c["locale"]?.asText())
+            val hits = if (hybrid != null) {
+                val q = c["query"].asText()
+                hybrid.search(q, category, equipments, c["locale"]?.asText()) { qvec!![q]?.let(QueryEmbedder::normalize) }.hits
+            } else engine.search(c["query"].asText(), category, equipments, c["locale"]?.asText())
             val micros = (System.nanoTime() - started) / 1000
             val row = rows.addObject()
             row.put("id", c["id"].asText())

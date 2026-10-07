@@ -668,7 +668,11 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         val move = terms.firstNotNullOfOrNull { it.move }
         if (move != null) {
             val after = text.substring(minOf(text.length, segs[range.last].e))
-            if (move.id == "rack" && !after.startsWith("pull") && !after.startsWith("ぷる") && !after.startsWith("풀")) {
+            if (move.id == "bench" && text.substring(first.s, first.e) in plainBenchKeys) {
+                // "ベンチがなくても", "no bench" — 벤치가 없으면 벤치·랙이 필요한 바벨·머신·케이블 운동은 못 한다(벤치프레스를 빼는 것과는 다르다: 그쪽은 아래 move.keys 로만 제외)
+                excludeEquip.addAll(BENCHLESS_EXCLUDED_EQUIPMENT)
+                excludeKeys.addAll(move.keys)
+            } else if (move.id == "rack" && !after.startsWith("pull") && !after.startsWith("ぷる") && !after.startsWith("풀")) {
                 // "스쿼트 랙 없이" — 랙이 없으면 바벨 스쿼트를 못 한다. 바벨을 빼고 랙 없이 하는 스쿼트류를 보여 준다.
                 excludeEquip.add(Equipment.BARBELL)
                 lex.conceptById["squatany"]?.let { insteadConcepts.add(it) }
@@ -792,6 +796,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private const val NOISE_EXTRA_COST = 4
         private const val MAX_TERM_LEN = 40
         /** 다른 부위와 겹쳐 쓰는 개념 — "하체 워밍업", "앉아서 하는 복근" 은 두 조건에 모두 맞는 운동을 앞세운다 */
+        private val BENCHLESS_EXCLUDED_EQUIPMENT = setOf(Equipment.BARBELL, Equipment.MACHINE, Equipment.CABLE)
+        private val plainBenchKeys: Set<String> = listOf("bench", "benches", "ベンチ", "ベンチ台", "벤치", "벤치대", "flat bench").map { SearchText.strictKey(it) }.toSet()
         private val COMBINE_IDS = setOf("warmup", "pos-seated", "pos-lying", "pos-standing", "foamroll", "obj:chair", "obj:wall")
         private val TYPO_ROLES = setOf(Role.CONCEPT, Role.STRETCH, Role.EQUIP, Role.NOISE)
         private const val TYPO_MIN_LOOSE = 4

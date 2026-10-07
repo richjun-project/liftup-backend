@@ -27,6 +27,11 @@ spring:
 jwt:
   secret: ${JWT_SECRET:localDevOnlySecretKeyForJWTTokenGeneration1234567890}
 
+# 의미(임베딩) 검색 — 로컬에서는 키의 IP 제한 때문에 실패할 수 있지만 그때는 조용히 어휘 검색만 쓴다
+search:
+  semantic:
+    enabled: ${SEMANTIC_SEARCH_ENABLED:true}
+
 # Qdrant (local)
 qdrant:
   host: localhost

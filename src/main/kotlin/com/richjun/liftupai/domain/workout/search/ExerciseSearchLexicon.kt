@@ -252,7 +252,7 @@ internal object ExerciseSearchLexicon {
     val equipmentTerms: Map<String, Set<Equipment>> = buildList {
         addAll(equip(ExerciseSearchLexiconRound3.DUMBBELL_EXTRA + "|덤벨|아령|dumbbell|dumbbells|db|ダンベル|one dumbbell|single dumbbell|a dumbbell|1 dumbbell|two dumbbells|a pair of dumbbells|pair of dumbbells|ダンベル1個|ダンベル一個|ダンベル一つ|ダンベル2個|덤벨 하나|덤벨 한개|덤벨 한 개|덤벨 1개|덤벨 두 개|덤벨 2개|덤벨 두개", Equipment.DUMBBELL))
         addAll(equip("바벨|barbell|bb|バーベル", Equipment.BARBELL))
-        addAll(equip("머신|기구|machine|マシン|筋トレ器具|ジム器具|ジムの器具|トレーニング器具|トレーニングマシン|運動器具|헬스 기구|운동 기구|헬스장 기구", Equipment.MACHINE))
+        addAll(equip("머신|기구|기계|machine|machines|マシン|マシーン|機械|器械|筋トレ器具|ジム器具|ジムの器具|トレーニング器具|トレーニングマシン|運動器具|헬스 기구|운동 기구|헬스장 기구", Equipment.MACHINE))
         addAll(equip("케이블|cable|ケーブル", Equipment.CABLE))
         addAll(equip("맨몸|맨몸운동|bodyweight|body weight|no equipment|noequipment|calisthenics|自重|器具なし|道具なし|徒手|장비없이|기구없이|without equipment|without any equipment|without equipments|no equipments|no equipment needed|equipment free|equipmentless|w/o equipment|no gear|without gear|no weights|without weights|no gym|without gym|gym free|no gym needed|器具を使わない|器具を使わずに|道具を使わない|道具を使わずに|器具無し|道具無し|器具不要|道具不要|장비 안 쓰는|장비 안 쓰고|기구 안 쓰는|기구 안 쓰고|장비 없는|기구 없는|도구 없이|도구 없는", Equipment.BODYWEIGHT))
         addAll(equip(ExerciseSearchLexiconRound3.TOWEL + "|밴드|저항밴드|저항 밴드|고무밴드|band|bands|resistance band|バンド|チューブ|レジスタンスバンド", Equipment.RESISTANCE_BAND))
