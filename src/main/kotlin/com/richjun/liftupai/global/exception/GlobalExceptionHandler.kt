@@ -8,8 +8,14 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.AuthenticationException
+import org.springframework.beans.TypeMismatchException
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.validation.FieldError
+import org.springframework.web.HttpMediaTypeNotSupportedException
+import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.ServletRequestBindingException
+import org.springframework.web.method.annotation.HandlerMethodValidationException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.resource.NoResourceFoundException
@@ -95,6 +101,31 @@ class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(ApiResponse.error("VALID001", ErrorLocalization.message("error.validation_failed", locale), errors))
+    }
+
+    // 클라이언트가 잘못 보낸 파라미터·본문(타입 불일치, 깨진 JSON, 빠진 필수 파라미터, 지원 안 하는 콘텐츠 타입)은
+    // 서버 장애가 아니라 400 이다. 아래 일반 핸들러로 떨어지면 500 + ERROR 스택트레이스가 남아 진짜 장애 알림을 오염시킨다.
+    @ExceptionHandler(
+        TypeMismatchException::class,
+        HttpMessageNotReadableException::class,
+        ServletRequestBindingException::class,
+        HttpMediaTypeNotSupportedException::class,
+        HandlerMethodValidationException::class
+    )
+    fun handleMalformedRequest(ex: Exception, request: HttpServletRequest): ResponseEntity<ApiResponse<Nothing>> {
+        val locale = resolveLocale(request)
+        // 스택트레이스 없이 한 줄만 (본문 내용은 개인정보일 수 있어 남기지 않는다)
+        log.warn("Malformed request at {} {}: {}", request.method, request.requestURI, ex.javaClass.simpleName)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error("VALID001", ErrorLocalization.message("error.bad_request", locale)))
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
+    fun handleMethodNotSupported(ex: HttpRequestMethodNotSupportedException, request: HttpServletRequest): ResponseEntity<ApiResponse<Nothing>> {
+        val locale = resolveLocale(request)
+        log.warn("Method not supported at {} {}", request.method, request.requestURI)
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+            .body(ApiResponse.error("VALID001", ErrorLocalization.message("error.bad_request", locale)))
     }
 
     @ExceptionHandler(AuthenticationException::class)

@@ -15,6 +15,9 @@ interface ExerciseTranslationRepository : JpaRepository<ExerciseTranslation, Lon
 
     fun findByExerciseIdInAndLocale(exerciseIds: Collection<Long>, locale: String): List<ExerciseTranslation>
 
+    /** 목록 한 페이지의 번역을 로케일 폴백(요청 → 기본 언어 → en)까지 한 번에 읽는다(쿼리 1개) */
+    fun findByExerciseIdInAndLocaleIn(exerciseIds: Collection<Long>, locales: Collection<String>): List<ExerciseTranslation>
+
     /** 검색 인덱스 빌드용 (exercise_id, locale, display_name) 투영 — LAZY exercise 프록시를 건드리지 않는다 */
     @Query("SELECT et.exercise.id, et.locale, et.displayName FROM ExerciseTranslation et")
     fun findAllNameRows(): List<Array<Any>>

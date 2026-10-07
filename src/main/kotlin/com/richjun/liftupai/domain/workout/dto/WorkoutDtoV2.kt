@@ -234,7 +234,12 @@ data class ExerciseDetailV2(
 
     // 추천(GET /api/v2/exercises/suggestions)에서만 채우는 "왜 이 운동인가" 한 줄. 목록·상세 응답에는 나가지 않는다.
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    val reason: String? = null
+    val reason: String? = null,
+
+    // 로그인 사용자에게 목록·즐겨찾기·최근 응답으로 내려줄 때만 채운다(비로그인은 필드 없음). JSON 키는 is_favorite.
+    @JsonProperty("is_favorite")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    val favorite: Boolean? = null
 )
 
 data class ExerciseDetailResponseV2(
