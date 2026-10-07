@@ -45,10 +45,14 @@ internal object QueryLexiconConstraint {
         |arent available|aren't available|are not available|arent accessible|aren't accessible|are not accessible|are unavailable|arent usable|aren't usable|are not usable|arent working|aren't working|are not working
         |쓰지 않을래|쓰지 않을 거야|쓰지 않을거야|쓰지 않을게|쓰지 않겠|안 쓰겠|안 쓸게|안쓸게|안 쓸 거야|안쓸거야|안 쓸래요
         |順番待ちが長い|順番待ちが長くて|順番待ちが長いので|順番待ちが長すぎる|順番待ちが多い|順番待ちが多くて|待ち時間が長くて|待ち時間が長いので|待ちが長くて|待ちが長いので|行列が長い|行列が長くて|行列が長いので|待たされそう|待ってられない
+        |貸出中|貸し出し中|貸出し中|貸し出されてる|貸し出されている|借りられてる|借りられている|借りられて|レンタル中|予約済み|予約で埋まって|予約が入って|予約されてる|予約されている
+        |待ちの列|待ち列|待ちの行列|待ち行列|列がやばい|列がすごい|列がすごくて|列が長すぎる|列ができてる|行列がやばい|待ちがやばい|待ち時間がやばい|待ちの列が長い|待ちの列がやばい
         |順番が回ってこない|順番が来ない|順番が回ってこなくて|順番が回ってこず|順番が全然来ない|順番が回ってこないので
+        |rented out|checked out|on loan|booked up|sold out|completely sold out|all sold out
         |has a long wait|have a long wait|has a long line|have a long line|has a long queue|have a long queue|has a wait|have a wait|has a huge line|have a huge line|has a massive line|has a big line|has a crazy line|has a huge queue|has a big queue
         |사양|사양할게|사양합니다|사양이야|사양이에요|사양하겠습니다|사양할래|사양해요
         |쓸 수 없어|쓸 수 없어서|쓸 수 없는|쓸 수 없음|쓸 수 없네|쓸 수가 없어|쓸수없어|쓸 수 없는데|쓸 수 없고|쓸 수 없다|쓸 수 없는 상황|사용할 수 없어|사용할 수 없어서|사용할 수 없는|사용할 수 없음|사용할 수가 없어|이용할 수 없어|이용할 수 없는|이용할 수 없음|이용할 수 없어서
+        |never again|never ever|not anymore|not any more|not any longer|no more|no longer|not ever
         |excluded|excluded please|exclude please|removed|removed please|skipped|skip please|dropped|nixed|off the list|not wanted|unwanted|not needed|isnt needed|arent needed|isn't needed|aren't needed|isnt wanted|isn't wanted|arent wanted|aren't wanted
         |はいやだ|はイヤだ|がいやだ|は嫌だ|が嫌だ|はいやです|はいやなんだ|はいやだな|はいやなので|がいやです|いやだ|嫌だ|イヤだ|やだ|ヤダ|嫌なんだ|嫌なの|いやなの|いやなんだ|いやだな|嫌だな|嫌かな|嫌だから|いやだから|やだから|嫌だし|いやだし
         |嫌いで|嫌いです|嫌いだ|嫌いなので|いやで|いやです|苦手です|苦手で|苦手なので|やめたい|やめたくて|やめとく|やめとき|やめておく|やめておきたい|やめとこう|やめよう|避けたいです|避けたいので|避けたいんだ|避けたいんですが|控えたい|控えたくて|控える|控えて|控えます|遠慮したい|遠慮して|遠慮します|遠慮する|敬遠したい|敬遠して|敬遠してる
@@ -90,6 +94,11 @@ internal object QueryLexiconConstraint {
         for (v in verbStems) for (t in dislikeTails) if (v.endsWith("기") == t.startsWith("싫") && v.endsWith("고") == t.startsWith("싶")) out.add("$v $t")
         out.addAll(listOf("싫고", "싫지만", "싫으니", "싫으니까", "싫구", "싫긴", "싫은 날", "싫다고", "별로", "별로야", "별로임", "별로예요", "별로라", "별로라서", "별로네", "별로고", "별로인데", "별로지만",
             "은 좀 그래", "는 좀 그래", "은 좀 그렇", "는 좀 그렇", "은 좀 부담", "는 좀 부담", "은 좀 꺼려", "는 좀 꺼려"))
+        // "점검한대서·고장이래·점검 중인 듯" — 전해 들은 말·추측 어미가 붙은 점유·고장 표현
+        val statusStems = listOf("점검", "점검중", "점검 중", "고장", "고장난", "고장났", "수리", "수리중", "수리 중", "사용중", "사용 중", "사용되고 있", "쓰고 있", "막혔", "꽉 찼", "꽉 찬", "다 찼", "만석", "공사", "정비", "정비중", "정비 중", "폐쇄", "대여중", "대여 중", "예약돼", "예약됐", "예약 꽉", "선점당", "선점 당", "선점됐")
+        val hearsayTails = listOf("이래", "이래서", "이라네", "이라던데", "이라고", "이라고 해서", "이라는데", "이라더라", "했대", "한대", "한대서", "한다고", "한다네", "한다더라", "이라서", "대", "대서", "다더라", "다던데", "다네", "다고 해서", "인 듯", "인듯", "인가 봐", "인가봐", "같아", "것 같아", "같음", "인 것 같아", "일 듯", "인가봄", "인가 봄", "해서", "해요", "함", "했어", "했음", "당함", "당했어", "당해서", "당했음", "됐어", "됐음", "돼서", "됨")
+        for (st in statusStems) for (t in hearsayTails) out.add(st + t)
+        out.addAll(listOf("선점당함", "선점당했", "선점당해", "뺏겼", "뺏겨서", "뺏김", "빼앗겼", "빼앗겨서", "빼앗김", "차지당했", "차지당해서", "먼저 쓰고 있", "이미 쓰고 있", "이미 누가 쓰고 있", "누가 먼저 쓰고 있", "누가 선점", "대여중", "대여 중", "대여돼", "대여됨", "대여되어", "대여해서", "예약돼", "예약됐", "예약 차서", "예약으로 꽉", "다 대여", "전부 대여"))
         out.addAll(listOf("붐빔", "붐벼서", "북적여서", "북적거려서", "북적임", "혼잡해서", "혼잡하고", "혼잡함", "복잡해서 못", "만원이라서"))
         out.joinToString("|")
     }
@@ -130,6 +139,7 @@ internal object QueryLexiconConstraint {
         |anything with|anything that uses|anything that use|anything using|anything involving|anything that needs|anything needing|anything|everything with|everything that uses|something with|stuff with|stuff that uses|stuff using|things with|things that use|things using|exercises that use|exercises that need|exercises involving|moves using|any exercise with|any exercises with|any workout with|any workouts with
         |i got nothing|got nothing|i have nothing|have nothing|i've got nothing|ive got nothing|there is nothing|there's nothing|theres nothing
         |쓰는데|쓸 거고|쓸거고|쓸 수 있고|쓸 수 있는데|써도 되고|써도 되는데|쓸래|쓰고
+        |lol|lmao|haha|ugh|omg|pls|plz|ㅋㅋ|ㅋㅋㅋ|ㅠㅠ|ㅜㅜ|ㅎㅎ|www|笑
         |needing|requiring|involving|needs|need|needed|require|requires|required|involve|involves|that need|that needs|that require|that requires|that involve|that involves|that use|that uses|which need|which needs|which use|which uses|having
         |bored|boring|ideas|idea|variation|variations|variety|switch up|mix up
         |라서|이라서|라서요|이라서요|라니까|이라니까|이니까|이니까요|니까요|여서|이어서|인데|인데요|이라고|이라는|라는|이었|였는데|이었는데|였어|이었어|였고|이었고
@@ -159,7 +169,8 @@ internal object QueryLexiconConstraint {
 
     /** 부상 감각 표현 — 관절 가까이에서 그 관절을 피할 부위로 만든다(관절이 없으면 아무 일도 하지 않는다) */
     val CUES_EXTRA = """
-        pinch|pinches|pinching|pinched|twinge|twinges|clicking|grinding|grinds|bothers|bothering|bothered|nags|nagging|acts up|flares up|flaring up|tweaked|tweak|killing me|kills me|aches when|hurts when|hurts if|painful when|pain when|pain during|pain while|sore when|uncomfortable when
+        cooked|shot|trashed|wrecked|fried|messed up|screwed up|jacked up|flared up|flared|flares|flare-up|flareup|acting up|acted up|toast
+        |pinch|pinches|pinching|pinched|twinge|twinges|clicking|grinding|grinds|bothers|bothering|bothered|nags|nagging|acts up|flares up|flaring up|tweaked|tweak|killing me|kills me|aches when|hurts when|hurts if|painful when|pain when|pain during|pain while|sore when|uncomfortable when
         |때문에|때문이라|때문이라서|탓에|のせいで|のせい|が原因で|が原因|because of|due to|owing to|on account of
         |찌릿|찌릿해|찌릿해요|찌릿찌릿|찌릿하|뜨끔|콕콕|쑤셔|쑤셔요|쑤시|욱신|욱신거려|욱신거리|삐끗|삐었|접질|저릿|저릿해|무리가 와|무리 와
         |ズキズキ|ずきずき|ピキッ|ぴきっ|チクチク|ちくちく|ビリビリ|ぎくっ|ギクッ|捻挫|捻った|ひねった|痛みがある|痛みが出る|痛みが出て|痛みが走る|調子が悪い|調子悪い|引っかかる|ひっかかる

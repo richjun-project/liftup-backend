@@ -92,6 +92,8 @@ class ConstraintUnderstandingTest {
         val r = plan("machines no, dumbbells yes, shoulders")
         assertTrue(Equipment.MACHINE in r.excludeEquip, engine.explain("machines no, dumbbells yes, shoulders"))
         assertFalse(Equipment.DUMBBELL in r.excludeEquip)
+        // 장비 뒤의 never 는 그 장비를 영영 안 쓴다는 말이다
+        for (q in listOf("triceps, cables never", "barbells never again, legs")) assertTrue(plan(q).excludeEquip.isNotEmpty() && plan(q).equipments.isEmpty(), engine.explain(q))
         // 앞에서 부정하는 no 는 그대로다
         assertTrue(Equipment.BARBELL in plan("no barbells, chest").excludeEquip)
         assertTrue(Equipment.RESISTANCE_BAND in plan("barbell but no band, legs").excludeEquip)
@@ -471,5 +473,15 @@ class ConstraintUnderstandingTest {
     private fun check(q: String, banned: Equipment, joint: QueryLexicon.Joint) {
         val p = plan(q)
         assertTrue(joint in p.injuries && banned in p.excludeEquip && banned !in p.equipments, "[$q] ${engine.explain(q)}")
+    }
+
+    @Test
+    fun `염좌는 바로 앞 관절의 부상이고 랙·스미스처럼 기구인 이름은 안 된다는 말로 제외한다`() {
+        assertTrue(QueryLexicon.Joint.WRIST in plan("手首の捻挫で腕立てできないからケーブルで胸").injuries)
+        assertTrue(QueryLexicon.Joint.ANKLE in plan("足首を捻挫して走れない").injuries)
+        for (q in listOf("스미스 되고 바벨 랙은 안 되는 날 스쿼트", "smith is fine, the squat rack isn't allowed, squats")) {
+            val p = plan(q)
+            assertTrue(Equipment.BARBELL in p.excludeEquip && Equipment.BARBELL !in p.equipments, "[$q] ${engine.explain(q)}")
+        }
     }
 }
