@@ -273,7 +273,7 @@ internal object QueryLexicon {
         大円筋|대원근|teres major|大円筋|広い背中|背中の広がり|背中を広く|背中を広げ|逆三角形|逆三角|넓은 등|등 넓히기|광배 넓히기|광배근 넓히기|v 라인|v taper|vtaper|v shape|vshape|wide back|broad back|lat width|wide lats|bigger lats|wider back|등 날개|등 넓게|광배 키우기 => backwide; muscles=LATS,BACK; cats=BACK; sig=pulldown|pull down|pull up|pullup|chin up|lat pull|straight arm|プルダウン|プルアップ|懸垂|チンアップ|チンニング|ラットプル|풀다운|풀업|친업|턱걸이|랫풀|랫 풀; pat=LAT_PULLDOWN,PULLUP_CHINUP
         脊柱起立筋|척추기립근|척추 기립근|erector spinae|erectors|erector|腰|腰回り|腰まわり|허리|허리 근육|허리 운동|허리근육|下背部|하부 등|lower back|lowerback|low back|腰の筋肉|back extensor|spinal erectors|spine => lowerback; muscles=BACK,CORE; sig=back extension|hyperextension|superman|bird dog|reverse hyper|バックエクステンション|バックエクステ|ハイパーエクステンション|スーパーマン|バードドッグ|백 익스텐션|백익스텐션|하이퍼 익스텐션|슈퍼맨|버드 독; sig2=good morning|rack pull|deadlift|グッドモーニング|ラックプル|デッドリフト|굿모닝|랙 풀|데드리프트; flags=strict
         猫背|巻き肩|巻肩|姿勢|姿勢改善|姿勢矯正|姿勢を良く|いい姿勢|良い姿勢|ストレートネック|スマホ首|スマホ猫背|デスクワーク|라운드숄더|라운드 숄더|거북목|일자목|굽은 등|굽은등|말린 어깨|말린어깨|둥근 어깨|자세 교정|바른 자세|바른자세|posture|bad posture|poor posture|good posture|rounded shoulders|rounded shoulder|round shoulders|hunchback|hunched back|hunched|forward head|slouch|slouching|kyphosis|tech neck|text neck|desk job|desk worker|sitting all day|sit all day|sitting too long|sedentary|long hours sitting|prolonged sitting|office worker|座りっぱなし|座りすぎ|長時間座|長時間のデスクワーク|오래 앉아|장시간 앉|하루 종일 앉|앉아서 일하는|사무직 스트레칭|스마트폰 목|사무직|굽은 어깨|굽은어깨|새우등|등 굽음|등이 굽은|어깨 말림|어깨가 말린|둥근 등|둥근등|골격 교정|몸 틀어짐|척추 측만|척추측만|자세가 나쁜|자세 안 좋은|姿勢が悪い|姿勢を直す|猫背矯正|巻き肩矯正|骨格矯正|体の歪み|身体の歪み|歪み矯正|背中が丸い|背中の丸み|丸まった背中|丸まった肩|頭が前に|肩が前に|hunched shoulders|slouched shoulders|forward shoulders|shoulders rounded forward|rounded back|round back|upper cross syndrome|scoliosis|fix posture|improve posture|straighten back|체형|체형교정|체형 교정|체형 교정 운동|체형 개선|日本人体型 => posture; muscles=BACK,SHOULDERS; sig=face pull|rear delt|reverse fly|reverse pec|superman|pull apart|y raise|w raise|wall angel|chin tuck|bird dog|dead bug|neck|chest stretch|pec stretch|scapula|フェイスプル|リアデルト|リバースフライ|スーパーマン|プルアパート|Yレイズ|ウォールエンジェル|バードドッグ|デッドバグ|ネック|チェストストレッチ|ペックストレッチ|肩甲骨|페이스풀|리어 델트|리버스 플라이|슈퍼맨|풀 어파트|Y 레이즈|월 엔젤|버드 독|데드 버그|넥|체스트 스트레칭|견갑; sig2=row~|ロー~|ロウ~|로우~|plank|stretch|プランク|ストレッチ|플랭크|스트레칭; flags=strict,stretch
-        肩こり|肩凝り|肩コリ|首こり|首凝り|목 뻐근|목뻐근|목 뻣뻣|뻣뻣한 목|목이 뻐근|어깨 뻐근|어깨 뻣뻣|어깨가 뻐근|뻐근한 어깨|어깨 담|목 담|neck stiffness|shoulder stiffness|肩の張り|首の張り|首のこり|어깨 뭉침|어깨 결림|어깨뭉침|목 뭉침|목 결림|stiff shoulders|stiff neck|tight shoulders|tight neck|neck tension|trap tension|neck and shoulder pain => stiffshoulder; muscles=TRAPS,SHOULDERS,NECK; cats=SHOULDERS; sig=shrug|neck|shoulder stretch|trap stretch|scapula|シュラッグ|ネック|ショルダーストレッチ|肩甲骨|슈러그|넥|숄더 스트레칭|견갑; sig2=rear delt|face pull|リアデルト|フェイスプル|리어 델트|페이스풀; flags=strict,stretch
+        肩こり|肩凝り|肩コリ|首こり|首凝り|목 뻐근|목뻐근|목 뻣뻣|뻣뻣한 목|목이 뻐근|어깨 뻐근|어깨 뻣뻣|어깨가 뻐근|뻐근한 어깨|어깨 담|목 담|neck stiffness|shoulder stiffness|肩の張り|首の張り|首のこり|어깨 뭉침|어깨 결림|어깨뭉침|목 뭉침|목 결림|stiff shoulders|stiff neck|tight shoulders|tight neck|neck tension|trap tension|neck and shoulder pain => stiffshoulder; muscles=TRAPS,SHOULDERS,NECK; cats=SHOULDERS; sig=neck stretch|shoulder stretch|trap stretch|scapula|ネックストレッチ|ショルダーストレッチ|肩甲骨|넥 스트레칭|숄더 스트레칭|견갑; sig2=shrug|neck|rear delt|face pull|シュラッグ|ネック|リアデルト|フェイスプル|슈러그|넥|리어 델트|페이스풀; flags=strict,stretch
         美尻|납작한 엉덩이|납작 엉덩이|엉덩이 볼륨|엉덩이 업|힙 볼륨|힙볼륨|엉덩이 올리|ヒップ上げ|お尻を持ち上げ|垂れ尻|下がったお尻|ぺたんこ尻|perky butt|lift glutes|sagging butt|flat butt|build glutes|glute building|glute activation|뒤태|뒷태|뒤태 만들기|후면 라인|ヒップライン|힙라인|엉덩이 라인|엉덩이 모양|小尻|스몰 힙|smaller butt|butt shape|glute shape|ヒップアップ|ヒップ アップ|힙업|힙 업|엉짱|애플힙|bubble butt|big butt|bigger butt|round butt|round glutes|rounder glutes|peach butt|booty|booty gains|butt lift|glute growth|bigger glutes|glute gains|hipup|hip up|お尻を大きく|お尻を引き上げ|桃尻|お尻 引き締め|尻上げ|bum|bigger bum => glutegoal; muscles=GLUTES; sig=hip thrust|glute bridge|donkey kick|glute kickback|leg kickback|bent leg kickback|fire hydrant|ヒップスラスト|グルートブリッジ|ドンキーキック|キックバック|ファイヤーハイドラント|힙 쓰러스트|글루트 브리지|동키 킥|킥백|파이어 하이드란트; sig2=glute|bulgarian|romanian|sumo|good morning|abduction|squat|グルート|ブルガリアン|ルーマニアン|スモウ|グッドモーニング|スクワット|글루트|불가리안|루마니안|스모|굿모닝|스쿼트|브리지|ブリッジ|bridge
         内もも|内腿|内転筋|허벅지 틈|허벅지 갭|허벅지갭|허벅지 사이 틈|脚の隙間|太ももの隙間|ももの隙間|내전근|안쪽 허벅지|내허벅지|허벅지 안쪽|inner thigh|inner thighs|adductor|adductors|thigh gap|太もも内側|ももの内側|ももの内|内ももの引き締め|inner leg => innerthigh; muscles=QUADRICEPS,GLUTES,LEGS; cats=LEGS; sig=adductor|adduction|inner thigh|sumo|curtsy|cossack|side lunge|lateral lunge|squeeze|アダクター|アダクション|内もも|スモウ|スモー|相撲|カーツィ|コサック|サイドランジ|ラテラルランジ|スクイーズ|어덕터|어덕션|내전|이너 싸이|스모|커시|코사크|사이드 런지|래터럴 런지|스퀴즈; flags=strict
         glute medius|glute med|glute minimus|中殿筋|외둔근|外もも|外腿|外転筋|외전근|바깥쪽 허벅지|바깥 허벅지|허벅지 바깥쪽|outer thigh|outer thighs|abductor|abductors|hip abductors|中臀筋|중둔근|gluteus medius|side glute|saddlebags|saddle bags|승마살|太もも外側|ももの外側 => outerthigh; muscles=GLUTES,LEGS; cats=LEGS; sig=abduct|fire hydrant|clamshell|side leg raise|side kick|band walk|monster walk|crab walk|lateral walk|アブダクション|アブダクター|ファイヤーハイドラント|クラムシェル|サイドレッグレイズ|サイドキック|モンスターウォーク|어브덕션|어브덕터|파이어 하이드란트|클램쉘|사이드 레그 레이즈|사이드 킥|몬스터 워크; flags=strict
@@ -301,7 +301,7 @@ internal object QueryLexicon {
         首|목|neck|ネック|넥|목 운동|首の運動 => neck; muscles=NECK; sig=neck stretch|ネックストレッチ|넥 스트레칭|neck extension|neck flexion|neck rotation|neck curl|neck bridge|ネックエクステンション|ネックフレクション|넥 익스텐션|넥 플렉션; avoid=behind neck|ビハインドネック|비하인드 넥; flags=strict,stretch
         全身|全身運動|全身トレーニング|전신|전신운동|full body|fullbody|whole body|total body|full-body|total-body => fullbody; sig=burpee|clean|snatch|thruster|swing|mountain climber|jumping jack|turkish|bear crawl|man maker|farmer|carry|squat to press|バーピー|クリーン|スナッチ|スラスター|スイング|マウンテンクライマー|ジャンピングジャック|ターキッシュ|ベアクロール|ファーマー|キャリー|버피|클린|스내치|스러스터|스윙|마운틴 클라이머|점핑 잭|터키시|베어 크롤|파머|캐리; pat=CLEAN,SNATCH,CARRY,PLYOMETRIC; flags=strict
         反り腰|反り腰改善|骨盤|骨盤矯正|骨盤前傾|骨盤後傾|골반|골반 교정|골반교정|골반 전방경사|전방경사|골반 틀어짐|swayback|sway back|anterior pelvic tilt|pelvic tilt|pelvis|lordosis|lumbar lordosis|골반 운동|産後|産後ケア|산후|산후 운동|postpartum|post partum|postnatal|after pregnancy|diastasis recti|diastasis|腹直筋離開|복직근 이개|임산부|pregnancy|prenatal|妊娠|妊婦|骨盤底筋|pelvic floor|골반저근|케겔|kegel|ケーゲル => pelvis; muscles=GLUTES,CORE,ABS; sig=glute bridge|dead bug|plank|hip flexor|pelvic|bird dog|cat|child pose|reverse crunch|leg raise|グルートブリッジ|デッドバグ|プランク|ヒップフレクサー|バードドッグ|キャット|チャイルド|リバースクランチ|レッグレイズ|글루트 브리지|데드 버그|플랭크|힙 플렉서|버드 독|캣|차일드|리버스 크런치|레그 레이즈; sig2=bridge|stretch|ブリッジ|ストレッチ|브리지|스트레칭; flags=strict,stretch
-        肩甲骨|肩甲骨はがし|날개뼈|견갑골|견갑|scapula|scapular|shoulder blade|shoulder blades|shoulder blade squeeze => scapula; muscles=BACK,TRAPS,SHOULDERS; cats=BACK; sig=scapula|scapular|face pull|y raise|w raise|wall angel|pull apart|row~|retraction|retractor|肩甲骨|フェイスプル|プルアパート|ウォールエンジェル|견갑|페이스풀|풀 어파트|월 엔젤; sig2=rear delt|shrug|リアデルト|シュラッグ|리어 델트|슈러그; flags=stretch
+        肩甲骨|날개뼈|견갑골|견갑|scapula|scapular|shoulder blade|shoulder blades|shoulder blade squeeze => scapula; muscles=BACK,TRAPS,SHOULDERS; cats=BACK; sig=scapula|scapular|face pull|y raise|w raise|wall angel|pull apart|row~|retraction|retractor|肩甲骨|フェイスプル|プルアパート|ウォールエンジェル|견갑|페이스풀|풀 어파트|월 엔젤; sig2=rear delt|shrug|リアデルト|シュラッグ|리어 델트|슈러그; flags=stretch
         有酸素|有酸素運動|유산소|유산소 운동|カーディオ|cardio|aerobic|aerobics|エアロビ|에어로빅|cardiovascular|심폐|심폐지구력 => cardio; cats=CARDIO; sig=bike|cycle|rowing machine|treadmill|run|jog|walk|jump rope|skipping|elliptical|stair|stepper|burpee|mountain climber|jumping jack|sprint|swim|battle rope|バイク|ローイングマシン|トレッドミル|ランニング|ジョギング|ウォーク|縄跳び|スキッピング|バーピー|マウンテンクライマー|ジャンピングジャック|スプリント|자전거|바이크|로잉머신|트레드밀|러닝|조깅|걷기|줄넘기|스키핑|버피|마운틴 클라이머|점핑 잭|스프린트; avoid=crunch|curl|press|row~|face pull|raise|stretch|クランチ|カール|プレス|ロー~|ロウ~|フェイスプル|ストレッチ|크런치|컬|프레스|로우~|페이스풀|스트레칭; flags=cardio
         HIIT|ハイット|ハイト|하이트|히트|tabata|タバタ|타바타|サーキット|서킷|circuit|circuits|interval|intervals|インターバル|인터벌|high intensity|고강도|高強度|クロスフィット|crossfit|크로스핏|metcon|conditioning|コンディショニング => hiit; cats=CARDIO; sig=burpee|mountain climber|jumping jack|jump squat|squat jump|box jump|high knee|skater|sprint|jump rope|battle rope|swing|thruster|plank jack|バーピー|マウンテンクライマー|ジャンピングジャック|ジャンプスクワット|ボックスジャンプ|ハイニー|スケーター|スプリント|縄跳び|バトルロープ|スイング|버피|마운틴 클라이머|점핑 잭|점프 스쿼트|박스 점프|하이니|스케이터|스프린트|줄넘기|배틀 로프|스윙; avoid=crunch|curl|stretch|クランチ|カール|ストレッチ|크런치|컬|스트레칭; flags=cardio
         ダイエット|脂肪燃焼|체지방|지방 연소|다이어트|살 빼기|살빼기|살 빼는|컷팅|커팅|カッティング|감량|감량기|살빠지는|살 빠지는|살이 빠지는|살 빠지게|살 잘 빠지는|살 빠지는 운동|살 뺄 수 있는|살 빼기 좋은|살 태우는|살 태우기|살 빼려면|지방 태우는|지방 태우기|지방태우기|지방 감소|지방 줄이는|체지방 감소|체지방 줄이는|체지방 태우기|체중 감량|체중감량|체중 줄이는|몸무게 줄이는|몸무게 빼는|칼로리 태우는|칼로리 태우기|칼로리 소모 운동|다이어트 운동|다이어트에 좋은|다이어트용|痩せる|痩せたい|痩せ|やせる|やせたい|痩せる運動|痩せやすい|痩せるための|脂肪を燃やす|脂肪を落とす|脂肪を減らす|体脂肪を落とす|体脂肪を減らす|カロリー消費|カロリーを消費|カロリー燃焼|カロリーを燃やす|消費カロリー|燃焼系|体重を落とす|体重を減らす|ダイエット運動|lose fat|losing fat|losing weight|lose weight fast|burn more calories|burning fat|burning calories|melt fat|drop weight|weight reduction|calorie burning|fat burner|fatburn|fat-burning|burn off fat|slim down fast|get slim|get skinny|lose belly|diet|fat loss|fat burning|burn fat|burn calories|lose weight|weight loss|slim down|get lean|calorie burn|칼로리 소모|減量|減脂|痩身|fat burn|shred|shredding|cutting => fatloss
@@ -314,7 +314,7 @@ internal object QueryLexicon {
         肘|ひじ|ヒジ|肘の運動|肘周り|팔꿈치|팔꿈치 운동|팔꿈치 강화|elbow|elbows|elbow strength|elbow exercises => elbowcare; muscles=BICEPS,TRICEPS,FOREARMS; cats=ARMS; sig=elbow|hammer curl|reverse curl|forearm|エルボー|ハンマーカール|リバースカール|팔꿈치|해머 컬|리버스 컬|전완; flags=strict
         ヨガ|ヨーガ|ヨガポーズ|ヨガのポーズ|ヨガ ポーズ|요가|요가 자세|요가 포즈|요가 동작|요가 스트레칭|yoga|yoga pose|yoga poses|yoga flow|yoga stretches|yoga stretch|asana|asanas|アーサナ|아사나 => yoga; sig=yoga|ヨガ|요가; sig2=pose~|cat cow|child pose|pigeon|crab pose|キャットアンドカウ|チャイルドポーズ|ピジョンポーズ|캣 카우|차일드 포즈|비둘기 자세; flags=strict,stretch
         러닝 후|런닝 후|러닝 끝나고|런닝 끝나고|달리기 후|달리기 끝나고|뛰고 나서|조깅 후|마라톤 후|ランニング後|ランニングの後|ランニング後の|ジョギング後|走った後|走った後の|マラソン後|after running|after a run|after jogging|post run|post-run|postrun|runners|runner|for runners|runner stretch|running recovery => postrun; muscles=LEGS,QUADRICEPS,HAMSTRINGS,CALVES,GLUTES; sig=runner stretch|calf stretch|gastrocnemius|hamstring stretch|quadriceps stretch|hip flexor stretch|glute stretch|it band|couch stretch|pigeon|ランナー|カーフストレッチ|ふくらはぎ ストレッチ|ハムストリング ストレッチ|大腿四頭筋ストレッチ|ヒップフレクサー|러너|종아리 스트레칭|햄스트링 스트레칭|쿼드 스트레칭|힙 플렉서; flags=strict,stretch
-        座ってできる|座ってできる運動|座って|座ったまま|座りながら|イスに座って|椅子に座って|椅子で|앉아서 하는|앉아서하는|앉아서|앉은 채로|의자에 앉아|의자 운동|seated workout|seated exercises|seated|sitting down|sitting|sit down workout|chair exercises|chair workout|on a chair|from a chair|while sitting|desk chair|chair => pos-seated; sig=seated|sitting|chair|シーテッド|イス|椅子|시티드|의자; flags=strict
+        座ってできる|座ってできる運動|座って|座ったまま|座りながら|イスに座って|椅子に座って|椅子で|앉아서 하는|앉아서하는|앉아서|앉은 채로|의자에 앉아|seated workout|seated exercises|seated|sitting down|sitting|sit down workout|on a chair|from a chair|while sitting|desk chair => pos-seated; sig=seated|sitting|chair|シーテッド|イス|椅子|시티드|의자; flags=strict
         寝ながらできる|寝ながら|寝たまま|寝転がって|横になって|仰向け|床で|누워서 하는|누워서하는|누워서|누운 채로|바닥에서|lying down|laying down|lie down|lying|supine|on the floor|floor exercises|floor workout|mat workout|mat exercises|in bed|bed workout => pos-lying; sig=lying|supine|floor|mat|ライイング|仰向け|マット|라잉|매트; flags=strict
         立ったままできる|立ったまま|立ちながら|서서 하는|서서하는|서서|선 채로|standing workout|standing exercises|standing|on your feet|stand up|without lying down|without getting on the floor => pos-standing; sig=standing|スタンディング|스탠딩; flags=strict
         脚やせ|脚痩せ|足痩せ|足やせ|太もも痩せ|太ももやせ|ももやせ|太ももを細く|脚を細く|脚を細くしたい|ふくらはぎ痩せ|다리 얇아지는|다리 얇게|다리 가늘게|다리 슬림|다리살 빼기|다리살 빼는|다리살|허벅지 얇아지는|허벅지 얇게|허벅지 슬림|허벅지살 빼기|허벅지살 빼는|허벅지살|허벅지 지방|종아리살|종아리 얇아지는|종아리 얇게|slim legs|slimmer legs|thinner legs|thin legs|skinny legs|lean legs|leg slimming|slim thighs|slimmer thighs|thinner thighs|thigh slimming|lose thigh fat|thigh fat|leg fat|trim thighs|toned legs|toned thighs|tone legs => legslim; muscles=LEGS,QUADRICEPS,HAMSTRINGS,GLUTES,CALVES; cats=LEGS,CARDIO; sig=walking lunge|bodyweight squat|reverse lunge|side lunge|jumping jack|jump rope|stationary bike|spin bike|stair climber|treadmill|cycling|step up|glute bridge|wall sit|ウォーキングランジ|自重スクワット|リバースランジ|サイドランジ|ジャンピングジャック|縄跳び|エアロバイク|ステアクライマー|トレッドミル|ステップアップ|워킹 런지|맨몸 스쿼트|리버스 런지|사이드 런지|점핑 잭|줄넘기|실내 자전거|스텝밀|트레드밀|스텝업|월 싯; sig2=squat|lunge|calf raise|スクワット|ランジ|カーフレイズ|스쿼트|런지|카프 레이즈
@@ -350,6 +350,7 @@ internal object QueryLexicon {
         band: band|밴드|バンド|resistance band|저항밴드
         wall: wall|벽|ウォール
         weight: weights|weight|웨이트|ウェイト
+        rack: squat rack|power rack|half rack|squat stand|rack|スクワットラック|パワーラック|ハーフラック|スクワットスタンド|ラック|랙|스쿼트 랙|스쿼트랙|파워랙|파워 랙|하프랙|하프 랙
     """.trimIndent()
 
     // ── 부상 프로필 ──────────────────────────────────────────────────────────────────────────
@@ -456,26 +457,26 @@ internal object QueryLexicon {
 
         // 1) 조사·군더더기
         for (k in splitRules(PURE_PARTICLES)) add(key(k), Term(Role.NOISE, particle = true))
-        for (k in splitRules(NOISE)) add(key(k), Term(Role.NOISE))
+        for (k in splitRules(NOISE) + splitRules(QueryLexiconRound3.NOISE)) add(key(k), Term(Role.NOISE))
         for (k in splitRules(UNITS)) add(key(k), Term(Role.UNIT))
         // "運動前の"·"운동 전" 의 한 글자 — 단어 경계에서만 군더더기로 본다
         for (k in listOf("前", "前に", "前の", "전", "전에", "후", "後", "後に", "後の", "후에")) add(key(k), Term(Role.NOISE, isolated = isIsolated(key(k))))
         for (k in CONJUNCTIONS.split("|")) add(key(k), Term(Role.CONJ, particle = true))
 
         // 2) 부정/단서/수준/스트레칭/소음
-        for (k in splitRules(NEG_AFTER)) add(key(k.removePrefix("-")), Term(Role.NEG, targetBefore = true, particle = isKana(k)))
-        for (k in NEG_BEFORE.split("|")) add(key(k), Term(Role.NEG, targetBefore = false))
-        for (k in splitRules(INSTEAD_AFTER)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k), instead = true))
-        for (k in splitRules(INSTEAD_BEFORE)) add(key(k), Term(Role.NEG, targetBefore = false, instead = true))
+        for (k in splitRules(NEG_AFTER) + splitRules(QueryLexiconRound3.NEG_AFTER)) add(key(k.removePrefix("-")), Term(Role.NEG, targetBefore = true, particle = isKana(k)))
+        for (k in NEG_BEFORE.split("|") + QueryLexiconRound3.NEG_BEFORE.split("|")) add(key(k), Term(Role.NEG, targetBefore = false))
+        for (k in splitRules(INSTEAD_AFTER) + splitRules(QueryLexiconRound3.INSTEAD_AFTER)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k), instead = true))
+        for (k in splitRules(INSTEAD_BEFORE) + splitRules(QueryLexiconRound3.INSTEAD_BEFORE)) add(key(k), Term(Role.NEG, targetBefore = false, instead = true))
         for (k in splitRules(CUES)) add(key(k), Term(Role.CUE))
         for (k in splitRules(QUIET)) add(key(k), Term(Role.QUIET))
         for (k in BEGINNER.split("|")) add(key(k), Term(Role.LEVEL, level = -1))
         for (k in ADVANCED.split("|")) add(key(k), Term(Role.LEVEL, level = 1))
         for (k in splitRules(CANT_DO)) add(key(k), Term(Role.LEVEL, level = -1, regress = true))
-        for (k in STRETCH.split("|")) add(key(k), Term(Role.STRETCH))
+        for (k in STRETCH.split("|") + splitRules(QueryLexiconRound3.STRETCH)) add(key(k), Term(Role.STRETCH))
 
         for (k in listOf("産後", "産後ケア", "산후", "산후 운동", "postpartum", "post partum", "postnatal", "after pregnancy", "임산부", "pregnancy", "prenatal", "妊娠", "妊婦", "diastasis recti", "diastasis")) add(key(k), Term(Role.QUIET))
-        for (line in MODIFIER_RULES.lines().map { it.trim() }.filter { it.isNotEmpty() }) {
+        for (line in (MODIFIER_RULES + "\n" + QueryLexiconRound3.MODIFIERS).lines().map { it.trim() }.filter { it.isNotEmpty() }) {
             val kind = Mod.valueOf(line.substringBefore(":").trim())
             for (t in line.substringAfter(":").split("|")) {
                 val k = key(t)
@@ -485,7 +486,7 @@ internal object QueryLexicon {
 
         // 3) 개념
         val conceptMap = LinkedHashMap<String, Concept>()
-        for (line in CONCEPT_RULES.lines().map { it.trim() }.filter { it.isNotEmpty() }) {
+        for (line in (QueryLexiconRound3.CONCEPT_RULES + "\n" + CONCEPT_RULES).lines().map { it.trim() }.filter { it.isNotEmpty() }) {
             val (left, right) = line.split("=>", limit = 2).map { it.trim() }
             val fields = right.split(";").map { it.trim() }
             val id = fields[0]
@@ -511,7 +512,7 @@ internal object QueryLexicon {
                     strict = "strict" in flags,
                     stretch = "stretch" in flags,
                     cardio = "cardio" in flags,
-                    nameWords = triggers.mapNotNull { sigKey(it) }
+                    nameWords = triggers.mapNotNull { sigKey(it) }.ifEmpty { sigList(kv["sig"]) }
                 ).also { conceptMap[id] = it }
             }
             for (t in triggers) {

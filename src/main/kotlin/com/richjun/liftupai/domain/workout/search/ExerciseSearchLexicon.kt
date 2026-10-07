@@ -18,7 +18,7 @@ internal object ExerciseSearchLexicon {
     class MuscleTerm(val muscles: Set<MuscleGroup>, val categories: Set<ExerciseCategory>)
 
     /** strong 이면 확장 표현이 원 질의보다 우선한다(카탈로그가 다른 이름으로 부르는 운동 — 별칭이 정답 이름을 가리키는 경우) */
-    class Synonym(val triggers: Set<String>, val expansions: List<List<String>>, val strong: Boolean = false)
+    class Synonym(val triggers: Set<String>, val expansions: List<List<String>>, val strong: Boolean = false, val noTypo: Boolean = false)
 
     private fun key(raw: String) = SearchText.strictKey(raw)
 
@@ -134,11 +134,13 @@ internal object ExerciseSearchLexicon {
     )
 
     /** 내장 동의어 전체: 기본 사전 + 2차 확장(은어·브랜드·그립 조합) */
-    val SYNONYM_RULES: List<String> = BASE_SYNONYM_RULES + ExerciseSearchLexiconRound2.ALL
+    val SYNONYM_RULES: List<String> = BASE_SYNONYM_RULES + ExerciseSearchLexiconRound2.ALL + ExerciseSearchLexiconRound3.RULES
 
     /** "트리거|트리거 => 확장|확장" 한 줄을 해석한다. 형식이 틀리면 null (런타임 DB 동의어 줄이 서버를 깨뜨리지 않게). */
     fun parseSynonymRule(rule: String): Synonym? {
-        val trimmed = rule.trim()
+        // 줄 맨 앞의 "~" 는 이 줄의 트리거를 오타 교정 어휘에 넣지 않는다 — 동작을 풀어 쓴 긴 구절이 비슷한 다른 말의 "교정 후보"가 되지 않게
+        val noTypo = rule.trim().startsWith("~")
+        val trimmed = rule.trim().removePrefix("~").trim()
         if (trimmed.isEmpty() || trimmed.startsWith("#") || !trimmed.contains("=>")) return null
         val strong = trimmed.contains("=>>")
         // "=>>>" 는 한 방향 강한 별칭 — 왼쪽만 트리거다(확장에 일반어("chin up")가 있어도 그 단어 질의가 이 규칙으로 번지지 않는다)
@@ -153,7 +155,7 @@ internal object ExerciseSearchLexicon {
         // 한자 표기의 가나 읽기("懸垂" → "けんすい")도 같은 그룹의 트리거로 — 일본 사용자는 둘 다 쓴다
         val triggers = (base + base.flatMap { KanjiReadings.variants(it) }).toSet()
         if (expansions.isEmpty() || triggers.isEmpty()) return null
-        return Synonym(triggers = triggers, expansions = expansions, strong = strong)
+        return Synonym(triggers = triggers, expansions = expansions, strong = strong, noTypo = noTypo)
     }
 
     /** 동의어 사전과 그 색인. 엔진마다 기본 사전 + 런타임 추가분(extraSynonyms)으로 만든다. */
@@ -207,7 +209,7 @@ internal object ExerciseSearchLexicon {
         addAll(muscle("어깨|삼각근|肩|三角筋|ショルダー|숄더|肩の筋肉|shoulders|shoulder|delts|delt|deltoids|deltoid", setOf(G.SHOULDERS), setOf(C.SHOULDERS)))
         addAll(muscle("팔|腕|アーム|arms|arm|상완|팔운동|腕トレ|upper arm|upper arms", setOf(G.BICEPS, G.TRICEPS, G.FOREARMS), setOf(C.ARMS)))
         addAll(muscle("이두|이두근|brachialis|brachioradialis|上腕筋|腕橈骨筋|상완근|bis|bi|biceps brachii|上腕二頭筋|二頭筋|二頭|上腕二頭|力こぶ|バイセップス|바이셉스|biceps|bicep", setOf(G.BICEPS), setOf(C.ARMS)))
-        addAll(muscle("삼두|삼두근|tris|tri|triceps brachii|上腕三頭筋|三頭筋|三頭|上腕三頭|二の腕|二の腕痩せ|振袖肉|トライセプス|트라이셉스|팔뚝살|팔뚝|underarm flab|underarm fat|arm flab|arm fat|flabby arms|upper arm fat|bat wings|batwings|arm jiggle|triceps|tricep", setOf(G.TRICEPS), setOf(C.ARMS)))
+        addAll(muscle("振り袖|振りそで|振袖|ふりそで|二の腕のたるみ|二の腕のぷよぷよ|二の腕ぷよぷよ|ぷよぷよ二の腕|二の腕が気になる|二の腕のお肉|二の腕を細く|팔뚝 군살|팔뚝 처짐|팔뚝 늘어짐|팔 처짐|팔뚝살 빼기|처진 팔뚝|처진 팔|흔들리는 팔뚝|나비 팔뚝|나비팔|삼두|삼두근|tris|tri|triceps brachii|上腕三頭筋|三頭筋|三頭|上腕三頭|二の腕|二の腕痩せ|振袖肉|トライセプス|트라이셉스|팔뚝살|팔뚝|underarm flab|underarm fat|arm flab|arm fat|flabby arms|upper arm fat|bat wings|batwings|arm jiggle|triceps|tricep", setOf(G.TRICEPS), setOf(C.ARMS)))
         addAll(muscle("전완|전완근|前腕|forearms|forearm", setOf(G.FOREARMS), setOf(C.ARMS)))
         addAll(muscle("복근|코어|배|복|복부|복직근|복횡근|식스팩|6팩|腹筋|腹直筋|腹横筋|体幹|お腹|腹|コア|アブ|abs|ab|core|abdominals|abdominal|rectus abdominis|transverse abdominis|stomach|belly|six pack|sixpack", setOf(G.ABS, G.CORE), setOf(C.CORE)))
         addAll(muscle("종아리|비복근|가자미근|ふくらはぎ|腓腹筋|ヒラメ筋|カーフ|calves|calve|calf|gastrocnemius|soleus", setOf(G.CALVES), setOf(C.LEGS)))
@@ -248,7 +250,7 @@ internal object ExerciseSearchLexicon {
         terms.split("|").map { key(it) }.filter { it.isNotEmpty() }.map { it to eq.toSet() }
 
     val equipmentTerms: Map<String, Set<Equipment>> = buildList {
-        addAll(equip("덤벨|아령|dumbbell|dumbbells|db|ダンベル|one dumbbell|single dumbbell|a dumbbell|1 dumbbell|two dumbbells|a pair of dumbbells|pair of dumbbells|ダンベル1個|ダンベル一個|ダンベル一つ|ダンベル2個|덤벨 하나|덤벨 한개|덤벨 한 개|덤벨 1개|덤벨 두 개|덤벨 2개|덤벨 두개", Equipment.DUMBBELL))
+        addAll(equip(ExerciseSearchLexiconRound3.DUMBBELL_EXTRA + "|덤벨|아령|dumbbell|dumbbells|db|ダンベル|one dumbbell|single dumbbell|a dumbbell|1 dumbbell|two dumbbells|a pair of dumbbells|pair of dumbbells|ダンベル1個|ダンベル一個|ダンベル一つ|ダンベル2個|덤벨 하나|덤벨 한개|덤벨 한 개|덤벨 1개|덤벨 두 개|덤벨 2개|덤벨 두개", Equipment.DUMBBELL))
         addAll(equip("바벨|barbell|bb|バーベル", Equipment.BARBELL))
         addAll(equip("머신|기구|machine|マシン|筋トレ器具|ジム器具|ジムの器具|トレーニング器具|トレーニングマシン|運動器具|헬스 기구|운동 기구|헬스장 기구", Equipment.MACHINE))
         addAll(equip("케이블|cable|ケーブル", Equipment.CABLE))
@@ -272,7 +274,7 @@ internal object ExerciseSearchLexicon {
 
     val homeTerms: Set<String> = listOf(
         "집|집에서|홈트|홈트레이닝|홈|자취방|자취|home|at home|athome|home workout|自宅|宅トレ|おうち|ホーム|家|家で|宅|hotel|hotel room|hotelroom|호텔|호텔방|ホテル|travel|traveling|출장|여행|여행지|旅行|旅先|small space|limited space|no space|좁은 곳|좁은 공간|狭い部屋|office|사무실|사무실에서|オフィス|オフィスで|desk workout|desk|at your desk|at work|workplace|책상|책상에서|デスク|デスクで"
-    ).flatMap { it.split("|") }.map { key(it) }.filter { it.isNotEmpty() }.toSet()
+    ).flatMap { it.split("|") }.plus(ExerciseSearchLexiconRound3.HOME_EXTRA.split("|")).map { key(it) }.filter { it.isNotEmpty() }.toSet()
 
     /** 의도 해석 시 무시하는 군더더기 단어 */
     val fillerTerms: Set<String> = listOf(

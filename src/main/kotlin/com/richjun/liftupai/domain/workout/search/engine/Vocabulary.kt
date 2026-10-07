@@ -30,7 +30,7 @@ internal class Vocabulary(
         }
         for (s in synonyms.synonyms) {
             for (e in s.expansions) for (w in e) freq.merge(w, 1, Int::plus)
-            for (t in s.triggers) freq.putIfAbsent(t, 1)
+            if (!s.noTypo) for (t in s.triggers) freq.putIfAbsent(t, 1)
         }
         words = freq.filterKeys { isUsable(it) }
         val entries = words.map { (w, f) -> Entry(w, SearchText.looseKey(w), f) }.filter { it.loose.length >= MIN_CORRECT_LEN }

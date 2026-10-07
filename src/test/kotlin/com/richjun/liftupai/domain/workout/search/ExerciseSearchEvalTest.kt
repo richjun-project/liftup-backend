@@ -58,7 +58,9 @@ class ExerciseSearchEvalTest {
                 movementPattern = n["movementPattern"]?.takeIf { !it.isNull }?.asText(),
                 tier = RecommendationTier.valueOf(n["recommendationTier"].asText()),
                 popularity = n["popularity"].asInt(50),
-                difficulty = n["difficulty"].asInt(50)
+                difficulty = n["difficulty"].asInt(50),
+                // 설명문 검색 계층까지 포함해 실제 엔진과 같은 조건으로 평가한다(운영은 exercise_translations 의 instructions·tips)
+                descriptions = n["translations"].associate { it["locale"].asText() to listOf(it["instructions"], it["tips"]).mapNotNull { x -> x?.takeIf { v -> !v.isNull }?.asText() }.joinToString("\n") }
             )
         }
     }
