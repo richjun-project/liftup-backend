@@ -50,6 +50,7 @@ class UserPlanController(
         @RequestBody request: RecommendTemplateRequest,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<TemplateRecommendationResponse>> {
+        validateRecommendRequest(request, locale)
         val response = templateRecommendationService.recommend(userDetails.getUser(), request, locale)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
@@ -165,4 +166,26 @@ class UserPlanController(
         return ResponseEntity.ok(mapOf("success" to true, "data" to dashboard))
     }
 
+
+    /**
+     * 온보딩 답변 검증 — 목록 길이·값 범위를 제한해 한 요청이 SQL 수천 개(부상 목록 증폭)나 큰 메모리를 만들지 못하게 한다.
+     * 알 수 없는 장비·경험 값은 서비스가 안전한 기본값으로 처리하므로 여기서는 형식과 크기만 본다.
+     */
+    private fun validateRecommendRequest(request: RecommendTemplateRequest, localeParam: String?) {
+        // JSON 의 null 원소([null])는 코틀린 타입상 막히지 않으므로 여기서 걸러낸다
+        @Suppress("UNCHECKED_CAST")
+        fun items(list: List<String>?) = list as List<String?>?
+        ExerciseRequestValidator.list(items(request.goals), "goals", ExerciseRequestValidator.MAX_GOALS)
+        ExerciseRequestValidator.list(items(request.equipment), "equipment", ExerciseRequestValidator.MAX_EQUIPMENT)
+        ExerciseRequestValidator.list(items(request.injuries), "injuries", ExerciseRequestValidator.MAX_INJURIES)
+        ExerciseRequestValidator.list(items(request.focusAreas), "focus_areas", ExerciseRequestValidator.MAX_FOCUS_AREAS)
+        ExerciseRequestValidator.range(request.weeklyDays, "weekly_days", 1, 7)
+        ExerciseRequestValidator.range(request.sessionDuration, "session_duration", 5, 300)
+        ExerciseRequestValidator.range(request.age, "age", 5, 120)
+        ExerciseRequestValidator.text(request.experienceLevel, "experience_level")
+        ExerciseRequestValidator.text(request.gender, "gender")
+        ExerciseRequestValidator.text(request.trainingStyle, "training_style")
+        ExerciseRequestValidator.locale(request.locale)
+        ExerciseRequestValidator.locale(localeParam)
+    }
 }

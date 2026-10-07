@@ -4,6 +4,7 @@ import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.entity.Exercise
 import com.richjun.liftupai.domain.workout.entity.ExerciseTranslation
 import com.richjun.liftupai.domain.workout.entity.WorkoutSession
+import com.richjun.liftupai.domain.workout.repository.ExerciseTranslationRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
@@ -20,7 +21,8 @@ import org.springframework.stereotype.Component
 class WorkoutV2SharedSupport(
     private val userSettingsRepository: UserSettingsRepository,
     private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService,
-    private val workoutSessionRepository: WorkoutSessionRepository
+    private val workoutSessionRepository: WorkoutSessionRepository,
+    private val exerciseTranslationRepository: ExerciseTranslationRepository? = null
 ) {
 
     fun resolveLocale(userId: Long?, localeOverride: String? = null): String {
@@ -39,8 +41,27 @@ class WorkoutV2SharedSupport(
         return AppTime.resolveZoneId(timeZone)
     }
 
+    /**
+     * 운동 번역을 로케일 폴백(요청 → 기본 언어 → en)까지 한 번에 읽는다 — 쿼리 1개.
+     * (이전에는 로케일마다 쿼리를 따로 날려 목록 한 페이지에 최대 3개를 썼다)
+     */
     fun translationMap(exercises: Collection<Exercise>, locale: String): Map<Long, ExerciseTranslation> {
-        return exerciseCatalogLocalizationService.translationMap(exercises, locale)
+        val repo = exerciseTranslationRepository
+            ?: return exerciseCatalogLocalizationService.translationMap(exercises, locale)
+        if (exercises.isEmpty()) return emptyMap()
+
+        val normalized = exerciseCatalogLocalizationService.normalizeLocale(locale)
+        val order = buildList {
+            add(normalized)
+            val base = normalized.substringBefore('-')
+            if (base != normalized) add(base)
+            if (!contains("en")) add("en")
+        }
+        val rows = repo.findByExerciseIdInAndLocaleIn(exercises.map { it.id }.toSet(), order)
+        val rank = order.withIndex().associate { it.value to it.index }
+        val resolved = HashMap<Long, ExerciseTranslation>(rows.size * 2)
+        rows.sortedBy { rank[it.locale.lowercase()] ?: Int.MAX_VALUE }.forEach { resolved.putIfAbsent(it.exercise.id, it) }
+        return resolved
     }
 
     fun localizedName(

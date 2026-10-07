@@ -10,7 +10,10 @@ import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.PersonalRecordRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
+import com.richjun.liftupai.domain.workout.favorite.ExerciseFavoriteRepository
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchIndexService
+import com.richjun.liftupai.domain.workout.search.ops.SearchOpsRecorder
+import com.richjun.liftupai.global.media.ExerciseMediaCatalog
 import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import com.richjun.liftupai.global.exception.BadRequestException
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
@@ -34,10 +37,24 @@ class ExerciseCatalogDetailService(
     private val exercisePatternClassifier: ExercisePatternClassifier,
     private val exerciseCatalogLocalizationService: ExerciseCatalogLocalizationService,
     private val sharedSupport: WorkoutV2SharedSupport,
-    private val exerciseSearchIndexService: ExerciseSearchIndexService
+    private val exerciseSearchIndexService: ExerciseSearchIndexService,
+    // 아래는 Spring 이 채운다. 단위 테스트에서 생략하면 이전 동작(캐시 없이 리포지토리, 즐겨찾기·운영 로그 없음, 모든 운동에 미디어)이다.
+    private val catalogCache: ExerciseCatalogCache? = null,
+    private val favoriteRepository: ExerciseFavoriteRepository? = null,
+    private val mediaCatalog: ExerciseMediaCatalog = ExerciseMediaCatalog.ALL_AVAILABLE,
+    private val searchOps: SearchOpsRecorder? = null
 ) {
     @Value("\${app.exercise-media.base-url:https://liftup-cdn.com}")
     private var exerciseMediaBaseUrl: String = "https://liftup-cdn.com"
+
+    companion object {
+        /** 장비 필터로 결과가 이보다 적으면 "필터 때문에 가려진 결과 수"를 계산해 내려준다 */
+        const val HIDDEN_HINT_BELOW = 10
+        const val FALLBACK_LIMIT = 10
+
+        /** 페이지 없는 목록 상한 */
+        const val LEGACY_LIST_CAP = 100
+    }
 
     /**
      * 운동 목록(페이징).
@@ -52,8 +69,10 @@ class ExerciseCatalogDetailService(
         hasGif: Boolean,
         localeOverride: String?,
         search: String?,
-        pageable: org.springframework.data.domain.Pageable
+        pageable: org.springframework.data.domain.Pageable,
+        userId: Long? = null
     ): Map<String, Any> {
+        val startedNanos = System.nanoTime()
         val locale = sharedSupport.resolveLocale(null, localeOverride)
         val cat = category?.takeIf { it.isNotBlank() }?.let { parseCategory(it) }
         val equipments = parseEquipments(equipment)
@@ -65,13 +84,32 @@ class ExerciseCatalogDetailService(
         val from = pageable.offset.coerceAtMost(rankedIds.size.toLong()).toInt()
         val to = (from + pageSize).coerceAtMost(rankedIds.size)
         val pageIds = rankedIds.subList(from, to)
+        val firstPage = pageable.pageNumber == 0
 
-        val byId = exerciseRepository.findAllById(pageIds).associateBy { it.id }
-        val exercises = pageIds.mapNotNull { byId[it] }
-        val translations = sharedSupport.translationMap(exercises, locale)
-        val content = exercises.map { toExerciseDetail(it, locale, translations, hasGif) }
+        // 장비 필터 때문에 가려진 결과 수 — 필터가 있고 결과가 적을 때만 (앱이 "필터를 풀면 N개 더 있어요"를 보여준다)
+        val hiddenByFilters = if (equipments != null && firstPage && totalElements < HIDDEN_HINT_BELOW) {
+            (exerciseSearchIndexService.searchIds(search, cat, null, locale).size - totalElements).toInt().coerceAtLeast(0)
+        } else 0
+        // 0건이면 감지한 카테고리/근육의 대표 운동(최대 10개)
+        val fallbackIds = if (totalElements == 0L && firstPage) {
+            exerciseSearchIndexService.fallbackIds(search, cat, equipments, locale, FALLBACK_LIMIT)
+        } else emptyList()
 
-        return mapOf(
+        val exercises = loadExercises(pageIds)
+        val fallbackExercises = loadExercises(fallbackIds)
+        val shown = exercises + fallbackExercises
+        val translations = sharedSupport.translationMap(shown, locale)
+        val favoriteIds = favoriteIdsAmong(userId, shown)
+        val content = exercises.map { toExerciseDetail(it, locale, translations, hasGif, favoriteIds) }
+
+        if (firstPage && !search.isNullOrBlank()) {
+            searchOps?.record(
+                search, locale, totalElements.toInt(), (System.nanoTime() - startedNanos) / 1_000_000,
+                source = "exercise_list", hasFilters = cat != null || equipments != null
+            )
+        }
+
+        val response = linkedMapOf<String, Any>(
             "content" to content,
             "totalElements" to totalElements,
             "totalPages" to totalPages,
@@ -79,26 +117,59 @@ class ExerciseCatalogDetailService(
             "last" to (pageable.pageNumber >= totalPages - 1),
             "size" to pageSize
         )
+        if (hiddenByFilters > 0) response["hidden_by_filters"] = hiddenByFilters
+        if (fallbackExercises.isNotEmpty()) {
+            response["fallback"] = fallbackExercises.map { toExerciseDetail(it, locale, translations, hasGif, favoriteIds) }
+        }
+        return response
     }
 
-    /** 운동 목록(전체, 하위 호환) — 순서·검색 규칙은 페이징 경로와 같다 */
+    /**
+     * 운동 목록(전체, 하위 호환) — 순서·검색 규칙은 페이징 경로와 같다.
+     * 한 번에 너무 많이 나가지 않도록 최대 [LEGACY_LIST_CAP]개까지만 준다(페이징 경로를 쓰라는 신호).
+     */
     @Transactional(readOnly = true)
     fun getExercisesV2(
         category: String?,
         equipment: String?,
         hasGif: Boolean,
         localeOverride: String?,
-        search: String? = null
+        search: String? = null,
+        userId: Long? = null
     ): List<ExerciseDetailV2> {
         val locale = sharedSupport.resolveLocale(null, localeOverride)
         val cat = category?.takeIf { it.isNotBlank() }?.let { parseCategory(it) }
         val equipments = parseEquipments(equipment)
-        val rankedIds = exerciseSearchIndexService.searchIds(search, cat, equipments, locale)
-        val byId = exerciseRepository.findAllById(rankedIds).associateBy { it.id }
-        val exercises = rankedIds.mapNotNull { byId[it] }
+        val rankedIds = exerciseSearchIndexService.searchIds(search, cat, equipments, locale).take(LEGACY_LIST_CAP)
+        val exercises = loadExercises(rankedIds)
         val translations = sharedSupport.translationMap(exercises, locale)
+        val favoriteIds = favoriteIdsAmong(userId, exercises)
 
-        return exercises.map { toExerciseDetail(it, locale, translations, hasGif) }
+        return exercises.map { toExerciseDetail(it, locale, translations, hasGif, favoriteIds) }
+    }
+
+    /**
+     * id 순서대로 운동 엔티티를 가져온다. 카탈로그 캐시(근육군까지 이미 들어 있음)에서 꺼내므로 SQL 이 들지 않는다 —
+     * 이전에는 findAllById 가 페이지마다 근육군을 개별 조회(N+1)했다. 캐시에 없는 id 만 리포지토리로 보충한다.
+     */
+    private fun loadExercises(ids: List<Long>): List<Exercise> {
+        if (ids.isEmpty()) return emptyList()
+        val cached = catalogCache?.get()?.byId
+        if (cached == null) {
+            val byId = exerciseRepository.findAllById(ids).associateBy { it.id }
+            return ids.mapNotNull { byId[it] }
+        }
+        val missing = ids.filter { it !in cached }
+        val extra = if (missing.isEmpty()) emptyMap() else exerciseRepository.findAllById(missing).associateBy { it.id }
+        return ids.mapNotNull { cached[it] ?: extra[it] }
+    }
+
+    /** 로그인 사용자가 즐겨찾기한 운동 id (쿼리 1개). 비로그인이면 null — 응답에 is_favorite 를 싣지 않는다. */
+    private fun favoriteIdsAmong(userId: Long?, exercises: List<Exercise>): Set<Long>? {
+        val repo = favoriteRepository ?: return null
+        if (userId == null) return null
+        if (exercises.isEmpty()) return emptySet()
+        return repo.findFavoriteIdsIn(userId, exercises.map { it.id }.toSet()).toSet()
     }
 
     private fun parseCategory(raw: String): ExerciseCategory {
@@ -124,9 +195,14 @@ class ExerciseCatalogDetailService(
 
     /** 운동 목록 → 응답 DTO (추천·대체 운동 등 다른 서비스가 같은 목록 형식을 쓰도록 공개) */
     @Transactional(readOnly = true)
-    fun toExerciseDetails(exercises: List<Exercise>, locale: String, hasGif: Boolean = false): List<ExerciseDetailV2> {
+    fun toExerciseDetails(
+        exercises: List<Exercise>,
+        locale: String,
+        hasGif: Boolean = false,
+        favoriteIds: Set<Long>? = null
+    ): List<ExerciseDetailV2> {
         val translations = sharedSupport.translationMap(exercises, locale)
-        return exercises.map { toExerciseDetail(it, locale, translations, hasGif) }
+        return exercises.map { toExerciseDetail(it, locale, translations, hasGif, favoriteIds) }
     }
 
     /** Exercise.difficulty(1-100) → beginner/intermediate/advanced (1-30 / 31-60 / 61+) */
@@ -140,7 +216,8 @@ class ExerciseCatalogDetailService(
         exercise: Exercise,
         locale: String,
         translations: Map<Long, ExerciseTranslation>,
-        hasGif: Boolean
+        hasGif: Boolean,
+        favoriteIds: Set<Long>? = null
     ): ExerciseDetailV2 {
         return ExerciseDetailV2(
             id = exercise.id,
@@ -148,7 +225,7 @@ class ExerciseCatalogDetailService(
             category = exercise.category.name,
             muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
             equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
-            imageUrl = if (hasGif) generateGifUrl(exercise) else null,
+            imageUrl = if (hasGif) generateImageUrl(exercise) else null,
             thumbnailUrl = generateThumbnailUrl(exercise),
             videoUrl = generateVideoUrl(exercise),
             difficulty = WorkoutLocalization.difficultyDisplayName(difficultyKey(exercise.difficulty), locale),
@@ -156,7 +233,8 @@ class ExerciseCatalogDetailService(
             tier = exercise.recommendationTier.name,
             equipmentCode = exercise.equipment?.name,
             muscleGroupCodes = exercise.muscleGroups.map { it.name }.sorted(),
-            popularity = exercise.popularity
+            popularity = exercise.popularity,
+            favorite = favoriteIds?.let { exercise.id in it }
         )
     }
 
@@ -189,7 +267,7 @@ class ExerciseCatalogDetailService(
             category = exercise.category.name,
             muscleGroups = exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) },
             equipment = exercise.equipment?.let { WorkoutLocalization.equipmentName(it.name, locale) },
-            imageUrl = generateGifUrl(exercise),
+            imageUrl = generateImageUrl(exercise),
             thumbnailUrl = generateThumbnailUrl(exercise),
             videoUrl = generateVideoUrl(exercise),
             difficulty = WorkoutLocalization.difficultyDisplayName(difficultyKey(exercise.difficulty), locale),
@@ -252,16 +330,17 @@ class ExerciseCatalogDetailService(
         }
     }
 
-    private fun generateGifUrl(exercise: Exercise): String {
-        return buildExerciseMediaUrl(exercise, "animation.gif")
+    /**
+     * 화면용 큰 이미지 — 존재하지 않는 animation.gif 대신 실제로 있는 썸네일을 쓴다. 썸네일이 없으면 null.
+     */
+    private fun generateImageUrl(exercise: Exercise): String? = generateThumbnailUrl(exercise)
+
+    private fun generateThumbnailUrl(exercise: Exercise): String? {
+        return if (mediaCatalog.hasThumb(exercise.slug)) buildExerciseMediaUrl(exercise, "thumb.jpg") else null
     }
 
-    private fun generateThumbnailUrl(exercise: Exercise): String {
-        return buildExerciseMediaUrl(exercise, "thumb.jpg")
-    }
-
-    private fun generateVideoUrl(exercise: Exercise): String {
-        return buildExerciseMediaUrl(exercise, "video.mp4")
+    private fun generateVideoUrl(exercise: Exercise): String? {
+        return if (mediaCatalog.hasVideo(exercise.slug)) buildExerciseMediaUrl(exercise, "video.mp4") else null
     }
 
     private fun buildExerciseMediaUrl(exercise: Exercise, fileName: String): String {

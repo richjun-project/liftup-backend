@@ -1,6 +1,7 @@
 package com.richjun.liftupai.domain.workout.controller
 
 import com.richjun.liftupai.domain.workout.dto.*
+import com.richjun.liftupai.domain.workout.search.ops.SearchOpsRecorder
 import com.richjun.liftupai.domain.workout.service.ProgramService
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.security.CustomUserDetails
@@ -12,7 +13,8 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/v2")
 class ProgramController(
-    private val programService: ProgramService
+    private val programService: ProgramService,
+    private val searchOps: SearchOpsRecorder
 ) {
 
     // ── Program Catalog ───────────────────────────────────────────────────────
@@ -111,7 +113,14 @@ class ProgramController(
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<ExerciseSearchResponse>> {
-        val response = programService.searchExercises(q, category, page, size, locale)
+        ExerciseRequestValidator.query(q, "q")
+        ExerciseRequestValidator.locale(locale)
+        val safeSize = ExerciseRequestValidator.page(page, size).coerceAtMost(50)
+        val started = System.nanoTime()
+        val response = programService.searchExercises(q, category, page, safeSize, locale)
+        if (page == 0) {
+            searchOps.record(q, locale, response.totalElements.toInt(), (System.nanoTime() - started) / 1_000_000, "program_search", category != null)
+        }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -123,7 +132,9 @@ class ProgramController(
         @RequestParam(required = false) locale: String?,
         @RequestParam(name = "referenceExerciseId", required = false) referenceExerciseId: Long?
     ): ResponseEntity<ApiResponse<ExerciseSearchResponse>> {
-        val response = programService.listExercises(category, page, size, locale, referenceExerciseId)
+        ExerciseRequestValidator.locale(locale)
+        val safeSize = ExerciseRequestValidator.page(page, size).coerceAtMost(50)
+        val response = programService.listExercises(category, page, safeSize, locale, referenceExerciseId)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -135,6 +146,7 @@ class ProgramController(
         @PathVariable id: Long,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<SubstituteListResponse>> {
+        ExerciseRequestValidator.locale(locale)
         // 로그인 사용자면 저장된 보유 장비·부상으로 걸러 개인화한다
         val response = programService.getExerciseSubstitutes(id, locale, userDetails?.getId())
         return ResponseEntity.ok(ApiResponse.success(response))

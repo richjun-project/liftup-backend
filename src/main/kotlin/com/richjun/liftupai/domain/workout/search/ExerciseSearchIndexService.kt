@@ -6,44 +6,196 @@ import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.RecommendationTier
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
 import com.richjun.liftupai.domain.workout.repository.ExerciseTranslationRepository
+import com.richjun.liftupai.domain.workout.search.ops.SearchSynonymRepository
+import com.richjun.liftupai.domain.workout.search.ops.SynonymLines
 import org.slf4j.LoggerFactory
+import org.springframework.boot.context.event.ApplicationReadyEvent
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
+import org.springframework.transaction.event.TransactionPhase
+import org.springframework.transaction.event.TransactionalEventListener
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * 운동 검색 인덱스(ExerciseSearchEngine)를 DB 에서 만들고 캐시한다.
- * - 첫 사용 시 지연 빌드, ExerciseCatalogChangedEvent 수신 시 무효화
- * - 수동 DB 수정 등을 놓치지 않도록 TTL 이 지나면 다음 요청에서 다시 빌드
+ *
+ * - 앱 기동 직후(ApplicationReadyEvent) 미리 만들고 대표 질의로 데워 첫 요청이 느리지 않게 한다.
+ * - 카탈로그 변경은 커밋된 뒤(AFTER_COMMIT)에만 반영한다. 세대 번호(generation)를 올려 두고, 빌드가 도는 사이에
+ *   이벤트가 오면 그 빌드 결과는 캐시하지 않는다 — 커밋 전 데이터로 만든 스냅샷이 TTL 동안 남지 않는다.
+ * - 재빌드가 실패하면 이전 인덱스를 계속 쓰고 WARN 만 남긴다(DB 순단으로 검색이 500 이 되지 않게). 이전 것이 없을 때만 예외.
+ * - TTL 이 지나면 요청 스레드가 막히지 않게 백그라운드에서 갱신하고 그동안은 이전 인덱스를 쓴다.
+ * - 질의는 길이·단어 수를 제한하고 중복 단어를 빼서(엔진 비용 폭주 방지) 넘기고, 같은 (질의·필터·로케일) 결과는 작은 LRU 로 재사용한다(페이지 넘김).
+ * - 런타임 동의어(search_synonyms)를 짧은 TTL 로 읽어 [activeSynonymLines] 로 제공한다. 줄이 바뀌면 인덱스를 다시 만든다.
  */
 @Service
 class ExerciseSearchIndexService(
     private val exerciseRepository: ExerciseRepository,
-    private val exerciseTranslationRepository: ExerciseTranslationRepository
+    private val exerciseTranslationRepository: ExerciseTranslationRepository,
+    private val synonymRepository: SearchSynonymRepository? = null
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
-    private class Snapshot(val engine: ExerciseSearchEngine, val builtAtMillis: Long)
+    private class Snapshot(
+        val engine: ExerciseSearchEngine,
+        val builtAtMillis: Long,
+        val generation: Long,
+        val synonymVersion: Int
+    ) {
+        /** 이 스냅샷 전용 결과 캐시 — 스냅샷이 바뀌면 함께 사라진다 */
+        val results = ResultCache(RESULT_CACHE_SIZE)
+    }
 
-    @Volatile
-    private var snapshot: Snapshot? = null
-    private val lock = Any()
+    private class SynonymState(val lines: List<String>, val loadedAtMillis: Long) {
+        val version: Int = lines.hashCode()
+    }
 
-    fun engine(): ExerciseSearchEngine {
-        val current = snapshot
-        if (current != null && System.currentTimeMillis() - current.builtAtMillis < TTL_MILLIS) return current.engine
-        synchronized(lock) {
-            val again = snapshot
-            if (again != null && System.currentTimeMillis() - again.builtAtMillis < TTL_MILLIS) return again.engine
-            val built = build()
-            snapshot = Snapshot(built, System.currentTimeMillis())
-            return built
+    private data class ResultKey(
+        val query: String,
+        val category: ExerciseCategory?,
+        val equipments: Set<Equipment>?,
+        val locale: String?
+    )
+
+    private class ResultCache(private val max: Int) {
+        private val map = object : LinkedHashMap<ResultKey, List<Long>>(64, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<ResultKey, List<Long>>?) = size > max
+        }
+
+        @Synchronized
+        fun get(key: ResultKey): List<Long>? = map[key]
+
+        @Synchronized
+        fun put(key: ResultKey, value: List<Long>) {
+            map[key] = value
         }
     }
 
-    @EventListener(ExerciseCatalogChangedEvent::class)
-    fun invalidate() {
-        snapshot = null
+    @Volatile
+    private var snapshot: Snapshot? = null
+
+    @Volatile
+    private var synonyms: SynonymState? = null
+
+    private val generation = AtomicLong()
+    private val lock = Any()
+    private val refreshing = AtomicBoolean(false)
+
+    /** 재빌드 실패 후 이 시각 전에는 다시 시도하지 않는다 (DB 장애 중 요청마다 빌드를 두드리지 않게) */
+    @Volatile
+    private var retryNotBeforeMillis = 0L
+
+    /** 빌드 횟수 (테스트·운영 점검용) */
+    internal val buildCount = AtomicInteger()
+
+    internal var ttlMillis: Long = TTL_MILLIS
+    internal var synonymTtlMillis: Long = SYNONYM_TTL_MILLIS
+    internal var failureBackoffMillis: Long = FAILURE_BACKOFF_MILLIS
+    internal var clock: () -> Long = System::currentTimeMillis
+
+    private val refresher by lazy {
+        Executors.newSingleThreadExecutor { r -> Thread(r, "exercise-search-index-refresh").apply { isDaemon = true } }
     }
+
+    // ── 캐시 수명 ────────────────────────────────────────────────────────────────────────────────
+
+    fun engine(): ExerciseSearchEngine = current().engine
+
+    private fun current(): Snapshot {
+        val cur = snapshot
+        if (cur != null && cur.generation == generation.get() && cur.synonymVersion == (synonyms?.version ?: cur.synonymVersion)) {
+            val now = clock()
+            val synonymsStale = synonymRepository != null && (synonyms?.let { now - it.loadedAtMillis >= synonymTtlMillis } ?: true)
+            if (now - cur.builtAtMillis >= ttlMillis || synonymsStale) refreshInBackground()
+            return cur
+        }
+        return rebuildBlocking()
+    }
+
+    /** 커밋된 카탈로그 변경 — 다음 요청이 새 인덱스를 만들게 한다. 이전 인덱스는 재빌드가 실패할 때를 위해 남겨 둔다. */
+    @TransactionalEventListener(classes = [ExerciseCatalogChangedEvent::class], phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    fun invalidate() {
+        generation.incrementAndGet()
+    }
+
+    /** 앱이 요청을 받기 시작하면 인덱스를 만들고 대표 질의로 JIT 를 데운다 */
+    @EventListener(ApplicationReadyEvent::class)
+    fun warmUp() {
+        try {
+            val engine = engine()
+            WARM_QUERIES.forEach { q -> engine.search(q, null, null, "ko") }
+        } catch (e: Exception) {
+            logger.warn("Exercise search index warm-up failed (will build on first request): {}", e.message)
+        }
+    }
+
+    private fun refreshInBackground() {
+        // 직전 재빌드가 실패했다면 백오프 동안은 DB 를 다시 두드리지 않는다
+        if (clock() < retryNotBeforeMillis) return
+        if (!refreshing.compareAndSet(false, true)) return
+        try {
+            refresher.execute {
+                try {
+                    synchronized(lock) {
+                        val cur = snapshot
+                        val before = synonyms?.version
+                        val state = loadSynonyms(force = true)
+                        val expired = cur == null || clock() - cur.builtAtMillis >= ttlMillis
+                        // 동의어만 만료된 경우에는 줄이 실제로 바뀌었을 때만 인덱스를 다시 만든다
+                        if (expired || state.version != before || cur!!.generation != generation.get()) rebuildLocked(forceSynonymReload = false)
+                    }
+                } catch (e: Exception) {
+                    logger.warn("Exercise search index background refresh failed, keeping previous index: {}", e.message)
+                } finally {
+                    refreshing.set(false)
+                }
+            }
+        } catch (e: Exception) {
+            refreshing.set(false)
+        }
+    }
+
+    private fun rebuildBlocking(): Snapshot {
+        val prev = snapshot
+        if (prev != null && clock() < retryNotBeforeMillis) return prev
+        synchronized(lock) {
+            // 기다리는 동안 다른 스레드가 이미 만들었으면 그것을 쓴다
+            val again = snapshot
+            if (again != null && again.generation == generation.get() && again.synonymVersion == (synonyms?.version ?: again.synonymVersion)) return again
+            return rebuildLocked(forceSynonymReload = false)
+        }
+    }
+
+    /** lock 보유 상태에서 호출. 실패 시 이전 스냅샷(있으면)을 돌려준다. */
+    private fun rebuildLocked(forceSynonymReload: Boolean): Snapshot {
+        var attempt = 0
+        while (true) {
+            attempt++
+            val gen = generation.get()
+            val built: Snapshot
+            try {
+                val lines = loadSynonyms(force = forceSynonymReload || synonyms == null).lines
+                built = Snapshot(build(lines), clock(), gen, synonyms?.version ?: 0)
+            } catch (e: Exception) {
+                val prev = snapshot
+                if (prev == null) throw e
+                retryNotBeforeMillis = clock() + failureBackoffMillis
+                logger.warn("Exercise search index rebuild failed, keeping previous index: {}", e.message)
+                return prev
+            }
+            retryNotBeforeMillis = 0L
+            // 빌드 도중 카탈로그 변경이 커밋되었다면 이 결과는 낡았을 수 있다 — 캐시하지 않고 다시 만든다(마지막 시도는 캐시 없이 반환)
+            if (gen == generation.get()) {
+                snapshot = built
+                return built
+            }
+            if (attempt >= MAX_REBUILD_ATTEMPTS) return built
+        }
+    }
+
+    // ── 질의 ─────────────────────────────────────────────────────────────────────────────────────
 
     /** 질의 검색(질의가 비면 브라우즈) — 결과는 점수 순 운동 id 목록 */
     fun searchIds(
@@ -51,7 +203,15 @@ class ExerciseSearchIndexService(
         category: ExerciseCategory?,
         equipments: Set<Equipment>?,
         locale: String?
-    ): List<Long> = engine().search(query, category, equipments, locale).map { it.doc.id }
+    ): List<Long> {
+        val snap = current()
+        val q = normalizeQuery(query)
+        val key = ResultKey(q.orEmpty(), category, equipments?.toSet(), locale?.lowercase())
+        snap.results.get(key)?.let { return it }
+        val ids = snap.engine.search(q, category, equipments, locale).map { it.doc.id }
+        snap.results.put(key, ids)
+        return ids
+    }
 
     /** 노출 가능한 운동(ESSENTIAL + STANDARD)만, 브라우즈 순서(티어 → 인기도 → 이름)로 */
     fun listableIds(category: ExerciseCategory?, locale: String?): List<Long> =
@@ -59,7 +219,91 @@ class ExerciseSearchIndexService(
             .filter { it.doc.tier == RecommendationTier.ESSENTIAL || it.doc.tier == RecommendationTier.STANDARD }
             .map { it.doc.id }
 
-    private fun build(): ExerciseSearchEngine {
+    /**
+     * 0건일 때 보여줄 대안 — 같은 질의를 필터 없이 / 카테고리 없이 / 단어별로 완화해서 가장 먼저 걸리는 것의 대표 운동(최대 limit).
+     * 단어별 완화는 합산 점수로 가장 많이 걸린 카테고리의 운동을 티어 → 점수 순으로 고른다. 아무것도 못 찾으면 빈 목록(억지 인기 운동은 주지 않는다).
+     */
+    fun fallbackIds(
+        query: String?,
+        category: ExerciseCategory?,
+        equipments: Set<Equipment>?,
+        locale: String?,
+        limit: Int = FALLBACK_LIMIT
+    ): List<Long> {
+        val q = normalizeQuery(query) ?: return emptyList()
+        val engine = engine()
+        fun representative(hits: List<ExerciseSearchHit>): List<Long> =
+            hits.filter { it.doc.tier == RecommendationTier.ESSENTIAL || it.doc.tier == RecommendationTier.STANDARD }
+                .ifEmpty { hits }.map { it.doc.id }.distinct().take(limit)
+
+        if (equipments != null) {
+            representative(engine.search(q, category, null, locale)).takeIf { it.isNotEmpty() }?.let { return it }
+        }
+        if (category != null) {
+            representative(engine.search(q, null, null, locale)).takeIf { it.isNotEmpty() }?.let { return it }
+        }
+        val tokens = SearchText.words(q).filter { it.length >= 2 }.distinct().take(MAX_FALLBACK_TOKENS)
+        if (tokens.size < 2) return emptyList() // 한 단어는 위에서 이미 같은 질의로 시도했다
+        val scores = HashMap<Long, Double>()
+        val docs = HashMap<Long, ExerciseSearchDoc>()
+        tokens.forEach { token ->
+            engine.search(token, category, null, locale).take(FALLBACK_PER_TOKEN).forEach { hit ->
+                scores.merge(hit.doc.id, hit.score, Double::plus)
+                docs[hit.doc.id] = hit.doc
+            }
+        }
+        if (scores.isEmpty()) return emptyList()
+        val ranked = scores.entries.sortedByDescending { it.value }.map { docs.getValue(it.key) }
+        val dominant = ranked.take(5).groupingBy { it.category }.eachCount().maxByOrNull { it.value }?.key
+        return ranked.filter { dominant == null || it.category == dominant }
+            .sortedWith(compareBy<ExerciseSearchDoc> { tierRank(it.tier) }.thenByDescending { scores.getValue(it.id) })
+            .map { it.id }.take(limit)
+    }
+
+    private fun tierRank(t: RecommendationTier) = when (t) {
+        RecommendationTier.ESSENTIAL -> 0
+        RecommendationTier.STANDARD -> 1
+        else -> 2
+    }
+
+    // ── 런타임 동의어 ─────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * 현재 켜져 있는 동의어 줄(엔진 사전과 같은 형식). 짧은 TTL 로 DB 를 다시 읽는다.
+     * 형식이 틀린 줄은 건너뛰고 WARN. DB 읽기 실패 시 이전 목록(없으면 빈 목록)을 유지한다.
+     * 통합 단계에서 ExerciseSearchEngine(docs, extraSynonyms) 생성자에 이 목록을 넘긴다.
+     */
+    fun activeSynonymLines(): List<String> = loadSynonyms(force = false).lines
+
+    /** TTL 을 기다리지 않고 동의어를 다시 읽고(줄이 바뀌었으면) 인덱스를 새로 만든다. 재배포 없이 반영하는 경로. */
+    fun reloadSynonyms(): List<String> {
+        val before = synonyms?.version
+        val state = loadSynonyms(force = true)
+        if (before != state.version) synchronized(lock) { rebuildLocked(forceSynonymReload = false) }
+        return state.lines
+    }
+
+    private fun loadSynonyms(force: Boolean): SynonymState {
+        val prev = synonyms
+        val now = clock()
+        if (!force && prev != null && now - prev.loadedAtMillis < synonymTtlMillis) return prev
+        val repo = synonymRepository ?: return SynonymState(emptyList(), now).also { synonyms = it }
+        return try {
+            val lines = repo.findByEnabledTrueOrderByIdAsc().mapNotNull { row ->
+                SynonymLines.validate(row.line).also { if (it == null) logger.warn("Ignoring invalid search synonym row id={}", row.id) }
+            }
+            SynonymState(lines, now).also { synonyms = it }
+        } catch (e: Exception) {
+            logger.warn("Search synonyms reload failed, keeping previous list: {}", e.message)
+            val keep = SynonymState(prev?.lines.orEmpty(), now)
+            synonyms = keep
+            keep
+        }
+    }
+
+    // ── 빌드 ─────────────────────────────────────────────────────────────────────────────────────
+
+    private fun build(synonymLines: List<String>): ExerciseSearchEngine {
         val started = System.currentTimeMillis()
         val exercises = exerciseRepository.findAllWithMuscleGroups()
         val namesByExercise = HashMap<Long, MutableMap<String, String>>()
@@ -68,9 +312,15 @@ class ExerciseSearchIndexService(
             namesByExercise.getOrPut(id) { linkedMapOf() }[(row[1] as String).lowercase()] = row[2] as String
         }
         val docs = exercises.map { toDoc(it, namesByExercise[it.id].orEmpty()) }
+        buildCount.incrementAndGet()
         logger.info("Exercise search index built: {} docs in {}ms", docs.size, System.currentTimeMillis() - started)
-        return ExerciseSearchEngine(docs)
+        return newEngine(docs, synonymLines)
     }
+
+    /** 통합 단계에서 `ExerciseSearchEngine(docs, synonymLines)` 로 바꾼다 (검색 엔진 리프가 extraSynonyms 생성자를 추가한 뒤) */
+    @Suppress("UNUSED_PARAMETER")
+    private fun newEngine(docs: List<ExerciseSearchDoc>, synonymLines: List<String>): ExerciseSearchEngine =
+        ExerciseSearchEngine(docs)
 
     private fun toDoc(e: Exercise, translated: Map<String, String>): ExerciseSearchDoc {
         val names = LinkedHashMap<String, String>()
@@ -93,5 +343,38 @@ class ExerciseSearchIndexService(
 
     companion object {
         private const val TTL_MILLIS = 10 * 60 * 1000L
+        private const val SYNONYM_TTL_MILLIS = 60 * 1000L
+        private const val FAILURE_BACKOFF_MILLIS = 30 * 1000L
+        private const val MAX_REBUILD_ATTEMPTS = 3
+        private const val RESULT_CACHE_SIZE = 512
+        private const val FALLBACK_LIMIT = 10
+        private const val FALLBACK_PER_TOKEN = 30
+        private const val MAX_FALLBACK_TOKENS = 5
+
+        /** 엔진에 넘기는 질의의 상한 — 이보다 긴 입력은 엔진 비용이 초선형으로 늘어난다 */
+        const val MAX_QUERY_CHARS = 80
+        const val MAX_QUERY_WORDS = 6
+
+        private val WHITESPACE = Regex("\\s+")
+        private val WARM_QUERIES = listOf(
+            "squat", "스쿼트", "ベンチプレス", "bench press", "하체", "胸", "덤벨 가슴", "lat pulldown", "ラットプルダウン", "plank"
+        )
+
+        /** 제어문자 제거·공백 정리·중복 단어 제거·길이(80자)와 단어 수(6개) 제한. 비면 null(브라우즈) */
+        fun normalizeQuery(raw: String?): String? {
+            if (raw.isNullOrBlank()) return null
+            val cleaned = buildString(raw.length.coerceAtMost(MAX_QUERY_CHARS * 4)) {
+                for (c in raw.take(MAX_QUERY_CHARS * 4)) append(if (c.isISOControl()) ' ' else c)
+            }.replace(WHITESPACE, " ").trim()
+            if (cleaned.isEmpty()) return null
+            val cut = if (cleaned.length > MAX_QUERY_CHARS) {
+                var end = MAX_QUERY_CHARS
+                if (Character.isHighSurrogate(cleaned[end - 1])) end--
+                cleaned.substring(0, end).trim()
+            } else cleaned
+            // 같은 단어의 반복("dumbbell curl row" × 450)은 의미 없이 비용만 키운다 — 중복을 빼고 앞 6단어만
+            val words = cut.split(' ').distinctBy { it.lowercase() }
+            return (if (words.size > MAX_QUERY_WORDS) words.take(MAX_QUERY_WORDS).joinToString(" ") else words.joinToString(" ")).ifEmpty { null }
+        }
     }
 }
