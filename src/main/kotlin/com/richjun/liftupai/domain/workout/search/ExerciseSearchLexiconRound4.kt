@@ -18,7 +18,7 @@ internal object ExerciseSearchLexiconRound4 {
         // 버터플라이 머신 = 펙 덱 플라이
         "~蝶々マシン|蝶マシン|ちょうちょマシン|バタフライマシン|バタフライ マシン|蝶々|나비 머신|나비머신|butterfly machine|butterfly fly machine|butterfly fly =>>> 펙 덱 플라이 머신|pec deck fly machine|ペックフライマシン",
         // 물구나무 푸시업 = 파이크 푸시업(핸드스탠드 푸시업의 입문 변형)
-        "~^逆立ち腕立て|逆立ち腕立て伏せ|逆立ちプッシュアップ|倒立腕立て|倒立腕立て伏せ|倒立プッシュアップ|물구나무 푸시업|물구나무 푸시업|물구나무 푸쉬업|물구나무서서 푸시업|물구나무 팔굽혀펴기|handstand push up|handstand pushup|handstand push ups|handstand press|handstand press up|hspu|wall handstand push up|inverted push up|handstand pushups =>>> 파이크 푸시업|pike push up|パイクプッシュアップ|핸드스탠드 푸시|handstand push|ハンドスタンド・プッシュ",
+        "~逆立ち腕立て|逆立ち腕立て伏せ|逆立ちプッシュアップ|倒立腕立て|倒立腕立て伏せ|倒立プッシュアップ|물구나무 푸시업|물구나무 푸시업|물구나무 푸쉬업|물구나무서서 푸시업|물구나무 팔굽혀펴기|handstand push up|handstand pushup|handstand push ups|handstand press|handstand press up|hspu|wall handstand push up|inverted push up|handstand pushups =>>> 파이크 푸시업|pike push up|パイクプッシュアップ|핸드스탠드 푸시|handstand push|ハンドスタンド・プッシュ",
         // 역손 턱걸이 = 친업(손바닥이 얼굴 쪽)
         "~역손 턱걸이|역손턱걸이|역수 턱걸이|역수턱걸이|역손 풀업|역손풀업|역손 친업|역손잡이 턱걸이|언더그립 턱걸이|언더 그립 턱걸이|reverse grip pull up|reverse grip pullup|underhand pull up|underhand pullup|supinated pull up|supinated pullup|逆手プルアップ|逆手チンニング =>>> 친업|chin up|チンアップ",
         // 복근 휠을 묘사한 말 / 무릎 대고 굴리기

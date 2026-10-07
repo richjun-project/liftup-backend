@@ -727,7 +727,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         if (terms.any { it.role == Role.NAME } || compound) {
             excludeKeys.add(SigKey(key, false))
             // 같은 동작의 다른 언어 표기도 함께 제외 (데드리프트 → deadlift, 데드리프트)
-            synonyms.index[key].orEmpty().filter { !it.approx }.forEach { g ->
+            synonyms.index[key].orEmpty().forEach { g ->
                 g.expansions.forEach { exp -> SearchText.strictKey(exp).takeIf { it.length >= 3 }?.let { excludeKeys.add(SigKey(it, false)) } }
             }
             for (i in range) consumed[i] = true

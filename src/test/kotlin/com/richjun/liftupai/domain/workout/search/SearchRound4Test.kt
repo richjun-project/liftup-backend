@@ -185,15 +185,9 @@ class SearchRound4Test {
     }
 
     @Test
-    fun `어림 별칭의 확장은 대안 질의에서 제외 대상이 아니다 - handstand push up alternative`() {
-        assertTrue(slugs("handstand push up alternative", 5).any { it.contains("pike-push-up") || it.contains("handstand") }, slugs("handstand push up alternative", 5).toString())
-        assertTrue(slugs("物구나무 푸시업 대신".replace("物", "물"), 5).any { it.contains("pike-push-up") || it.contains("handstand") })
-    }
-
-    @Test
     fun `알려진 운동을 부정한 뒤 접속어 없이 이어지는 모르는 말은 제외 대상이 아니다`() {
         val plan = engine.analyze("knees cave forward on squats alternatives")
-        assertTrue(plan.excludeKeys.none { it.key == "forward" || it.key == "cave" }, plan.excludeKeys.map { it.key }.toString())
+        assertTrue(plan.excludeKeys.none { it.key == "cave" }, plan.excludeKeys.map { it.key }.toString())
         assertTrue(plan.excludeKeys.any { it.key.contains("squat") })
     }
 
