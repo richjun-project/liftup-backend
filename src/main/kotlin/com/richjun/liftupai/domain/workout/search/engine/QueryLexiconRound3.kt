@@ -27,6 +27,9 @@ internal object QueryLexiconRound3 {
         系の種目|系の運動|系の筋トレ|系のトレーニング|系の|系統|系列|系|各種|種類|いろいろな|いろんな|いろいろ|バリエーション|ファミリー
         |계열|계열의|계열 운동|종류|종류의|종류들|여러가지|여러 가지|여러|다양한|다양하게|바리에이션
         |variations|variation|variants|variant|varieties|variety|types|type|kinds|kind|families|family|styles|style|versions|version|related|similar
+        |全部|全て|すべて|ぜんぶ|みんな|どれも|全台|전부|모두|죄다|다들
+        |을 때|을때|일 때|일때|할 때|할때|때는|때엔|땐|때
+        |heavy|heavier|重い|重たい|重め|무거운|무거워|무겁다|무거운데
         |ゆるい|ゆるめ|ゆるく|ゆるやか|ゆったり|穏やか|軽い|軽め|軽く|睡眠前|寝る直前|ベッドの上|ベッドで|布団の上|布団で|さえあれば|があれば|あれば|だけでできる|だけでOK|だけで|だけあれば|のみで|のみ
         |있으면|있으면 되는|있으면되는|만 있으면|만있으면|있어도|있다면|있는|되는|하나만|한개만|만으로|뿐인|가볍게|가벼운|편안한|편안하게|편하게|부드럽게|부드러운|침대에서|침대 위에서|침대 위|이불 위에서|이불 위
         |what can i use|what do i use|what should i use|what to use|what else can i use|use instead|can i use|what can i substitute|what can i swap|what to swap|what to replace it with|what do i do instead|what do i do without|what are my options|what are the options|what to do if|what to do when|what do i do if|what can i do if|what if|if|when|whenever|there|theres|is there|are there|there is|there are|どうすれば|どうしたら|どうする|어떻게 해야|어떡하지|어쩌지|something like|anything like|things like|exercises like|exercise like|moves like|workouts like|stuff like|similar exercises to|exercises similar to|similar to|what else|what other|something else|anything else|other options|other option|what can i do|what do i do|what should i do|i have|i got|have a|have an|has a|my gym|available|補助種目|補助トレ|補助運動|サブ種目|보조 운동|보조운동|보조 종목|보조 동작|accessory exercises|accessory exercise|accessory work|accessory lifts|accessories|accessory|assistance exercises|assistance exercise|assistance work|supplemental exercises|supplementary exercises|auxiliary exercises|気分|きぶん|기분|기분이야|기분이다|in the mood|feel like|feeling like|feeling|mood|gentler|gentlest|softer|easier|lighter|less intense|something gentler|something easier|something lighter|something softer|gentle|gently|easy going|light|lightly|relaxing|relaxed|calm|calming|before bed|before sleep|before sleeping|bedtime|at bedtime|at night|in bed|in the bed|on the bed|all you need|all i need|only need|just need|only requires|just a|is all|need only|requires only|using only|with only
@@ -36,6 +39,8 @@ internal object QueryLexiconRound3 {
     val NEG_AFTER = """
         が無いとき|が無い時|が無い場合|が無いなら|が無ければ|がないとき|がない時|がない場合|がないなら|がなければ|が無くて|がなくて|が無い|がない|無いとき|無い時|無い場合|無ければ|ないとき|ない時|ない場合|なければ|無くて|なしの|使えない|使えないとき|使えない時|使えなくて|持ってない|持っていない|持ってないとき|持ってない時
         |외에|외엔|이외|이외에|이외의|외의|제외하고 다른|빼고 다른
+        |が怖い|が怖くて|が怖いので|が怖いから|は怖い|は怖くて|が苦手|は苦手|が嫌い|は嫌い|が嫌|が不安|が心配|が苦手で|が苦手なので|が嫌で|が嫌なので|怖くて|怖いので|怖い|苦手で|苦手なので|嫌いで|嫌なので
+        |무서워|무서운|무서워서|무섭|무섭다|무서워요|겁나|겁나는|겁나서|싫어|싫은|싫어서|싫다|부담스러운|부담스러워|부담돼|꺼려지|꺼려져
         |없을 때|없을때|없는데|없어서|없으면|없는 경우|없는경우|없을 땐|없을땐|없을경우|없을 경우|못 쓰는|못쓰는|못 쓸 때|못쓸때|못 쓰면|없다면|없고|없어
         |not available|isnt available|isn't available|unavailable|not accessible|dont have|don't have|do not have|doesnt have|doesn't have|havent got|haven't got|missing|lacking
     """.trimIndent()
@@ -45,12 +50,15 @@ internal object QueryLexiconRound3 {
         |とは別の|とは別|とは違う|とは違った|とは異なる|ではない別の|以外の別の
         |대신|대신에|대신할|대신으로|대신하는|대신 할|대체품|대체 운동|대체운동|대체할|대체로|대체하는|대용|대용품|대안|대안으로|대안 운동|말고 다른|말고다른|말고 대체|말고 비슷한|말고 다른 거|말고 다른 운동|말고 비슷한 운동|대신 할 수 있는|대신 할수있는|대신 하는
         |what else|what other exercise|what other exercises|what can i do instead|what can i do|what can i use|what do i use|what should i use|what to use|what else can i use|what can i substitute|what can i swap|what to swap|what to replace it with|what do i do instead|what do i do without|alternative|alternatives|alternate for|substitute|substitutes|substitution|substituting|replacement|replacements|equivalent|equivalents|stand in for|standin
+            |all busy|all taken|all occupied|all in use|all full|all being used|all booked|are all busy|are all taken|are all full
             |is taken|are taken|is occupied|are occupied|is being used|are being used|is in use|are in use|is busy|are busy|is full|is crowded|are crowded|is not free|are not free|being used|taken|occupied|in use
         |が使用中|が使われている|が埋まっている|が空いてない|が空いていない|が混んでいる|が混雑|使用中|埋まっている|空いてない|空いていない|混んでいる
+        |が空かない|が空かなくて|が空かないので|が空かないから|が空いてなくて|が空いてないので|が空いてないから|が空いていなくて|が空いていないので|が埋まってて|が埋まっていて|が埋まってる|が使えなくて|が使えないので|が混んでて|が混んでいて|が混んでる|が混雑していて|が占領されて|が全部埋まって|が取られて|が取られていて|が使われてて|が使われていて|が空かず|空かなくて|空かないので|空いてなくて|空いてないので|埋まってて|埋まっていて|混んでて|混んでいて
+        |가 꽉 차|가 다 차|가 만석|이 꽉 차|이 다 차|이 만석|가 비지 않|이 비지 않|가 안 비|이 안 비|가 안 비어|이 안 비어|가 비질 않|줄 서 있|줄 서있|줄이 길|대기 줄|대기가 많|웨이팅|차지하고 있|차지하고있|점령당|누가 차지
         |가 사용 중|이 사용 중|사용 중이면|사용중이면|사용 중일 때|사용중일 때|사용 중|사용중|누가 쓰고 있|누가 쓰고있|자리가 없|자리 없|다 찼|꽉 찼|꽉 차 있|붐빌 때|붐비는
     """.trimIndent()
 
-    val NEG_BEFORE = "dont have|don't have|do not have|dont own|don't own|do not own|have no|got no|no access to|without access to|dont have access to|don't have access to|lack|lacking|ran out of|cant use|can't use|cannot use|unable to use"
+    val NEG_BEFORE = "dont have|don't have|do not have|dont own|don't own|do not own|have no|got no|no access to|without access to|dont have access to|don't have access to|lack|lacking|ran out of|cant use|can't use|cannot use|unable to use|scared of|afraid of|fear of|fearful of|intimidated by|nervous about|nervous of|uneasy about|worried about|uncomfortable with|dont like|don't like|do not like|dislike|hate|sick of|tired of|bored of|bored with"
 
     val INSTEAD_BEFORE = "swap|swapping|swap out|switch from|switching from|change from|changing from|replace|instead of|insteadof|alternative to|alternatives to|alternative for|alternatives for|alternative of|substitute for|substitutes for|substitute to|replacement for|replacements for|replace|replacing|rather than|in place of|swap for|swap out|other than|something other than|equivalent to|equivalent of|same as|alternatives like"
 

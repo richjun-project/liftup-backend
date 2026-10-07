@@ -209,8 +209,8 @@ class HybridSearchTest {
 
     @Test
     fun `사전이 못 알아들은 짧은 별칭도 의미 검색을 부른다`() {
-        assertEquals(1, calls("逆立ち腕立て"))
-        assertEquals(1, calls("t bar"))
+        assertEquals(1, calls("dumbbell zxqvwbn"))
+        assertEquals(1, calls("바벨 흐뭇뭇"))
     }
 
     @Test
