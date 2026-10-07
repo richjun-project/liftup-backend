@@ -415,6 +415,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
 
         // 장비가 쓸 수 없다(점유·고장·금지)고 말해졌는가 — "바벨 다 쓰고 있어서 데드리프트 대신" 의 대안은 그 장비로 하던 운동의 다른 장비 버전이다
         var unavailableEquipment = false
+        /** 사전이 모르는 덩어리를 부정 대상으로 쓴 적이 있는가 — 모르는 말이 질의에 있었다는 뜻이다(대상으로 소비돼도 hasUnknown 에 센다) */
+        var unknownTargetUsed = false
         val altKeys = ArrayList<SigKey>()
         /** 질의에 아직 부정되지 않은 바벨 요청이 있는가("barbell but no rack" — 랙이 없다는 말이 바벨 전체를 빼라는 뜻이 아니다) */
         fun barbellRequested(target: IntRange? = null) = segs.indices.any { i ->
@@ -538,6 +540,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                     if (resolveTarget(segs, r, text, excludeEquip, excludeKeys, consumed, negConcepts, negJoints, insteadHere, insteadConcepts, avail, barbellRequested(r))) {
                         any = true
                         // 장비·부위·관절·동작 묶음이 아닌 평범한 이름 낱말("코너", "스미스")만 잡았으면 쓸 수 없는 대상을 못 잡은 것과 같다
+                        if (segs[r.first].unknown) unknownTargetUsed = true
                         segs[r.first].let { s0 -> if (!s0.unknown && (s0.has(Role.EQUIP) || s0.has(Role.CONCEPT) || s0.has(Role.JOINT) || s0.terms!!.any { it.move != null })) realTarget = true }
                         if (avail && (excludeEquip.size > equipBefore || excludeKeys.subList(before, excludeKeys.size).any { it.key in MACHINE_NAME_KEYS })) unavailableEquipment = true
                         if (insteadHere) similarKeys.addAll(excludeKeys.subList(before, excludeKeys.size))
@@ -719,6 +722,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                             segs[idx - 1].terms!!.any { p -> p.role == Role.EQUIP && p.equipment != setOf(Equipment.MACHINE) }
                         // "free weights" 처럼 자유중량 전체를 가리키는 말은 구체 장비(바벨·덤벨·케틀벨)가 따로 있으면 그 설명일 뿐이다 — 마지막에 구체 장비가 없을 때만 요청으로 센다
                         if (t.equipment == FREE_WEIGHT_SET) genericFreeWeights = true
+                        else if (t.equipment == QueryLexicon.GENERIC_EQUIPMENT) Unit // "장비·equipment" 만으로는 아무 장비도 요청하지 않는다(부정할 때만 뜻이 있다)
                         else if (!describesPrevious) equipments.addAll(t.equipment)
                     }
                     if (terms.any { it.role == Role.HOME }) home = true
@@ -810,7 +814,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         return QueryPlan(
             mode = mode, concepts = effectiveConcepts, equipments = equipments, home = home, stretch = stretch, level = level, regress = regress,
             excludeEquip = excludeEquip, excludeKeys = excludeKeys, injuries = injuries, numbers = numbers, highReps = highReps,
-            seeds = finalSeeds, hasUnknown = unknownChunks.isNotEmpty(), similarTo = similarKeys,
+            seeds = finalSeeds, hasUnknown = unknownChunks.isNotEmpty() || unknownTargetUsed, similarTo = similarKeys,
             excludeConcepts = negConcepts.distinctBy { it.id },
             combineAll = effectiveConcepts.size > 1 && effectiveConcepts.any { it.id in COMBINE_IDS },
             onlyEquip = equipments.isNotEmpty() && excludeEquip.isEmpty() && !text.contains(NOT_ONLY) && segs.indices.any { i -> isOnlyMarker(segs, i, text) }
@@ -925,7 +929,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             val found = LinkedHashSet<Equipment>()
             for (i in range) segs[i].terms?.firstOrNull { it.role == Role.EQUIP }?.let { found.addAll(it.equipment); consumed[i] = true }
             // "ケーブルマシン" — 구체 장비 뒤의 일반 머신은 같은 기구의 설명이라서 머신 전체를 뺀다는 뜻이 아니다
-            if (found.size > 1) found.remove(Equipment.MACHINE)
+            if (found.size > 1 && found != QueryLexicon.GENERIC_EQUIPMENT) found.remove(Equipment.MACHINE)
             excludeEquip.addAll(found)
             return true
         }

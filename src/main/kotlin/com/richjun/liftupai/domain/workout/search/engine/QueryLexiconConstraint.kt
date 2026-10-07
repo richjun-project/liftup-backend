@@ -118,6 +118,7 @@ internal object QueryLexiconConstraint {
         |쓰는 건|쓰는건|쓰는 거|쓰는거|쓰는 게|쓰는게|쓰는 걸|쓰는걸|쓰는 것|쓰는것|하는 건|하는건|하는 게|하는게|하는 걸|하는걸|하는 것|하는것|쓰기는|쓰기가|쓰기도|사용하는 건|사용하는건|사용하는 거|사용하는 게|사용하는게|사용하기는|사용하기가
         |all i have is|all i have|all i got|all i got is|all ive got|all i own|all we have|all we have is|all we got|all that i have|all that we have|all there is|all that is available|all thats available|all they have is|all my gym has|all my gym has is|all my home has|all i can use is|all i can use|all i can get is
         |fine|great|cool|awesome|perfect|alright|sweet
+        |anything with|anything that uses|anything that use|anything using|anything involving|anything that needs|anything needing|anything|everything with|everything that uses|something with|stuff with|stuff that uses|stuff using|things with|things that use|things using|exercises that use|exercises that need|exercises involving|moves using|any exercise with|any exercises with|any workout with|any workouts with
         |needing|requiring|involving|needs|need|needed|require|requires|required|involve|involves|that need|that needs|that require|that requires|that involve|that involves|that use|that uses|which need|which needs|which use|which uses|having
         |bored|boring|ideas|idea|variation|variations|variety|switch up|mix up
         |라서|이라서|라서요|이라서요|라니까|이라니까|이니까|이니까요|니까요|여서|이어서|인데|인데요|이라고|이라는|라는|이었|였는데|이었는데|였어|이었어|였고|이었고
@@ -148,6 +149,7 @@ internal object QueryLexiconConstraint {
     /** 부상 감각 표현 — 관절 가까이에서 그 관절을 피할 부위로 만든다(관절이 없으면 아무 일도 하지 않는다) */
     val CUES_EXTRA = """
         pinch|pinches|pinching|pinched|twinge|twinges|clicking|grinding|grinds|bothers|bothering|bothered|nags|nagging|acts up|flares up|flaring up|tweaked|tweak|killing me|kills me|aches when|hurts when|hurts if|painful when|pain when|pain during|pain while|sore when|uncomfortable when
+        |때문에|때문이라|때문이라서|탓에|のせいで|のせい|が原因で|が原因|because of|due to|owing to|on account of
         |찌릿|찌릿해|찌릿해요|찌릿찌릿|찌릿하|뜨끔|콕콕|쑤셔|쑤셔요|쑤시|욱신|욱신거려|욱신거리|삐끗|삐었|접질|저릿|저릿해|무리가 와|무리 와
         |ズキズキ|ずきずき|ピキッ|ぴきっ|チクチク|ちくちく|ビリビリ|ぎくっ|ギクッ|捻挫|捻った|ひねった|痛みがある|痛みが出る|痛みが出て|痛みが走る|調子が悪い|調子悪い|引っかかる|ひっかかる
     """.trimIndent()

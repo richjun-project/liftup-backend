@@ -4,6 +4,7 @@ import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.MuscleGroup
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchLexicon
+import com.richjun.liftupai.domain.workout.search.ExerciseSearchLexiconConstraint
 import com.richjun.liftupai.domain.workout.search.KanjiReadings
 import com.richjun.liftupai.domain.workout.search.SearchText
 
@@ -439,6 +440,9 @@ internal object QueryLexicon {
             "와이드|클로즈|그립|바|시티드|스탠딩|라잉|싱글|스트레칭|포즈|요가|ワイド|クローズ|グリップ|バー|シーテッド|スタンディング|ライイング|シングル|ストレッチ|ポーズ|ヨガ"
         ).split("|").map { key(it) }.filter { it.isNotEmpty() }.toSet() + ExerciseSearchLexicon.equipmentTerms.keys
 
+    /** 장비 일반(맨몸 제외 전부) */
+    val GENERIC_EQUIPMENT: Set<Equipment> = setOf(Equipment.BARBELL, Equipment.DUMBBELL, Equipment.MACHINE, Equipment.CABLE, Equipment.KETTLEBELL, Equipment.RESISTANCE_BAND)
+
     // ── 구축 ─────────────────────────────────────────────────────────────────────────────────
     val concepts: Map<String, Concept>
     val moveGroups: Map<String, MoveGroup>
@@ -548,6 +552,9 @@ internal object QueryLexicon {
 
         // 5) 장비·홈
         for ((k, eq) in ExerciseSearchLexicon.equipmentTerms) add(k, Term(Role.EQUIP, equipment = eq))
+        // "장비가 하나도 없다·아무것도 없다" 계열은 맨몸, 장비 일반을 가리키는 말(부정하면 맨몸 말고 전부 뺀다)
+        for (k in ExerciseSearchLexiconConstraint.NO_EQUIPMENT_TERMS) add(key(k), Term(Role.EQUIP, equipment = setOf(Equipment.BODYWEIGHT)))
+        for (k in ExerciseSearchLexiconConstraint.GENERIC_EQUIPMENT_TERMS) add(key(k), Term(Role.EQUIP, equipment = GENERIC_EQUIPMENT))
         for (k in ExerciseSearchLexicon.homeTerms) add(k, Term(Role.HOME))
         for (k in ExerciseSearchLexicon.fillerTerms) add(k, Term(Role.NOISE, particle = k.length <= 2 && isKana(k)))
 
