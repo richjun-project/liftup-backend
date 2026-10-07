@@ -246,7 +246,7 @@ internal object ExerciseSearchLexicon {
         addAll(equip("바벨|barbell|bb|バーベル", Equipment.BARBELL))
         addAll(equip("머신|기구|machine|マシン", Equipment.MACHINE))
         addAll(equip("케이블|cable|ケーブル", Equipment.CABLE))
-        addAll(equip("맨몸|맨몸운동|bodyweight|body weight|no equipment|noequipment|calisthenics|自重|器具なし|道具なし|徒手|장비없이|기구없이", Equipment.BODYWEIGHT))
+        addAll(equip("맨몸|맨몸운동|bodyweight|body weight|no equipment|noequipment|calisthenics|自重|器具なし|道具なし|徒手|장비없이|기구없이|without equipment|without any equipment|without equipments|no equipments|no equipment needed|equipment free|equipmentless|w/o equipment|no gear|without gear|no weights|without weights|no gym|without gym|gym free|no gym needed|器具を使わない|器具を使わずに|道具を使わない|道具を使わずに|器具無し|道具無し|器具不要|道具不要|장비 안 쓰는|장비 안 쓰고|기구 안 쓰는|기구 안 쓰고|장비 없는|기구 없는|도구 없이|도구 없는", Equipment.BODYWEIGHT))
         addAll(equip("밴드|저항밴드|저항 밴드|고무밴드|band|bands|resistance band|バンド|チューブ|レジスタンスバンド", Equipment.RESISTANCE_BAND))
         addAll(equip("케틀벨|kettlebell|ケトルベル", Equipment.KETTLEBELL))
     }.toMap()

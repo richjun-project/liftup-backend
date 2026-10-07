@@ -67,7 +67,9 @@ internal object QueryLexicon {
         /** NEG: "대신/instead of/代わりに" — 제외하되 그 운동과 비슷한 운동을 대신 보여 준다 */
         val instead: Boolean = false,
         /** LEVEL: "X 못 해요/できない/can't do X" — X 의 쉬운 변형(어시스트·무릎·인클라인)을 앞세운다 */
-        val regress: Boolean = false
+        val regress: Boolean = false,
+        /** JOINT: 부위 단어(back/背中/등)를 겸하는 약한 관절 — 다른 관절이 가까이 있으면 그쪽이 부상 관절이다 */
+        val weakJoint: Boolean = false
     )
 
     class MoveGroup(val id: String, val keys: List<SigKey>)
@@ -154,7 +156,7 @@ internal object QueryLexicon {
     private val CUES = """
         痛い|痛み|痛めた|痛めている|痛めてる|痛くない|痛くならない|痛めない|痛くなる|優しい|やさしい|負担がかからない|負担がかからず|負担がない|負担の少ない|負担少ない|負担を減らす|負担をかけない|負担をかけずに|負担軽減|負担が少ない|負担が小さい|負担にならない|怪我|ケガ|けが|故障|違和感|悪い|不安|庇う|保護|リハビリ|痛む|傷める|傷めた|炎症|痛くて|痛くても|大丈夫|安全|安全な|安心|弱い|弱め|軽め|無理なく|無理のない|ケガしにくい|怪我しにくい|痛めにくい|傷めにくい|怪我予防|ケガ予防|痛くなりにくい
         |안좋은데|안좋은데도|아픈데|아프지만|안좋을때|안좋을 때|안좋은|안좋아|안좋다|안좋을|안 좋을 때|아픈|아플|아플때|아프|아파|아프지않은|아프지않게|아프지않는|안아픈|안아프게|통증|부담|부담없는|부담적은|부담이적은|부담을줄이는|부담안되는|부담이안되는|약한|약할|약해|부상|재활|보호|다쳤|다친|다쳐서|조심|조심해서|무리없는|무리없이|염증|불편|불편한|불안|안전한|안전하게|안전|무리가안가는|무리안가는|무리가가지않는|무리가 안 가는|무리 안 가는|괜찮은|괜찮게|편한|편하게|디스크|시큰|시큰거리는|뻐근|뻐근한
-        |bad|sore|weak|injured|injury|injuries|pain|painful|painless|hurt|hurts|hurting|friendly|safe|safely|gentle|gently|rehab|rehabilitation|protect|protecting|careful|carefully|issues|issue|problems|problem|trouble|troubles|ache|aches|aching|stiff|tender|inflamed|pulled|strained|strain|sprain|sprained|surgery|recovering|recovery|post-op|easy-on|easy on|easyon|kind to|gentle on|low-stress|prehab|prevent injury|injury prevention|injury-proof|bulletproof|wont hurt|doesnt hurt|aggravate|aggravating|irritate|irritating|flare up|flareup
+        |bad|sore|weak|injured|injury|injuries|pain|painful|painless|hurt|hurts|hurting|friendly|safe|safely|gentle|gently|rehab|rehabilitation|protect|protecting|careful|carefully|issues|issue|problems|problem|trouble|troubles|ache|aches|aching|stiff|tender|inflamed|pulled|strained|strain|sprain|sprained|surgery|recovering|recovery|post-op|easy-on|easy on|easyon|kind to|gentle on|low-stress|safe for|good for|careful with|prehab|prevent injury|injury prevention|injury-proof|bulletproof|wont hurt|doesnt hurt|aggravate|aggravating|irritate|irritating|flare up|flareup
     """.trimIndent()
 
     /** 충격·소음을 피하는 표현 — 점프류를 제외한다 */
@@ -164,7 +166,8 @@ internal object QueryLexicon {
     """.trimIndent()
 
     /** 관절 앞에 붙는 형용사형 단서(bad knees) — 이 단서는 뒤 관절에 걸린다 */
-    val adjectiveCues: Set<String> = "bad|sore|weak|injured|painful|tender|stiff|damaged|hurt|hurting|strained|sprained|pulled|inflamed".split("|").map { key(it) }.toSet()
+    val adjectiveCues: Set<String> = ("bad|sore|weak|injured|painful|tender|stiff|damaged|hurt|hurting|strained|sprained|pulled|inflamed|" +
+        "easy on|gentle on|kind to|safe for|good for|protect|protecting|careful with|careful|doesnt hurt|wont hurt|hurt my|hurts my|aggravate|aggravating|irritate|irritating").split("|").map { key(it) }.toSet()
 
     // ── 수준 ─────────────────────────────────────────────────────────────────────────────────
     private val BEGINNER = "beginner friendly|beginners friendly|newbie friendly|novice friendly|初心者にやさしい|初心者に優しい|초보자 친화|초보도 쉬운|easy|쉬운|楽な|初心者|初心者向け|入門|入門者|ビギナー|初級|初級者|ビギナー向け|はじめて|初めて|초보|초보자|초보자용|초보용|초심자|입문|입문자|왕초보|처음|처음하는|beginner|beginners|beginner-friendly|novice|newbie|starter|starters|entry level|entrylevel|first time|first-time|noob|rookie|beginning"
@@ -229,7 +232,7 @@ internal object QueryLexicon {
     }
 
     // ── 스트레칭 / 홈 ────────────────────────────────────────────────────────────────────────
-    private val STRETCH = "ストレッチ|柔軟|柔軟体操|ほぐし|ほぐす|스트레칭|스트레치|유연성|이완|풀기|stretch|stretches|stretching|flexibility|mobility|モビリティ|가동성|loosen|loosening|release|relax|リリース|이완운동"
+    private val STRETCH = "伸ばす|伸ばし|伸ばしたい|伸ばして|のばす|のばし|ほぐす|ほぐしたい|ほぐして|ほぐし|柔らかく|柔らかくしたい|やわらかく|ゆるめる|緩める|緩和|リラックス|푸는|푸는법|푸는 법|풀어주는|풀어줘|풀고싶어|늘리기|늘려|늘리는|이완|이완하기|유연하게|유연해지는|부드럽게|근막이완|loosen|loosening|lengthen|elongate|flexible|limber|ストレッチ|柔軟|柔軟体操|ほぐし|ほぐす|스트레칭|스트레치|유연성|이완|풀기|stretch|stretches|stretching|flexibility|mobility|モビリティ|가동성|loosen|loosening|release|relax|リリース|이완운동"
 
     // ── 개념 정의 ────────────────────────────────────────────────────────────────────────────
     // 형식: 트리거|트리거 => id; muscles=A,B; cats=X; sig=..|..; sig2=..; pat=..; avoid=..; flags=strict,stretch,cardio
@@ -326,6 +329,8 @@ internal object QueryLexicon {
         HIP: 股関節痛|고관절통증|고관절 통증|hip pain
         NECK: 首痛|목통증|목 통증|neck pain|寝違え|목디스크|頸椎ヘルニア|neck disc
     """.trimIndent()
+
+    private val WEAK_JOINT_KEYS: Set<String> = listOf("back", "背中", "등").map { key(it) }.toSet()
 
     private val JOINT_RULES = """
         KNEE: 膝|ひざ|ヒザ|무릎|knee|knees|膝関節|무릎 관절
@@ -493,7 +498,7 @@ internal object QueryLexicon {
             val joint = Joint.valueOf(line.substringBefore(":").trim())
             for (t in line.substringAfter(":").split("|")) {
                 val k = key(t)
-                add(k, Term(Role.JOINT, joint = joint, isolated = isIsolated(k)))
+                add(k, Term(Role.JOINT, joint = joint, isolated = isIsolated(k), weakJoint = k in WEAK_JOINT_KEYS))
             }
         }
 

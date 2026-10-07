@@ -420,8 +420,14 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         val right = scan(idx, 1)
         val cueKey = text.substring(segs[idx].s, segs[idx].e)
         val latin = cueKey.isNotEmpty() && cueKey[0].code < 0x250
+        fun weak(i: Int?) = i != null && segs[i].terms!!.filter { it.role == Role.JOINT }.all { it.weakJoint }
         val pick = when {
-            left != null && right != null -> if (latin && cueKey in lex.adjectiveCues) right else left
+            left != null && right != null -> when {
+                weak(left) && !weak(right) -> right
+                weak(right) && !weak(left) -> left
+                latin && cueKey in lex.adjectiveCues -> right
+                else -> left
+            }
             else -> left ?: right
         } ?: return null
         val out = arrayListOf(pick)
