@@ -29,6 +29,9 @@ internal object QueryLexiconRound3 {
         |variations|variation|variants|variant|varieties|variety|types|type|kinds|kind|families|family|styles|style|versions|version|related|similar
         |全部|全て|すべて|ぜんぶ|みんな|どれも|全台|전부|모두|죄다|다들
         |을 때|을때|일 때|일때|할 때|할때|때는|때엔|땐|때
+        |朝起きたら|朝起きた時|朝起きると|起きたら|起きると|起きて|朝一|朝から
+        |아침에 일어나면|아침에 일어나서|일어나면|일어나서|기상 후|기상후
+        |when i wake up|when i get up|after waking up|after i wake up|first thing in the morning|in the morning|every morning|at night
         |heavy|heavier|重い|重たい|重め|무거운|무거워|무겁다|무거운데
         |ゆるい|ゆるめ|ゆるく|ゆるやか|ゆったり|穏やか|軽い|軽め|軽く|睡眠前|寝る直前|ベッドの上|ベッドで|布団の上|布団で|さえあれば|があれば|あれば|だけでできる|だけでOK|だけで|だけあれば|のみで|のみ
         |있으면|있으면 되는|있으면되는|만 있으면|만있으면|있어도|있다면|있는|되는|하나만|한개만|만으로|뿐인|가볍게|가벼운|편안한|편안하게|편하게|부드럽게|부드러운|침대에서|침대 위에서|침대 위|이불 위에서|이불 위

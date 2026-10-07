@@ -17,4 +17,7 @@ interface SemanticConstraint {
 
     /** 질의에 어휘 사전이 못 알아들은 덩어리(별칭·오타·새 표현)가 있는가 — 이름 일치가 확실하지 않다는 신호 */
     val unrecognized: Boolean get() = false
+
+    /** 부상 관절 조건이 풀려 있는가 — 이때 어휘 순위는 의미 검색이 모르는 정보(관절별 권장·주의 동작)를 담고 있다 */
+    val injuryAware: Boolean get() = false
 }

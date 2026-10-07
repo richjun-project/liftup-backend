@@ -28,8 +28,9 @@ class HybridSearch(
         val rrfK: Int = 60,
         val lexicalWeight: Double = 1.0,
         val semanticWeight: Double = 1.0,
-        val lexicalDepth: Int = 10,
-        val semanticDepth: Int = 30,
+        /** 융합에 쓰는 어휘 상위 개수 — 작게 잡아 어휘 상위권의 확신을 살리고, 의미는 더 넓게(아래) 본다 */
+        val lexicalDepth: Int = 5,
+        val semanticDepth: Int = 50,
         /**
          * 어휘 1위가 이 점수 이상이면(정확·단어 경계 이름 일치) 그 운동을 1위로 지킨다 — "squat" 같은 정식 이름 질의에서
          * 어휘 엔진이 고른 대표 운동이 의미 유사도 때문에 밀려나지 않게. null 이면 지키지 않는다.
@@ -40,7 +41,9 @@ class HybridSearch(
         /** 공백 없이 쓴 한·일·중 문장을 자연어로 볼 최소 글자 수 */
         val minCjkLetters: Int = 8,
         /** 어휘 결과가 비었을 때, 의미 1위 유사도가 이 값보다 낮으면 의미 결과도 버린다(운동과 무관한 질의에 억지 결과를 주지 않는다) */
-        val emptyLexicalMinSimilarity: Double = 0.0
+        val emptyLexicalMinSimilarity: Double = 0.0,
+        /** 부상 조건이 풀려 있으면 어휘 순위가 의미 검색이 모르는 정보(관절별 권장·주의 동작)를 담고 있어 가중치를 높인다 */
+        val injuryLexicalBoost: Double = 2.0
     )
 
     /** [hits] 는 어휘 검색과 같은 길이의 전체 순서. [semantic] 은 의미 검색이 실제로 섞였는가. [degraded] 는 의미 검색이 필요했는데 질의 벡터를 못 구해 어휘 결과만 낸 경우(호출자는 이 결과를 오래 캐시하지 않는다). [complete] 는 어휘 검색이 시간 예산 안에 끝났는가. */
@@ -101,8 +104,9 @@ class HybridSearch(
         val score = HashMap<Long, Double>()
         val doc = HashMap<Long, ExerciseSearchDoc>()
         val lexRank = HashMap<Long, Int>()
+        val lexW = config.lexicalWeight * (if (constraint.injuryAware) config.injuryLexicalBoost else 1.0)
         lexical.take(config.lexicalDepth).forEachIndexed { r, h ->
-            score.merge(h.doc.id, config.lexicalWeight / (k + r + 1), Double::plus)
+            score.merge(h.doc.id, lexW / (k + r + 1), Double::plus)
             doc[h.doc.id] = h.doc
             lexRank[h.doc.id] = r
         }
