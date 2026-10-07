@@ -96,7 +96,7 @@ python3 scripts/search/regenerate_embeddings.py --check
 ## 설정
 
 `application.yml` 의 `search.rewrite.*`: `enabled`(`QUERY_REWRITE_ENABLED`, 기본 꺼짐 · prod·local 켜짐 · 테스트 꺼짐), `model`, `timeout-ms`(2500), `cache-size`(4096),
-`breaker-failures`(5), `breaker-open-ms`(30000, 실패 때마다 두 배, 최대 16배). 의미 검색(`search.semantic.enabled`)이 꺼져 있으면 해석도 쓰이지 않는다(하이브리드 위에서만 동작).
+`breaker-failures`(5), `breaker-open-ms`(30000, 실패 때마다 두 배, 최대 8배), `negative-cache-ms`(600000). 의미 검색(`search.semantic.enabled`)이 꺼져 있으면 해석도 쓰이지 않는다(하이브리드 위에서만 동작).
 키는 `gemini.api-key` 를 그대로 쓰고 `x-goog-api-key` 헤더로만 보낸다. 질의 문자열 외에는 아무것도 보내지 않고, 키·질의는 로그에 남기지 않는다.
 
 ## 측정 기록 (5번째 검증셋 404건, 튜닝용 / 이전 평가셋 회귀)
@@ -115,3 +115,42 @@ LLM 호출 비율(건너뛰기 적용): 개발 14%, 적대적 54%, 5번째 83%.
 ```sh
 RW_TUNE_ROOT=<dir> RW_TUNE_SAFETY=<search-safety.json> ./gradlew cleanTest test --tests '*RewriteTuneTest' -i
 ```
+
+# 운동 검색 — 운영 강화 (6.1)
+
+검색의 Gemini 호출(질의 임베딩 + LLM 해석)은 채팅·플랜 생성과 **같은 키/쿼터**를 쓴다. 검색이 그것을 굶기지 않도록 전역 관문(`search/ops/SearchLlmGuard`)을 둔다.
+
+| 키(환경변수) | 기본 | 의미 |
+| --- | --- | --- |
+| `search.llm.budget-per-minute` (`SEARCH_LLM_CALLS_PER_MINUTE`) | 90 | 임베딩+해석 합산 분당 호출 수. 넘으면 호출하지 않고 어휘/하이브리드 결과(degraded)로 간다 |
+| `search.llm.daily-cap` (`SEARCH_LLM_DAILY_CAP`) | 20000 | UTC 하루 호출 수. 바닥나면 WARN 한 줄(그날 한 번) 후 다음 UTC 날까지 건너뛴다 |
+| `search.llm.max-concurrent-searches` (`SEARCH_LLM_MAX_CONCURRENT`) | 20 | Gemini 를 기다리는 자연어 검색 동시 상한(해석 스레드 풀 16 과 맞춤). 넘으면 기다리지 않고 바로 건너뛴다 |
+| `search.llm.summary-interval-ms` | 300000 | 요약 INFO 로그 주기(활동이 없으면 로그 없음) |
+| `search.llm.api-key` (`SEARCH_LLM_API_KEY`) | (정의 안 함 → `gemini.api-key`) | 검색 전용 키/프로젝트로 쿼터를 분리하고 싶을 때. 정의하면 빈 값도 우선하니 쓰지 않을 때는 정의하지 않는다 |
+| `search.{semantic,rewrite}.negative-cache-ms` | 600000 | 내용 실패(거절·산문·잘림·JSON 오류·차원 불일치)를 질의별로 기억하는 시간 |
+
+## 장애 분류
+
+- 차단기에 세는 것: 전송 오류·시간 초과·5xx(연속 5번이면 30초, 다시 실패하면 두 배씩, 최대 8배). 429 는 한 번으로 열리고 `Retry-After`(초, 최대 10분)만큼 유지(없으면 30초). 인증 오류(401/403)는 한 번으로 5분.
+- 세지 않는 것: 내용 실패와 그 밖의 4xx(400). 서버가 멀쩡히 답한 것이라 오히려 연속 실패 수를 비운다. 그 질의는 음성 캐시(기본 10분)에 들어가 다시 부르지 않는다 — 나쁜 질의를 반복해도 호출이 늘지 않고 모두의 차단기를 열 수 없다.
+- 기동 시(`SearchLlmStatus`): 설정은 켜져 있는데 키가 비어 있으면 WARN 한 줄, 아니면 기능 상태와 한도를 INFO 로 남긴다. 전송은 미리 만들어 두고 해석 없이 임베딩 한 번을 데운다(차단기·예산에 세지 않음).
+
+## 관측
+
+- 요약 로그(`Search LLM summary: …`): embed/rewrite 별 호출 수·성공·분류별 실패(transport/timeout/5xx/429/auth/content)·예산·차단기 건너뜀·캐시 적중률·음성 캐시 적중·p50/p95 지연,
+  LLM 이 필요했던 검색 수(의미 반영·해석 반영·degraded), 결과 캐시 적중률, degraded 목록을 페이지 넘김에 이어 쓴 횟수, 분당/일일/동시성 건너뜀, 오늘 쓴 예산. 질의 문자열·사용자 식별자는 없다.
+- 검색 운영 기록(`search_query_log.source`)에 의미·해석 사용 꼬리표가 붙는다: `exercise_list+sr` = 의미(s)·해석(r) 반영, `+d` = 필요했는데 못 얻음(degraded). 쓰지 않은 검색은 이전과 같은 값.
+- 임베딩이 없는 운동이 있으면 인덱스를 다시 만들 때마다 WARN(`regenerate_embeddings.py` 안내).
+
+## 페이지 일관성
+
+같은 (질의·필터·로케일)의 페이지는 같은 순위 목록에서 나온다. LLM 이 없어 만든 degraded 목록은 페이지 넘김 구간(5분) 동안 유지되고, **첫 페이지 요청만** 30초 뒤에 다시 시도해 교체할 수 있다.
+완전한 목록은 10분 유지하고, 카탈로그·동의어·문서 내용이 그대로인 TTL 재빌드는 결과 캐시를 이어받는다(내용이 바뀌면 비운다). 페이지 번호는 `searchIds(..., page)` 인자, 없으면 현재 HTTP 요청의 `page` 파라미터.
+
+## 이름 일치 확인과 힌트 정밀도
+
+- 이름 일치로 LLM 을 건너뛰거나 1위를 고정하려면 질의의 내용 토큰이 이름에서 통째 단어로 나와야 한다(`SemanticConstraint.wholeTokenNameMatch`). 사전이 아는 별칭·사전 낱말로 나뉘는 복합어는 통째로 본다. "삼각형" ⊂ "역삼각형", "dead" ⊂ "deadlift" 같은 부분 문자열은 아니다.
+- 힌트가 가리킨 운동(그 힌트의 1위)이 부상·부정·집 조건으로 빠지면, 같은 분류이고 동작 계열이 같거나 근육이 겹치는 후보만 대신 쓴다. 단어 하나만 겹치는 무관한 이름("leg extension" → "triceps extension")은 버린다.
+- 목표 말투("〜の補助で+부위", "보조로 +부위", "to support my … ")에 부위 개념과 언급된 운동이 함께 있으면 어휘 검색이 그 부위 의도로 읽고, 언급된 운동 자체는 뒤로 미룬다(융합 뒤 상위 20 안에서도).
+- 질의가 직접 말한 장비는 LLM 의 제외 장비에서 뺀다(수건처럼 사물을 장비 자리에 쓴 말은 LLM 의 읽기를 믿는다). 집+일반 장비("집에서 덤벨")는 힌트의 장비 범위를 넓히지 않는다.
+- 설명문(BM25) 계층도 집·생활 사물 의도의 장비 범위와 부상 "조심할 동작" 뒤로 미룸을 이름·의도 경로와 똑같이 적용한다.

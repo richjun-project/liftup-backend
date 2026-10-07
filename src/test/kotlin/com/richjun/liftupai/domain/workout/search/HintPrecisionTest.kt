@@ -37,50 +37,43 @@ class HintPrecisionTest {
         ExerciseSearchDoc(id, slug, mapOf("en" to slug.replace('-', ' '), "ko" to name), cat, eq, muscles, pattern, RecommendationTier.STANDARD, 50, 40)
 
     @Test
-    fun `합성어 속 부분 문자열 일치는 LLM 을 건너뛰는 근거가 아니다`() {
+    fun `합성어 속 부분 문자열 일치는 LLM 을 건너뛰는 근거가 아니다 - 통째 단어일 때만 건너뛴다`() {
         val small = listOf(
             d(1, "reverse-triangle-fly", "역삼각형 플라이"),
-            d(2, "barbell-bench-press", "바벨 벤치프레스", Equipment.BARBELL),
-            d(3, "pull-up", "풀업", cat = ExerciseCategory.BACK, muscles = setOf(MuscleGroup.BACK))
+            d(2, "triangle-push-up", "삼각형 푸시업"),
+            d(3, "barbell-bench-press", "바벨 벤치프레스", Equipment.BARBELL),
+            d(4, "pull-up", "풀업", cat = ExerciseCategory.BACK, muscles = setOf(MuscleGroup.BACK))
         )
         val e = ExerciseSearchEngine(small, emptyList(), 10_000_000_000L)
-        val h = HybridSearch(e, ExerciseVectors.fromFloats(listOf("reverse-triangle-fly", "barbell-bench-press", "pull-up"), List(3) { i -> FloatArray(768).also { it[i] = 1f } }))
+        val h = HybridSearch(e, ExerciseVectors.fromFloats(small.map { it.slug }, List(small.size) { i -> FloatArray(768).also { it[i] = 1f } }))
         val lex = e.search("삼각형 플라이")
         assertEquals("reverse-triangle-fly", lex.first().doc.slug)
         assertTrue(lex.first().score >= 160.0, "합성어 속 일치도 어휘 점수는 단어 경계 대역이다: ${lex.first().score}")
         val c = e.semanticConstraint("삼각형 플라이")!!
+        assertFalse(c.unrecognized, "이름 낱말을 다 아는 질의라 예전에는 여기서 건너뛰었다")
         assertFalse(c.wholeTokenNameMatch(lex.first().doc), "내용 토큰이 이름에 통째 단어로 나오지 않는다")
         assertTrue(h.needsRewrite("삼각형 플라이", lex, c), "부분 문자열 일치로는 LLM 을 건너뛰지 않는다")
         // 통째 단어 일치는 지금처럼 건너뛴다
-        val lex2 = e.search("벤치프레스")
-        val c2 = e.semanticConstraint("벤치프레스")!!
-        assertTrue(c2.wholeTokenNameMatch(lex2.first().doc))
-        assertFalse(h.needsRewrite("벤치프레스", lex2, c2))
+        val lex2 = e.search("삼각형 푸시업")
+        val c2 = e.semanticConstraint("삼각형 푸시업")
+        assertTrue(c2 == null || c2.wholeTokenNameMatch(lex2.first().doc))
+        val lex3 = e.search("벤치프레스")
+        val c3 = e.semanticConstraint("벤치프레스")!!
+        assertTrue(c3.wholeTokenNameMatch(lex3.first().doc))
+        assertFalse(h.needsRewrite("벤치프레스", lex3, c3))
     }
 
     @Test
-    fun `사전이 아는 낱말이 붙여 쓴 이름 속에만 있어도 LLM 을 건너뛰지 않는다 - 통째 단어일 때만 건너뛴다`() {
-        val small = listOf(
-            d(1, "front-squat-compound", "프런트스쿼트", Equipment.BARBELL, ExerciseCategory.LEGS, null, setOf(MuscleGroup.QUADRICEPS)),
-            d(2, "barbell-squat", "바벨 스쿼트", Equipment.BARBELL, ExerciseCategory.LEGS, null, setOf(MuscleGroup.QUADRICEPS)),
-            d(3, "pull-up", "풀업", cat = ExerciseCategory.BACK, muscles = setOf(MuscleGroup.BACK))
-        )
-        val e = ExerciseSearchEngine(small.filter { it.id != 2L }, emptyList(), 10_000_000_000L)
-        val h = HybridSearch(e, ExerciseVectors.fromFloats(listOf("front-squat-compound", "pull-up"), List(2) { i -> FloatArray(768).also { it[i] = 1f } }))
-        val lex = e.search("스쿼트")
-        assertEquals("front-squat-compound", lex.first().doc.slug)
-        assertTrue(lex.first().score >= 160.0, "붙여 쓴 이름 속 일치도 어휘 점수는 단어 경계 대역이다: ${lex.first().score}")
-        val c = e.semanticConstraint("스쿼트")!!
-        assertFalse(c.wholeTokenNameMatch(lex.first().doc))
-        assertFalse(c.unrecognized, "사전이 다 아는 질의라 예전에는 여기서 건너뛰었다")
-        assertTrue(h.needsRewrite("스쿼트", lex, c))
-        // 이름에 통째 단어로 있으면 건너뛴다
-        val e2 = ExerciseSearchEngine(small, emptyList(), 10_000_000_000L)
-        val lex2 = e2.search("스쿼트")
-        val c2 = e2.semanticConstraint("스쿼트")!!
-        assertEquals("barbell-squat", lex2.first().doc.slug)
-        assertTrue(c2.wholeTokenNameMatch(lex2.first().doc))
-        assertFalse(HybridSearch(e2, ExerciseVectors.fromFloats(small.map { it.slug }, List(3) { i -> FloatArray(768).also { it[i] = 1f } })).needsRewrite("스쿼트", lex2, c2))
+    fun `사전이 아는 별칭과 붙여 쓴 복합어는 통째 일치로 보아 지금처럼 건너뛰고 이름 속 부분 문자열만 건너뛰지 않는다`() {
+        fun skips(q: String): Boolean {
+            val c = engine.semanticConstraint(q) ?: return true
+            return !hybrid.needsRewrite(q, engine.search(q), c)
+        }
+        assertTrue(skips("ブルスク"), "별칭")
+        assertTrue(skips("ケーブルロウ"), "사전 낱말로 나뉘는 복합어")
+        assertTrue(skips("ハトのポーズ"))
+        assertFalse(skips("sumo dead"), "dead ⊂ deadlift 는 부분 문자열 일치다")
+        assertFalse(skips("hypers"))
     }
 
     @Test

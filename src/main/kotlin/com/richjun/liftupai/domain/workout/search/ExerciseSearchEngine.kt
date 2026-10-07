@@ -494,10 +494,19 @@ class ExerciseSearchEngine(
         return words.filter { it !in QueryLexicon.genericWords }.ifEmpty { words }
     }
 
-    /** 모든 내용 토큰이 이 문서의 어떤 이름에서 "통째 단어(단어 경계에서 시작해 단어 경계에서 끝남)"로 나오는가 — 합성어 속 부분 문자열("삼각형" ⊂ "역삼각형")은 아니다 */
+    /**
+     * 모든 내용 토큰이 이 문서의 어떤 이름에서 "통째 단어(단어 경계에서 시작해 단어 경계에서 끝남)"로 나오는가 — 합성어 속 부분 문자열("삼각형" ⊂ "역삼각형")은 아니다.
+     * 사전이 아는 별칭("ブルスク", "불스")이거나 사전 낱말로 나뉘는 붙여 쓴 복합어("ケーブルロウ")는 그 말이 이름을 가리키는 것이니 통째로 본다(부분 문자열 우연 일치가 아니다).
+     */
     private fun wholeTokenMatch(d: IDoc, tokens: List<String>): Boolean {
         if (tokens.isEmpty()) return true
-        return d.names.any { n -> tokens.all { t -> alignedOccurrence(n, t) } }
+        return tokens.all { t -> d.names.any { n -> alignedOccurrence(n, t) } || knownAlias(t) }
+    }
+
+    private fun knownAlias(t: String): Boolean {
+        if (synonymGroups(t) != null) return true
+        val parts = splitCompounds(listOf(t)) ?: return false
+        return parts.all { synonymGroups(it) != null || it in ExerciseSearchLexicon.equipmentTerms }
     }
 
     private fun alignedOccurrence(n: NameKey, t: String): Boolean {
