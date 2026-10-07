@@ -13,7 +13,9 @@ import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.user.service.StrengthAssessmentEstimator
 import com.richjun.liftupai.domain.workout.dto.request.ApplyTemplateRequest
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Lazy
+import com.richjun.liftupai.domain.workout.util.WorkoutLocalization
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -36,7 +38,12 @@ class AIPlanGenerationService(
     private val userProfileRepository: UserProfileRepository,
     private val userSettingsRepository: UserSettingsRepository,
     private val objectMapper: ObjectMapper,
-    @Lazy private val self: AIPlanGenerationService
+    @Lazy private val self: AIPlanGenerationService,
+    /** 장비·부상·경험·나이·집중 부위의 단일 출처 */
+    private val trainingContext: UserTrainingContextResolver = UserTrainingContextResolver(userSettingsRepository, userProfileRepository),
+    /** AI 가 못 쓰면 쓰는 폴백 템플릿을 새 추천 엔진으로 고른다 (없으면 옛 경험·일수 거리 규칙) */
+    @Autowired(required = false)
+    private val templateRecommendationService: TemplateRecommendationService? = null,
 ) {
     private val log = LoggerFactory.getLogger(AIPlanGenerationService::class.java)
 
@@ -72,25 +79,38 @@ class AIPlanGenerationService(
     ): PlanDashboardResponse {
         log.info("Generating AI plan for user {} with goals: {}", user.id, request.goals)
 
-        // 부상은 요청 + 프로필 + 설정을 합친다. 한쪽만 보면 필터가 조용히 무력화된다(UserPlanService 와 같은 이유).
-        val injuries = resolveInjuries(user, request)
-        val effectiveRequest = if (injuries.isNotEmpty()) request.copy(injuries = injuries.toList()) else request
+        // 장비·부상(프로필 ∪ 설정 ∪ 요청)·수준·나이·집중 부위는 단일 해석기에서 한 번만 읽는다. 한쪽만 보면 필터가 조용히 무력화된다(UserPlanService 와 같은 이유).
+        val ctx = resolveContext(user, request)
+        val injuries = ctx.injuries
+        val loc = ctx.language
+        fun progress(step: Int, key: String) = onProgress(step, WorkoutLocalization.message("plan.progress.$key", loc))
+        val effectiveRequest = request.copy(
+            injuries = if (injuries.isNotEmpty()) injuries.toList() else request.injuries,
+            // 요청이 장비를 비워 보내면 저장된 장비를 쓴다 — 모델에게 보이는 풀과 사후 검증이 같은 장비를 본다
+            equipment = if (ctx.equipment.isEmpty()) request.equipment else ctx.equipment.toList(),
+            // 요청의 집중 부위에 저장된 집중 목표(thick_legs·glutes …)를 합친다 — 예전엔 요청 값만 읽었다
+            focusAreas = ((request.focusAreas ?: emptyList()) + ctx.focusAreas.map { it.name.lowercase() }).distinct().ifEmpty { null },
+        )
         val targets = targetsOf(effectiveRequest)
+        val restricted = restrictedChecker(injuries)
+        val suitable = ctx.suitability()
         val constraints = PlanConstraints(
             allowedEquipment = PlanConstraints.normalizeEquipment(effectiveRequest.equipment),
             injuries = injuries,
-            isRestricted = { ex -> injuries.isNotEmpty() && injuryFilterService.isExerciseRestricted(ex.id, injuries) }
+            isRestricted = restricted,
+            isSuitable = suitable,
         )
 
-        // 1. Build prompt
-        onProgress(1, "운동 데이터베이스 분석 중...")
+        // 1. Build prompt — 모델에게 보이는 운동 풀도 부상·수준 규칙으로 걸러 둔다(예전엔 제한 운동이 보여 사후 복구에만 의존했다)
+        progress(1, "analyzing")
         val exercisePool = curatedExercisePoolService.getPromptReadyExerciseList(
-            availableEquipment = effectiveRequest.equipment.toSet()
+            availableEquipment = effectiveRequest.equipment.toSet(),
+            isAllowed = { ex -> !restricted(ex) && suitable(ex) },
         )
         val prompt = buildPlanGenerationPrompt(effectiveRequest, exercisePool, targets)
 
         // 2. Call Gemini AI
-        onProgress(2, "AI가 맞춤 플랜을 설계하고 있어요...")
+        progress(2, "designing")
         val firstRaw = try {
             if (streamChunk != null) callGeminiStreamingWithRetry(prompt, 3, streamChunk) else callGeminiWithRetry(prompt, 3)
         } catch (e: Exception) {
@@ -99,7 +119,7 @@ class AIPlanGenerationService(
         }
 
         // 3. Parse (실패 시 JSON-only 지시로 1회 재요청)
-        onProgress(3, "AI 응답을 분석하고 있어요...")
+        progress(3, "reading")
         var parsed = tryParse(firstRaw)
         if (parsed == null) {
             log.warn("First AI response unparsable — retrying once with JSON-only instruction")
@@ -111,13 +131,13 @@ class AIPlanGenerationService(
         }
 
         // 4~5. Guard → normalize → validate
-        onProgress(4, "운동 정확도를 검증하고 있어요...")
-        onProgress(5, "플랜 품질을 최종 검토하고 있어요...")
+        progress(4, "verifying")
+        progress(5, "reviewing")
         var attempt = runPipeline(parsed, constraints, targets)
 
         if (!attempt.report.isValid) {
             log.warn("Quality validation failed ({} errors), regenerating with fix instructions", attempt.report.errors.size)
-            onProgress(5, "품질 기준 미달, AI가 다시 설계하고 있어요...")
+            progress(5, "redesigning")
             val fixPrompt = prompt + buildFixInstructions(attempt.report)
             val retryParsed = try { tryParse(callGeminiWithRetry(fixPrompt, 1)) } catch (e: Exception) { null }
             if (retryParsed != null) {
@@ -139,7 +159,7 @@ class AIPlanGenerationService(
         }
 
         // 6. Persist
-        onProgress(6, "플랜을 저장하고 있어요...")
+        progress(6, "saving")
         return self.persistAIPlan(user, attempt.plan, effectiveRequest)
     }
 
@@ -179,19 +199,25 @@ class AIPlanGenerationService(
         locale = request.locale ?: "ko"
     )
 
-    internal fun resolveInjuries(user: User, request: GenerateAIPlanRequest): Set<String> {
-        val fromRequest = request.injuries.orEmpty()
-        val fromProfile = try {
-            userProfileRepository.findByUser_Id(user.id).orElse(null)?.injuries?.toList().orEmpty()
-        } catch (e: Exception) { emptyList() }
-        val fromSettings = try {
-            userSettingsRepository.findByUser_Id(user.id).orElse(null)?.injuries?.toList().orEmpty()
-        } catch (e: Exception) { emptyList() }
-        return (fromRequest + fromProfile + fromSettings)
-            .map { it.substringBefore(':').trim().lowercase() }
-            .filter { it.isNotEmpty() && it != "none" }
-            .toSet()
-    }
+    /** 부상 = 프로필 ∪ 설정 ∪ 요청 (단일 해석기). */
+    internal fun resolveInjuries(user: User, request: GenerateAIPlanRequest): Set<String> = trainingContext.resolveInjuries(user.id, request.injuries)
+
+    internal fun resolveContext(user: User, request: GenerateAIPlanRequest): UserTrainingContextResolver.Context =
+        try {
+            trainingContext.resolve(user.id, UserTrainingContextResolver.Overrides(
+                equipment = request.equipment, injuries = request.injuries, experience = request.experienceLevel,
+                focusGoals = null, sessionMinutes = request.sessionDuration, age = request.age, gender = request.gender, locale = request.locale,
+            ))
+        } catch (e: Exception) {
+            UserTrainingContextResolver.of(null, null, UserTrainingContextResolver.Overrides(
+                equipment = request.equipment, injuries = request.injuries, experience = request.experienceLevel,
+                sessionMinutes = request.sessionDuration, age = request.age, gender = request.gender, locale = request.locale,
+            ))
+        }
+
+    /** 부상 제한 검사기 — 부상이 없으면 저장소를 건드리지 않는다 */
+    private fun restrictedChecker(injuries: Set<String>): (Exercise) -> Boolean =
+        if (injuries.isEmpty()) { _ -> false } else injuryFilterService.restrictionChecker(injuries)
 
     /**
      * AI 가 끝내 쓸 만한 플랜을 못 주면 사전 템플릿을 적용한다.
@@ -205,14 +231,38 @@ class AIPlanGenerationService(
         onProgress: (step: Int, message: String) -> Unit,
         reason: String
     ): PlanDashboardResponse {
-        onProgress(6, "검증된 기본 플랜을 적용하고 있어요...")
-        val code = chooseFallbackTemplateCode(request)
+        onProgress(6, WorkoutLocalization.message("plan.progress.fallback", request.locale ?: "ko"))
+        val code = recommendFallbackCode(user, request, injuries) ?: chooseFallbackTemplateCode(request)
         log.warn("AI plan fallback → template '{}' for user {} ({})", code, user.id, reason)
         return userPlanService.applyTemplate(
             user, code,
-            ApplyTemplateRequest(injuries = injuries.toList().ifEmpty { null }, equipment = request.equipment.ifEmpty { null }),
+            ApplyTemplateRequest(
+                injuries = injuries.toList().ifEmpty { null }, equipment = request.equipment.ifEmpty { null },
+                experienceLevel = request.experienceLevel, goals = request.goals, focusAreas = request.focusAreas,
+                age = request.age, sessionDuration = request.sessionDuration,
+            ),
             request.locale ?: "ko"
         )
+    }
+
+    /** 폴백 템플릿을 템플릿 추천 엔진(장비·부상·시간·목표·집중 부위 모두 고려)으로 고른다. 엔진을 못 쓰면 null. */
+    private fun recommendFallbackCode(user: User, request: GenerateAIPlanRequest, injuries: Set<String>): String? {
+        val svc = templateRecommendationService ?: return null
+        return try {
+            svc.recommend(
+                user,
+                com.richjun.liftupai.domain.workout.dto.request.RecommendTemplateRequest(
+                    experienceLevel = request.experienceLevel, goals = request.goals, gender = request.gender, age = request.age,
+                    weeklyDays = request.weeklyDays, sessionDuration = request.sessionDuration, equipment = request.equipment.ifEmpty { null },
+                    injuries = injuries.toList().ifEmpty { null }, focusAreas = request.focusAreas, trainingStyle = request.trainingStyle,
+                    locale = request.locale,
+                ),
+                request.locale,
+            ).templateCode
+        } catch (e: Exception) {
+            log.warn("Template recommendation for AI fallback failed: {}", e.message)
+            null
+        }
     }
 
     internal fun chooseFallbackTemplateCode(request: GenerateAIPlanRequest): String {
@@ -261,25 +311,14 @@ class AIPlanGenerationService(
         )
         val savedTemplate = templateRepository.save(template)
 
-        val injuries = request.injuries?.map { it.substringBefore(':').trim().lowercase() }?.toSet() ?: emptySet()
-
-        // Pre-resolve all exercises once to avoid duplicate resolution
-        val resolvedExercises = mutableMapOf<Long, Exercise?>()
-        for (dayEntry in plan.days) {
-            for (exEntry in dayEntry.exercises) {
-                if (!resolvedExercises.containsKey(exEntry.exerciseId)) {
-                    var exercise = resolveExerciseWithFallback(exEntry, dayEntry.workoutType)
-                    if (exercise != null && injuries.isNotEmpty() &&
-                        injuryFilterService.isExerciseRestricted(exercise.id, injuries)) {
-                        exercise = findNonRestrictedAlternative(exercise, injuries, dayEntry.workoutType)
-                    }
-                    resolvedExercises[exEntry.exerciseId] = exercise
-                }
-            }
-        }
+        // 운동 확정 + 안전 규칙 + 시간 맞춤. 대체는 플랜 전체의 "이미 쓴 대체" 집합을 공유한다 —
+        // 예전엔 운동 id 별로 "해당 부위에서 가장 인기 있는 운동" 으로 바꿔 서로 다른 제한 운동 둘이 같은 대체로 가 하루에 두 번 들어갔고,
+        // 장비·수준 검사 없이 바벨 운동이 덤벨 사용자에게 갔다.
+        val finalDays = resolveDays(user, plan, request)
 
         // Save template days and exercises
-        for (dayEntry in plan.days) {
+        for (day in finalDays) {
+            val dayEntry = day.entry
             val workoutType = try {
                 WorkoutType.valueOf(dayEntry.workoutType.uppercase())
             } catch (_: Exception) {
@@ -290,28 +329,23 @@ class AIPlanGenerationService(
                 dayNumber = dayEntry.dayNumber,
                 dayName = dayEntry.dayName,
                 workoutType = workoutType,
-                estimatedDurationMinutes = dayEntry.estimatedDurationMinutes
+                estimatedDurationMinutes = day.minutes
             )
             val savedTemplateDay = templateDayRepository.save(templateDay)
 
-            for (exEntry in dayEntry.exercises) {
-                val exercise = resolvedExercises[exEntry.exerciseId]
-                if (exercise == null) {
-                    log.error("Skipping exercise '{}' (ID={}) in template day {}: no exercise found even after fallback",
-                        exEntry.exerciseName, exEntry.exerciseId, dayEntry.dayNumber)
-                    continue
-                }
+            day.exercises.forEachIndexed { i, planned ->
+                val src = planned.source
                 val templateExercise = TemplateDayExercise(
                     templateDay = savedTemplateDay,
-                    exercise = exercise,
-                    orderInDay = exEntry.order,
-                    sets = exEntry.sets,
-                    minReps = exEntry.minReps,
-                    maxReps = exEntry.maxReps,
-                    restSeconds = exEntry.restSeconds,
-                    isCompound = exEntry.isCompound,
-                    targetRPE = exEntry.targetRPE,
-                    notes = exEntry.notes
+                    exercise = src.exercise,
+                    orderInDay = i + 1,
+                    sets = src.sets,
+                    minReps = src.minReps,
+                    maxReps = src.maxReps,
+                    restSeconds = src.restSeconds,
+                    isCompound = src.isCompound,
+                    targetRPE = src.targetRPE,
+                    notes = src.notes
                 )
                 templateDayExerciseRepository.save(templateExercise)
             }
@@ -341,7 +375,8 @@ class AIPlanGenerationService(
         )
         val savedPlan = userWorkoutPlanRepository.save(userPlan)
 
-        for (dayEntry in plan.days) {
+        for (day in finalDays) {
+            val dayEntry = day.entry
             val workoutType = try {
                 WorkoutType.valueOf(dayEntry.workoutType.uppercase())
             } catch (_: Exception) {
@@ -352,28 +387,23 @@ class AIPlanGenerationService(
                 dayNumber = dayEntry.dayNumber,
                 dayName = dayEntry.dayName,
                 workoutType = workoutType,
-                estimatedDurationMinutes = dayEntry.estimatedDurationMinutes
+                estimatedDurationMinutes = day.minutes
             )
             val savedDay = userPlanDayRepository.save(planDay)
 
-            for (exEntry in dayEntry.exercises) {
-                val exercise = resolvedExercises[exEntry.exerciseId]
-                if (exercise == null) {
-                    log.error("Skipping exercise '{}' (ID={}) in user plan day {}: no exercise found even after fallback",
-                        exEntry.exerciseName, exEntry.exerciseId, dayEntry.dayNumber)
-                    continue
-                }
+            day.exercises.forEachIndexed { i, planned ->
+                val src = planned.source
                 val planExercise = UserPlanDayExercise(
                     planDay = savedDay,
-                    exercise = exercise,
-                    orderInDay = exEntry.order,
-                    sets = exEntry.sets,
-                    minReps = exEntry.minReps,
-                    maxReps = exEntry.maxReps,
-                    restSeconds = exEntry.restSeconds,
-                    isCompound = exEntry.isCompound,
-                    targetRPE = exEntry.targetRPE,
-                    notes = exEntry.notes
+                    exercise = src.exercise,
+                    orderInDay = i + 1,
+                    sets = src.sets,
+                    minReps = src.minReps,
+                    maxReps = src.maxReps,
+                    restSeconds = src.restSeconds,
+                    isCompound = src.isCompound,
+                    targetRPE = src.targetRPE,
+                    notes = src.notes
                 )
                 userPlanDayExerciseRepository.save(planExercise)
             }
@@ -385,6 +415,76 @@ class AIPlanGenerationService(
         )
 
         return userPlanService.getPlanDashboard(user.id)
+    }
+
+    /** 확정된 하루: 원본 항목 + 안전·시간 규칙을 거친 운동 목록 */
+    internal class FinalDay(val entry: AIPlanDayEntry, val exercises: List<TemplatePlanAdapter.PlannedExercise>, val minutes: Int)
+
+    /**
+     * AI 플랜의 각 하루를 실제 운동으로 확정한다.
+     *  1) id 로 찾고(없으면 같은 부위 인기 운동), 부상·장비·수준 규칙을 어기거나 그날 이미 있는 운동이면 대체한다
+     *  2) 대체는 한 번 쓴 운동을 플랜 전체에서 다시 쓰지 않는다(후보가 모자라면 그날만 겹치지 않게)
+     *  3) 초보·고령 처방 보정과 세션 시간(85~110%) 맞춤을 거친다
+     */
+    internal fun resolveDays(user: User, plan: AIPlanResponse, request: GenerateAIPlanRequest): List<FinalDay> {
+        val ctx = resolveContext(user, request)
+        val injuries = ctx.injuries
+        val restricted = restrictedChecker(injuries)
+        val suitable = ctx.suitability()
+        val level = ctx.level ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
+        val poolCache = mutableMapOf<ExerciseCategory, List<Exercise>>()
+        val adapter = TemplatePlanAdapter(
+            poolByCategory = { cat -> poolCache.getOrPut(cat) { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(cat) } },
+            isRestricted = restricted,
+        )
+        fun acceptable(ex: Exercise) =
+            TemplatePlanAdapter.equipmentAllowed(ex, ctx.equipment) && !restricted(ex) && suitable(ex)
+
+        val replacedAcrossPlan = mutableSetOf<Long>()
+        val resolved = plan.days.map { dayEntry ->
+            val inDay = mutableSetOf<Long>()
+            val rows = mutableListOf<TemplatePlanAdapter.PlannedExercise>()
+            for (exEntry in dayEntry.exercises.sortedBy { it.order }) {
+                var exercise = resolveExerciseWithFallback(exEntry, dayEntry.workoutType)
+                if (exercise == null || exercise.id in inDay || !acceptable(exercise)) {
+                    val dayPatterns = rows.mapNotNull { it.exercise.movementPattern }.toSet()
+                    fun pick(exclude: Set<Long>, avoid: Set<String>) = adapter.pickRefill(
+                        workoutType = dayEntry.workoutType, injuries = injuries, exclude = exclude, needed = 1,
+                        allowedEquipment = ctx.equipment, maxDifficulty = null, suitable = suitable, avoidPatterns = avoid,
+                    ).firstOrNull()
+                    val replacement = pick(inDay + replacedAcrossPlan, dayPatterns) ?: pick(inDay, dayPatterns)
+                    if (replacement != null) {
+                        log.warn("AI plan: exercise '{}' (ID={}) replaced by '{}' (restricted/duplicate/equipment/level)",
+                            exEntry.exerciseName, exEntry.exerciseId, replacement.name)
+                        replacedAcrossPlan += replacement.id
+                    } else {
+                        log.error("Skipping exercise '{}' (ID={}) in day {}: no safe replacement found",
+                            exEntry.exerciseName, exEntry.exerciseId, dayEntry.dayNumber)
+                    }
+                    exercise = replacement
+                }
+                if (exercise == null) continue
+                inDay += exercise.id
+                rows += TemplatePlanAdapter.PlannedExercise(
+                    TemplatePlanAdapter.SourceExercise(
+                        exercise, exEntry.sets, exEntry.minReps, exEntry.maxReps, exEntry.restSeconds,
+                        exEntry.isCompound, exEntry.targetRPE, exEntry.notes,
+                    ),
+                    TemplatePlanAdapter.Origin.TEMPLATE,
+                )
+            }
+            TemplatePlanAdapter.AdaptedDay(dayEntry.dayNumber, dayEntry.workoutType, rows, 0, 0)
+        }
+        val tctx = TemplatePlanAdapter.Context(
+            allowedEquipment = ctx.equipment, injuries = injuries, focus = ctx.focusAreas,
+            maxDifficulty = TemplatePlanAdapter.maxDifficultyFor(ctx.experience ?: request.experienceLevel),
+            sessionMinutes = request.sessionDuration.takeIf { it > 0 } ?: ctx.sessionMinutesOrDefault(),
+            suitable = suitable, level = level, age = ctx.age ?: request.age,
+        )
+        val finished = adapter.personalize(resolved, tctx)
+        return plan.days.zip(finished).map { (entry, day) ->
+            FinalDay(entry, day.exercises, day.estimatedMinutes().takeIf { day.exercises.isNotEmpty() } ?: entry.estimatedDurationMinutes)
+        }
     }
 
     /**
@@ -410,16 +510,6 @@ class AIPlanGenerationService(
             log.error("No plan-eligible fallback in category {} for '{}'", category, exEntry.exerciseName)
         }
         return fallback
-    }
-
-    private fun findNonRestrictedAlternative(
-        restricted: Exercise, injuries: Set<String>, workoutType: String
-    ): Exercise? {
-        val category = hallucinationGuardService.mapWorkoutTypeToCategory(workoutType)
-        val alternatives = exerciseRepository.findByIsPlanEligibleTrueAndCategory(category)
-            .filter { it.id != restricted.id && !injuryFilterService.isExerciseRestricted(it.id, injuries) }
-            .sortedByDescending { it.popularity }
-        return alternatives.firstOrNull()
     }
 
     private fun callGeminiWithRetry(prompt: String, maxRetries: Int): String {
@@ -621,7 +711,7 @@ ${buildRPETargets(request.experienceLevel, trainingStyle)}
       ]
     }
   ],
-  "coachingNotes": "string (Korean, overall advice)"
+  "coachingNotes": "string (in $responseLanguage, overall advice)"
 }
 """.trimIndent()
     }

@@ -200,6 +200,9 @@ class PTRecommendationEngine(
             estimated1RM = estimated1RM,
             declaredWorkingWeight = declaredWorkingWeight,
             goals = profile?.goals.orEmpty(),
+            profile = profile,
+            experienceLevel = experienceLevel,
+            hasPersonalRecord = personalRecord != null,
         )
 
         // 6. 최종 추천 생성
@@ -418,6 +421,9 @@ class PTRecommendationEngine(
         estimated1RM: Double? = null,
         declaredWorkingWeight: Double? = null,
         goals: Set<com.richjun.liftupai.domain.user.entity.FitnessGoal> = emptySet(),
+        profile: com.richjun.liftupai.domain.user.entity.UserProfile? = null,
+        experienceLevel: ExperienceLevel? = null,
+        hasPersonalRecord: Boolean = personalRecord != null,
     ): ProgressionPlan {
 
         // 운동 특성별 분화된 세트/횟수/휴식 처방 (시작 무게를 목표 반복수에 맞추기 위해 먼저 푼다).
@@ -472,6 +478,11 @@ class PTRecommendationEngine(
             RecoveryStatus.DETRAINED -> 0.85
         }
 
+        // 첫 세션(PR·최근 이력 모두 없음)은 플랜 화면·하루 운동과 같은 단일 출처 무게에서 출발한다.
+        // 예전엔 가상의 PR(= 기본값 × 1.2)의 65~75% 밴드로 눌러 같은 사람에게 화면마다 다른 무게(기본값의 90%)를 줬다.
+        val isFirstSession = !hasPersonalRecord && recentHistory.isEmpty()
+        val firstSessionWeight = if (isFirstSession) weightRecommendationService.firstSessionWeight(profile, exercise, targetRepsForStart) else null
+
         // 최종 무게 계산 (NaN 방지 + 안전 마진 강화)
         var targetWeight = if (lastWeight > 0 && lastWeight.isFinite()) {
             val computed = lastWeight * progressionMultiplier * recoveryMultiplier
@@ -486,7 +497,9 @@ class PTRecommendationEngine(
         }
 
         // 안전 마진 적용 (과학적 근거: NSCA Guidelines)
-        if (prWeight > 0) {
+        if (firstSessionWeight != null) {
+            targetWeight = firstSessionWeight
+        } else if (prWeight > 0) {
             // 1. 주기화 범위 내로 제한
             targetWeight = targetWeight.coerceIn(
                 prWeight * intensityRange.start,
@@ -552,7 +565,21 @@ class PTRecommendationEngine(
         val goalReps = goalWindow?.let { exerciseTrainingProfileResolver.fitReps(reps, it) } ?: reps
 
         // 미성년·고령 볼륨 상한
-        val cappedSets = sets.coerceAtMost(RecommendationConstants.getAgeMaxSets(age)).coerceAtLeast(1)
+        var cappedSets = sets.coerceAtMost(RecommendationConstants.getAgeMaxSets(age)).coerceAtLeast(1)
+        var finalReps = goalReps
+        var finalRest = config.restSeconds
+        // 초보·노비스는 처음 몇 주 주력 복합운동을 8회 이상·3세트 이하로 — 첫 바벨 스쿼트가 4x6-8/180초로 나가던 것을 막는다(골든셋 F10)
+        if (experienceLevel != null && RecoRules.isBeginnerBand(experienceLevel)) {
+            val range = Regex("""^\s*(\d+)\s*(?:-\s*(\d+))?\s*$""").matchEntire(finalReps)
+            if (range != null) {
+                val lo = range.groupValues[1].toInt()
+                val hi = range.groupValues[2].ifEmpty { range.groupValues[1] }.toInt()
+                val rx = RecoRules.beginnerRx(exercise, RecoRules.Rx(cappedSets, lo, hi, finalRest))
+                cappedSets = rx.sets
+                finalReps = if (rx.minReps == rx.maxReps) "${rx.minReps}" else "${rx.minReps}-${rx.maxReps}"
+                finalRest = rx.restSeconds
+            }
+        }
 
         // intensity 계산 시 NaN 방지
         val intensity = if (prWeight > 0 && targetWeight.isFinite()) {
@@ -562,11 +589,12 @@ class PTRecommendationEngine(
         }
 
         return ProgressionPlan(
-            weight = roundToPlate(targetWeight),
+            // 2.5kg 단위·바벨 20kg 하한은 모든 경로가 같은 함수(RecoRules.finalizeWeight)를 거친다. 무게 없는 종목(맨몸·밴드)은 0.
+            weight = RecoRules.finalizeWeight(exercise, targetWeight),
             sets = cappedSets,
-            reps = goalReps,
-            restSeconds = config.restSeconds,
-            minRestSeconds = config.minRestSeconds,
+            reps = finalReps,
+            restSeconds = finalRest,
+            minRestSeconds = config.minRestSeconds.coerceAtMost(finalRest).coerceAtLeast(minOf(finalRest, if (finalRest > config.restSeconds) 90 else 0)),
             intensity = intensity,
             focus = determineFocus(performanceAnalysis, periodizationPhase, strategy, locale)
         )

@@ -14,6 +14,27 @@ object SubstituteRanker {
     data class Ranked(val exercise: Exercise, val score: Double, val similarity: Double)
 
     /**
+     * 사용자 맥락(보유 장비·부상·수준·나이)을 지키는 대체 순위. 대체 후보 API(ProgramService)와 하루 운동의 인라인 대체(PlanWorkoutEnricher)가
+     * 같은 함수를 부르므로 같은 사람·같은 운동이면 같은 후보가 나온다.
+     * 철봉이 필요한 동작·너무 어려운 동작은 후보에서 빠진다(예전엔 초보에게 아처 풀업·스내치 데드리프트가 대체로 나갔다).
+     */
+    fun rankForUser(
+        original: Exercise,
+        pool: Collection<Exercise>,
+        curatedIds: Set<Long>,
+        ctx: UserTrainingContextResolver.Context,
+        isRestricted: (Exercise) -> Boolean,
+        limit: Int = 10,
+    ): List<Ranked> {
+        val suitable = ctx.suitability()
+        return rank(
+            original, pool, curatedIds,
+            isAllowed = { ex -> TemplatePlanAdapter.equipmentAllowed(ex, ctx.equipment) && !isRestricted(ex) && suitable(ex) },
+            limit = limit,
+        )
+    }
+
+    /**
      * @param curatedIds 운영자가 큐레이션한 대체 목록(exercise_substitutions)에 있는 운동 — 가산점
      * @param isAllowed 사용자 장비·부상 필터 (비로그인이면 항상 true)
      */

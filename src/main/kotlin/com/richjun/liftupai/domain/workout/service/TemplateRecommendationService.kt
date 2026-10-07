@@ -28,6 +28,8 @@ class TemplateRecommendationService(
     private val injuryFilterService: InjuryFilterService,
     private val userSettingsRepository: UserSettingsRepository,
     private val userProfileRepository: UserProfileRepository,
+    /** 장비·부상·경험·나이·세션 시간의 단일 출처 — recommend 와 apply 가 같은 사람을 같게 읽는다 */
+    private val trainingContext: UserTrainingContextResolver = UserTrainingContextResolver(userSettingsRepository, userProfileRepository),
 ) {
     private val log = LoggerFactory.getLogger(TemplateRecommendationService::class.java)
 
@@ -47,8 +49,9 @@ class TemplateRecommendationService(
 
     @Transactional(readOnly = true)
     fun recommend(user: User, request: RecommendTemplateRequest, localeOverride: String? = null): TemplateRecommendationResponse {
-        val locale = resolveLocale(user, request, localeOverride)
-        val profile = toProfile(request)
+        val ctx = trainingContext.resolve(user.id, overridesOf(request))
+        val locale = resolveLocale(ctx, localeOverride)
+        val profile = toProfile(request, ctx)
         val snap = snapshot()
         val pool = catalogCache.get().planPool
         val adapter = TemplatePlanAdapter(
@@ -69,32 +72,35 @@ class TemplateRecommendationService(
         )
     }
 
-    internal fun toProfile(request: RecommendTemplateRequest): TemplateRecommendationEngine.RecoProfile {
+    internal fun overridesOf(request: RecommendTemplateRequest) = UserTrainingContextResolver.Overrides(
+        equipment = request.equipment, injuries = request.injuries, experience = request.experienceLevel,
+        focusGoals = null, sessionMinutes = request.sessionDuration, age = request.age, gender = request.gender, locale = request.locale,
+    )
+
+    /** 요청만으로 만든 프로필(저장값 없음). 테스트·비로그인 호출용 */
+    internal fun toProfile(request: RecommendTemplateRequest): TemplateRecommendationEngine.RecoProfile =
+        toProfile(request, UserTrainingContextResolver.of(null, null, overridesOf(request)))
+
+    /** 요청 + 저장된 온보딩 값(장비는 요청 우선, 부상은 합집합, 나이·경험·시간은 요청 우선)으로 만든 프로필 */
+    internal fun toProfile(request: RecommendTemplateRequest, ctx: UserTrainingContextResolver.Context): TemplateRecommendationEngine.RecoProfile {
         val goals = request.goals.orEmpty().map { it.trim().lowercase().replace('-', '_').replace(' ', '_') }.filter { it.isNotEmpty() }
+        // 집중 부위: 요청(goals·focus_areas) → 저장된 집중 목표. applyTemplate 과 같은 순서
+        val requested = FocusArea.resolve(goals, request.focusAreas)
+        val focus = requested.ifEmpty { ctx.focusAreas }
         return TemplateRecommendationEngine.RecoProfile(
-            experience = request.experienceLevel?.trim()?.lowercase()?.takeIf { it.isNotEmpty() } ?: "beginner",
+            experience = ctx.experience ?: "beginner",
             goals = goals,
             weeklyDays = (request.weeklyDays ?: DEFAULT_DAYS).coerceIn(1, 7),
-            sessionDuration = (request.sessionDuration ?: DEFAULT_MINUTES).coerceIn(10, 240),
-            // 장비 표기는 applyTemplate 과 같은 규칙(BARBELL 등 enum 이름)으로 맞춘다
-            equipment = request.equipment.orEmpty()
-                .map { it.trim().uppercase().replace(" ", "_").replace("-", "_") }.filter { it.isNotEmpty() }.toSet(),
-            injuries = request.injuries.orEmpty()
-                .map { it.substringBefore(':').trim().lowercase() }.filter { it.isNotEmpty() && it != "none" }.toSet(),
-            focus = FocusArea.resolve(goals, request.focusAreas),
+            sessionDuration = ctx.sessionMinutes ?: DEFAULT_MINUTES,
+            equipment = ctx.equipment,
+            injuries = ctx.injuries,
+            focus = focus,
+            age = ctx.age,
         )
     }
 
-    private fun resolveLocale(user: User, request: RecommendTemplateRequest, override: String?): String {
-        val raw = override?.takeIf { it.isNotBlank() } ?: request.locale?.takeIf { it.isNotBlank() }
-            ?: userSettingsRepository.findByUser_Id(user.id).orElse(null)?.language
-        val normalized = raw?.trim()?.lowercase()?.replace('_', '-').orEmpty()
-        return when {
-            normalized.startsWith("ko") -> "ko"
-            normalized.startsWith("ja") -> "ja"
-            else -> "en"
-        }
-    }
+    private fun resolveLocale(ctx: UserTrainingContextResolver.Context, override: String?): String =
+        UserTrainingContextResolver.normalizeLanguage(override?.takeIf { it.isNotBlank() } ?: ctx.language)
 
     private fun snapshot(): Snapshot {
         val current = snapshot

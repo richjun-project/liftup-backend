@@ -499,63 +499,6 @@ class WorkoutService(
         )
     }
 
-    @Transactional(readOnly = true)
-    fun getTodayRecommendations(userId: Long): TodayWorkoutRecommendation {
-        val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("User not found") }
-
-        val profile = userProfileRepository.findByUser_Id(userId).orElse(null)
-        val settings = userSettingsRepository.findByUser_Id(userId).orElse(null)
-
-        // 근육 회복 상태 계산 (내부용 캐노니컬 값 + 화면 표시용 로케일 지역화 값)
-        val locale = resolveLocale(userId)
-        val recoveryInfo = calculateMuscleRecoveryInfo(userId)
-        val recoveryStatus = recoveryInfo.map { info ->
-            MuscleRecoveryStatus(
-                muscle = WorkoutTargetResolver.displayName(info.muscleGroup, locale),
-                recoveryPercentage = info.recoveryPercentage,
-                lastWorked = AppTime.formatUtc(info.lastWorked)
-            )
-        }
-
-        // 회복된 근육군 찾기 (캐노니컬 MuscleGroup 기준 — 로케일에 영향받지 않음)
-        val wellRecoveredMuscles = recoveryInfo
-            .filter { it.recoveryPercentage >= 80 }
-            .map { it.muscleGroup }
-
-        // 타겟 근육군 결정 (회복 상태와 최근 운동 이력 고려)
-        val targetMuscles = determineTargetMuscles(userId, wellRecoveredMuscles)
-
-        // 추천 운동 생성
-        val recommendedExercises = generateRecommendedExercises(
-            userId,
-            profile?.experienceLevel ?: ExperienceLevel.BEGINNER,
-            settings?.availableEquipment?.toList() ?: emptyList(),
-            recoveryStatus,
-            targetMuscles
-        )
-
-        // 대체 운동 생성
-        val alternatives = generateAlternativeExercises(recommendedExercises)
-
-        // 난이도 계산
-        val difficulty = calculateDifficulty(profile?.experienceLevel, recommendedExercises.size)
-
-        // 예상 소요 시간 계산
-        val estimatedDuration = calculateEstimatedDuration(recommendedExercises)
-
-        return TodayWorkoutRecommendation(
-            programName = "Custom ${targetMuscles.joinToString(", ")} workout",
-            dayInProgram = calculateDayInProgram(userId),
-            targetMuscles = targetMuscles,
-            exercises = recommendedExercises,
-            estimatedDuration = estimatedDuration,
-            difficulty = difficulty,
-            recoveryStatus = recoveryStatus,
-            alternatives = alternatives
-        )
-    }
-
     fun generateProgram(userId: Long, request: GenerateProgramRequest): WorkoutProgramResponse {
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
@@ -901,127 +844,6 @@ class WorkoutService(
         }
     }
 
-    private fun generateRecommendedExercises(
-        userId: Long,
-        experienceLevel: ExperienceLevel,
-        availableEquipment: List<String>,
-        recoveryStatus: List<MuscleRecoveryStatus>,
-        targetMuscles: List<String> = listOf(
-            WorkoutTargetResolver.displayName(WorkoutFocus.CHEST, locale = "ko"),
-            WorkoutTargetResolver.displayName(MuscleGroup.TRICEPS, locale = "ko")
-        )
-    ): List<RecommendedExercise> {
-        val recommendedExercises = mutableListOf<RecommendedExercise>()
-
-        // 한글 타겟 근육군을 영어 MuscleGroup으로 변환
-        val targetMuscleGroups = targetMuscles.flatMap { getEnglishMuscleGroups(it) }.toSet()
-
-        // 타겟 근육군에 맞는 운동 조회
-        val exercises = exerciseRepository.findAll().filter { exercise ->
-            exercise.muscleGroups.any { muscle ->
-                targetMuscleGroups.contains(muscle)
-            }
-        }
-
-        // 장비 필터링
-        var filteredExercises = if (availableEquipment.isNotEmpty()) {
-            exercises.filter { exercise ->
-                val equipmentName = exercise.equipment?.name
-                equipmentName == null ||
-                availableEquipment.any { it.equals(equipmentName, ignoreCase = true) }
-            }
-        } else {
-            exercises
-        }
-
-        // 핵심 운동을 우선 추천하고, 부족할 때만 일반 운동으로 보충
-        val coreExercises = removeDuplicatePatterns(
-            filteredExercises.filter { RecommendationExerciseRanking.isCoreCandidate(it) }
-        ).sortedWith(RecommendationExerciseRanking.displayOrderComparator())
-
-        val fallbackExercises = removeDuplicatePatterns(
-            filteredExercises.filter { RecommendationExerciseRanking.isGeneralCandidate(it) }
-                .filterNot { candidate -> coreExercises.any { it.id == candidate.id } }
-        ).sortedWith(RecommendationExerciseRanking.displayOrderComparator())
-
-        filteredExercises = (coreExercises + fallbackExercises).distinctBy { it.id }
-
-        // 경험 레벨에 따른 운동 개수 및 세트/렙 조정
-        data class WorkoutConfig(val exerciseCount: Pair<Int, Int>, val setsRange: Pair<Int, Int>, val repsRange: String, val rpeTarget: Int)
-
-        val config = when (experienceLevel) {
-            ExperienceLevel.NOVICE -> WorkoutConfig(3 to 4, 2 to 3, "15-20", 5)
-            ExperienceLevel.BEGINNER -> WorkoutConfig(3 to 4, 2 to 3, "12-15", 6)
-            ExperienceLevel.INTERMEDIATE -> WorkoutConfig(4 to 5, 3 to 4, "8-12", 7)
-            ExperienceLevel.ADVANCED -> WorkoutConfig(5 to 6, 4 to 5, "6-10", 8)
-            ExperienceLevel.EXPERT -> WorkoutConfig(6 to 7, 4 to 6, "4-8", 9)
-        }
-
-        val (exerciseCount, setsRange, repsRange, rpeTarget) = config
-
-        // 운동 선택 및 추천 생성
-        val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("User not found") }
-
-        filteredExercises.take(exerciseCount.second).forEach { exercise ->
-            val previousRecord = personalRecordRepository.findTopByUserAndExerciseOrderByWeightDesc(
-                user = user,
-                exercise = exercise
-            )
-
-            recommendedExercises.add(
-                RecommendedExercise(
-                    exerciseId = exercise.id,
-                    name = exercise.name,
-                    recommendedSets = setsRange.second,
-                    recommendedReps = repsRange,
-                    recommendedWeight = previousRecord?.weight?.times(0.8) ?: 20.0,
-                    rpe = rpeTarget,
-                    restTime = if (exercise.category in listOf(ExerciseCategory.LEGS, ExerciseCategory.BACK)) 120 else 90,
-                    previousPerformance = previousRecord?.let { "${it.weight}kg x ${it.reps} reps" } ?: "No record"
-                )
-            )
-        }
-
-        return recommendedExercises
-    }
-
-    private fun generateAlternativeExercises(exercises: List<RecommendedExercise>): List<AlternativeExercise> {
-        val alternatives = mutableListOf<AlternativeExercise>()
-
-        exercises.forEach { exercise ->
-            // 각 운동에 대한 대체 운동 찾기
-            val mainExercise = exerciseRepository.findById(exercise.exerciseId).orElse(null)
-            if (mainExercise != null) {
-                // 같은 근육군을 타겟으로 하는 다른 운동 찾기
-                val similarExercises = exerciseRepository.findAll().filter { alt ->
-                    alt.id != mainExercise.id &&
-                    alt.muscleGroups.any { it in mainExercise.muscleGroups } &&
-                    alt.category == mainExercise.category
-                }.take(2)
-
-                similarExercises.forEach { alt ->
-                    alternatives.add(
-                        AlternativeExercise(
-                            exerciseId = alt.id,
-                            name = alt.name,
-                            reason = when {
-                                alt.equipment != mainExercise.equipment ->
-                                    "Can be replaced with a ${alt.equipment?.name ?: "bodyweight"} variation"
-                                alt.muscleGroups.size != mainExercise.muscleGroups.size ->
-                                    "Alternative for difficulty adjustment"
-                                else ->
-                                    "Alternative with a similar muscle stimulus"
-                            }
-                        )
-                    )
-                }
-            }
-        }
-
-        return alternatives.distinctBy { it.exerciseId }
-    }
-
     private fun generateWeeklySchedule(
         weeklyDays: Int,
         workoutSplit: String,
@@ -1110,6 +932,10 @@ class WorkoutService(
         }
     }
 
+    /**
+     * 체중·성별·수준만으로 계산하는 "무게 계산기" API(calculateWeight)의 일반 작업 무게. 종목을 모르므로 바벨 하한(20kg)은 걸지 않는다 —
+     * 운동별 추천 무게는 WeightRecommendationService 가 단일 출처다.
+     */
     private fun calculateRecommendedWeight(
         bodyWeight: Double,
         gender: String,
@@ -1134,96 +960,6 @@ class WorkoutService(
             com.richjun.liftupai.domain.workout.dto.WarmupSet(weight = workingWeight * 0.6, reps = 8),
             com.richjun.liftupai.domain.workout.dto.WarmupSet(weight = workingWeight * 0.8, reps = 5)
         )
-    }
-
-    private fun determineTargetMuscles(userId: Long, wellRecoveredMuscles: List<MuscleGroup>): List<String> {
-        // 최근 7일간 운동 이력 조회
-        val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("User not found") }
-        val recentSessions = workoutSessionRepository.findTop7ByUserOrderByStartTimeDesc(user)
-
-        // 최근에 운동한 근육군 파악
-        val recentlyWorkedMuscles = mutableMapOf<WorkoutFocus, Int>()
-        recentSessions.forEach { session ->
-            val sessionExercises = workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id)
-            sessionExercises.forEach { exercise ->
-                exercise.exercise.muscleGroups.forEach { muscle ->
-                    val focus = WorkoutTargetResolver.focusForMuscleGroup(muscle)
-                    recentlyWorkedMuscles[focus] = recentlyWorkedMuscles.getOrDefault(focus, 0) + 1
-                }
-            }
-        }
-
-        // 덜 운동한 근육군 우선 선택
-        val focusPriority = listOf(
-            WorkoutFocus.CHEST,
-            WorkoutFocus.BACK,
-            WorkoutFocus.SHOULDERS,
-            WorkoutFocus.ARMS,
-            WorkoutFocus.LEGS,
-            WorkoutFocus.CORE
-        )
-        val recoveredFocuses = wellRecoveredMuscles
-            .map(WorkoutTargetResolver::focusForMuscleGroup)
-            .toSet()
-        val underworkedMuscles = focusPriority.filter { focus ->
-            (recoveredFocuses.isEmpty() || focus in recoveredFocuses) &&
-                recentlyWorkedMuscles.getOrDefault(focus, 0) < 2
-        }
-
-        return if (underworkedMuscles.isNotEmpty()) {
-            underworkedMuscles
-                .take(2)
-                .map { WorkoutTargetResolver.displayName(it, locale = resolveLocale(userId)) }
-        } else {
-            // 기본값: 푸시/풀 분할
-            val zoneId = AppTime.resolveZoneId(userSettingsRepository.findByUser_Id(userId).orElse(null)?.timeZone)
-            val dayOfWeek = AppTime.currentUserDate(zoneId).dayOfWeek.value
-            when (dayOfWeek % 3) {
-                0 -> listOf(WorkoutFocus.CHEST, WorkoutFocus.ARMS)
-                1 -> listOf(WorkoutFocus.BACK, WorkoutFocus.ARMS)
-                else -> listOf(WorkoutFocus.LEGS, WorkoutFocus.CORE)
-            }
-                .map { WorkoutTargetResolver.displayName(it, locale = resolveLocale(userId)) }
-        }
-    }
-
-    private fun calculateDifficulty(experienceLevel: ExperienceLevel?, exerciseCount: Int): String {
-        return when {
-            experienceLevel == ExperienceLevel.BEGINNER && exerciseCount <= 3 -> "easy"
-            experienceLevel == ExperienceLevel.BEGINNER -> "moderate"
-            experienceLevel == ExperienceLevel.INTERMEDIATE && exerciseCount <= 4 -> "moderate"
-            experienceLevel == ExperienceLevel.INTERMEDIATE -> "hard"
-            experienceLevel == ExperienceLevel.ADVANCED && exerciseCount <= 5 -> "hard"
-            experienceLevel == ExperienceLevel.ADVANCED -> "very hard"
-            else -> "moderate"
-        }
-    }
-
-    private fun calculateEstimatedDuration(exercises: List<RecommendedExercise>): Int {
-        var totalMinutes = 0
-        exercises.forEach { exercise ->
-            // 세트당 시간: 실행시간(30초) + 휴식시간
-            val minutesPerSet = (30 + exercise.restTime) / 60.0
-            totalMinutes += (exercise.recommendedSets * minutesPerSet).toInt()
-        }
-        // 준비운동 10분 + 마무리 5분 추가
-        return totalMinutes + 15
-    }
-
-    private fun calculateDayInProgram(userId: Long): Int {
-        // 현재 진행 중인 프로그램의 날짜 계산
-        val user = userRepository.findById(userId)
-            .orElseThrow { ResourceNotFoundException("User not found") }
-        val sessions = workoutSessionRepository.findByUserOrderByStartTimeDesc(user,
-            org.springframework.data.domain.PageRequest.of(0, 1))
-
-        return if (sessions.hasContent()) {
-            val firstSession = sessions.content.first()
-            ChronoUnit.DAYS.between(firstSession.startTime.toLocalDate(), AppTime.utcNow().toLocalDate()).toInt() % 30 + 1
-        } else {
-            1
-        }
     }
 
     private fun generateWorkingSets(workingWeight: Double): List<WorkingSet> {
@@ -1331,10 +1067,6 @@ class WorkoutService(
     }
 
     private fun minOf(a: Double, b: Double): Double = if (a < b) a else b
-
-    private fun getEnglishMuscleGroups(koreanName: String): List<MuscleGroup> {
-        return WorkoutTargetResolver.muscleGroupsFor(koreanName).toList()
-    }
 
     /**
      * 패턴 중복 제거 - 같은 패턴의 운동 중 핵심도와 활용도가 높은 운동 하나만 선택

@@ -104,10 +104,11 @@ class AIWorkoutRecommendationInjuryTest {
     fun resolvesProfileInjuriesWhenSettingsEmpty() {
         val profile = UserProfile(id = 1L, user = user)
         profile.injuries = mutableSetOf("knee:moderate")
-        assertEquals(setOf("knee:moderate"), service.resolveUserInjuries(UserSettings(user = user), profile))
-        assertEquals(setOf("knee:moderate"), service.resolveUserInjuries(null, profile))
+        // 모든 추천 경로가 같은 해석(부위만 남김 — 심각도 접미사 제거)을 쓴다
+        assertEquals(setOf("knee"), service.resolveUserInjuries(UserSettings(user = user), profile))
+        assertEquals(setOf("knee"), service.resolveUserInjuries(null, profile))
         val s = UserSettings(user = user).apply { injuries = mutableSetOf("shoulder") }
-        assertEquals(setOf("shoulder"), service.resolveUserInjuries(s, profile), "settings 에 값이 있으면 settings 우선")
+        assertEquals(setOf("shoulder", "knee"), service.resolveUserInjuries(s, profile), "프로필 ∪ 설정 합집합(부위만, 심각도 접미사 제거)")
         assertTrue(service.resolveUserInjuries(UserSettings(user = user).apply { injuries = mutableSetOf("none") }, null).isEmpty())
     }
 

@@ -59,11 +59,10 @@ class ExerciseRecommendationService(
         // 부상 부위에 부하가 가는 종목은 후보에서 아예 제외한다.
         // 홈 화면 빠른 추천은 그동안 부상 정보를 전혀 보지 않아, 무릎 부상자에게도 스쿼트가 추천됐다.
         val injuries: Set<String> = try {
-            val settingsInjuries = userSettingsRepository.findByUser_Id(user.id)
-                .map { it.injuries.toSet() }.orElse(emptySet())
-            settingsInjuries.ifEmpty {
-                userProfileRepository.findByUser(user).map { it.injuries.toSet() }.orElse(emptySet())
-            }
+            // 프로필 ∪ 설정의 합집합 — 설정이 비어 있지 않다는 이유로 프로필의 부상을 버리지 않는다(단일 해석기와 같은 규칙)
+            val settings = userSettingsRepository.findByUser_Id(user.id).orElse(null)
+            val profileForInjuries = userProfileRepository.findByUser(user).orElse(null)
+            UserTrainingContextResolver.of(settings, profileForInjuries).injuries
         } catch (e: Exception) {
             logger.warn("Failed to load injuries for user ${user.id}: ${e.message}")
             emptySet()
@@ -72,8 +71,8 @@ class ExerciseRecommendationService(
             if (injuries.isEmpty()) list else {
                 val filtered = injuryFilterService.filterExercises(list, injuries)
                 logger.info("Injury filter: ${list.size} -> ${filtered.size} (injuries=$injuries)")
-                // 필터가 너무 공격적이어서 후보가 고갈되면 원본을 쓴다(추천 자체가 실패하는 것보다 낫다)
-                if (filtered.size >= 10) filtered else list
+                // 부상 필터는 완화하지 않는다 — 후보가 적어도 부상 부위 운동을 되돌려 넣지 않는다(다치게 하는 것보다 적게 추천하는 편이 낫다)
+                filtered
             }
         }
 

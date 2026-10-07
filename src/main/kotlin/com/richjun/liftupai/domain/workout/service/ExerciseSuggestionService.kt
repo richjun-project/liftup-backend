@@ -38,6 +38,8 @@ class ExerciseSuggestionService(
             experience = ctx.experience,
             focus = ctx.focusAreas,
             limit = (limit ?: DEFAULT_LIMIT).coerceIn(1, MAX_LIMIT),
+            // 철봉이 없는 사람에게 풀업, 초보·고령·미성년에게 너무 어려운 동작을 제안하지 않는다
+            suitable = ctx.suitability(),
         )
         val ranked = ExerciseSuggestionRanker.rank(
             pool = catalogCache.get().all,

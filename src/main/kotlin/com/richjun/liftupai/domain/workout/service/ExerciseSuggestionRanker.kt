@@ -28,6 +28,8 @@ object ExerciseSuggestionRanker {
         val experience: String? = null,
         val focus: List<FocusArea> = emptyList(),
         val limit: Int = 10,
+        /** 이 사람이 실제로 할 수 있는 운동인가(철봉 필요·너무 어려운 동작). 기본은 전부 허용 */
+        val suitable: (Exercise) -> Boolean = { true },
     )
 
     data class Suggestion(
@@ -47,6 +49,7 @@ object ExerciseSuggestionRanker {
                 (input.category == null || ex.category == input.category) &&
                 TemplatePlanAdapter.equipmentAllowed(ex, input.allowedEquipment) &&
                 ex.difficulty <= hardCap &&
+                input.suitable(ex) &&
                 (input.muscles.isEmpty() || ex.muscleGroups.any { it in input.muscles }) &&
                 !isRestricted(ex)
         }
