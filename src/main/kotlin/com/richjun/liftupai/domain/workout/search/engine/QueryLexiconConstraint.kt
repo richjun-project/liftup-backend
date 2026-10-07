@@ -127,6 +127,7 @@ internal object QueryLexiconConstraint {
         |못 밀|못밀|못 밀어|못밀어|못 밀겠|못밀겠|못 당겨|못당겨|못 당기|못당기|못 매달|못매달|못 올리|못올리|못 올려|못올려|못 올리겠|못올리겠
         |握れない|握れなくて|握れず|握れません|握れないので|握れないから|握れなくなった|握れなくなって|持てない|持てなくて|持てず|持てません|持てないので|持てないから|持てなくなった|掴めない|掴めなくて|つかめない|つかめなくて
         |cant grip|can't grip|cannot grip|cant hold|can't hold|cannot hold|cant lift|can't lift|cannot lift|cant hang|can't hang|cant press|can't press|cannot press|cant push|can't push|cant pull|can't pull|unable to grip|unable to hold|unable to lift|not able to grip|not able to hold|not able to lift
+        |안 돼|안돼|안 됨|안됨|안되고|안 되고|안 되네|안되네|안 되니까|안돼서|안되서|안 돼서|안 되서|안됩니다|안 됩니다|안되는데|안 되는데|안되지만|안 되지만|안되거든|안 돼요|안돼용|안 되는 상태|안되는 상태
     """.trimIndent()
 
     /** 부상 감각 표현 — 관절 가까이에서 그 관절을 피할 부위로 만든다(관절이 없으면 아무 일도 하지 않는다) */

@@ -414,6 +414,12 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
 
         // 1) 부정: 표지 + 대상
         fun negAt(idx: Int, neg: Term, avail: Boolean): Boolean {
+            // "the gym is crowded", "ジムが混んでる" — 헬스장 자체가 붐빈다는 말은 어떤 장비도 쓸 수 없다는 말이 아니다(건너뛰는 군더더기 뒤의 장비를 대상으로 잡지 않는다)
+            if (avail && neg.targetBefore) {
+                var j = idx - 1
+                while (j >= 0 && skippable(segs[j]) && text.substring(segs[j].s, segs[j].e) !in GYM_WORDS) j--
+                if (j >= 0 && !segs[j].unknown && text.substring(segs[j].s, segs[j].e) in GYM_WORDS) return false
+            }
             // "bored of normal squats, variation ideas" — 질린 운동의 변형을 달라는 말이다. 질렸다는 말이 그 운동을 빼라는 뜻이 아니다
             if (text.substring(segs[idx].s, segs[idx].e) in BOREDOM_KEYS && segs.any { sg -> !sg.unknown && !sg.isNum && text.substring(sg.s, sg.e) in VARIATION_KEYS }) return false
             // "背中の肉をなくしたい" — 군살·처짐을 없애고 싶다는 목표다. 그 부위를 빼라는 부정이 아니다(앞의 군살 개념은 긍정 목표로 둔다).
@@ -1076,6 +1082,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private val ONLY_WORDS = listOf("only", "just", "onlyhave", "onlygot", "justhave", "onlyhas", "nothingbut", "allihave", "allwehave", "のみ", "だけ", "しか", "밖에", "뿐").map { SearchText.strictKey(it) }.toSet()
         private val ONLY_PARTICLES = listOf("만", "로만", "으로만", "만으로", "만가지고").map { SearchText.strictKey(it) }.toSet()
         private val NOT_ONLY = Regex("notonly|뿐만아니라|だけでなく|だけじゃなく|만이아니라|만아니라|뿐아니라|だけではなく")
+        private val GYM_WORDS = listOf("gym", "gyms", "헬스장", "헬스", "체육관", "ジム", "ジムが", "fitness center", "weight room", "weightroom").map { SearchText.strictKey(it) }.toSet()
         private val FREE_WEIGHT_SET = setOf(Equipment.DUMBBELL, Equipment.BARBELL, Equipment.KETTLEBELL)
         private val PREFIX_EQUIPMENT = setOf(Equipment.BARBELL, Equipment.DUMBBELL, Equipment.CABLE, Equipment.KETTLEBELL, Equipment.RESISTANCE_BAND)
         /** 장비이지만 장비 사전에는 없는 기구 이름 — 이게 점유·고장이라는 말은 장비를 쓸 수 없다는 말이다 */

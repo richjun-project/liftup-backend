@@ -182,7 +182,7 @@ internal object QueryLexicon {
     val nameMasks: List<String> = listOf("胸椎", "胸骨").map { key(it) }
 
     /** 영어에서 부정 뒤에 오면 새 절이 시작되는 말 — "without barbell with dumbbells" 의 dumbbells 는 긍정이다 */
-    val chainBreakers: Set<String> = "with|using|use|but|instead|however|though|while|yet|only|just|and then|then|yes|yeah|yep|yup|ok|okay|fine|allowed|permitted|have|got|있고|있지만|있는데|있어도|있으나|있으며|있어요|있음|있다|되고|되는데|되지만|가능하고|가능한데|あるが|あるけど|あるけれど|あるものの|あって|はあるが|はあるけど|だけど|だが|ですが|けど|けれど|けれども|ものの".split("|").map { key(it) }.toSet()
+    val chainBreakers: Set<String> = "with|using|use|but|instead|however|though|while|yet|only|just|and then|then|yes|yeah|yep|yup|ok|okay|fine|allowed|permitted|have|got|있고|있지만|있는데|있어도|있으나|있으며|있어요|있음|있다|되고|되는데|되지만|가능하고|가능한데|あるが|あるけど|あるけれど|あるものの|あって|はあるが|はあるけど|だけど|だが|ですが|けど|けれど|けれども|ものの|使う|使える|使えます|使って|使います|使いたい|使用する|使っている|使ってる|使ってて|쓸 거고|쓸거고|쓰고|쓸래|쓰는데|쓸 수 있고|쓸 수 있는데|써도 되고|써도 되는데|가능하고|가능한데|가능하지만".split("|").map { key(it) }.toSet()
 
     val adjectiveCues: Set<String> = ("bad|sore|weak|injured|painful|tender|stiff|damaged|hurt|hurting|strained|sprained|pulled|inflamed|" +
         "easy on|gentle on|kind to|safe for|good for|protect|protecting|careful with|careful|doesnt hurt|wont hurt|hurt my|hurts my|aggravate|aggravating|irritate|irritating").split("|").map { key(it) }.toSet()
