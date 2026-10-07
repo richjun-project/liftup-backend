@@ -124,7 +124,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
 
     private val typoTargets: Map<Int, List<Target>> by lazy {
         index.entries.asSequence()
-            .filter { (k, v) -> v.any { it.role in TYPO_ROLES && !it.particle } }
+            .filter { (k, v) -> k !in lex.noTypoKeys && v.any { it.role in TYPO_ROLES && !it.particle } }
             .map { (k, _) -> Target(k, SearchText.looseKey(k)) }
             .filter { typoEligible(it.key, it.loose) }
             .groupBy { it.loose.length }

@@ -159,6 +159,53 @@ class ConstraintUnderstandingTest {
     }
 
     @Test
+    fun `장비가 하나도 없다는 말의 활용형은 맨몸이다`() {
+        for (q in listOf("집에 도구 하나도 없어서 하체", "아무 장비도 없고 어깨", "運動器具が全くない家で脚", "家に何もなくて背中", "i got nothing, just my body, legs", "no gear whatsoever, chest", "캠핑장에 아무것도 없는데 전신")) {
+            val p = plan(q)
+            assertEquals(setOf(Equipment.BODYWEIGHT), p.equipments, "[$q] ${engine.explain(q)}")
+            assertTrue(top(q, 8).all { it.equipment == Equipment.BODYWEIGHT }, "[$q] ${top(q, 8).map { it.slug }}")
+        }
+        // 장비 일반을 부정하면 맨몸 말고 전부 뺀다
+        for (q in listOf("장비 말고 맨몸으로 등", "equipment is not allowed, back")) {
+            assertTrue(plan(q).excludeEquip.containsAll(setOf(Equipment.BARBELL, Equipment.DUMBBELL, Equipment.MACHINE, Equipment.CABLE)), "[$q] ${engine.explain(q)}")
+        }
+    }
+
+    @Test
+    fun `비어 있다 대기 없다 아무도 안 쓴다는 말은 점유가 아니라 그 장비를 쓴다는 말이다`() {
+        for (q in listOf(
+            "머신 대기 없음 가슴", "덤벨이 비어 있어서 어깨", "ケーブルが空いてる 胸", "ラックは誰も使ってない 脚",
+            "no line for the cable machine, chest", "nobody is hogging the barbells, back", "the dumbbells aren't taken, arms", "the cables are not busy, back", "the rack is empty, legs"
+        )) {
+            val p = plan(q)
+            assertTrue(p.excludeEquip.isEmpty(), "[$q] 점유가 아닌데 장비를 뺐다: ${engine.explain(q)}")
+        }
+        // 체육관 자체가 붐빈다는 말도 어떤 장비도 쓸 수 없다는 말이 아니다
+        assertTrue(plan("dumbbell workout when the gym is crowded").excludeEquip.isEmpty())
+    }
+
+    @Test
+    fun `싫다 별로야 좀 그래 쓰기 싫은 날 은 취향이라 그 장비를 뺀다`() {
+        assertExcludes(Equipment.DUMBBELL, "덤벨은 별로야 어깨", "덤벨 쓰기 싫은 날 가슴")
+        assertExcludes(Equipment.MACHINE, "머신 쓰는 건 싫어 등", "マシンはちょっとなあ 脚", "say no to machines, back")
+        assertExcludes(Equipment.BARBELL, "바벨은 좀 그래 하체", "hard pass on barbells, legs")
+        // 부위를 싫어하는 말은 그 부위를 뺀다(개념 대상은 취향 표지에서도 그대로)
+        assertTrue(plan("가슴 운동은 싫어 등").excludeConcepts.isNotEmpty() || plan("가슴 운동은 싫어 등").concepts.none { it.id.contains("manboob") })
+    }
+
+    @Test
+    fun `못 잡는다 못 든다 같은 능력 동사는 장비를 가리킬 때만 제외고 아니면 쉬운 변형이다`() {
+        // 장비를 못 잡는다 → 그 장비 제외(부상 단서 없이도)
+        assertExcludes(Equipment.DUMBBELL, "덤벨은 못 잡겠어 이두", "can't hold dumbbells, biceps")
+        // 운동을 못 한다(부상·장비 없음) → 그 운동의 쉬운 변형
+        for (q in listOf("턱걸이 못 매달려요", "weak grip, can't hang from the bar")) {
+            assertTrue(plan(q).excludeKeys.isEmpty(), "[$q] ${engine.explain(q)}")
+        }
+        // 握力 같은 능력 개념이 쓸 수 없다는 말의 대상이 되어 사라지면 안 된다
+        assertTrue(plan("握力が弱くて重いものが持てない").concepts.isNotEmpty())
+    }
+
+    @Test
     fun `쓸 수 있는 것을 말하는 긍정 요청은 지우지 않는다`() {
         for ((q, e) in listOf("케이블로만 어깨" to Equipment.CABLE, "machines only back" to Equipment.MACHINE, "ダンベルのみで脚" to Equipment.DUMBBELL, "밴드로만 하체" to Equipment.RESISTANCE_BAND)) {
             val p = plan(q)

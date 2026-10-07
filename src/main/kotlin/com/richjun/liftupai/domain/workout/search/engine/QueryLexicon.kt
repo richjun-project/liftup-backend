@@ -451,6 +451,9 @@ internal object QueryLexicon {
     /** 키 → 용어들 (한 키가 여러 역할을 가질 수 있다) */
     val termIndex: Map<String, List<Term>>
 
+    /** 조합으로 만든 긴 문형 — 오타 교정 후보에서 뺀다(후보가 수천 개 늘어 모든 모르는 단어의 교정이 느려진다) */
+    val noTypoKeys: Set<String>
+
     /** 가장 긴 용어 길이 (DP 윈도우) */
     val maxTermLength: Int
 
@@ -465,7 +468,7 @@ internal object QueryLexicon {
 
         // 1) 조사·군더더기
         for (k in splitRules(PURE_PARTICLES)) add(key(k), Term(Role.NOISE, particle = true))
-        for (k in splitRules(NOISE) + splitRules(QueryLexiconRound3.NOISE) + splitRules(QueryLexiconConstraint.NOISE)) add(key(k), Term(Role.NOISE))
+        for (k in splitRules(NOISE) + splitRules(QueryLexiconRound3.NOISE) + splitRules(QueryLexiconConstraint.NOISE) + splitRules(QueryLexiconConstraint.AVAILABLE)) add(key(k), Term(Role.NOISE))
         for (k in splitRules(UNITS)) add(key(k), Term(Role.UNIT))
         // "運動前の"·"운동 전" 의 한 글자 — 단어 경계에서만 군더더기로 본다
         for (k in listOf("前", "前に", "前の", "전", "전에", "후", "後", "後に", "後の", "후에")) add(key(k), Term(Role.NOISE, isolated = isIsolated(key(k))))
@@ -553,7 +556,9 @@ internal object QueryLexicon {
         // 5) 장비·홈
         for ((k, eq) in ExerciseSearchLexicon.equipmentTerms) add(k, Term(Role.EQUIP, equipment = eq))
         // "장비가 하나도 없다·아무것도 없다" 계열은 맨몸, 장비 일반을 가리키는 말(부정하면 맨몸 말고 전부 뺀다)
-        for (k in ExerciseSearchLexiconConstraint.NO_EQUIPMENT_TERMS) add(key(k), Term(Role.EQUIP, equipment = setOf(Equipment.BODYWEIGHT)))
+        val generated = HashSet<String>()
+        for (k in ExerciseSearchLexiconConstraint.NO_EQUIPMENT_TERMS) { add(key(k), Term(Role.EQUIP, equipment = setOf(Equipment.BODYWEIGHT))); generated.add(key(k)) }
+        noTypoKeys = generated
         for (k in ExerciseSearchLexiconConstraint.GENERIC_EQUIPMENT_TERMS) add(key(k), Term(Role.EQUIP, equipment = GENERIC_EQUIPMENT))
         for (k in ExerciseSearchLexicon.homeTerms) add(k, Term(Role.HOME))
         for (k in ExerciseSearchLexicon.fillerTerms) add(k, Term(Role.NOISE, particle = k.length <= 2 && isKana(k)))

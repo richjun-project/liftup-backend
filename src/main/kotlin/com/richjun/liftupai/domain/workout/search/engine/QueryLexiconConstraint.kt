@@ -119,6 +119,7 @@ internal object QueryLexiconConstraint {
         |all i have is|all i have|all i got|all i got is|all ive got|all i own|all we have|all we have is|all we got|all that i have|all that we have|all there is|all that is available|all thats available|all they have is|all my gym has|all my gym has is|all my home has|all i can use is|all i can use|all i can get is
         |fine|great|cool|awesome|perfect|alright|sweet
         |anything with|anything that uses|anything that use|anything using|anything involving|anything that needs|anything needing|anything|everything with|everything that uses|something with|stuff with|stuff that uses|stuff using|things with|things that use|things using|exercises that use|exercises that need|exercises involving|moves using|any exercise with|any exercises with|any workout with|any workouts with
+        |i got nothing|got nothing|i have nothing|have nothing|i've got nothing|ive got nothing|there is nothing|there's nothing|theres nothing
         |needing|requiring|involving|needs|need|needed|require|requires|required|involve|involves|that need|that needs|that require|that requires|that involve|that involves|that use|that uses|which need|which needs|which use|which uses|having
         |bored|boring|ideas|idea|variation|variations|variety|switch up|mix up
         |라서|이라서|라서요|이라서요|라니까|이라니까|이니까|이니까요|니까요|여서|이어서|인데|인데요|이라고|이라는|라는|이었|였는데|이었는데|였어|이었어|였고|이었고
@@ -163,4 +164,25 @@ internal object QueryLexiconConstraint {
         |嫌い|嫌|嫌だ|嫌で|が嫌い|は嫌い|が嫌|は嫌|が苦手|は苦手|怖い|怖くて|怖いので|が怖い|は怖い|いや|いやで
         |scared of|afraid of|nervous about|worried about|uncomfortable with|intimidated by
     """.trimIndent()
+
+    /**
+     * 쓸 수 있다·비어 있다는 말 — 점유·고장 표지와 글자가 겹치지만("대기 없음", "aren't taken") 뜻은 반대라서 더 긴 군더더기로 먼저 먹는다.
+     * 군더더기라 아무 것도 빼거나 요청하지 않는다.
+     */
+    val AVAILABLE: String = run {
+        val out = LinkedHashSet<String>()
+        val koWait = listOf("대기", "줄", "줄이", "웨이팅", "대기줄이", "대기 줄이", "기다릴 일", "기다릴 필요")
+        val koNone = listOf("없음", "없어", "없어서", "없이", "없는", "없고", "없네", "없다", "없어요", "없는데", "없으니까", "없거든")
+        for (w in koWait) for (n in koNone) out.add("$w $n")
+        for (w in listOf("사람", "사람이", "사람들이", "인원이", "회원이")) for (n in koNone + listOf("적어", "적음", "적어서", "적은데", "적네", "별로 없어", "거의 없어", "거의 없음", "얼마 없어")) out.add("$w $n")
+        out.addAll(listOf("비어 있어서", "비어있어서", "비었어", "비었네", "비어서", "비어있음", "비어 있음", "비어 있어", "비어있어", "비어 있는", "비어있는", "비어 있네", "비어있네", "비어 있는데", "비어있는데", "자리 있음", "자리 있어", "자리 남아 있어", "자리가 있어", "자리가 남아", "자리 남아", "한산해", "한산해서", "한산한", "한산", "널널해", "널널해서", "널널", "여유 있어", "여유있어", "여유로워", "안 붐벼", "안 붐비는", "안붐벼", "안 붐빔", "안 막혀", "막히지 않아", "안 차 있어", "안 찼어", "안 꽉 차", "꽉 차지 않았", "비지 않은 건 아니", "텅 비어", "텅 비었어", "텅텅", "텅텅 비어"))
+        out.addAll(listOf("待ちなし", "待ち時間なし", "待たずに", "空いてる", "空いています", "空いている", "空いてます", "空いていて", "空いてた", "空いたので", "ガラガラ", "すいてる", "すいています", "混んでない", "混んでいない", "混雑してない", "混雑していない", "並ばなくていい", "並ばずに", "誰も使ってない", "誰も使っていない", "使われてない", "使われていない", "余ってる", "余っている", "空きがある", "空きあり", "余裕がある", "人がいない", "人が少ない", "人が少なくて", "人が全然いない", "待ち時間がない", "待ちがない", "並んでない", "並んでいない", "行列がない", "行列なし"))
+        out.addAll(listOf("no line for", "no lines for", "no queue for", "no wait for", "no waiting for", "no crowd at", "no crowd on", "no line at", "no queue at", "no wait at", "no line", "no queue", "no wait", "no waiting", "no crowds", "no crowd",
+            "nobody is using", "nobody's using", "nobody using", "no one is using", "no one using", "noone is using", "nobody is on", "nobody on", "no one on", "no one is on", "nobody is hogging", "nobody hogging", "no one is hogging", "no one hogging", "nobody has", "no one has", "nobody", "no one", "noone",
+            "aren't busy", "arent busy", "isn't busy", "isnt busy", "not busy", "not crowded", "arent crowded", "aren't crowded", "isnt crowded", "isn't crowded", "not packed", "isnt packed", "isn't packed", "arent packed", "aren't packed",
+            "not taken", "isnt taken", "isn't taken", "arent taken", "aren't taken", "not in use", "isnt in use", "isn't in use", "arent in use", "aren't in use", "not occupied", "isnt occupied", "isn't occupied", "arent occupied", "aren't occupied",
+            "not being used", "isnt being used", "isn't being used", "arent being used", "aren't being used", "not reserved", "isnt reserved", "isn't reserved", "arent reserved", "aren't reserved", "not booked", "isnt booked", "isn't booked", "not blocked", "isnt blocked", "isn't blocked",
+            "are empty", "is empty", "wide open", "available now", "available right now", "plenty of", "lots of", "tons of", "loads of", "a lot of", "so many", "plenty", "are open", "is open", "are free", "is free", "are available", "is available", "all available", "all free", "all open"))
+        out.joinToString("|")
+    }
 }

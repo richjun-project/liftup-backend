@@ -18,7 +18,7 @@ internal object ExerciseSearchLexiconConstraint {
     private val jaPronouns = listOf("何も", "なにも", "一切", "全く", "まったく", "一つも", "ひとつも", "全然", "ぜんぜん")
 
     private val enPhrases = listOf(
-        "nothing at all", "nothing whatsoever", "got nothing", "have nothing", "i have nothing", "i got nothing", "there is nothing", "theres nothing", "there's nothing", "nothing here", "nothing at home", "nothing with me",
+        "nothing at all", "nothing whatsoever", "got nothing at all", "have nothing at all", "i have nothing at all", "i got nothing at all", "got nothing at home", "i have nothing at home", "there is nothing here", "theres nothing here", "there's nothing here", "there is nothing at home", "there's nothing at home", "theres nothing at home", "nothing here", "nothing at home", "nothing with me",
         "no equipment at all", "no equipment whatsoever", "no gear whatsoever", "no gear at all", "no weights at all", "no equipment", "no equipments", "zero equipment", "zero gear", "empty handed", "empty-handed",
         "nothing but my body", "nothing but bodyweight", "nothing but body weight", "only my body", "just my body", "just my bodyweight", "just bodyweight", "only bodyweight", "only body weight", "just body weight",
         "my body only", "only my body weight", "just my body weight", "my body weight only", "only my own body weight", "only my own bodyweight", "just my own body", "just my own bodyweight", "my own body weight", "my own bodyweight", "bodyweight only", "body weight only", "only myself", "just myself", "with just my body", "using only my body", "using only my bodyweight", "equipment less", "no tools", "no tools at all", "toolless", "tool free",
