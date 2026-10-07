@@ -196,7 +196,9 @@ class ExerciseSearchEngineRobustnessTest {
         val head = "dumbbell curl "
         val a = head.repeat(11) + "zzzzzz" // 154 + 6
         val longer = a + "x".repeat(5000)
-        assertEquals(engine.search(a).map { it.doc.id }.take(20), engine.search(longer).map { it.doc.id }.take(20))
+        // 결정성 검사라 시간 예산(40ms)에 걸리지 않게 넉넉한 엔진을 쓴다 — 부하가 높은 기계에서 예산 초과로 잘린 결과끼리 비교하면 흔들렸다
+        val unhurried = ExerciseSearchEngine(docs, budgetNanos = 10_000_000_000L)
+        assertEquals(unhurried.search(a).map { it.doc.id }.take(20), unhurried.search(longer).map { it.doc.id }.take(20))
     }
 
     @Test
