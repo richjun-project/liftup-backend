@@ -33,7 +33,11 @@ internal class QueryPlan(
     /** 이름으로 보이지만 어휘에 없는 덩어리(오타 가능성) 존재 */
     val hasUnknown: Boolean,
     /** "X 대신/alternative to X" 의 X — 제외하되 X 와 비슷한(같은 부위·동작) 운동을 보여 준다 */
-    val similarTo: List<SigKey> = emptyList()
+    val similarTo: List<SigKey> = emptyList(),
+    /** "가슴 말고", "no legs" 처럼 부정된 부위·목표 — 그 부위 운동을 결과에서 뺀다 */
+    val excludeConcepts: List<Concept> = emptyList(),
+    /** 웜업처럼 다른 부위와 겹쳐 쓰는 개념("하체 워밍업") — 합집합이 아니라 모든 개념에 맞는 운동을 앞세운다 */
+    val combineAll: Boolean = false
 ) {
     companion object {
         /** 이해 계층을 거치지 않고 단어열 그대로 이름 검색하는 계획(질의가 어떤 운동의 이름과 정확히 같을 때) */
@@ -44,7 +48,7 @@ internal class QueryPlan(
         )
     }
 
-    val hasExclusions: Boolean get() = excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || injuries.isNotEmpty()
+    val hasExclusions: Boolean get() = excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || injuries.isNotEmpty() || excludeConcepts.isNotEmpty()
     val hasIntentSignal: Boolean get() = concepts.isNotEmpty() || equipments.isNotEmpty() || home
 }
 
@@ -156,6 +160,12 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             Role.UNIT -> if (!prevNum) return false
             else -> Unit
         }
+        // 영어 "free"/"less" 는 "equipment free"·"jump free" 처럼 부정이지만 "free weights"·"free motion" 의 free 는 아니다
+        if (t.role == Role.NEG && latin && (key == "free" || key == "less")) {
+            val next = nextWord(tok, j)
+            if (key == "free" && next in FREE_NOT_NEG_BEFORE) return false
+            if (key == "less" && next.isNotEmpty() && next !in LESS_NEG_BEFORE) return false
+        }
         if (t.particle) {
             if (anyKata(tok, i, j)) return false
             val needsPrev = (t.role == Role.NEG && t.targetBefore) || (t.role == Role.NOISE && key.length <= 2) || t.role == Role.CONJ
@@ -173,6 +183,15 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         return true
     }
 
+    /** j 위치에서 시작하는 다음 단어(없으면 빈 문자열) */
+    private fun nextWord(tok: SearchText.Tokenized, j: Int): String {
+        val text = tok.strict
+        if (j >= text.length) return ""
+        var e = j + 1
+        while (e < text.length && !tok.isWordStart(e)) e++
+        return text.substring(j, e)
+    }
+
     /** j 위치에서 사전 용어(숫자 포함)가 시작하는가 */
     private fun startsKnown(tok: SearchText.Tokenized, j: Int): Boolean {
         val text = tok.strict
@@ -185,9 +204,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
     /** 1글자 용어 뒤에 사전 용어가 바로 이어지는가(예: 背中 의 背 는 아니지만 "背を"처럼 조사가 이어지는 경우) */
     private fun nextStartsKnown(tok: SearchText.Tokenized, j: Int): Boolean {
         val text = tok.strict
-        for (end in minOf(text.length, j + 4) downTo j + 1) {
+        for (end in minOf(text.length, j + 8) downTo j + 1) {
             val terms = index[text.substring(j, end)] ?: continue
-            if (terms.any { it.role == Role.NOISE || it.role == Role.NEG || it.role == Role.CONJ || it.role == Role.UNIT || it.role == Role.CUE }) return true
+            if (terms.any { it.role == Role.NOISE || it.role == Role.NEG || it.role == Role.CONJ || it.role == Role.UNIT || it.role == Role.CUE || it.role == Role.STRETCH || it.role == Role.HOME || it.role == Role.QUIET }) return true
         }
         return false
     }
@@ -210,6 +229,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         val excludeEquip = LinkedHashSet<Equipment>()
         val excludeKeys = ArrayList<SigKey>()
         val similarKeys = ArrayList<SigKey>()
+        val negConcepts = ArrayList<Concept>()
+        val negJoints = LinkedHashSet<Joint>()
         var cueFlag = false
 
         fun chunkAt(idx: Int): Pair<Int, Int> {
@@ -233,8 +254,14 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             while (chainLeft-- > 0) {
                 var j = cursor + step
                 var sawConj = false
-                while (j in segs.indices && skippable(segs[j])) { if (segs[j].has(Role.CONJ)) sawConj = true; j += step }
-                if (j !in segs.indices) break
+                var broken = false
+                while (j in segs.indices && skippable(segs[j])) {
+                    if (segs[j].has(Role.CONJ)) sawConj = true
+                    // "without barbell with dumbbells", "but", "instead" — 새 절이 시작되면 부정은 거기서 끝난다(뒤 장비는 긍정)
+                    if (targets.isNotEmpty() && text.substring(segs[j].s, segs[j].e) in lex.chainBreakers) { broken = true; break }
+                    j += step
+                }
+                if (broken || j !in segs.indices) break
                 val sg = segs[j]
                 if (sg.has(Role.NEG) || sg.has(Role.UNIT) || sg.isNum) break
                 val range = if (sg.unknown) {
@@ -243,7 +270,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                 if (targets.isNotEmpty()) {
                     // 이어지는 대상은 접속어(や·と·도·and)가 있거나, 쉼표·공백으로 나열된 별개 단어일 때만 (스쿼트, 런지 없이)
                     val laterStart = if (step < 0) segs[cursor].s else segs[range.first].s
-                    val resolvable = sg.unknown || (!sg.has(Role.CONCEPT) && (sg.has(Role.NAME) || sg.has(Role.EQUIP)))
+                    // 부위·관절은 "가슴이랑 등 빼고"처럼 접속어로 이어졌을 때만 같은 부정에 묶는다
+                    val resolvable = sg.unknown || (!sg.has(Role.CONCEPT) && (sg.has(Role.NAME) || sg.has(Role.EQUIP))) ||
+                        (sawConj && (sg.has(Role.CONCEPT) || sg.has(Role.JOINT)))
                     if (!resolvable) break
                     // 접속어 없이 나열만 된 경우는 같은 종류끼리만 이어 붙인다 ("ベンチプレス ダンベル以外" 의 벤치프레스는 제외 대상이 아니다)
                     val sameKind = segs[targets.last().first].has(Role.EQUIP) == sg.has(Role.EQUIP)
@@ -255,7 +284,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             var any = false
             for (r in targets) {
                 val before = excludeKeys.size
-                if (resolveTarget(segs, r, text, excludeEquip, excludeKeys, consumed)) {
+                if (resolveTarget(segs, r, text, excludeEquip, excludeKeys, consumed, negConcepts, negJoints)) {
                     any = true
                     if (neg.instead) similarKeys.addAll(excludeKeys.subList(before, excludeKeys.size))
                 }
@@ -264,6 +293,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             if (any) consumed[idx] = true
         }
 
+        // 1.5) 부정된 관절("무릎 빼고", "without knees")은 그 관절의 부상 프로필로 — 이름 검색이 아니라 부담 큰 동작을 피한다
+        val injuries = LinkedHashSet<Joint>(negJoints)
+
         // 2) 소음/충격 회피 표현 → 점프류 제외 + 집
         var quiet = false
         for (idx in segs.indices) if (!consumed[idx] && segs[idx].has(Role.QUIET)) { quiet = true; if (!segs[idx].has(Role.CONCEPT)) consumed[idx] = true }
@@ -271,7 +303,6 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
 
         // 3) 부상: 단서(痛い/아플 때/bad)에 걸린 관절은 목표가 아니라 피할 부위. 단서마다 가장 가까운 관절 하나(와 접속어로 이어진 관절들)만 쓴다.
         val cue = cueFlag || segs.indices.any { !consumed[it] && segs[it].has(Role.CUE) }
-        val injuries = LinkedHashSet<Joint>()
         if (cue) {
             for (idx in segs.indices) {
                 if (consumed[idx] || !segs[idx].has(Role.CUE)) continue
@@ -354,8 +385,16 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             idx++
         }
         if (jointPlain) positiveName = true
-        // 스트레칭 단독("스트레칭", "ヨガ")은 이름 검색, 부위와 함께면 의도 검색
-        if (stretch && concepts.isEmpty() && equipments.isEmpty()) positiveName = true
+        // 스트레칭 단독("스트레칭", "ストレッチ")은 가장 쓸모 있는 일반 스트레칭 목록, 다른 이름 조각이 섞였으면("스트레칭 폴") 이름 검색, 부위와 함께면 의도 검색
+        if (stretch && concepts.isEmpty() && equipments.isEmpty()) {
+            val general = lex.conceptById["stretchgeneral"]
+            if (general != null && !positiveName && unknownChunks.isEmpty()) concepts.add(general) else positiveName = true
+        }
+
+        // "전신 스트레칭": 전신은 특정 부위가 아니라서 부위별 스트레칭 신호가 없다 — 가장 쓸모 있는 일반 스트레칭 목록으로
+        if (stretch && concepts.isNotEmpty() && concepts.all { it.id == "fullbody" }) {
+            lex.conceptById["stretchgeneral"]?.let { concepts.clear(); concepts.add(it) }
+        }
 
         val distinctConcepts = concepts.distinctBy { it.id }.let { list -> if (list.size > 1) list.filter { it.id != "fatloss" }.ifEmpty { list } else list }
         var effectiveConcepts: List<Concept> = distinctConcepts
@@ -381,10 +420,10 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         val seeds = buildSeeds(tok, segs, consumed)
 
         // 모르는 덩어리가 남았는데 부위·장비·집 같은 내용 신호가 없으면(수준·제외 표현뿐) 그 덩어리가 운동 이름이다
-        val grammarRemnantsOnly = (injuries.isNotEmpty() || excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || similarKeys.isNotEmpty()) && unknownChunks.all { it.length <= 3 }
+        val grammarRemnantsOnly = (injuries.isNotEmpty() || negConcepts.isNotEmpty() || excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || similarKeys.isNotEmpty()) && unknownChunks.all { it.length <= 3 }
         val onlyModifiers = !hasContentSignal && unknownChunks.isNotEmpty() && !grammarRemnantsOnly
         var mode = when {
-            !positiveName && !nameLikeUnknown && !onlyModifiers && (hasContentSignal || level != 0 || excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || injuries.isNotEmpty()) -> Mode.INTENT
+            !positiveName && !nameLikeUnknown && !onlyModifiers && (hasContentSignal || level != 0 || excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || injuries.isNotEmpty() || negConcepts.isNotEmpty()) -> Mode.INTENT
             !positiveName && !nameLikeUnknown && unknownChunks.isEmpty() -> Mode.BROWSE
             else -> Mode.NAME
         }
@@ -400,7 +439,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         return QueryPlan(
             mode = mode, concepts = effectiveConcepts, equipments = equipments, home = home, stretch = stretch, level = level, regress = regress,
             excludeEquip = excludeEquip, excludeKeys = excludeKeys, injuries = injuries, numbers = numbers, highReps = highReps,
-            seeds = finalSeeds, hasUnknown = unknownChunks.isNotEmpty(), similarTo = similarKeys
+            seeds = finalSeeds, hasUnknown = unknownChunks.isNotEmpty(), similarTo = similarKeys,
+            excludeConcepts = negConcepts.distinctBy { it.id },
+            combineAll = effectiveConcepts.size > 1 && effectiveConcepts.any { it.id == "warmup" }
         )
     }
 
@@ -451,7 +492,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
     /** 부정 대상 하나를 해석해 제외 조건에 반영한다. 반영했으면 true. */
     private fun resolveTarget(
         segs: List<Seg>, range: IntRange, text: String,
-        excludeEquip: MutableSet<Equipment>, excludeKeys: MutableList<SigKey>, consumed: BooleanArray
+        excludeEquip: MutableSet<Equipment>, excludeKeys: MutableList<SigKey>, consumed: BooleanArray,
+        negConcepts: MutableList<Concept>, negJoints: MutableSet<Joint>
     ): Boolean {
         val first = segs[range.first]
         if (first.unknown) {
@@ -462,7 +504,16 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             return true
         }
         val terms = first.terms!!
-        if (terms.any { it.role == Role.JOINT || it.role == Role.CUE }) return false
+        if (terms.any { it.role == Role.CUE }) return false
+        val concept = terms.firstOrNull { it.role == Role.CONCEPT }?.concept
+        if (terms.any { it.role == Role.JOINT }) {
+            // 관절: 무릎·손목처럼 부위 개념이 없으면 부상 프로필, 어깨·허리처럼 부위이기도 하면 그 부위 운동도 뺀다. 등·back 은 부위로만 쓴다.
+            var done = false
+            terms.firstOrNull { it.role == Role.JOINT && it.joint != null && !it.weakJoint }?.joint?.let { negJoints.add(it); done = true }
+            if (concept != null) { negConcepts.add(concept); done = true }
+            if (done) for (i in range) consumed[i] = true
+            return done
+        }
         val eq = terms.firstOrNull { it.role == Role.EQUIP }
         if (eq != null) {
             excludeEquip.addAll(eq.equipment)
@@ -494,6 +545,12 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                 consumed[range.first] = true
                 return true
             }
+        }
+        if (concept != null) {
+            // "가슴 말고", "no legs", "유산소 빼고" — 부정된 부위·목표는 긍정 목표로 더하지 않고 그 부위 운동을 뺀다
+            negConcepts.add(concept)
+            consumed[range.first] = true
+            return true
         }
         return false
     }
@@ -570,6 +627,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private const val NOISE_EXTRA_COST = 4
         private const val MAX_TERM_LEN = 40
         private const val HIGH_REPS = 20
+        private val FREE_NOT_NEG_BEFORE = setOf("weight", "motion", "hand", "style", "form", "flow", "fall", "standing", "range", "running", "lift", "lifting").map { SearchText.strictKey(it) }.toSet()
+        private val LESS_NEG_BEFORE = setOf("workout", "exercise", "training", "routine", "program", "plan").map { SearchText.strictKey(it) }.toSet()
         private val REP_UNITS = setOf("회", "개", "回", "번", "rep", "time", "個").map { SearchText.strictKey(it) }.toSet()
     }
 }

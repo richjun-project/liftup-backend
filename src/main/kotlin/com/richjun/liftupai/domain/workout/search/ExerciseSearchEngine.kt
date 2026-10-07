@@ -49,8 +49,23 @@ data class ExerciseSearchHit(val doc: ExerciseSearchDoc, val score: Double)
  */
 class ExerciseSearchEngine(
     docs: Collection<ExerciseSearchDoc>,
-    extraSynonyms: List<String> = emptyList()
+    extraSynonyms: List<String> = emptyList(),
+    /** 한 질의의 점수 계산 예산(나노초). 넘겨서 끝난 결과는 불완전하므로 캐시하지 않는다. 테스트에서 줄여 쓴다. */
+    private val budgetNanos: Long = DEFAULT_BUDGET_NANOS
 ) {
+
+    /** 한 질의의 시간 예산. 한 번이라도 넘기면 [exceeded] 가 서서 결과가 불완전함을 알린다. */
+    private class Budget(nanos: Long) {
+        private val deadline = System.nanoTime() + nanos
+        @Volatile var exceeded = false
+        fun over(): Boolean {
+            if (System.nanoTime() > deadline) { exceeded = true; return true }
+            return false
+        }
+    }
+
+    /** 검색 결과와 완전성 — 시간 예산을 넘겨 끝난 결과(complete=false)는 호출자도 캐시하지 않아야 한다 */
+    class SearchOutcome(val hits: List<ExerciseSearchHit>, val complete: Boolean)
 
     private class Variant(
         val words: List<String>,
@@ -95,6 +110,7 @@ class ExerciseSearchEngine(
     }
 
     private val sigIndex = SigIndex(indexed)
+    private val indexById: Map<Long, IDoc> = indexed.associateBy { it.doc.id }
 
     /** 모든 이름의 strict 키 — 질의가 이름과 정확히 같은지 O(1) 로 본다 */
     private val exactNames: Set<String> = indexed.flatMapTo(HashSet()) { d -> d.names.map { it.strict } }
@@ -127,7 +143,15 @@ class ExerciseSearchEngine(
         category: ExerciseCategory? = null,
         equipments: Set<Equipment>? = null,
         locale: String? = null
-    ): List<ExerciseSearchHit> {
+    ): List<ExerciseSearchHit> = searchOutcome(query, category, equipments, locale).hits
+
+    /** [search] 와 같되 결과가 시간 예산 안에서 끝났는지도 알려 준다. 불완전한 결과는 엔진 캐시에도 넣지 않는다. */
+    fun searchOutcome(
+        query: String?,
+        category: ExerciseCategory? = null,
+        equipments: Set<Equipment>? = null,
+        locale: String? = null
+    ): SearchOutcome {
         val raw = query.orEmpty()
         val norm = if (raw.isBlank()) "" else SearchText.normalize(raw).trim()
         val loc = locale?.lowercase()?.substringBefore('-').orEmpty()
@@ -136,11 +160,29 @@ class ExerciseSearchEngine(
             equipments?.map { it.name }?.sorted()?.joinTo(this, ",")
             append('\u0000').append(if (norm.isEmpty()) loc else "")
         }
-        synchronized(cache) { cache[cacheKey] }?.let { return ArrayList(it) }
+        synchronized(cache) { cache[cacheKey] }?.let { return SearchOutcome(ArrayList(it), true) }
 
-        val result = compute(raw, norm, category, equipments, locale)
-        synchronized(cache) { cache[cacheKey] = result }
-        return ArrayList(result)
+        val budget = Budget(budgetNanos)
+        val result = compute(raw, norm, category, equipments, locale, budget)
+        // 시간 예산을 넘겨 일부만 훑은 결과는 캐시하지 않는다 — 한 번 느렸다고 TTL 동안 잘린 결과가 고정되지 않게
+        if (!budget.exceeded) synchronized(cache) { cache[cacheKey] = result }
+        return SearchOutcome(ArrayList(result), !budget.exceeded)
+    }
+
+    /** 엔진 결과 캐시에 든 질의 수(테스트용) */
+    internal fun cachedQueryCount(): Int = synchronized(cache) { cache.size }
+
+    /**
+     * 질의 전체의 부정·부상 조건으로 제외될 운동인지 판별하는 함수(없으면 null).
+     * 0건 대안처럼 질의를 쪼개 다시 찾는 곳이 "점프 빼고"·"무릎이 안 좋아서" 맥락을 잃지 않게 한다.
+     */
+    internal fun exclusionPredicate(query: String): ((ExerciseSearchDoc) -> Boolean)? {
+        val tok = SearchText.tokenize(query)
+        if (tok.words.isEmpty() || tok.strict in exactNames) return null
+        val plan = analyzer.analyze(tok).plan
+        if (!plan.hasExclusions) return null
+        val ex = exclusionSet(plan)
+        return { doc -> indexById[doc.id]?.let { isExcluded(it, plan, ex) } ?: false }
     }
 
     /** 브라우즈 순서: 티어 → 인기도 → 로컬라이즈 이름 */
@@ -174,11 +216,11 @@ class ExerciseSearchEngine(
         norm: String,
         category: ExerciseCategory?,
         equipments: Set<Equipment>?,
-        locale: String?
+        locale: String?,
+        budget: Budget
     ): List<ExerciseSearchHit> {
         val pool = filtered(category, equipments)
         if (norm.isEmpty()) return browseSorted(pool, locale)
-        val deadline = System.nanoTime() + BUDGET_NANOS
 
         if (SearchText.isChoseongQuery(norm)) return searchChoseong(norm, pool)
         val tok = SearchText.tokenize(raw)
@@ -190,7 +232,7 @@ class ExerciseSearchEngine(
         var result = when (plan.mode) {
             Mode.BROWSE -> browseSorted(excludeFrom(pool, plan), locale)
             Mode.INTENT -> searchIntent(plan, pool)
-            Mode.NAME -> searchName(plan, pool, deadline)
+            Mode.NAME -> searchName(plan, pool, budget)
         }
         // 이름으로는 못 찾았는데 부위·장비를 알아들었다면 그 의도로 보여 준다
         if (result.isEmpty() && plan.mode == Mode.NAME && plan.hasIntentSignal) result = searchIntent(plan, pool)
@@ -235,7 +277,7 @@ class ExerciseSearchEngine(
             RecommendationTier.STANDARD -> 3.0
             else -> 0.0
         }
-        return t + d.popularity.coerceIn(0, 100) / 100.0 * 3.0
+        return t + d.popularity.coerceIn(0, 100) / 100.0 * 4.0
     }
 
     // ── 제외(부정·부상) ──────────────────────────────────────────────────────────────────────
@@ -245,7 +287,22 @@ class ExerciseSearchEngine(
         val b = BitSet(indexed.size)
         for (k in plan.excludeKeys) b.or(sigIndex.hits(k))
         for (j in plan.injuries) QueryLexicon.injuryProfiles[j]?.hard?.forEach { b.or(sigIndex.hits(it)) }
+        for (c in plan.excludeConcepts) b.or(conceptMembers(c))
         return b
+    }
+
+    /**
+     * 부정된 부위·목표("가슴 말고", "no legs")에 속하는 운동. 부위 메타(카테고리·근육)가 있으면 그것으로 — 이름 신호는
+     * 다른 부위 운동에도 걸린다(fly ⊂ reverse fly). 메타가 없는 개념(자세 등)만 이름 신호로 가려낸다.
+     */
+    private fun conceptMembers(c: QueryLexicon.Concept): BitSet = conceptBits.getOrPut(c.id + "#members") {
+        val b = BitSet(indexed.size)
+        if (c.categories.isEmpty() && c.muscles.isEmpty()) b.or(sigIndex.anyOf(c.sig))
+        else for (d in indexed) {
+            val docMuscles = d.doc.muscleGroups
+            if (d.doc.category in c.categories || (docMuscles.isNotEmpty() && docMuscles.all { it in c.muscles })) b.set(d.index)
+        }
+        b
     }
 
     private fun isExcluded(d: IDoc, plan: QueryPlan, ex: BitSet): Boolean =
@@ -294,15 +351,42 @@ class ExerciseSearchEngine(
 
     // ── 의도(부위·목표·자세·장비·집) ─────────────────────────────────────────────────────────
 
+    /** 이름에 부위 표기가 있는 문서 — "胸椎"처럼 다른 부위를 가리키는 복합어 속의 글자는 세지 않는다 */
+    private fun nameHits(keys: List<SigKey>): BitSet {
+        val b = BitSet(indexed.size)
+        for (d in indexed) {
+            if (d.sigNames.any { n -> keys.any { k -> hasOutsideMasks(n, k) } }) b.set(d.index)
+        }
+        return b
+    }
+
+    private fun hasOutsideMasks(n: NameKey, k: SigKey): Boolean {
+        val masks = QueryLexicon.nameMasks
+        var from = 0
+        while (true) {
+            val i = n.strict.indexOf(k.key, from)
+            if (i < 0) return false
+            val e = i + k.key.length
+            val startOk = !k.latin || i == 0 || i in n.starts
+            val endOk = !k.wordEnd || e == n.strict.length || e in n.starts
+            val masked = masks.any { m -> var at = n.strict.indexOf(m); var hit = false; while (at >= 0) { if (i >= at && i < at + m.length) { hit = true; break }; at = n.strict.indexOf(m, at + 1) }; hit }
+            if (startOk && endOk && !masked) return true
+            from = i + 1
+        }
+    }
+
     private fun bitsFor(c: QueryLexicon.Concept, kind: String, keys: List<SigKey>): BitSet =
         conceptBits.getOrPut(c.id + "#" + kind) { sigIndex.anyOf(keys) }
+
+    /** 일반 스트레칭 대표 목록 — 부위별 스트레칭 질의에서 가산한다 */
+    private val generalStretch: BitSet by lazy { QueryLexicon.conceptById["stretchgeneral"]?.let { sigIndex.anyOf(it.sig) } ?: BitSet() }
 
     private inner class ConceptEval(val c: QueryLexicon.Concept, val stretchWanted: Boolean) {
         val explicit = !c.id.startsWith("muscle:")
         val sig: BitSet = bitsFor(c, "sig", c.sig)
         val sig2: BitSet = bitsFor(c, "sig2", c.sig2)
         val avoid: BitSet = bitsFor(c, "avoid", c.avoid)
-        val names: BitSet = if (stretchWanted) bitsFor(c, "names", c.nameWords) else sig
+        val names: BitSet = if (stretchWanted) conceptBits.getOrPut(c.id + "#names") { nameHits(c.nameWords) } else sig
 
         /** 이 개념에 대한 적합도 0..1 (후보가 아니면 -1) */
         fun fit(d: IDoc): Double {
@@ -320,7 +404,11 @@ class ExerciseSearchEngine(
                 if (!d.isStretch) return -1.0
                 val nameHit = if (names.get(d.index)) 1.0 else 0.0
                 if (nameHit == 0.0 && sigP == 0.0 && sigS == 0.0 && mus == 0.0) return -1.0
-                return 0.55 * nameHit + 0.25 * maxOf(sigP, 0.5 * sigS) + 0.2 * mus
+                // 널리 쓰는 대표 스트레칭(차일드 포즈·캣카우 …)은 부위 표기가 이름에 없어도 앞쪽에 둔다
+                val canonical = if (c.id != "stretchgeneral" && generalStretch.get(d.index)) CANONICAL_STRETCH_BONUS else 0.0
+                val f = 0.55 * nameHit + 0.25 * maxOf(sigP, 0.5 * sigS) + 0.2 * mus + canonical
+                // 폼롤러·마사지는 스트레칭이 아니라 롤링이다 — 진짜 스트레칭 뒤로
+                return if (d.isRolling) f * ROLLING_FACTOR else f
             }
             if (!explicit) {
                 if (cat == 0.0 && mus == 0.0) return -1.0
@@ -361,6 +449,12 @@ class ExerciseSearchEngine(
             if (similar.isNotEmpty()) return rankSorted(scoreIntent(plan, similar, emptyList(), soft, prefer, fits))
         }
         var out = scoreIntent(plan, cands, evals, soft, prefer)
+        if (plan.combineAll && out.size < COMBINE_MIN_HITS) {
+            // 두 조건에 모두 맞는 운동이 적으면("가슴 웜업") 한쪽만 맞는 운동으로 채우되, 둘 다 맞는 것을 위에 둔다
+            val both = out.associateBy { it.doc.id }
+            out = scoreIntent(plan, cands, evals, soft, prefer, requireAll = false)
+                .map { h -> if (both.containsKey(h.doc.id)) ExerciseSearchHit(h.doc, h.score + COMBINE_BOTH_BONUS) else h }
+        }
         if (out.isEmpty() && evals.any { it.c.strict }) {
             // 신호 표기가 하나도 안 맞으면(카탈로그가 바뀐 경우) 부위·카테고리만으로라도 보여 준다
             val relaxed = plan.concepts.map { ConceptEval(relax(it), plan.stretch) }
@@ -373,7 +467,7 @@ class ExerciseSearchEngine(
         }
         if (out.isEmpty() && plan.stretch) {
             // 스트레칭을 물었는데 부위 신호가 안 맞으면(전신 스트레칭) 스트레칭 전반을 인기·티어 순으로 보여 준다
-            out = cands.filter { it.isStretch }.map { ExerciseSearchHit(it.doc, BAND_INTENT + 6.0 + it.rank) }
+            out = cands.filter { it.isStretch }.map { ExerciseSearchHit(it.doc, BAND_INTENT + 6.0 + it.rank - (if (it.isRolling) ROLLING_FALLBACK_PENALTY else 0.0)) }
         }
         return rankSorted(out)
     }
@@ -404,13 +498,18 @@ class ExerciseSearchEngine(
         return out
     }
 
-    private fun scoreIntent(plan: QueryPlan, cands: List<IDoc>, evals: List<ConceptEval>, soft: BitSet, prefer: BitSet, fits: Map<Int, Double>? = null): List<ExerciseSearchHit> {
+    private fun scoreIntent(plan: QueryPlan, cands: List<IDoc>, evals: List<ConceptEval>, soft: BitSet, prefer: BitSet, fits: Map<Int, Double>? = null, requireAll: Boolean = plan.combineAll): List<ExerciseSearchHit> {
         val out = ArrayList<ExerciseSearchHit>()
         for (d in cands) {
             var fit = fits?.get(d.index) ?: 1.0
             if (evals.isNotEmpty()) {
                 var best = -1.0
-                for (e in evals) { val f = e.fit(d); if (f > best) best = f }
+                if (requireAll) {
+                    // "하체 워밍업": 부위에도 웜업 신호에도 맞는 운동만, 둘 다 잘 맞을수록 앞에
+                    var sum = 0.0
+                    for (e in evals) { val f = e.fit(d); if (f < 0) { sum = -1.0; break }; sum += f }
+                    if (sum >= 0) best = sum / evals.size
+                } else for (e in evals) { val f = e.fit(d); if (f > best) best = f }
                 if (best < 0) continue
                 fit = best
             }
@@ -426,18 +525,18 @@ class ExerciseSearchEngine(
 
     // ── 이름 검색 ────────────────────────────────────────────────────────────────────────────
 
-    private fun searchName(plan: QueryPlan, rawPool: List<IDoc>, deadline: Long): List<ExerciseSearchHit> {
+    private fun searchName(plan: QueryPlan, rawPool: List<IDoc>, budget: Budget): List<ExerciseSearchHit> {
         val seeds = plan.seeds.filter { it.isNotEmpty() }
         if (seeds.isEmpty()) return emptyList()
         if (seeds.size > 1) {
             // 이름에도 쓰이는 군더더기를 남긴 후보로 확실한 일치가 있으면 그것만, 없을 때만 군더더기를 뗀 후보까지 본다
-            val primary = searchNameWith(plan, rawPool, deadline, seeds.take(1))
+            val primary = searchNameWith(plan, rawPool, budget, seeds.take(1))
             if (primary.any { it.score >= BAND_TOKEN_SUB }) return primary
         }
-        return searchNameWith(plan, rawPool, deadline, seeds)
+        return searchNameWith(plan, rawPool, budget, seeds)
     }
 
-    private fun searchNameWith(plan: QueryPlan, rawPool: List<IDoc>, deadline: Long, seeds: List<List<String>>): List<ExerciseSearchHit> {
+    private fun searchNameWith(plan: QueryPlan, rawPool: List<IDoc>, budget: Budget, seeds: List<List<String>>): List<ExerciseSearchHit> {
         val ex = if (plan.hasExclusions) exclusionSet(plan) else null
         val pool = if (ex != null) rawPool.filter { !isExcluded(it, plan, ex) } else rawPool
         val soft = if (plan.injuries.isNotEmpty()) softBits(plan) else null
@@ -490,10 +589,10 @@ class ExerciseSearchEngine(
                 consider(d, best, bestName)
                 if (best >= BAND_LOOSE) solid++
             }
-            if ((++counter and 127) == 0 && System.nanoTime() > deadline) break
+            if ((++counter and 127) == 0 && budget.over()) break
         }
 
-        val overBudget = { System.nanoTime() > deadline }
+        val overBudget = { budget.over() }
 
         // 확실한 매칭이 적으면 퍼지(오타 허용) 보강
         if (solid < FUZZY_TRIGGER && !overBudget()) {
@@ -909,6 +1008,11 @@ class ExerciseSearchEngine(
         private const val OCC_EXACT = 3
         private const val EXACT_WORD_BONUS = 4.0
 
+        private const val ROLLING_FACTOR = 0.5
+        private const val COMBINE_MIN_HITS = 8
+        private const val COMBINE_BOTH_BONUS = 12.0
+        private const val CANONICAL_STRETCH_BONUS = 0.3
+        private const val ROLLING_FALLBACK_PENALTY = 8.0
         private const val SYN_PENALTY = 2.0
         private const val TYPO_PENALTY = 3.0
         private const val SEED_ALT_PENALTY = 12.0
@@ -934,10 +1038,10 @@ class ExerciseSearchEngine(
         private const val MAX_TYPO_VARIANTS = 4
         private const val MAX_COMBOS = 40
         private const val MAX_COMBO_WORDS = 6
-        private const val MAX_SYN_RUN = 3
+        private const val MAX_SYN_RUN = 4
         private const val CACHE_SIZE = 512
         private val WARM_QUERIES = listOf("スクワット", "벤치프레스", "bench press", "背中を鍛えたい", "무릎 안 좋을 때 하체운동", "bad knees leg workout", "without deadlifts", "덤벨 컬", "유산소", "ヒップアップ")
         /** 한 질의의 후보 점수 계산 예산 — 넘으면 비싼 보강 단계(퍼지·바이그램)를 건너뛴다 */
-        private const val BUDGET_NANOS = 40_000_000L
+        const val DEFAULT_BUDGET_NANOS = 40_000_000L
     }
 }

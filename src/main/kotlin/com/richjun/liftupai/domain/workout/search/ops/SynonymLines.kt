@@ -6,7 +6,7 @@ package com.richjun.liftupai.domain.workout.search.ops
  */
 object SynonymLines {
     const val MAX_LINE_LENGTH = 500
-    private val ARROW = Regex("=>>?")
+    private val ARROW = Regex("=>{1,3}")
 
     /** 올바른 줄이면 정리(trim)한 줄을, 아니면 null */
     fun validate(raw: String?): String? {
