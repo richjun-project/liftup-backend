@@ -64,7 +64,7 @@ allOpen {
 tasks.named('test') {
 	useJUnitPlatform()
 	// 검색 평가셋 파일 오버라이드(-DsearchEval.file=...)를 테스트 JVM 으로 전달
-	['searchEval.file', 'searchDump.in', 'searchDump.out', 'searchDump.qvec', 'recoEval.file'].each { key ->
+	['searchEval.file', 'searchDump.in', 'searchDump.out', 'searchDump.qvec', 'searchDump.rewrites', 'recoEval.file'].each { key ->
 		def value = System.getProperty(key)
 		if (value != null) {
 			systemProperty key, value
