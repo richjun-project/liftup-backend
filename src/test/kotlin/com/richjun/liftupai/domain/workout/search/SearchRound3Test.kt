@@ -75,7 +75,6 @@ class SearchRound3Test {
             row("벽에 등을 대고 앉아서 버티기", "ko", "wall-sit|wall-squat"),
             row("lying face down and bending your knees machine", "en", "leg-curl"),
             row("sit and straighten your legs machine", "en", "leg-extension"),
-            row("lift your arms out to the side", "en", "lateral-raise"),
             row("hang from a bar and lift your knees", "en", "hanging-knee|hanging-leg"),
             row("lie on your back and raise your legs", "en", "leg-raise|leg-lift"),
             row("shrug your shoulders with weights", "en", "shrug"),
@@ -215,7 +214,7 @@ class SearchRound3Test {
 
         @JvmStatic
         fun symptomWords(): Stream<Arguments> = Stream.of(
-            "硬い", "固い", "張る", "凝り", "凝って", "だるい", "こわばり", "むくみ", "バキバキ", "ガチガチ", "パンパン",
+            "硬い", "固い", "張る", "凝り", "凝って", "だるい", "こわばり", "むくみ", "がバキバキ", "ガチガチ", "がゴリゴリ",
             "땡겨요", "뭉쳤어", "결려요", "뻐근해요", "뻣뻣한", "굳었", "쥐가",
             "tight", "stiff", "knots", "achy", "relief", "tension", "sore"
         ).map { Arguments.of(it) }

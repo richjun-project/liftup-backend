@@ -334,55 +334,66 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                 while (j in segs.indices && skippable(segs[j])) j++
                 j in segs.indices && segs[j].terms?.any { it.role == Role.NEG && it.instead } == true
             }
-            val targets = ArrayList<IntRange>()
-            var cursor = idx
-            val step = if (neg.targetBefore) -1 else 1
-            var chainLeft = 4
-            while (chainLeft-- > 0) {
-                var j = cursor + step
-                var sawConj = false
-                var broken = false
-                while (j in segs.indices && skippable(segs[j])) {
-                    if (segs[j].has(Role.CONJ)) sawConj = true
-                    // "without barbell with dumbbells", "but", "instead" — 새 절이 시작되면 부정은 거기서 끝난다(뒤 장비는 긍정)
-                    if (targets.isNotEmpty() && text.substring(segs[j].s, segs[j].e) in lex.chainBreakers) { broken = true; break }
-                    j += step
+            /** 표지에서 step 방향으로 부정 대상 덩어리들을 모은다 */
+            fun collectTargets(step: Int): List<IntRange> {
+                val targets = ArrayList<IntRange>()
+                var cursor = idx
+                var chainLeft = 4
+                while (chainLeft-- > 0) {
+                    var j = cursor + step
+                    var sawConj = false
+                    var broken = false
+                    while (j in segs.indices && skippable(segs[j])) {
+                        if (segs[j].has(Role.CONJ)) sawConj = true
+                        // "without barbell with dumbbells", "but", "instead" — 새 절이 시작되면 부정은 거기서 끝난다(뒤 장비는 긍정)
+                        if (targets.isNotEmpty() && text.substring(segs[j].s, segs[j].e) in lex.chainBreakers) { broken = true; break }
+                        j += step
+                    }
+                    if (broken || j !in segs.indices) break
+                    val sg = segs[j]
+                    if (sg.has(Role.NEG) || sg.has(Role.UNIT) || sg.isNum) break
+                    var range = if (sg.unknown) {
+                        val (a2, b2) = chunkAt(j); a2..b2
+                    } else j..j
+                    // 붙여 쓴 이름 복합어("워킹런지"가 워킹 + 런지로 쪼개진 것)는 한 대상이다 — 앞 조각만 빼면 남은 조각이 긍정 이름이 돼 버린다
+                    if (!sg.unknown) {
+                        fun nameSeg(i: Int) = i in segs.indices && !segs[i].unknown && !segs[i].isNum && segs[i].onlyRoles(Role.NAME)
+                        while (nameSeg(range.first) && nameSeg(range.first - 1) && !tok.isWordStart(segs[range.first].s) && !consumed[range.first - 1]) range = (range.first - 1)..range.last
+                        while (nameSeg(range.last) && nameSeg(range.last + 1) && !tok.isWordStart(segs[range.last + 1].s) && !consumed[range.last + 1]) range = range.first..(range.last + 1)
+                    }
+                    if (targets.isNotEmpty()) {
+                        // 이어지는 대상은 접속어(や·と·도·and)가 있거나, 쉼표·공백으로 나열된 별개 단어일 때만 (스쿼트, 런지 없이)
+                        val laterStart = if (step < 0) segs[cursor].s else segs[range.first].s
+                        // 부위·관절은 "가슴이랑 등 빼고"처럼 접속어로 이어졌을 때만 같은 부정에 묶는다
+                        val resolvable = sg.unknown || (!sg.has(Role.CONCEPT) && (sg.has(Role.NAME) || sg.has(Role.EQUIP))) ||
+                            (sawConj && (sg.has(Role.CONCEPT) || sg.has(Role.JOINT)))
+                        if (!resolvable) break
+                        // 접속어 없이 나열만 된 경우는 같은 종류끼리만 이어 붙인다 ("ベンチプレス ダンベル以外" 의 벤치프레스는 제외 대상이 아니다)
+                        val sameKind = segs[targets.last().first].has(Role.EQUIP) == sg.has(Role.EQUIP)
+                        if (!sawConj && !(tok.isWordStart(laterStart) && sameKind)) break
+                    }
+                    targets.add(range)
+                    cursor = if (step < 0) range.first else range.last
                 }
-                if (broken || j !in segs.indices) break
-                val sg = segs[j]
-                if (sg.has(Role.NEG) || sg.has(Role.UNIT) || sg.isNum) break
-                var range = if (sg.unknown) {
-                    val (a2, b2) = chunkAt(j); a2..b2
-                } else j..j
-                // 붙여 쓴 이름 복합어("워킹런지"가 워킹 + 런지로 쪼개진 것)는 한 대상이다 — 앞 조각만 빼면 남은 조각이 긍정 이름이 돼 버린다
-                if (!sg.unknown) {
-                    fun nameSeg(i: Int) = i in segs.indices && !segs[i].unknown && !segs[i].isNum && segs[i].onlyRoles(Role.NAME)
-                    while (nameSeg(range.first) && nameSeg(range.first - 1) && !tok.isWordStart(segs[range.first].s) && !consumed[range.first - 1]) range = (range.first - 1)..range.last
-                    while (nameSeg(range.last) && nameSeg(range.last + 1) && !tok.isWordStart(segs[range.last + 1].s) && !consumed[range.last + 1]) range = range.first..(range.last + 1)
-                }
-                if (targets.isNotEmpty()) {
-                    // 이어지는 대상은 접속어(や·と·도·and)가 있거나, 쉼표·공백으로 나열된 별개 단어일 때만 (스쿼트, 런지 없이)
-                    val laterStart = if (step < 0) segs[cursor].s else segs[range.first].s
-                    // 부위·관절은 "가슴이랑 등 빼고"처럼 접속어로 이어졌을 때만 같은 부정에 묶는다
-                    val resolvable = sg.unknown || (!sg.has(Role.CONCEPT) && (sg.has(Role.NAME) || sg.has(Role.EQUIP))) ||
-                        (sawConj && (sg.has(Role.CONCEPT) || sg.has(Role.JOINT)))
-                    if (!resolvable) break
-                    // 접속어 없이 나열만 된 경우는 같은 종류끼리만 이어 붙인다 ("ベンチプレス ダンベル以外" 의 벤치프레스는 제외 대상이 아니다)
-                    val sameKind = segs[targets.last().first].has(Role.EQUIP) == sg.has(Role.EQUIP)
-                    if (!sawConj && !(tok.isWordStart(laterStart) && sameKind)) break
-                }
-                targets.add(range)
-                cursor = if (step < 0) range.first else range.last
+                return targets
             }
-            var any = false
-            for (r in targets) {
-                val before = excludeKeys.size
-                if (resolveTarget(segs, r, text, excludeEquip, excludeKeys, consumed, negConcepts, negJoints, insteadHere, insteadConcepts)) {
-                    any = true
-                    if (insteadHere) similarKeys.addAll(excludeKeys.subList(before, excludeKeys.size))
+            var cueOnly = false
+            fun resolveAll(targets: List<IntRange>): Boolean {
+                var any = false
+                for (r in targets) {
+                    val before = excludeKeys.size
+                    if (resolveTarget(segs, r, text, excludeEquip, excludeKeys, consumed, negConcepts, negJoints, insteadHere, insteadConcepts)) {
+                        any = true
+                        if (insteadHere) similarKeys.addAll(excludeKeys.subList(before, excludeKeys.size))
+                    }
+                    else if (r.any { segs[it].has(Role.JOINT) || segs[it].has(Role.CUE) }) { cueFlag = true; cueOnly = true }
                 }
-                else if (r.any { segs[it].has(Role.JOINT) || segs[it].has(Role.CUE) }) { cueFlag = true; any = true }
+                return any
             }
+            var resolved = resolveAll(collectTargets(if (neg.targetBefore) -1 else 1))
+            // "pull up alternatives for home / for bad knees" — "alternatives for" 뒤의 말이 운동·장비가 아니라 상황(집·부상)이면 대안을 물은 대상은 앞에 있다
+            if (!resolved && neg.instead && !neg.targetBefore) resolved = resolveAll(collectTargets(-1))
+            val any = resolved || cueOnly
             if (any) consumed[idx] = true
         }
 

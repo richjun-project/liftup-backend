@@ -266,6 +266,8 @@ class ExerciseSearchEngine(
         for (sg in a.segs) {
             val t = sg.terms ?: continue
             if (dropConcepts && sg.e - sg.s >= 2 && t.any { it.role == Role.CONCEPT }) { for (p in sg.s until sg.e) drop[p] = true; continue }
+            // 장비·장소 표기("マシン", "덤벨", "집에서")는 필터로 따로 쓰므로 설명문 질의에서는 뺀다 — 안 그러면 설명문에 "ケーブルマシン"이 나오는 케이블 운동이 걸려든다
+            if (t.all { it.role == Role.EQUIP || it.role == Role.HOME || it.role == Role.NOISE }) { for (p in sg.s until sg.e) drop[p] = true; continue }
             if (sg.isNum || t.all { it.role == Role.UNIT || it.role == Role.NEG || it.role == Role.CONJ || it.role == Role.LEVEL || (it.role == Role.NOISE && !it.particle) }) {
                 // "lift"·"持ち上げる" 처럼 이름 검색에서는 군더더기지만 동작 묘사에서는 핵심인 말은 남긴다
                 if (!sg.isNum && t.any { it.role == Role.NOISE } && t.none { it.role == Role.NEG || it.role == Role.UNIT }) {
@@ -302,7 +304,9 @@ class ExerciseSearchEngine(
         var nameWeak = result.isEmpty() || weak || topScore < BAND_PARTIAL || (motion && plan.mode == Mode.NAME && topScore < BAND_TOKEN_SUB)
         val intentMotion = plan.mode == Mode.INTENT && motion
         if (!nameWeak && !intentMotion) return result
-        val allowed = BitSet(indexed.size).also { b -> pool.forEach { b.set(it.index) } }
+        // 장비를 말한 질의("…마신")는 설명문 후보도 그 장비로 좁힌다(그 장비의 운동이 없으면 좁히지 않는다)
+        val equipPool = if (plan.equipments.isEmpty()) pool else pool.filter { it.doc.equipment in plan.equipments }.ifEmpty { pool }
+        val allowed = BitSet(indexed.size).also { b -> equipPool.forEach { b.set(it.index) } }
         val ex = if (plan.hasExclusions) exclusionSet(plan) else null
         // 이름 일치가 조금이라도 있는 질의("frog stretch")는 설명문이 그 위에 쏟아져 들어오지 않게 더 엄격하게(coverage 높게) 본다
         val minCoverage = if (result.isNotEmpty() && !weak && !motion) DESC_MIN_COVERAGE_WITH_NAME else DESC_MIN_COVERAGE
