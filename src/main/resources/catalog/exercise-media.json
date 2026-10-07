@@ -1,0 +1,4882 @@
+{
+ "3-4-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "3-leg-chatarunga-pose": {
+  "thumb": true,
+  "video": true
+ },
+ "3-leg-dog-pose": {
+  "thumb": true,
+  "video": true
+ },
+ "4-corners-curtsy": {
+  "thumb": true,
+  "video": true
+ },
+ "4-corners-side-step": {
+  "thumb": true,
+  "video": true
+ },
+ "4-punches-side-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "4-reverse-lunge-and-4-side-taps": {
+  "thumb": true,
+  "video": true
+ },
+ "45-degree-bicycle-twisting": {
+  "thumb": true,
+  "video": true
+ },
+ "45-degree-side-bend": {
+  "thumb": true,
+  "video": true
+ },
+ "45-degree-twisting-hyperextension": {
+  "thumb": true,
+  "video": true
+ },
+ "45-degrees-step-out": {
+  "thumb": true,
+  "video": true
+ },
+ "90-degree-heel-touch": {
+  "thumb": true,
+  "video": true
+ },
+ "90-to-90-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "ab-mat-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "ab-tuck": {
+  "thumb": true,
+  "video": true
+ },
+ "ab-wheel-all-the-way-out": {
+  "thumb": true,
+  "video": true
+ },
+ "ab-wheel-halfway-out": {
+  "thumb": true,
+  "video": true
+ },
+ "ab-wheel-left-out": {
+  "thumb": true,
+  "video": true
+ },
+ "ab-wheel-plank": {
+  "thumb": true,
+  "video": true
+ },
+ "ab-wheel-pulses": {
+  "thumb": true,
+  "video": true
+ },
+ "ab-wheel-take-it-or-leave-it": {
+  "thumb": true,
+  "video": true
+ },
+ "abdominal-crunches": {
+  "thumb": true,
+  "video": true
+ },
+ "abdominal-crunches-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "abdominal-crunches-with-hold": {
+  "thumb": true,
+  "video": true
+ },
+ "abdominal-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "above-head-chest-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "across-chest-shoulder-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "adductor-dynamic-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "adductor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "adductor-stretch-side-standing": {
+  "thumb": true,
+  "video": true
+ },
+ "air-bike": {
+  "thumb": true,
+  "video": true
+ },
+ "air-bike-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "air-punches-march": {
+  "thumb": true,
+  "video": true
+ },
+ "air-twisting-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "all-fours-quad-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-arm-leg-plank": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-arm-leg-plank-rest-pause": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-bicep-curl-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-front-kick-in-place": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-hammer-curl-seated-dumbbells": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-hammer-curl-standing-dumbbells": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-heel-touch-side-kick-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-heel-touches": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-leg-pull": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-leg-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-leg-raise-from-reverse-plank-position": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-lying-floor-leg-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-oblique-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-punching": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-single-leg-raise-plank": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-sprinter-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-superman": {
+  "thumb": true,
+  "video": true
+ },
+ "alternate-toe-tap-leg-lift": {
+  "thumb": true,
+  "video": true
+ },
+ "alternating-biceps-curl-seated-dumbbells": {
+  "thumb": true,
+  "video": true
+ },
+ "alternating-biceps-hammer-curls-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "alternating-hamstring-curl-with-punch": {
+  "thumb": true,
+  "video": true
+ },
+ "alternating-leg-downward-dog": {
+  "thumb": true,
+  "video": true
+ },
+ "alternating-leg-lifts": {
+  "thumb": true,
+  "video": true
+ },
+ "alternating-lunge-with-rotation": {
+  "thumb": true,
+  "video": true
+ },
+ "alternating-oblique-sit-ups": {
+  "thumb": true,
+  "video": true
+ },
+ "alternating-plank-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "alternating-step-out": {
+  "thumb": true,
+  "video": true
+ },
+ "alternating-toe-tap": {
+  "thumb": true,
+  "video": true
+ },
+ "ankle-circles": {
+  "thumb": true,
+  "video": true
+ },
+ "ankle-dorsal-flexion": {
+  "thumb": true,
+  "video": true
+ },
+ "ankle-plantar-flexion": {
+  "thumb": true,
+  "video": true
+ },
+ "archer-pull-up": {
+  "thumb": true,
+  "video": true
+ },
+ "archer-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "archer-step-back": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-circle": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-circles-backward": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-crossover": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-crossover-chest-out": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-double-crossover": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-pulses": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-pulses-cross": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-pulses-palms-downwards": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-pulses-palms-upwards": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-rotation-knee-lift": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-swing-side-to-side": {
+  "thumb": true,
+  "video": true
+ },
+ "arm-tuck-side-bend": {
+  "thumb": true,
+  "video": true
+ },
+ "armless-prayer-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "arms-behind-back-shoulder-flexor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "arms-up-and-down": {
+  "thumb": true,
+  "video": true
+ },
+ "arnold-press-cable-resistance-band-standing": {
+  "thumb": true,
+  "video": true
+ },
+ "arnold-press-dumbbell": {
+  "thumb": true,
+  "video": true
+ },
+ "around-the-world-superman-hold": {
+  "thumb": true,
+  "video": true
+ },
+ "assault-air-bike": {
+  "thumb": false,
+  "video": false
+ },
+ "assisted-chin-up-normal-width-reverse-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "assisted-chin-up-on-a-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "assisted-chin-up-reverse-close-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "assisted-chin-up-reverse-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "assisted-close-grip-underhand-chin-up": {
+  "thumb": true,
+  "video": true
+ },
+ "assisted-dip-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "assisted-parallel-close-grip-pull-up": {
+  "thumb": true,
+  "video": true
+ },
+ "assisted-pull-up": {
+  "thumb": true,
+  "video": true
+ },
+ "assisted-pull-up-close-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "assisted-pull-up-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "assisted-sit-ups": {
+  "thumb": true,
+  "video": true
+ },
+ "assisted-weighted-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "back-and-forward-leg-swings": {
+  "thumb": true,
+  "video": true
+ },
+ "back-and-shoulder-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "back-extension-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "back-extension-on-exercise-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "back-lever": {
+  "thumb": true,
+  "video": true
+ },
+ "back-pec-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "back-slaps-wrap-around-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "back-squeeze": {
+  "thumb": true,
+  "video": true
+ },
+ "back-stretch-dynamic": {
+  "thumb": true,
+  "video": true
+ },
+ "back-stretch-standing-with-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "backhand-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "backward-abdominal-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "backward-forward-turn-to-side-neck-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "balance-board-lateral-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "ball-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "balloon-drill": {
+  "thumb": true,
+  "video": true
+ },
+ "band-assisted-chin-up-from-knee": {
+  "thumb": true,
+  "video": true
+ },
+ "band-bent-over-row": {
+  "thumb": true,
+  "video": true
+ },
+ "band-bicycle-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "band-chest-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "band-close-grip-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "band-close-grip-row": {
+  "thumb": true,
+  "video": true
+ },
+ "band-concentration-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "band-cross-abduction": {
+  "thumb": true,
+  "video": true
+ },
+ "band-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "band-incline-t-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "band-incline-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "band-lying-reverse-grip-pressdown": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-back-wide-shrug": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-behind-neck-push-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-behind-the-back-push-press-single-arm-balance": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-bench-lateral-step-up": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-bench-press-decline": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-bench-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-bent-over-row-pronated-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-bent-over-row-supinated-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-bicep-curl-close-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-box-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-bulgarian-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-clean-and-jerk-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-clean-and-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-clean-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-clean-grip-front-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-clean-pull": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-close-grip-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-close-grip-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-curtsy-lunges": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-deadlift-high-pull": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-drag-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-floor-chest-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-front-chest-bench-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-front-chest-lunges": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-front-lunges-with-small-pause": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-front-squats": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-full-clean": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-full-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-full-zercher-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-glute-bridge": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-good-morning": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-hip-thrust": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-incline-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-jefferson-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-jefferson-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-jm-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-jump-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-kas-glute-bridge": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-kneeling-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-lap-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-lateral-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-low-bar-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-lying-row": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-lying-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-lying-triceps-skull-crusher": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-muscle-clean": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-narrow-stance-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-one-arm-single-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-one-leg-hip-thrust": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-overhead-lunges": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-overhead-shrug": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-overhead-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-pendlay-row": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-power-clean": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-power-clean-from-blocks": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-power-jerk": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-power-snatch": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-preacher-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-pullover-to-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-push-bent-over-row": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-quarter-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-rack-pull": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-rear-delt-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-rear-lunge-on-box": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-rear-lunges": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-reverse-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-reverse-close-grip-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-reverse-grip-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-reverse-spider-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-rollout": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-romanian-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-seated-behind-neck-military-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-seated-concentration-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-seated-good-morning": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-seated-on-knee-calve-raises": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-seated-overhead-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-seated-overhead-triceps-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-seated-twist": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-seated-twist-on-exercise-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-shrugs": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-side-bends": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-side-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-single-arm-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-single-leg-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-single-leg-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-smith-chest-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-snatch": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-snatch-balance": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-snatch-deadlift-close-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-snatch-deadlift-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-snatch-from-blocks": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-snatch-pull": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-split-clean": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-split-jerk": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-squat-to-grass": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-squat-with-2-sec-hold": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-standing-back-wrist-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-standing-close-grip-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-standing-close-grip-military-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-standing-concentration-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-standing-leg-calf-raises": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-standing-military-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-standing-overhead-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-standing-twist": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-standing-wide-grip-military-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-step-up-on-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-stiff-leg-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-straight-leg-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-sumo-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-sumo-romanian-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-thruster": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-upright-row": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-wide-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-wide-grip-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-wide-grip-upright-row": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-wide-shrug": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-wrist-curl-on-knees": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-wrist-curl-wide-legs": {
+  "thumb": true,
+  "video": true
+ },
+ "barbell-wrist-extension-on-knees": {
+  "thumb": true,
+  "video": true
+ },
+ "basic-toe-touch": {
+  "thumb": true,
+  "video": true
+ },
+ "basketball-shot-jump": {
+  "thumb": true,
+  "video": true
+ },
+ "battle-ropes": {
+  "thumb": false,
+  "video": false
+ },
+ "behind-neck-lat-pull-down-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "behind-neck-press-resistance-band-cable": {
+  "thumb": true,
+  "video": true
+ },
+ "bench-alternating-step-ups": {
+  "thumb": true,
+  "video": true
+ },
+ "bench-bulgarian-split-squats": {
+  "thumb": true,
+  "video": true
+ },
+ "bench-decline-ab-sit-ups": {
+  "thumb": true,
+  "video": true
+ },
+ "bench-dip-knees-bent": {
+  "thumb": true,
+  "video": true
+ },
+ "bench-dip-on-floor": {
+  "thumb": true,
+  "video": true
+ },
+ "bench-knee-tucks": {
+  "thumb": true,
+  "video": true
+ },
+ "bench-pull-ups": {
+  "thumb": true,
+  "video": true
+ },
+ "bench-reverse-plank-hold": {
+  "thumb": true,
+  "video": true
+ },
+ "bench-triceps-dip-leg-curls": {
+  "thumb": true,
+  "video": true
+ },
+ "bench-triceps-dip-straight-legs": {
+  "thumb": true,
+  "video": true
+ },
+ "bent-arm-chest-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "bent-knee-back-to-side-kick": {
+  "thumb": true,
+  "video": true
+ },
+ "bent-knee-lying-twist": {
+  "thumb": true,
+  "video": true
+ },
+ "bent-knee-lying-twist-on-stability-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "bent-leg-side-kick-kneeling": {
+  "thumb": true,
+  "video": true
+ },
+ "bent-over-rear-delt-fly-dumbbell": {
+  "thumb": true,
+  "video": true
+ },
+ "bent-over-rear-deltoid-fly-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "bent-over-row-with-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "bent-over-twist": {
+  "thumb": true,
+  "video": true
+ },
+ "bicep-curl-low-cable-machine-normal-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "biceps-curl-cable": {
+  "thumb": true,
+  "video": true
+ },
+ "biceps-curl-cable-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "biceps-curl-cable-wide-grip-crossover-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "biceps-curl-front-step": {
+  "thumb": true,
+  "video": true
+ },
+ "biceps-curl-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "biceps-curl-to-shoulder-press-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "biceps-leg-concentration-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "biceps-stretch-behind-the-back": {
+  "thumb": true,
+  "video": true
+ },
+ "bicycle-air-legs": {
+  "thumb": true,
+  "video": true
+ },
+ "bicycle-twisting-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "bicycles": {
+  "thumb": true,
+  "video": true
+ },
+ "bicycles-crunches": {
+  "thumb": true,
+  "video": true
+ },
+ "bird-dog": {
+  "thumb": true,
+  "video": true
+ },
+ "boat-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "body-saw-plank": {
+  "thumb": true,
+  "video": true
+ },
+ "body-slide": {
+  "thumb": true,
+  "video": true
+ },
+ "body-throw": {
+  "thumb": true,
+  "video": true
+ },
+ "body-up": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-bent-over-rear-delt-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-forward-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-front-slam": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-full-squat-with-overhead-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-full-squat-with-overhead-press": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-glute-bridge": {
+  "thumb": false,
+  "video": false
+ },
+ "bodyweight-hip-thrust": {
+  "thumb": false,
+  "video": false
+ },
+ "bodyweight-knee-thrust": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-knee-to-hand-tap": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-kneeling-hold-to-stand": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-kneeling-push-up-row": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-kneeling-sissy-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-kneeling-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-lying-leg-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-muscle-up": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-overhead-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-overhead-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-pulse-forward-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-pulse-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-pulse-squat-arms-to-chest": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-rear-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-rear-lunge-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-single-leg-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-squat-to-front-leg": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-squat-to-side-leg": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-squat-to-side-to-front-leg": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-squats-hold": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-standing-around-world-wall-supported": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-standing-back-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-standing-calf-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-standing-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-standing-military-press": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-standing-military-press-wall-supported": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-standing-shrug": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-standing-triangle-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-step-up-on-step-box": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-svend-press": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-wall-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-windmill": {
+  "thumb": true,
+  "video": true
+ },
+ "bodyweight-windmill-cut": {
+  "thumb": true,
+  "video": true
+ },
+ "bottoms-up-half-rep": {
+  "thumb": true,
+  "video": true
+ },
+ "bouncing-circle-draw": {
+  "thumb": true,
+  "video": true
+ },
+ "bouncing-inner-thigh-tap": {
+  "thumb": true,
+  "video": true
+ },
+ "box-jump": {
+  "thumb": true,
+  "video": true
+ },
+ "box-jump-squats": {
+  "thumb": true,
+  "video": true
+ },
+ "boxing-jab": {
+  "thumb": true,
+  "video": true
+ },
+ "boxing-left-hook": {
+  "thumb": true,
+  "video": true
+ },
+ "boxing-left-uppercut": {
+  "thumb": true,
+  "video": true
+ },
+ "boxing-right-cross": {
+  "thumb": true,
+  "video": true
+ },
+ "boxing-right-hook": {
+  "thumb": true,
+  "video": true
+ },
+ "boxing-right-uppercut": {
+  "thumb": true,
+  "video": true
+ },
+ "brazilian-crunches": {
+  "thumb": true,
+  "video": true
+ },
+ "bridge-hip-abduction": {
+  "thumb": true,
+  "video": true
+ },
+ "bridge-mountain-climber-cross-body": {
+  "thumb": true,
+  "video": true
+ },
+ "bridge-pose-setu-bandhasana": {
+  "thumb": true,
+  "video": true
+ },
+ "bridge-with-alternating-leg-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "briskly-walking": {
+  "thumb": true,
+  "video": true
+ },
+ "bulgarian-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "bulgarian-split-squat-cable-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "burpee": {
+  "thumb": true,
+  "video": true
+ },
+ "burpee-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "butt-kick-with-row": {
+  "thumb": true,
+  "video": true
+ },
+ "butt-kicks": {
+  "thumb": true,
+  "video": true
+ },
+ "butterfly-yoga-flaps": {
+  "thumb": true,
+  "video": true
+ },
+ "butterfly-yoga-pose": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-alternate-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-assisted-inverse-leg-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-bar-lateral-pulldown": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-bench-fly-press": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-bent-over-one-arm-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-bent-over-reverse-grip-row": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-bent-over-row": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-close-grip-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-close-grip-front-lat-pulldown": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-crunch": {
+  "thumb": false,
+  "video": false
+ },
+ "cable-face-pull": {
+  "thumb": false,
+  "video": false
+ },
+ "cable-front-raises-straight-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-lateral-raises": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-leaning-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-low-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-low-seated-row": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-lying-extension-pullover-with-cables-attachment": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-lying-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-lying-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-lying-triceps-extension-low": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-machine-high-to-low": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-middle-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-narrow-chair-stand-up": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-neutral-grip-kickback": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-one-arm-bent-over-row": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-one-arm-chest-fly-bent": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-one-arm-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-one-arm-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-one-arm-inner-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-one-arm-lat-pulldown": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-overhead-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-overhead-extension-rope": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-palm-rotational-row": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-preacher-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-pull-through": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-pulldown": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-pulldown-pro-lat-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-pushdown": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-pushdown-straight-arm": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-rear-delt-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-rear-drive": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-rear-drive-bent-arm": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-rear-pulldown": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-reverse-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-reverse-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-reverse-grip-pushdown": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-reverse-grip-straight-back-seated-high-row": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-reverse-grip-triceps-pushdown-ez-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-rope-hammer-curl": {
+  "thumb": false,
+  "video": false
+ },
+ "cable-seated-on-floor-row": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-seated-one-arm-alternate-row": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-seated-rear-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-seated-row": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-seated-row-with-v-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-seated-supine-grip-row": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-standing-up-straight-crossovers": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-straight-arm-pulldown": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-triceps-overhead-extension-ez-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-triceps-push-down-elbow-out-v-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-triceps-push-down-ez-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-triceps-push-down-ez-bar-close-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-triceps-push-down-ez-bar-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-triceps-push-down-straight-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-triceps-push-down-v-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-triceps-rope-pushdown": {
+  "thumb": false,
+  "video": false
+ },
+ "cable-twin-handle-parallel-grip-lat-pulldown": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-twist": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-twist-up-down": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-twisting-overhead-press": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-twisting-pull": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-underhand-pulldown-wide-grips": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-upper-chest-crossover": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-upright-row-with-ez-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-upright-row-with-straight-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-wrist-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "cable-y-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "calf-raise-clap": {
+  "thumb": true,
+  "video": true
+ },
+ "calf-raise-from-deficit-with-chair-supported": {
+  "thumb": true,
+  "video": true
+ },
+ "calf-raise-leg-press-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "calf-raise-on-hack-squat-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "calf-raise-with-wall-support": {
+  "thumb": true,
+  "video": true
+ },
+ "calf-stretch-with-hands-against-wall": {
+  "thumb": true,
+  "video": true
+ },
+ "calf-stretch-with-rope": {
+  "thumb": true,
+  "video": true
+ },
+ "calves-stretch-on-stairs": {
+  "thumb": true,
+  "video": true
+ },
+ "captains-chair-leg-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "captains-chair-straight-leg-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "cardio-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "cat-cow": {
+  "thumb": false,
+  "video": false
+ },
+ "cat-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "ceiling-look-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "celebratory-hip-thrust": {
+  "thumb": true,
+  "video": true
+ },
+ "chair-back-lunge-left-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "chair-bulgarian-split-squats-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "chair-elevated-single-leg-glute-bridge": {
+  "thumb": true,
+  "video": true
+ },
+ "chair-feet-elevated-glute-bridge": {
+  "thumb": true,
+  "video": true
+ },
+ "chair-frog-feet-elevated-glute-bridge-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "chair-triceps-dips": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-dip": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-dip-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-dip-on-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-dip-on-dip-station": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-dip-weighted": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-dip-weighted-slow": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-dip-with-pause-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-fly-high-to-low-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-fly-low-to-high-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-fly-side-step": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-lift-with-rotation": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-out-hands-behind-hold": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-press-front-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-press-high-to-low-cable-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-press-low-to-high-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-press-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "chest-pull-back": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-raise-and-rotate": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-stretch-with-exercise-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "chest-tap-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "child-pose": {
+  "thumb": true,
+  "video": true
+ },
+ "child-pose-up": {
+  "thumb": true,
+  "video": true
+ },
+ "chin-up": {
+  "thumb": true,
+  "video": true
+ },
+ "chin-up-isometric-and-negative": {
+  "thumb": true,
+  "video": true
+ },
+ "chin-up-reverse-close-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "chin-up-reverse-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "chin-ups-narrow-parallel-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "circle-elbow-arm": {
+  "thumb": true,
+  "video": true
+ },
+ "circles-knee-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "clap-curtsy-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "clap-jack": {
+  "thumb": true,
+  "video": true
+ },
+ "clap-push-ups": {
+  "thumb": true,
+  "video": true
+ },
+ "climber-a-padded-stool-supported": {
+  "thumb": true,
+  "video": true
+ },
+ "clock-push-ups": {
+  "thumb": true,
+  "video": true
+ },
+ "close-grip-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "cluster": {
+  "thumb": true,
+  "video": true
+ },
+ "cobra-full-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "cobra-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "cobra-side-ab-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "cobra-yoga-pose-hold": {
+  "thumb": true,
+  "video": true
+ },
+ "cocoons": {
+  "thumb": true,
+  "video": true
+ },
+ "commando-pull-up": {
+  "thumb": true,
+  "video": true
+ },
+ "concentration-curls-dumbbell": {
+  "thumb": true,
+  "video": true
+ },
+ "control-balance": {
+  "thumb": true,
+  "video": true
+ },
+ "corner-touch": {
+  "thumb": true,
+  "video": true
+ },
+ "corner-wall-chest-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "cossack-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "couch-stretch": {
+  "thumb": false,
+  "video": false
+ },
+ "counterbalanced-skater-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "crab-pose": {
+  "thumb": true,
+  "video": true
+ },
+ "crab-twist-toe-touch": {
+  "thumb": true,
+  "video": true
+ },
+ "criss-cross-arms-lift": {
+  "thumb": true,
+  "video": true
+ },
+ "criss-cross-elbow-to-knee": {
+  "thumb": true,
+  "video": true
+ },
+ "criss-cross-jack": {
+  "thumb": true,
+  "video": true
+ },
+ "criss-cross-jump": {
+  "thumb": true,
+  "video": true
+ },
+ "criss-cross-leg-raises": {
+  "thumb": true,
+  "video": true
+ },
+ "cross-over-shoulder-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "crossed-arms-front-leg-kick": {
+  "thumb": true,
+  "video": true
+ },
+ "crossover-kneeling-hip-flexor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "crouching-heel-back-calf-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "crunch-arms-straight": {
+  "thumb": true,
+  "video": true
+ },
+ "crunch-floor": {
+  "thumb": true,
+  "video": true
+ },
+ "crunch-frog-on-floor": {
+  "thumb": true,
+  "video": true
+ },
+ "crunch-hands-overhead": {
+  "thumb": true,
+  "video": true
+ },
+ "crunch-leg-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "crunch-legs-on-stability-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "crunch-on-bosu-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "crunch-on-stability-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "crunch-straight-leg-up": {
+  "thumb": true,
+  "video": true
+ },
+ "crunch-with-medicine-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "curtsy-lunge-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "curtsy-lunges-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "curtsy-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dead-bug": {
+  "thumb": true,
+  "video": true
+ },
+ "dead-bug-extended-arms": {
+  "thumb": true,
+  "video": true
+ },
+ "dead-hang-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-bench-full-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-bench-oblique-crunches-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-bench-oblique-crunches-dumbbells": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-bent-leg-reverse-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-chair-push-up-diamond": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-diamond-pike-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-kneeling-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-kneeling-push-up-on-box": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-levitating-sit-ups-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-push-up-against-wall": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-shoulder-tap": {
+  "thumb": true,
+  "video": true
+ },
+ "decline-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "deep-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "diagonal-chop-cable": {
+  "thumb": true,
+  "video": true
+ },
+ "diagonal-chop-left": {
+  "thumb": true,
+  "video": true
+ },
+ "diagonal-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "diagonal-opens": {
+  "thumb": true,
+  "video": true
+ },
+ "diagonal-punch": {
+  "thumb": true,
+  "video": true
+ },
+ "diamond-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "diamond-push-up-on-knees": {
+  "thumb": true,
+  "video": true
+ },
+ "dip-leg-raise-on-couch": {
+  "thumb": true,
+  "video": true
+ },
+ "dip-on-floor-with-chair": {
+  "thumb": true,
+  "video": true
+ },
+ "dips-between-chairs": {
+  "thumb": true,
+  "video": true
+ },
+ "donkey-calf-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "donkey-kicks-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "doorway-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "double-jump-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "double-knee-drive": {
+  "thumb": true,
+  "video": true
+ },
+ "double-punch-front-leg-lift": {
+  "thumb": true,
+  "video": true
+ },
+ "drag-curl-dumbbell": {
+  "thumb": true,
+  "video": true
+ },
+ "drag-curl-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-ab-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-alternate-bench-press-high-start": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-alternate-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-alternate-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-alternate-side-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-armpit-row": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-arnold-press-seated": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-around-pullover": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-around-the-world": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-bar-grip-sumo-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-bench-seated-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-bent-arm-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-bent-arm-pullover": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-bent-over-face-pull": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-bent-over-reverse-row": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-bent-over-row": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-bicep-curl-to-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-biceps-curl-with-overhead-extension-on-stability-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-bulgarian-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-chest-pull-over": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-chest-supported-lateral-raises": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-close-grip-shoulder-press-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-close-grip-simultaneous-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-close-legs-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-cross-body-hammer-curl-version-2": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-crunch-hold-with-legs-off": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-cuban-press-version-2": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-curls": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-curls-alternating": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-curtsy-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-decline-alternate-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-decline-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-decline-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-decline-hammer-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-decline-one-arm-hammer-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-decline-overhead-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-decline-shrug": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-decline-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-decline-triceps-pull-over-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-decline-twist-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-diagonal-chop": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-drag-over-shoulder-bicep-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-external-rotation": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-face-down-lying-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-farmer-walks": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-floor-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-fly-flat-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-front-rack-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-front-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-glute-bridge": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-goblet-2-sec-hold-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-goblet-curtsy-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-goblet-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-goblet-split-squat-front-foot-elevanted": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-goblet-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-half-biceps-curl-for-21s": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-half-kneeling-military-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-hammer-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-hammer-curl-simultaneous-arms": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-hammer-grip-incline-bench-two-arm-row": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-hammer-preacher-curl-simultaneous-arms": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-hammer-strict-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-hang-power-clean": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-high-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-hip-thrust": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-alternate-bicep-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-alternate-hammer-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-alternate-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-breeding": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-fly-on-exercise-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-hammer-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-hammer-simultaneous-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-one-arm-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-one-arm-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-palms-back-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-rear-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-row": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-shrug": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-squeeze-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-svend-close-grip-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-twisted-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-incline-two-arm-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-iron-cross": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-jumping-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-kickback": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-kneeling-arnold-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-kneeling-hold-to-stand-clean-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-kneeling-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lateral-to-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-leaning-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-low-windmill": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lunge": {
+  "thumb": false,
+  "video": false
+ },
+ "dumbbell-lunge-alternating-on-the-spot": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lunge-pulse": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lunge-to-overhead-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lying-external-shoulder-rotation": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lying-one-arm-neutral-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lying-one-arm-rear-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lying-pronation-rotation-on-floor": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lying-rear-delt-row": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lying-rear-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lying-supine-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lying-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-lying-triceps-extension-on-floor": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-narrow-stance-squats": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-floor-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-floor-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-hammer-preacher-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-kickback": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-low-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-reverse-preacher-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-reverse-wrist-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-row-rack-support": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-seated-neutral-wrist-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-snatch": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-triceps-extension-on-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-wide-grip-bench-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-wrist-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-one-arm-zottman-preacher-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-over-bench-reverse-wrist-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-over-bench-wrist-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-overhead-extension-seated": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-overhead-extension-standing": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-overhead-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-overhead-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-plyo-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-preacher-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-preacher-curl-over-exercise-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-preacher-curl-turned-torso": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-press-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-pronate-grip-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-prone-incline-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-prone-incline-hammer-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-pullover": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-pullover-hip-extension-on-exercise-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-pullover-on-floor": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-push-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-rdl-stretch-isometric": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-rear-delt-row": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-rear-full-shrugs": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-rear-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-rear-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-rear-lunge-from-step": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-renegade-row": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-reverse-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-reverse-grip-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-reverse-lunge-on-the-spot": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-reverse-lunges-pulses": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-reverse-spider-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-reverse-wrist-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-romanian-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-russian-twist-with-legs-floor-off": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-scott-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-alternate-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-alternate-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-bench-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-bent-arm-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-calf-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-hammer-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-kickback": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-neutral-wrist-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-on-exercise-ball-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-one-leg-calf-raise-hammer-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-reverse-close-grip-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-reverse-grip-concentration-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-seated-shoulder-press-parallel-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-shrugs": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-side-bend": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-side-lunge-alternating": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-side-lunge-left-n-right": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-side-lunge-single-leg": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-side-lying-one-hand-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-side-plank-with-rear-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-side-squat-side-to-side": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-simultaneous-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-arm-floor-press-from-close-elbow": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-arm-leaning-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-arm-overhead-carry": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-arm-overhead-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-arm-row": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-arm-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-arm-starfish-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-arm-underhand-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-leg-calf-raise-wall-support": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-leg-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-leg-glute-bridge": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-leg-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-leg-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-leg-squat-with-support-pistol": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-single-leg-step-up": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-squats": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-squats-to-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-alternate-overhead-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-alternate-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-alternate-vertical-front-raises": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-behind-back-shoulders-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-both-arms-kickback": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-calf-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-calf-raise-on-step": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-concentration-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-curl-arnold-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-front-raise-above-head": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-hammer-drag-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-one-arm-concentration-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-one-arm-curl-over-incline-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-one-arm-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-overhead-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-palms-in-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-preacher-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-reverse-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-single-arm-cross-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-single-leg-calf-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-triceps-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-standing-wide-simultaneous-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-starfish-crunch-alternating": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-static-lunge": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-step-up-on-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-step-up-with-knee-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-stiff-leg-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-straight-arm-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-straight-arm-twisting-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-straight-leg-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-straight-leg-russian-twist": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-suitcase-carry": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-sumo-squat-off-benches": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-supported-sissy-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-svend-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-tate-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-triceps-kick-back-single-arm": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-upright-shoulder-external-rotation": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-v-up": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-w-press": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-waiter-biceps-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-walking-lunge": {
+  "thumb": false,
+  "video": false
+ },
+ "dumbbell-zottman-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbell-zottman-preacher-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbells-plank-to-alternating-row": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbbells-triceps-kick-back-both-arms": {
+  "thumb": true,
+  "video": true
+ },
+ "dumbell-burpee": {
+  "thumb": true,
+  "video": true
+ },
+ "elbow-back-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "elliptical-trainer": {
+  "thumb": false,
+  "video": false
+ },
+ "exercise-ball-back-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "exercise-ball-hip-flexor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "exercise-ball-lat-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "exercise-ball-lower-back-dynamic-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "exercise-ball-lower-back-prone-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "exercise-ball-lying-side-lat-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "exercise-ball-seated-hamstring-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "exercise-ball-seated-quad-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "exercise-ball-sit-ups": {
+  "thumb": true,
+  "video": true
+ },
+ "explosive-push-ups": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-bar-biceps-curl-close-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-bar-biceps-curl-normal-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-bar-biceps-curl-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-bar-cable-curl-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-bar-overhead-extensions-standing": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-bar-seated-close-grip-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-bar-seated-wrist-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-bar-standing-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-barbell-anti-gravity-press": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-barbell-close-grip-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "ez-barbell-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "fast-feet": {
+  "thumb": true,
+  "video": true
+ },
+ "feet-together-barbell-squats": {
+  "thumb": true,
+  "video": true
+ },
+ "fire-hydrant-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "fire-hydrant-circle-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "fixed-bar-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "flat-bench-cable-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "floor-cable-resistance-band-press": {
+  "thumb": true,
+  "video": true
+ },
+ "flutter-kicks": {
+  "thumb": true,
+  "video": true
+ },
+ "foam-roller-back": {
+  "thumb": false,
+  "video": false
+ },
+ "foam-roller-calves": {
+  "thumb": false,
+  "video": false
+ },
+ "foam-roller-it-band-glute": {
+  "thumb": false,
+  "video": false
+ },
+ "foam-roller-lats": {
+  "thumb": false,
+  "video": false
+ },
+ "foam-roller-quads": {
+  "thumb": false,
+  "video": false
+ },
+ "front-raise-resistance-bands": {
+  "thumb": true,
+  "video": true
+ },
+ "front-shoulder-stretch-with-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "front-squats-dumbbell-low": {
+  "thumb": true,
+  "video": true
+ },
+ "front-squats-dumbbell-over-shoulders": {
+  "thumb": true,
+  "video": true
+ },
+ "front-squats-kettlelbell-over-shoulders": {
+  "thumb": true,
+  "video": true
+ },
+ "full-planche-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "glute-bridge-with-abduction-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "glute-ham-raise": {
+  "thumb": false,
+  "video": false
+ },
+ "glute-kickback-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "goblet-kettlebell-squats": {
+  "thumb": true,
+  "video": true
+ },
+ "good-morning-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "good-mornings-dumbbells": {
+  "thumb": true,
+  "video": true
+ },
+ "good-mornings-kettlebell": {
+  "thumb": true,
+  "video": true
+ },
+ "gym-rowing-machine-normal-speed": {
+  "thumb": true,
+  "video": true
+ },
+ "hack-squat-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "hammer-curl-resistance-band-simultaneous": {
+  "thumb": true,
+  "video": true
+ },
+ "hammer-strength-iso-lateral-leg-curl-both-leg": {
+  "thumb": true,
+  "video": true
+ },
+ "hammer-strength-mts-iso-lateral-biceps-curl-both-arm": {
+  "thumb": true,
+  "video": true
+ },
+ "hammer-strength-mts-iso-lateral-decline-press-both-arms": {
+  "thumb": true,
+  "video": true
+ },
+ "hammer-strength-plate-loaded-combination-iso-lateral-chest-chest-press": {
+  "thumb": true,
+  "video": true
+ },
+ "hammer-strength-plate-loaded-high-row-both-arms": {
+  "thumb": true,
+  "video": true
+ },
+ "hamstring-lying-curl-up-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "hamstring-lying-straight-leg-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "handstand-push-on-chair": {
+  "thumb": true,
+  "video": true
+ },
+ "hanging-knee-raises": {
+  "thumb": true,
+  "video": true
+ },
+ "hanging-leg-raise": {
+  "thumb": false,
+  "video": false
+ },
+ "hanging-oblique-crunches": {
+  "thumb": true,
+  "video": true
+ },
+ "heel-touches": {
+  "thumb": true,
+  "video": true
+ },
+ "high-cable-kneeling-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "high-knee-twist": {
+  "thumb": true,
+  "video": true
+ },
+ "high-knees": {
+  "thumb": true,
+  "video": true
+ },
+ "high-plank": {
+  "thumb": true,
+  "video": true
+ },
+ "high-resistance-band-kneeling-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "hip-adductor-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "hip-thrust-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "hollow-hold": {
+  "thumb": true,
+  "video": true
+ },
+ "in-and-out-squats-jump-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "incline-bench-cable-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "incline-diamond-push-up-on-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "incline-dumbbell-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "incline-lateral-raises-dumbbell": {
+  "thumb": true,
+  "video": true
+ },
+ "incline-push-up": {
+  "thumb": false,
+  "video": false
+ },
+ "incline-treadmill-walk": {
+  "thumb": false,
+  "video": false
+ },
+ "intermediate-hip-flexor-and-quad-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "inverted-row": {
+  "thumb": false,
+  "video": false
+ },
+ "inverted-rows-on-smith-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "iron-cross-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "iso-lateral-shoulder-press-both-arms": {
+  "thumb": true,
+  "video": true
+ },
+ "jack-knives": {
+  "thumb": true,
+  "video": true
+ },
+ "jump-rope-alternating-foot": {
+  "thumb": true,
+  "video": true
+ },
+ "jump-rope-basic-jump": {
+  "thumb": true,
+  "video": true
+ },
+ "jump-rope-double-bounce": {
+  "thumb": true,
+  "video": true
+ },
+ "jump-rope-face-pull": {
+  "thumb": true,
+  "video": true
+ },
+ "jump-rope-row": {
+  "thumb": true,
+  "video": true
+ },
+ "jump-squats-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "jumping-jack": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-bulgarian-split-squat-right": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-half-kneeling-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-kneeling-one-arm-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-seesaw-press": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-single-arm-clean-and-press": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-single-leg-glute-bridge-pullover": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-situp-press": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-squats": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-standing-bottoms-up-one-arm-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-strict-press": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-suitcase-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-sumo-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-sumo-deadlift-with-high-pull": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-sumo-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-sumo-squat-off-stepbox": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-swing": {
+  "thumb": true,
+  "video": true
+ },
+ "kettlebell-thruster": {
+  "thumb": true,
+  "video": true
+ },
+ "knee-push-up": {
+  "thumb": false,
+  "video": false
+ },
+ "knee-to-chest-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "kneeling-hip-flexor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "kneeling-lat-floor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "kneeling-leg-curl-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "kneeling-squat-jumps-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "kneeling-wrist-flexor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "landmine-chest-press": {
+  "thumb": true,
+  "video": true
+ },
+ "landmine-row": {
+  "thumb": true,
+  "video": true
+ },
+ "lat-pull-down-close-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "lat-pull-down-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "lateral-raise-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "lateral-raise-to-shoulder-press-resistance-band-cable": {
+  "thumb": true,
+  "video": true
+ },
+ "lateral-raises-dumbbell": {
+  "thumb": true,
+  "video": true
+ },
+ "leaning-dumbbell-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "leg-extended-stretch-on-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "leg-extension-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "leg-lift-circles": {
+  "thumb": true,
+  "video": true
+ },
+ "leg-press-machine-close-stance": {
+  "thumb": true,
+  "video": true
+ },
+ "leg-press-machine-normal-stance": {
+  "thumb": true,
+  "video": true
+ },
+ "leg-press-wide-high-stance": {
+  "thumb": true,
+  "video": true
+ },
+ "leg-raises-straight-legs": {
+  "thumb": true,
+  "video": true
+ },
+ "legs-hand-reach-spine-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "long-arm-crunches": {
+  "thumb": true,
+  "video": true
+ },
+ "low-cable-overhead-flyes": {
+  "thumb": true,
+  "video": true
+ },
+ "low-resistance-band-lying-bicep-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "low-resistance-band-lying-bicep-curl-half-repetition": {
+  "thumb": true,
+  "video": true
+ },
+ "lunge-front-kick": {
+  "thumb": true,
+  "video": true
+ },
+ "lunge-pulses-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "lunge-reverse-with-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "lunge-rotation-left-and-right-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "lunge-to-knee-drive-left-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "lunges-alternate-leg-with-pause-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "lunges-same-leg-side-view-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "lunging-straight-leg-calf-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-abs-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-back-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-bench-external-shoulder-rotation": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-bench-internal-rotation-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-crossover-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-glute-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-hip-flexor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-lateral-raises-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-leg-curl-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-leg-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-prone-abdominal-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-pull-over-with-resistance-band-cable": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-quadriceps-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "lying-side-quadriceps-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "machine-chest-press-decline": {
+  "thumb": true,
+  "video": true
+ },
+ "machine-chest-press-incline": {
+  "thumb": true,
+  "video": true
+ },
+ "machine-lateral-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "middle-back-rotation-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "middle-crunches": {
+  "thumb": true,
+  "video": true
+ },
+ "modified-hindu-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "mountain-climbers": {
+  "thumb": true,
+  "video": true
+ },
+ "mts-iso-lateral-kneeling-leg-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "neck-stretch": {
+  "thumb": false,
+  "video": false
+ },
+ "nordic-hamstring-curl": {
+  "thumb": false,
+  "video": false
+ },
+ "oblique-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "one-arm-reverse-dumbbell-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "outdoor-cycling": {
+  "thumb": false,
+  "video": false
+ },
+ "over-head-weight-sit-up": {
+  "thumb": true,
+  "video": true
+ },
+ "over-weight-ab-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "overhand-clap": {
+  "thumb": true,
+  "video": true
+ },
+ "overhand-tricep-stretching-single-arm": {
+  "thumb": true,
+  "video": true
+ },
+ "overhead-extension-resistance-band-both-arms": {
+  "thumb": true,
+  "video": true
+ },
+ "palm-up-palm-down-rotation": {
+  "thumb": true,
+  "video": true
+ },
+ "pec-deck-fly-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "pigeon-pose": {
+  "thumb": false,
+  "video": false
+ },
+ "pike-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "plank-cross-knee-drive": {
+  "thumb": true,
+  "video": true
+ },
+ "plank-jack": {
+  "thumb": true,
+  "video": true
+ },
+ "plank-knee-tucks": {
+  "thumb": true,
+  "video": true
+ },
+ "plank-lunges": {
+  "thumb": true,
+  "video": true
+ },
+ "plank-on-elbows": {
+  "thumb": true,
+  "video": true
+ },
+ "plank-reach-through": {
+  "thumb": true,
+  "video": true
+ },
+ "plank-shoulder-taps": {
+  "thumb": true,
+  "video": true
+ },
+ "plate-front-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "plate-loaded-chest-press-incline": {
+  "thumb": true,
+  "video": true
+ },
+ "plyo-side-lunge-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "preacher-curl-dumbbells-simultaneous": {
+  "thumb": true,
+  "video": true
+ },
+ "preacher-curl-ez-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "preacher-curl-ez-bar-close-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "preacher-curl-ez-bar-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "preacher-curl-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "pretzel-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "prone-bench-row-barbell-pronate-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "prone-bench-row-barbell-reverse-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "prone-bench-row-dumbbells": {
+  "thumb": true,
+  "video": true
+ },
+ "prone-bench-row-dumbbells-pronated-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "prone-bench-row-dumbbells-supinated-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "prone-front-raises-barbell-on-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "prone-front-raises-dumbbell-on-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "pull-up-neutral-grip": {
+  "thumb": false,
+  "video": false
+ },
+ "pull-up-normal-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "pull-up-wide-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "push-up-and-rotation": {
+  "thumb": true,
+  "video": true
+ },
+ "push-up-plus": {
+  "thumb": true,
+  "video": true
+ },
+ "push-ups-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "raised-leg-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "reaching-up-shoulder-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "rear-deltoid-fly-cable-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "rear-deltoid-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "recumbent-bike": {
+  "thumb": false,
+  "video": false
+ },
+ "resistance-band-assisted-front-rack-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-bent-leg-kickback-kneeling": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-cable-row": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-calf-press-sitting-on-chair": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-clam": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-cross-body-single-straight-arm-supinated-pulldown": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-face-pull": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-floor-hyperextension": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-glute-bridge": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-glute-bridge-abduction": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-hip-thrusts-on-knees": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-kneeling-cross-body-single-straight-arm-supinated-pulldown": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-kneeling-leg-half-circle": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-kneeling-leg-half-circle-on-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-leg-curl": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-leg-kickback": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-lying-abduction": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-lying-bent-knee-hip-abduction": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-lying-bent-knee-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-lying-hyperextension-abduction": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-lying-leg-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-one-leg-glute-bridge": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-one-leg-kickback-bent-position": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-pull-apart": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-reverse-hyper-with-stability-ball-on-flat-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-seated-bent-knee-abduction": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-seated-hip-abduction": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-shoulder-adduction": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-side-plank-glute-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-squat-jump": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-standing-balance-glute-kickback": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-standing-balance-hip-abduction": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-standing-external-rotation": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-standing-hip-abduction": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-standing-single-arm-shoulder-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-standing-single-arm-shoulder-flexion": {
+  "thumb": true,
+  "video": true
+ },
+ "resistance-band-upper-body-dead-bug": {
+  "thumb": true,
+  "video": true
+ },
+ "reverse-ab-wheel-rollout": {
+  "thumb": true,
+  "video": true
+ },
+ "reverse-cable-fly-on-crossover": {
+  "thumb": true,
+  "video": true
+ },
+ "reverse-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "reverse-crunch-with-kick-out": {
+  "thumb": true,
+  "video": true
+ },
+ "reverse-grip-lat-pull-down": {
+  "thumb": true,
+  "video": true
+ },
+ "reverse-grip-resistance-band-simultaneous": {
+  "thumb": true,
+  "video": true
+ },
+ "reverse-machine-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "reverse-shoulder-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "runner-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "running-outdoor": {
+  "thumb": false,
+  "video": false
+ },
+ "russian-twist": {
+  "thumb": true,
+  "video": true
+ },
+ "russian-twist-weighted-ball": {
+  "thumb": true,
+  "video": true
+ },
+ "scapula-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "scissors-kick": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-calf-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-calf-raises-dumbbell-on-knee": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-calf-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-cross-leg-glute-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-dumbbell-one-arm-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-dumbbell-rear-delt-fly": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-floor-crunches": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-flutter-kicks": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-hip-abductor-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-leg-curl-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-leg-extension-single-leg": {
+  "thumb": false,
+  "video": false
+ },
+ "seated-row-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "seated-shoulder-flexor-depressor-retractor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-shoulder-press-barbell": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-side-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-single-leg-hamstring-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "seated-straight-leg-calf-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "shadow-boxing": {
+  "thumb": true,
+  "video": true
+ },
+ "shoulder-circle": {
+  "thumb": true,
+  "video": true
+ },
+ "shoulder-extension": {
+  "thumb": true,
+  "video": true
+ },
+ "shoulder-press-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "side-lateral-raise-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "side-lunges-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "side-lying-floor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "side-lying-leg-lift-left": {
+  "thumb": true,
+  "video": true
+ },
+ "side-plank": {
+  "thumb": true,
+  "video": true
+ },
+ "side-plank-with-hip-lift": {
+  "thumb": true,
+  "video": true
+ },
+ "side-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "side-to-side-punch": {
+  "thumb": true,
+  "video": true
+ },
+ "side-to-side-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "side-wrist-pull-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "single-arm-cable-row-left": {
+  "thumb": true,
+  "video": true
+ },
+ "single-arm-overhead-extension-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "single-arm-standing-low-cable-row": {
+  "thumb": true,
+  "video": true
+ },
+ "single-kettlebell-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "single-leg-calf-raise-leg-press-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "single-leg-incline-45-degree-leg-press-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "single-leg-romanian-deadlifts-right-cable-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "ski-erg": {
+  "thumb": false,
+  "video": false
+ },
+ "skipping": {
+  "thumb": true,
+  "video": true
+ },
+ "smith-machine-bench-press": {
+  "thumb": false,
+  "video": false
+ },
+ "smith-machine-bulgarian-split-squat": {
+  "thumb": true,
+  "video": true
+ },
+ "smith-machine-calf-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "smith-machine-press-decline": {
+  "thumb": true,
+  "video": true
+ },
+ "smith-machine-press-flat": {
+  "thumb": true,
+  "video": true
+ },
+ "smith-machine-press-incline": {
+  "thumb": true,
+  "video": true
+ },
+ "smith-machine-romanian-deadlift": {
+  "thumb": false,
+  "video": false
+ },
+ "smith-machine-shoulder-press": {
+  "thumb": true,
+  "video": true
+ },
+ "smith-machine-squat": {
+  "thumb": false,
+  "video": false
+ },
+ "spider-curl-barbell": {
+  "thumb": true,
+  "video": true
+ },
+ "spider-curl-dumbbells-simultaneous": {
+  "thumb": true,
+  "video": true
+ },
+ "spider-curl-ez-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "spider-plank": {
+  "thumb": true,
+  "video": true
+ },
+ "spin-bike": {
+  "thumb": false,
+  "video": false
+ },
+ "stair-climber": {
+  "thumb": false,
+  "video": false
+ },
+ "standing-ab-wheel-rollout": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-adductor-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-bow-hamstring-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-cable-oblique-twist": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-calf-raise-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "standing-calf-raise-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-calf-raises-smith-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-gastrocnemius-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-hamstring-calf-stretch-with-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-lat-cable-pull-over": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-lateral-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-leg-elevated-hamstring-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-oblique-crunch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-one-arm-chest-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-overhand-shoulder-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-quadriceps-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-reverse-shoulder-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-shoulder-press-dumbbell": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-side-leg-raises": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-side-slope-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-swimmer": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-toe-touch": {
+  "thumb": true,
+  "video": true
+ },
+ "standing-y-raise": {
+  "thumb": true,
+  "video": true
+ },
+ "star-crunches": {
+  "thumb": true,
+  "video": true
+ },
+ "star-jump": {
+  "thumb": true,
+  "video": true
+ },
+ "stationary-exercise-bike": {
+  "thumb": true,
+  "video": true
+ },
+ "step-up-on-chair-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "straight-bar-cable-pull-down": {
+  "thumb": true,
+  "video": true
+ },
+ "straight-bar-cable-row-close-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "straight-bar-cable-row-normal-grip": {
+  "thumb": true,
+  "video": true
+ },
+ "sumo-squat-in-between-legs-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "sumo-squat-over-shoulder-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "superman": {
+  "thumb": true,
+  "video": true
+ },
+ "superman-holds": {
+  "thumb": true,
+  "video": true
+ },
+ "superman-pulls": {
+  "thumb": true,
+  "video": true
+ },
+ "superman-pulls-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "supine-push-up": {
+  "thumb": true,
+  "video": true
+ },
+ "svend-press-decline-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "svend-press-flat-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "svend-press-incline-bench": {
+  "thumb": true,
+  "video": true
+ },
+ "swimming": {
+  "thumb": false,
+  "video": false
+ },
+ "t-bar-row": {
+  "thumb": false,
+  "video": false
+ },
+ "t-bar-row-machine": {
+  "thumb": false,
+  "video": false
+ },
+ "thoracic-rotation": {
+  "thumb": false,
+  "video": false
+ },
+ "trap-bar-deadlift": {
+  "thumb": true,
+  "video": true
+ },
+ "trap-bar-shrug": {
+  "thumb": true,
+  "video": true
+ },
+ "treadmill-interval-sprints": {
+  "thumb": false,
+  "video": false
+ },
+ "treadmill-running": {
+  "thumb": false,
+  "video": false
+ },
+ "treadmill-walking": {
+  "thumb": false,
+  "video": false
+ },
+ "tricep-cable-kickback-on-crossover-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "tricep-extension-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "triceps-dip-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "triceps-light-stretch": {
+  "thumb": true,
+  "video": true
+ },
+ "triceps-rope-extension-on-crossover-machine": {
+  "thumb": true,
+  "video": true
+ },
+ "turkish-get-up": {
+  "thumb": false,
+  "video": false
+ },
+ "upright-row-cable-resistance-band": {
+  "thumb": true,
+  "video": true
+ },
+ "upright-row-dumbbell": {
+  "thumb": true,
+  "video": true
+ },
+ "upright-row-ez-bar": {
+  "thumb": true,
+  "video": true
+ },
+ "upward-rotation-bent-arms": {
+  "thumb": true,
+  "video": true
+ },
+ "v-bar-lat-pull-down": {
+  "thumb": true,
+  "video": true
+ },
+ "v-crunches": {
+  "thumb": true,
+  "video": true
+ },
+ "v-up": {
+  "thumb": true,
+  "video": true
+ },
+ "walking-lunge": {
+  "thumb": false,
+  "video": false
+ },
+ "walkout": {
+  "thumb": true,
+  "video": true
+ },
+ "wall-sit-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "wall-squat-with-pause-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "weighted-standing-shoulder-press-with-plate": {
+  "thumb": true,
+  "video": true
+ },
+ "wheels-to-heaven": {
+  "thumb": true,
+  "video": true
+ },
+ "wheels-to-toes": {
+  "thumb": true,
+  "video": true
+ },
+ "wide-push-ups-bodyweight": {
+  "thumb": true,
+  "video": true
+ },
+ "wind-wipers": {
+  "thumb": true,
+  "video": true
+ },
+ "worlds-greatest-stretch": {
+  "thumb": false,
+  "video": false
+ },
+ "wrist-curl-barbell": {
+  "thumb": true,
+  "video": true
+ },
+ "wrist-curl-dumbbell": {
+  "thumb": true,
+  "video": true
+ },
+ "wrist-extension-barbell": {
+  "thumb": true,
+  "video": true
+ },
+ "zotman-curls-dumbbell-simultaneous": {
+  "thumb": true,
+  "video": true
+ },
+ "zotman-curls-resistance-band-simultaneous": {
+  "thumb": true,
+  "video": true
+ }
+}
