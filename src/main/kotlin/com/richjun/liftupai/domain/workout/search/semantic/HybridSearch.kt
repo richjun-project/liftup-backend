@@ -132,14 +132,48 @@ class HybridSearch(
         val qv = if (wantSemantic) queryVector()?.let { unitVector(it) } else null
         val rw = pending?.let { await(it) }
 
-        val hybrid = if (qv != null) fuse(lex.hits, constraint, qv) else null
-        val base = hybrid ?: lex.hits
+        // 구조적 백스톱: 사전이 모르는 부정 관용구를 장비 요청으로 오인했다면, LLM 의 제외를 따라 그 장비를 제외로 바꿔 처음부터 다시 찾는다
+        val distrusted = if (rw != null && !rw.isEmpty) distrustedEquipment(query, category, equipments, rw, constraint) else emptySet()
+        var useLex = lex
+        var useConstraint = constraint
+        var useHintConstraint = hintConstraint
+        if (distrusted.isNotEmpty()) {
+            val lex2 = engine.searchOutcome(query, category, equipments, locale, distrusted)
+            val constraint2 = engine.semanticConstraint(query, category, equipments, treatAsExcluded = distrusted)
+            if (lex2.complete && constraint2 != null) {
+                useLex = lex2
+                useConstraint = constraint2
+                useHintConstraint = if (wantRewrite) engine.semanticConstraint(query, category, equipments, forHints = true, treatAsExcluded = distrusted) ?: constraint2 else constraint2
+            }
+        }
+        val hybrid = if (qv != null) fuse(useLex.hits, useConstraint, qv) else null
+        val base = hybrid ?: useLex.hits
         val degraded = (wantSemantic && qv == null) || (wantRewrite && rw == null)
-        val withRewrite = if (rw != null && !rw.isEmpty) applyRewrite(base, lex.hits, rw, hintConstraint, category, equipments) else null
+        val withRewrite = if (rw != null && !rw.isEmpty) applyRewrite(base, useLex.hits, rw, useHintConstraint, category, equipments) else null
+        return finish(useConstraint, hybrid, withRewrite, base, degraded)
+    }
+
+    private fun finish(constraint: SemanticConstraint, hybrid: List<ExerciseSearchHit>?, withRewrite: List<ExerciseSearchHit>?, base: List<ExerciseSearchHit>, degraded: Boolean): Result {
         val fused = withRewrite ?: base
         val goalOrdered = if (constraint.goalLiftIds.isNotEmpty() && (hybrid != null || withRewrite != null)) goalLiftsLast(fused, constraint.goalLiftIds) else fused
         val ordered = if (constraint.homeBodyweightFirst && (hybrid != null || withRewrite != null)) bodyweightFirst(goalOrdered) else goalOrdered
         return Result(ordered, true, semantic = hybrid != null, degraded = degraded, rewritten = withRewrite != null)
+    }
+
+    /**
+     * 사전이 요청으로 읽은 장비(하드 조건)를 LLM 이 제외 장비로 냈을 때, 그 읽기를 믿지 않을 장비.
+     * 사전이 모르는 말이 질의에 섞여 있고([SemanticConstraint.lexiconEquipment]), LLM 의 힌트가 가리킨 운동 가운데 그 장비를 쓰는 것이 없으면
+     * LLM 의 해석("ケトルベルは使わない")이 일관된 것이다. 호출자가 고른 장비 필터는 언제나 이긴다.
+     * 힌트가 그 장비 운동을 가리키면("use water bottles instead of dumbbells") LLM 스스로 모순이라 사전의 읽기를 둔다.
+     */
+    private fun distrustedEquipment(query: String?, category: ExerciseCategory?, equipments: Set<Equipment>?, rw: QueryRewrite, constraint: SemanticConstraint): Set<Equipment> {
+        if (constraint.lexiconEquipment.isEmpty() || rw.hints.isEmpty()) return emptySet()
+        val contested = constraint.lexiconEquipment intersect (rw.forbidEquipment - (equipments ?: emptySet()))
+        if (contested.isEmpty()) return emptySet()
+        val hintEquipment = rw.hints.mapNotNullTo(HashSet()) { hint ->
+            engine.searchOutcome(hint, category, equipments, "en").hits.firstOrNull()?.doc?.equipment
+        }
+        return contested - hintEquipment
     }
 
     /**

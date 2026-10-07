@@ -4,6 +4,7 @@ import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.MuscleGroup
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchLexicon
+import com.richjun.liftupai.domain.workout.search.ExerciseSearchLexiconConstraint
 import com.richjun.liftupai.domain.workout.search.KanjiReadings
 import com.richjun.liftupai.domain.workout.search.SearchText
 
@@ -70,10 +71,14 @@ internal object QueryLexicon {
         /** LEVEL: "X 못 해요/できない/can't do X" — X 의 쉬운 변형(어시스트·무릎·인클라인)을 앞세운다 */
         val regress: Boolean = false,
         /** JOINT: 부위 단어(back/背中/등)를 겸하는 약한 관절 — 다른 관절이 가까이 있으면 그쪽이 부상 관절이다 */
-        val weakJoint: Boolean = false
+        val weakJoint: Boolean = false,
+        /** NEG: 취향·제외 요청("~ 말고")이 아니라 쓸 수 없다는 말(점유·고장·금지·못 씀) — 그 대상이 "X 크로스오버"처럼 장비를 앞세운 이름이면 그 장비도 쓸 수 없다는 뜻이다 */
+        val avail: Boolean = false,
+        /** NEG: 취향 표현(싫다·무섭다·苦手) — 대상이 이름 없는 덩어리면 같은 절의 장비를 뺀다. 부위 개념 대상은 그대로 뺀다 */
+        val dislike: Boolean = false
     )
 
-    private fun Term.asIsolated() = Term(role, concept, equipment, joint, level, targetBefore, particle, true, move, mod, instead, regress, weakJoint)
+    private fun Term.asIsolated() = Term(role, concept, equipment, joint, level, targetBefore, particle, true, move, mod, instead, regress, weakJoint, avail, dislike)
 
     class MoveGroup(val id: String, val keys: List<SigKey>)
 
@@ -180,7 +185,7 @@ internal object QueryLexicon {
     val nameMasks: List<String> = listOf("胸椎", "胸骨").map { key(it) }
 
     /** 영어에서 부정 뒤에 오면 새 절이 시작되는 말 — "without barbell with dumbbells" 의 dumbbells 는 긍정이다 */
-    val chainBreakers: Set<String> = "with|using|use|but|instead|however|though|while|yet|only|just|and then|then".split("|").map { key(it) }.toSet()
+    val chainBreakers: Set<String> = "with|using|use|but|instead|however|though|while|yet|only|just|and then|then|yes|yeah|yep|yup|ok|okay|fine|great|cool|awesome|perfect|nice|alright|available|accessible|usable|open|allowed|permitted|have|got|있고|있지만|있는데|있어도|있으나|있으며|있어요|있음|있다|되고|되는데|되지만|가능하고|가능한데|あるが|あるけど|あるけれど|あるものの|あって|はあるが|はあるけど|だけど|だが|ですが|けど|けれど|けれども|ものの|使う|使える|使えます|使って|使います|使いたい|使用する|使っている|使ってる|使ってて|쓸 거고|쓸거고|쓰고|쓸래|쓰는데|쓸 수 있고|쓸 수 있는데|써도 되고|써도 되는데|가능하고|가능한데|가능하지만".split("|").map { key(it) }.toSet()
 
     val adjectiveCues: Set<String> = ("bad|sore|weak|injured|painful|tender|stiff|damaged|hurt|hurting|strained|sprained|pulled|inflamed|" +
         "easy on|gentle on|kind to|safe for|good for|protect|protecting|careful with|careful|doesnt hurt|wont hurt|hurt my|hurts my|aggravate|aggravating|irritate|irritating").split("|").map { key(it) }.toSet()
@@ -435,6 +440,9 @@ internal object QueryLexicon {
             "와이드|클로즈|그립|바|시티드|스탠딩|라잉|싱글|스트레칭|포즈|요가|ワイド|クローズ|グリップ|バー|シーテッド|スタンディング|ライイング|シングル|ストレッチ|ポーズ|ヨガ"
         ).split("|").map { key(it) }.filter { it.isNotEmpty() }.toSet() + ExerciseSearchLexicon.equipmentTerms.keys
 
+    /** 장비 일반(맨몸 제외 전부) */
+    val GENERIC_EQUIPMENT: Set<Equipment> = setOf(Equipment.BARBELL, Equipment.DUMBBELL, Equipment.MACHINE, Equipment.CABLE, Equipment.KETTLEBELL, Equipment.RESISTANCE_BAND)
+
     // ── 구축 ─────────────────────────────────────────────────────────────────────────────────
     val concepts: Map<String, Concept>
     val moveGroups: Map<String, MoveGroup>
@@ -442,6 +450,9 @@ internal object QueryLexicon {
 
     /** 키 → 용어들 (한 키가 여러 역할을 가질 수 있다) */
     val termIndex: Map<String, List<Term>>
+
+    /** 조합으로 만든 긴 문형 — 오타 교정 후보에서 뺀다(후보가 수천 개 늘어 모든 모르는 단어의 교정이 느려진다) */
+    val noTypoKeys: Set<String>
 
     /** 가장 긴 용어 길이 (DP 윈도우) */
     val maxTermLength: Int
@@ -457,7 +468,7 @@ internal object QueryLexicon {
 
         // 1) 조사·군더더기
         for (k in splitRules(PURE_PARTICLES)) add(key(k), Term(Role.NOISE, particle = true))
-        for (k in splitRules(NOISE) + splitRules(QueryLexiconRound3.NOISE)) add(key(k), Term(Role.NOISE))
+        for (k in splitRules(NOISE) + splitRules(QueryLexiconRound3.NOISE) + splitRules(QueryLexiconConstraint.NOISE) + splitRules(QueryLexiconConstraint.AVAILABLE)) add(key(k), Term(Role.NOISE))
         for (k in splitRules(UNITS)) add(key(k), Term(Role.UNIT))
         // "運動前の"·"운동 전" 의 한 글자 — 단어 경계에서만 군더더기로 본다
         for (k in listOf("前", "前に", "前の", "전", "전에", "후", "後", "後に", "後の", "후에")) add(key(k), Term(Role.NOISE, isolated = isIsolated(key(k))))
@@ -468,11 +479,17 @@ internal object QueryLexicon {
         for (k in NEG_BEFORE.split("|") + QueryLexiconRound3.NEG_BEFORE.split("|")) add(key(k), Term(Role.NEG, targetBefore = false))
         for (k in splitRules(INSTEAD_AFTER) + splitRules(QueryLexiconRound3.INSTEAD_AFTER)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k), instead = true))
         for (k in splitRules(INSTEAD_BEFORE) + splitRules(QueryLexiconRound3.INSTEAD_BEFORE)) add(key(k), Term(Role.NEG, targetBefore = false, instead = true))
+        // 장비 제약 문형(쓸 수 없다는 말) — avail 표지. 대안 표지와 같은 말이면 대안 표지가 먼저 시도된다
+        for (k in splitRules(QueryLexiconConstraint.NEG_AFTER) + splitRules(QueryLexiconConstraint.AVAIL_EXTRA) + splitRules(QueryLexiconConstraint.CROWD_AFTER)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k), avail = true))
+        for (k in splitRules(QueryLexiconConstraint.NEG_BEFORE)) add(key(k), Term(Role.NEG, targetBefore = false, avail = true))
+        for (k in splitRules(QueryLexiconConstraint.NEG_AFTER_EXISTENCE)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k)))
+        for (k in splitRules(QueryLexiconConstraint.DISLIKE_EXTRA)) add(key(k), Term(Role.NEG, targetBefore = true, particle = isKana(k), dislike = true))
         for (k in splitRules(CUES) + QueryLexiconRound3.CUES.split("|")) add(key(k), Term(Role.CUE))
+        for (k in splitRules(QueryLexiconConstraint.CUES_EXTRA)) add(key(k), Term(Role.CUE))
         for (k in splitRules(QUIET)) add(key(k), Term(Role.QUIET))
         for (k in BEGINNER.split("|")) add(key(k), Term(Role.LEVEL, level = -1))
         for (k in ADVANCED.split("|")) add(key(k), Term(Role.LEVEL, level = 1))
-        for (k in splitRules(CANT_DO)) add(key(k), Term(Role.LEVEL, level = -1, regress = true))
+        for (k in splitRules(CANT_DO) + splitRules(QueryLexiconConstraint.CANT_DO_EXTRA)) add(key(k), Term(Role.LEVEL, level = -1, regress = true))
         for (k in STRETCH.split("|") + splitRules(QueryLexiconRound3.STRETCH)) add(key(k), Term(Role.STRETCH))
 
         for (k in listOf("産後", "産後ケア", "산후", "산후 운동", "postpartum", "post partum", "postnatal", "after pregnancy", "임산부", "pregnancy", "prenatal", "妊娠", "妊婦", "diastasis recti", "diastasis")) add(key(k), Term(Role.QUIET))
@@ -539,6 +556,11 @@ internal object QueryLexicon {
 
         // 5) 장비·홈
         for ((k, eq) in ExerciseSearchLexicon.equipmentTerms) add(k, Term(Role.EQUIP, equipment = eq))
+        // "장비가 하나도 없다·아무것도 없다" 계열은 맨몸, 장비 일반을 가리키는 말(부정하면 맨몸 말고 전부 뺀다)
+        val generated = HashSet<String>()
+        for (k in ExerciseSearchLexiconConstraint.NO_EQUIPMENT_TERMS) { add(key(k), Term(Role.EQUIP, equipment = setOf(Equipment.BODYWEIGHT))); generated.add(key(k)) }
+        noTypoKeys = generated
+        for (k in ExerciseSearchLexiconConstraint.GENERIC_EQUIPMENT_TERMS) add(key(k), Term(Role.EQUIP, equipment = GENERIC_EQUIPMENT))
         for (k in ExerciseSearchLexicon.homeTerms) add(k, Term(Role.HOME))
         for (k in ExerciseSearchLexicon.fillerTerms) add(k, Term(Role.NOISE, particle = k.length <= 2 && isKana(k)))
 
@@ -594,7 +616,7 @@ internal object QueryLexicon {
                 index.getOrPut(v) { mutableListOf() }.addAll(fresh.map { t ->
                     when {
                         // 가나로 풀어 쓴 부정 표지("いがい", "ぬき")는 한자 표기와 달리 조사처럼 앞말에 붙어야 한다
-                        t.role == Role.NEG -> Term(Role.NEG, targetBefore = t.targetBefore, particle = isKana(v), instead = t.instead)
+                        t.role == Role.NEG -> Term(Role.NEG, targetBefore = t.targetBefore, particle = isKana(v), instead = t.instead, avail = t.avail, dislike = t.dislike)
                         short && !t.isolated -> t.asIsolated()
                         else -> t
                     }
