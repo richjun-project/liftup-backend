@@ -120,7 +120,8 @@ class ProgramWorkoutGeneratorService(
         val actualExercises = mutableMapOf<Long, com.richjun.liftupai.domain.workout.entity.Exercise>()
 
         // 7 & 8. Build exercise list applying overrides, SEVERE auto-substitution, weights, warmups
-        val generatedExercises = dayExercises.map { pde ->
+        val keptDayExercises = mutableListOf<com.richjun.liftupai.domain.workout.entity.ProgramDayExercise>()
+        val generatedExercises = dayExercises.mapNotNull { pde ->
             val override = overrideMap[pde.exercise.id]
             var actualExercise = override?.substituteExercise ?: pde.exercise
 
@@ -163,8 +164,13 @@ class ProgramWorkoutGeneratorService(
                 if (replacement != null) {
                     logger.info("Program safety layer: ${actualExercise.name} → ${replacement.name} (injury/equipment/level rules)")
                     actualExercise = replacement
+                } else if (!allowed(actualExercise)) {
+                    // 부상·장비·수준 규칙을 어기는데 대체할 운동도 없다 — 어기는 운동을 남기느니 그날 목록에서 뺀다
+                    logger.warn("Program safety layer: dropping ${actualExercise.name} (no safe replacement under injury/equipment/level rules)")
+                    return@mapNotNull null
                 }
             }
+            keptDayExercises += pde
             usedInDay += actualExercise.id
             actualExercises[actualExercise.id] = actualExercise
 
@@ -294,14 +300,14 @@ class ProgramWorkoutGeneratorService(
         }
 
         // 10. Compute weekly volume status
-        val weeklyVolume = computeWeeklyVolumeStatus(user, dayExercises, generatedExercises)
+        val weeklyVolume = computeWeeklyVolumeStatus(user, keptDayExercises, generatedExercises)
 
         // 11. Volume-reactive set adjustment: add/remove 1 set based on BELOW_MEV / ABOVE_MAV
         val isRealizationPhase = enrollment.program.progressionModel == ProgressionModel.BLOCK &&
             progressiveOverloadService.getBlockPhaseAdjustment(position).setsMultiplier <= 0.70
 
         val adjustedExercises = generatedExercises.mapIndexed { index, exercise ->
-            val pde = dayExercises[index]
+            val pde = keptDayExercises[index]
             val muscleGroups = exerciseMuscleGroupsMap[pde.exercise.id] ?: emptySet()
 
             val belowMev = weeklyVolume.any { vol ->
@@ -326,17 +332,24 @@ class ProgramWorkoutGeneratorService(
             }
         }
 
+        // 11-b. 저장된 세션 시간에 세트·휴식을 맞춘다(종목은 그대로, 세트 상한을 지킨다) — 추천·플랜과 같은 규칙
+        val fittedExercises = fitToSession(adjustedExercises, actualExercises, ctx, level)
+
         // 12. Return GeneratedWorkout
         return GeneratedWorkout(
-            programName = program.name,
+            programName = com.richjun.liftupai.domain.workout.util.WorkoutTranslations.createProgramName(
+                program.daysPerWeek, program.splitType.name, program.targetExperienceLevel.name, locale
+            ),
             weekNumber = position.week,
             dayNumber = position.dayInCycle,
-            dayName = programDay.name,
+            dayName = localizedDayName(programDay.name, programDay.workoutType, locale),
             isDeloadWeek = position.isDeloadWeek,
             periodizationPhase = resolvePeriodizationPhase(program.progressionModel, position),
             workoutType = programDay.workoutType,
-            estimatedDuration = programDay.estimatedDurationMinutes,
-            exercises = adjustedExercises,
+            estimatedDuration = if (fittedExercises.isEmpty()) programDay.estimatedDurationMinutes else SessionFit.minutes(
+                fittedExercises.map { SessionFit.Slot(it.sets, "${it.minReps}-${it.maxReps}", it.restSeconds) }
+            ),
+            exercises = fittedExercises,
             graduationStatus = if (graduationStatus.shouldGraduate) graduationStatus else null,
             weeklyVolume = weeklyVolume,
             readinessScore = readiness
@@ -406,6 +419,33 @@ class ProgramWorkoutGeneratorService(
         )
     }
 
+    /** 한글로 저장된 프로그램 하루 이름을 ko 가 아닌 사용자에게 그대로 내려 주지 않는다 */
+    private fun localizedDayName(stored: String, type: com.richjun.liftupai.domain.workout.entity.WorkoutType, locale: String): String {
+        val hasHangul = stored.any { it in '\uAC00'..'\uD7A3' }
+        return if (hasHangul && locale != "ko") com.richjun.liftupai.domain.workout.util.WorkoutLocalization.workoutTypeName(type, locale) else stored
+    }
+
+    private fun fitToSession(
+        exercises: List<ProgramGeneratedExercise>,
+        entities: Map<Long, com.richjun.liftupai.domain.workout.entity.Exercise>,
+        ctx: UserTrainingContextResolver.Context,
+        level: com.richjun.liftupai.domain.user.entity.ExperienceLevel,
+    ): List<ProgramGeneratedExercise> {
+        val target = ctx.sessionMinutes ?: return exercises
+        if (exercises.isEmpty()) return exercises
+        val slots = exercises.map { e ->
+            val ex = entities[e.exerciseId]
+            SessionFit.Slot(
+                sets = e.sets, reps = "${e.minReps}-${e.maxReps}", restSeconds = e.restSeconds,
+                minRestSeconds = (e.restSeconds * 0.75).roundToInt().coerceAtLeast(30).coerceAtMost(e.restSeconds),
+                maxRestSeconds = (if (ex != null) RecoRules.maxRestFor(ex, e.isCompound, e.minReps) else 120).coerceAtLeast(e.restSeconds),
+                maxSets = (if (ex != null) RecoRules.maxSetsFor(ex, level, ctx.age, e.isCompound, target) else 5).coerceAtLeast(e.sets),
+            )
+        }
+        val fitted = SessionFit.fit(slots, target).slots
+        return exercises.zip(fitted).map { (e, slot) -> e.copy(sets = slot.sets, restSeconds = slot.restSeconds) }
+    }
+
     private fun localizedName(ex: com.richjun.liftupai.domain.workout.entity.Exercise, locale: String): String {
         val loc = localizationService ?: return ex.name
         if (locale == "en") return ex.name
@@ -422,13 +462,22 @@ class ProgramWorkoutGeneratorService(
         usedInDay: Set<Long>,
         allowed: (com.richjun.liftupai.domain.workout.entity.Exercise) -> Boolean,
     ): com.richjun.liftupai.domain.workout.entity.Exercise? {
-        val categories = listOf(current.category, original.category).distinct()
-        val pool = categories.flatMap { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(it) }.distinctBy { it.id }
-        return SubstituteRanker.rank(
-            original = current, pool = pool, curatedIds = emptySet(),
-            isAllowed = { ex -> ex.id !in usedInDay && allowed(ex) }, limit = 1,
-        ).firstOrNull()?.exercise
-            ?: pool.firstOrNull { it.id !in usedInDay && it.id != current.id && allowed(it) }
+        // 같은 부위를 우선하고, 그 부위의 후보가 부상·장비로 전부 막히면(어깨 부상의 가슴 운동 등) 다른 부위의 안전한 운동으로 바꾼다
+        val categories = (listOf(current.category, original.category) + listOf(
+            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.BACK, com.richjun.liftupai.domain.workout.entity.ExerciseCategory.LEGS,
+            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.CORE, com.richjun.liftupai.domain.workout.entity.ExerciseCategory.CHEST,
+            com.richjun.liftupai.domain.workout.entity.ExerciseCategory.SHOULDERS, com.richjun.liftupai.domain.workout.entity.ExerciseCategory.ARMS,
+        )).distinct()
+        for (category in categories) {
+            val pool = exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(category)
+            val ranked = SubstituteRanker.rank(
+                original = current, pool = pool, curatedIds = emptySet(),
+                isAllowed = { ex -> ex.id !in usedInDay && allowed(ex) }, limit = 1,
+            ).firstOrNull()?.exercise
+                ?: pool.firstOrNull { it.id !in usedInDay && it.id != current.id && allowed(it) }
+            if (ranked != null) return ranked
+        }
+        return null
     }
 
     private fun computeWeeklyVolumeStatus(

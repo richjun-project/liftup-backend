@@ -606,7 +606,7 @@ class AIPlanGenerationService(
         throw RuntimeException("AI 응답에서 완전한 JSON 객체를 찾을 수 없습니다.")
     }
 
-    private fun buildPlanGenerationPrompt(request: GenerateAIPlanRequest, exercisePool: String, targets: PlanTargets): String {
+    internal fun buildPlanGenerationPrompt(request: GenerateAIPlanRequest, exercisePool: String, targets: PlanTargets): String {
         val trainingStyle = request.trainingStyle ?: "balanced"
         val focusAreas = request.focusAreas?.joinToString(", ") ?: "none"
         val strengthData = buildStrengthDataSummary(request)

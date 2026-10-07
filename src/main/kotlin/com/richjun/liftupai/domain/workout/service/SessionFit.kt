@@ -22,6 +22,8 @@ object SessionFit {
     private const val COMFORT_SETS = 3
     private const val MIN_SETS = 2
     private const val REST_STEP = 15
+    private const val SHORT_SESSION_REST = 60
+    private const val SHORT_SESSION_MIN_REST = 45
 
     data class Slot(
         val sets: Int,
@@ -78,6 +80,16 @@ object SessionFit {
         }
         // 4. 그래도 넘치면 세트 2까지
         reduceSets(cur, MIN_SETS, ::over)
+        // 4-b. 20분 이하 같은 아주 짧은 세션: 처방 하한 휴식도 줄인다(복합 60초·그 외 45초까지 — 짧은 세션의 정석은 짧은 휴식)
+        for (i in cur.indices.reversed()) {
+            if (!over()) break
+            val floor = if (cur[i].restSeconds > 60) SHORT_SESSION_REST else SHORT_SESSION_MIN_REST
+            if (cur[i].restSeconds > floor) cur[i] = cur[i].copy(restSeconds = floor, minRestSeconds = minOf(cur[i].minRestSeconds, floor))
+        }
+        for (i in cur.indices.reversed()) {
+            if (!over()) break
+            if (cur[i].restSeconds > SHORT_SESSION_MIN_REST) cur[i] = cur[i].copy(restSeconds = SHORT_SESSION_MIN_REST, minRestSeconds = minOf(cur[i].minRestSeconds, SHORT_SESSION_MIN_REST))
+        }
 
         // 5. 모자라면 세트 → 휴식 순으로 상한까지 늘린다
         growSets(cur, lower, upper)
