@@ -58,7 +58,12 @@ class ExerciseFavoriteService(
         try {
             favoriteRepository.save(ExerciseFavorite(userId = userId, exerciseId = exerciseId))
         } catch (e: DataIntegrityViolationException) {
-            // 동시에 같은 요청이 먼저 들어간 경우 — 결과는 같다
+            // 동시에 같은 요청이 먼저 들어간 경우 — 결과는 같다. 그런데 행이 없다면 중복이 아니라 FK 위반이다
+            // (카탈로그 캐시는 마이그레이션이 지운 운동을 최대 10분간 들고 있다) — 저장되지 않은 별을 성공으로 알리지 않는다.
+            if (!favoriteRepository.existsByUserIdAndExerciseId(userId, exerciseId)) {
+                logger.warn("Favorite insert failed and no row exists: user={}, exercise={} — {}", userId, exerciseId, e.message)
+                throw ResourceNotFoundException("Exercise not found")
+            }
             logger.debug("Favorite already inserted concurrently: user={}, exercise={}", userId, exerciseId)
         }
         return true

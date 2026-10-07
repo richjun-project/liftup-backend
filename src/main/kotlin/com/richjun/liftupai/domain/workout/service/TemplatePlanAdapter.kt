@@ -331,7 +331,7 @@ class TemplatePlanAdapter(
 
     /**
      * 같은 운동이 주에 [Context.repeatCap] 번을 넘으면 넘는 날의 운동을 같은 부위의 안 쓴 운동으로 바꾼다.
-     * 처방(세트·반복·휴식)은 자리의 것을 그대로 쓰고, 맞는 후보가 없으면 그대로 둔다(후보가 모자란 좁은 장비).
+     * 처방(세트·반복·휴식)은 같은 성격이면 자리의 것을 쓰고(복합↔고립·코어 여부가 바뀌면 새 종목 기준), 맞는 후보가 없으면 그대로 둔다(후보가 모자란 좁은 장비).
      * 2026-10 탐색: 무릎 부상 홈트 사용자 플랜에서 글루트 브릿지 변형이 주 3회, 푸시업이 주 2~3회 반복됐다.
      */
     private fun diversify(days: List<AdaptedDay>, ctx: Context): List<AdaptedDay> {
@@ -351,7 +351,13 @@ class TemplatePlanAdapter(
                 if (repl != null) {
                     val rx = p.source
                     val compound = RecoRules.isCompound(repl)
-                    list[i] = PlannedExercise(rx.copy(exercise = repl, isCompound = compound, notes = null), Origin.REFILL)
+                    // 자리의 처방(예: 복합 3x8-10)은 같은 성격의 종목에만 어울린다. 복합↔고립 또는 코어↔비코어로 바뀌면
+                    // 새 종목의 성격에 맞는 기본 처방으로 다시 짠다(플랭크에 복합 처방, 코어 자리에 바벨 복합이 가던 것을 막는다).
+                    val sameKind = RecoRules.isCompound(p.exercise) == compound &&
+                        (p.exercise.category == ExerciseCategory.CORE) == (repl.category == ExerciseCategory.CORE)
+                    val next = if (sameKind) rx.copy(exercise = repl, isCompound = compound, notes = null)
+                        else refillSource(repl).copy(targetRPE = rx.targetRPE)
+                    list[i] = PlannedExercise(next, Origin.REFILL)
                     inDay += repl.id
                     seen.merge(repl.id, 1, Int::plus)
                 } else {

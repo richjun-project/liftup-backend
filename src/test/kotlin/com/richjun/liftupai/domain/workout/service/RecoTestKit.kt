@@ -168,7 +168,10 @@ object RecoTestKit {
     }
 
     /** 프로그램 등록 사용자의 오늘 운동을 만드는 실제 ProgramWorkoutGeneratorService. 프로그램 하루에 [slugs] 운동이 들어 있다. */
-    class ProgramFixture(val repos: Repos, slugs: List<String>, val week: Int = 1, sets: Int = 4, reps: IntRange = 6..8, restSeconds: Int = 180) {
+    class ProgramFixture(
+        val repos: Repos, slugs: List<String>, val week: Int = 1, sets: Int = 4, reps: IntRange = 6..8, restSeconds: Int = 180,
+        localization: ExerciseCatalogLocalizationService? = null, catalogCache: ExerciseCatalogCache? = null,
+    ) {
         val user: User = repos.profile?.user ?: user()
         val program = com.richjun.liftupai.domain.workout.entity.CanonicalProgram(
             id = 1L, code = "p", name = "program", splitType = SplitType.FULL_BODY,
@@ -211,7 +214,7 @@ object RecoTestKit {
             enrollmentService, dayRepo, dayExRepo, overrideRepo, progressive,
             mockk(relaxed = true), graduation, repos.userProfileRepository, repos.userSettingsRepository,
             mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), exerciseRepo, mockk(relaxed = true),
-            weightService(repos, exerciseRepo), repos.resolver, ExerciseTrainingProfileResolver(ExercisePatternClassifier()), injuryFilter(), null,
+            weightService(repos, exerciseRepo), repos.resolver, ExerciseTrainingProfileResolver(ExercisePatternClassifier()), injuryFilter(), localization, catalogCache,
         )
     }
 }
