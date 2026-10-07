@@ -260,7 +260,7 @@ internal object ExerciseSearchLexicon {
         addAll(equip("맨몸|맨몸운동|bodyweight|body weight|no equipment|noequipment|calisthenics|自重|器具なし|道具なし|徒手|장비없이|기구없이|without equipment|without any equipment|without equipments|no equipments|no equipment needed|equipment free|equipmentless|w/o equipment|no gear|without gear|no weights|without weights|no gym|without gym|gym free|no gym needed|器具を使わない|器具を使わずに|道具を使わない|道具を使わずに|器具無し|道具無し|器具不要|道具不要|장비 안 쓰는|장비 안 쓰고|기구 안 쓰는|기구 안 쓰고|장비 없는|기구 없는|도구 없이|도구 없는|기구 하나 없이|기구 하나도 없이|아무 기구 없이|아무 기구도 없이|장비 하나 없이|장비 하나도 없이|아무 장비 없이|아무 장비도 없이|도구 하나 없이|아무 도구 없이|아무것도 없이|아무것도 없는|맨손으로|何もなしで|何も使わずに|何も使わない|何もいらない|器具一つなしで|器具ひとつなしで|器具も何もなしで|道具も何もなしで|no equipment at all|zero equipment|without any gear|nothing at all|with nothing|using nothing", Equipment.BODYWEIGHT))
         addAll(equip(ExerciseSearchLexiconRound3.TOWEL + "|밴드|저항밴드|저항 밴드|고무밴드|band|bands|resistance band|バンド|チューブ|レジスタンスバンド", Equipment.RESISTANCE_BAND))
         addAll(equip("케틀벨|kettlebell|ケトルベル", Equipment.KETTLEBELL))
-        addAll(equip("프리웨이트|프리 웨이트|자유중량|자유 중량|자유중량 운동|自由重量|フリーウェイト|フリーウエイト|フリーウェート", Equipment.DUMBBELL, Equipment.BARBELL, Equipment.KETTLEBELL))
+        addAll(equip("프리웨이트|프리 웨이트|자유중량|자유 중량|자유중량 운동|自由重量|フリーウェイト|フリーウエイト|フリーウェート|free weights|free weight|freeweights|freeweight", Equipment.DUMBBELL, Equipment.BARBELL, Equipment.KETTLEBELL))
     }.toMap()
 
     /** 오타 허용 매칭 대상 장비 어휘 (자모 기준 6자 이상인 것만 — 짧은 단어는 오탐이 많다) */

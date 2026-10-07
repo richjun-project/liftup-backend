@@ -33,24 +33,25 @@ internal object QueryLexiconConstraint {
         |점검중이라|점검 중이라|점검중이야|점검 중이야|점검중이어서|점검 중이어서|점검중인데|점검 중인데|점검중이네|점검 중이네|점검 중입니다|점검중입니다|점검중임|점검 중임|점검 때문에|점검으로|점검이라|점검이야|정비 중|정비중|정비 때문에|수리 때문에|수리 들어가|수리해야|공사 중|공사중|폐쇄|폐쇄돼서|폐쇄됐|폐쇄되어|닫혀|닫혀서|닫혀 있|닫혀있|닫았|닫았어|운영 안 함|운영안함|운영 안 해|운영 중단|이용 불가|이용불가|이용 금지|이용금지|이용 못 해|이용 못함
         |없음|없네|없다|없어요|없습니다|없네요|없거든|없거든요|없다니까|없는 상태|없는 환경|없는 곳
         |싫음|싫다|싫은데|싫어요|싫네|싫거든|싫어서|싫은 거|싫은거|꺼려|꺼려져요
-        |빼줘|빼 줘|빼주세요|빼 주세요|빼자|빼고싶|빼고 싶|빼 놓고|빼놓고|제외해줘|제외해 줘|제외해주세요|제외해 주세요|제외하고 싶|뺀|뺀거|뺀 거|뺀 걸로|뺀 것|뺀 운동
+        |빼줘|빼 줘|빼주세요|빼 주세요|빼자|빼고싶|빼고 싶|빼 놓고|빼놓고|제외해줘|제외해 줘|제외해주세요|제외해 주세요|제외하고 싶|뺀 걸로|뺀 운동
         |パス|パスで|はパス|のでパス|からパス|ならパス|でパス|もパス|パスです|パスしたい|パスしたいです|パスだ|パスね|パスかな|パスで全|ぱすで
         |패스|패스할래|패스함|패스야|패스예요|패스하고 싶어|패스할게|패스하겠습니다|패스하고|패스할 거야|패스할거야|패스 할래
         |禁止|禁止で|禁止です|禁止だ|禁止なので|禁止なんで|禁止されてる|禁止されて|禁止されている|禁止になった|使用禁止|使用不可|利用禁止|利用不可
         |NG|NGで|NGです|NGなので|ダメで|ダメです|ダメなので|ダメだ|だめで|だめです|だめなので|駄目で|駄目です|はダメ|はだめ|は駄目|不可で|不可です|不可
-        |厳しい|厳しくて|厳しいので
         |握れない|握れなくて|握れず|握れません|握れないので|握れないから|握れなくなった|握れなくなって|持てない|持てなくて|持てず|持てません|持てないので|持てないから|持てなくなった|掴めない|掴めなくて|つかめない|つかめなくて|握力がなくて|握力が弱くて|握力がない
         |使えない|使えなくて|使えず|使えません|使えないので|使えないから|使えなくなった|使えなくなって|つかえない|つかえなくて|使用できません|使用できないので|扱えない|扱えなくて|触れない|触れなくて|触りたくない|触りたくなくて|触れたくない
         |使われてる|使われている|使われてて|使われていて|使われてます|使われています|使われっぱなし|使われっぱ|使われちゃってる|使われちゃって|使われてしまって|使われまくり|使用されてる|使用されている|使用されてて|使用されていて|占領されてる|占領されている|占領されてて|占領されて|占拠されてる|占拠されて|独占されてる|独占されている|独占されてて|独占されて|独り占め|取られてる|取られている|取られてて|取られちゃって|取られっぱなし|押さえられてる|ふさがってる|ふさがっている|ふさがってて|塞がってる|塞がっている|塞がってて|埋まっちゃってる|埋まっちゃって|埋まりっぱなし
         |並んでる|並んでいる|並んでて|並んでいて|行列|行列で|行列ができてる|行列ができて|順番待ち|順番待ちで|順番待ちしてる|待ちで|待ちが長い|待ち時間が長い|待ち時間長い|待たされる|待たないと|待たなきゃ|待たなければ
         |故障で|全部故障|全て故障|すべて故障|ぜんぶ故障|が全部故障|全部壊れて|全部壊れてる|全て壊れて|故障だ|故障なので|故障なんで|故障中で|故障中です|故障中なので|故障してる|壊れてます|壊れています|壊れちゃって|壊れちゃってる|壊れっぱなし|壊れかけ|破損してる|破損して|メンテで|メンテ中で|メンテ中です|メンテナンス中で|メンテナンス中です|メンテナンスで|点検で|点検中で|点検中です|点検中なので|点検してる|点検してて|点検している|修理中|修理中で|修理中です|修理中なので|修理してる|修理してて|修理している|修理待ち|修理に出てる|整備中|整備中で|整備中です|工事中|工事中で|工事中です|閉鎖中|閉鎖されてる|閉鎖されて|休止中|停止中|使用停止|使用中止|閉まってる|閉まっている|閉まってて|閉まっていて|閉まってます|閉まっています
         |ないです|ないので|ないんで|ないんです|ないんだ|ないんだよ|ないんだよね|ありません|ありませんので|ないけど|ないんですが|ないのですが|ないんだけど|ないですが|なくなった|なくなって|なくなっちゃった|無いです|無いので
+        |はちょっと|ちょっと苦手|はちょっと苦手|はちょっと無理|はちょっと遠慮|はちょっと嫌|はちょっとね|はちょっとなあ|は勘弁|勘弁|勘弁して|勘弁してほしい|は勘弁して|は結構です|結構です|はけっこうです|はいらない|はいりません
+        |nope|nah|meh|uh no|hard pass|hard no|no no|nono|hell no|nuh uh|nuh-uh
         |はいやだ|はイヤだ|がいやだ|は嫌だ|が嫌だ|はいやです|はいやなんだ|はいやだな|はいやなので|がいやです|いやだ|嫌だ|イヤだ|やだ|ヤダ|嫌なんだ|嫌なの|いやなの|いやなんだ|いやだな|嫌だな|嫌かな|嫌だから|いやだから|やだから|嫌だし|いやだし
         |嫌いで|嫌いです|嫌いだ|嫌いなので|いやで|いやです|苦手です|苦手で|苦手なので|やめたい|やめたくて|やめとく|やめとき|やめておく|やめておきたい|やめとこう|やめよう|避けたいです|避けたいので|避けたいんだ|避けたいんですが|控えたい|控えたくて|控える|控えて|控えます|遠慮したい|遠慮して|遠慮します|遠慮する|敬遠したい|敬遠して|敬遠してる
         |除きたい|除いて|除いてください|除いてほしい|除外してください|除外してほしい|外して|外してください|外してほしい|外したい|外したくて|はずして|はずしてください|はずしたい|抜いて|抜いてください|抜いてほしい|抜きたい|抜きたくて|消して|消してください|消したい
         |no way|no go|nogo|no thanks|not allowed|not permitted|not an option|not available|not usable|not accessible|banned|prohibited|forbidden|off limits|offlimits|off-limits|is out|are out|is out for me|are out for me|is a no|are a no|is a no go|are a no go|a no go|a no-go|is off limits|are off limits|is banned|are banned|is not an option|are not an option|isnt an option|arent an option|isn't an option|aren't an option|is not allowed|are not allowed|isnt allowed|arent allowed|isn't allowed|aren't allowed|is off the table|are off the table|off the table
         |is taken over|are taken over|taken over|got taken|got taken over|is monopolized|are monopolized|monopolized|is all used|are all used|is used up|are used up|used up|is spoken for|are spoken for|spoken for|is blocked|are blocked|blocked|blocked off|roped off|is not free|are not free|isnt free|arent free|isn't free|aren't free|is not open|are not open|isnt open|arent open|isn't open|aren't open|is unusable|are unusable|unusable|is gone|are gone|all gone|always taken|always busy|always in use|always occupied|always full|always packed|always crowded|always has a line|always a line|always a queue|always a wait
-        |is out of service|are out of service|out of service|down for repairs|down for maintenance|is being repaired|are being repaired|being repaired|is being fixed|are being fixed|being fixed|is being serviced|being serviced|needs repair|need repair|needs repairs|need repairs|needs fixing|need fixing|needs maintenance|is under repair|are under repair|under repair|under repairs|is being cleaned|being cleaned|jammed|is jammed|are jammed|is stuck|are stuck|doesnt work|doesn't work|dont work|don't work|wont work|won't work|not functional|not functioning|isnt functioning|isn't functioning|is not functioning|malfunctioning|is malfunctioning|are malfunctioning|is faulty|are faulty|faulty|is defective|are defective|defective|is busted|are busted|busted|is dead|are dead|got broken|got broke|is broke|are broke
+        |is out of service|are out of service|out of service|down for repairs|down for maintenance|is being repaired|are being repaired|being repaired|is being fixed|are being fixed|being fixed|is being serviced|being serviced|needs repair|need repair|needs repairs|need repairs|needs fixing|need fixing|needs maintenance|is under repair|are under repair|under repair|under repairs|is being cleaned|being cleaned|jammed|is jammed|are jammed|doesnt work|doesn't work|dont work|don't work|wont work|won't work|not functional|not functioning|isnt functioning|isn't functioning|is not functioning|malfunctioning|is malfunctioning|are malfunctioning|is faulty|are faulty|faulty|is defective|are defective|defective|is busted|are busted|busted|is dead|are dead|got broken|got broke|is broke|are broke
         |is overrun|are overrun|overrun|is overcrowded|are overcrowded|overcrowded|jam packed|jampacked|is crammed|are crammed|crammed|is swarmed|are swarmed|swarmed|is overbooked|overbooked|is fully booked|are fully booked|fully booked|is sold out|are sold out|sold out|full up|is full of people|are full of people|full of people|has people on it|have people on it|has someone on it|have someone on it|has someone using it|have someone using them|someone is on it|someone is using it|someone is using them|someone has it|someone has them|somebody is on it|somebody is using it|somebody is using them|people are on it|people are using it|people are using them|in use by someone|being used by someone|used by someone|in use by people|being used by people|used by people|occupied by someone|occupied by people|taken by someone|taken by people|reserved by someone|hogged by someone|hogged by people|blocked by someone
     """.trimIndent()
 
@@ -66,6 +67,16 @@ internal object QueryLexiconConstraint {
         val out = LinkedHashSet<String>()
         for (sub in crowdSubjects) for (adv in adverbs) for (tail in crowdTails) out.add(listOf(sub, adv, tail).filter { it.isNotEmpty() }.joinToString(" "))
         for (sub in queueSubjects) for (adv in adverbs) for (tail in queueTails) out.add(listOf(sub, adv, tail).filter { it.isNotEmpty() }.joinToString(" "))
+        val waitStems = listOf("대기해야", "대기 해야", "줄 서야", "줄서야", "기다려야", "줄 서서 기다려야", "줄 기다려야")
+        val waitTails = listOf("", " 해", " 해서", " 돼", " 돼서", " 되서", " 되는데", " 하는데", " 하니까", " 해요", " 돼요", " 하고", " 함", " 하네", " 해야", " 하거든")
+        for (stem in waitStems) for (tail in waitTails) out.add(stem + tail)
+        out.addAll(listOf("안 남았", "안남았", "안 남음", "안남음", "남은 게 없", "남은게 없", "남은 게 하나도 없", "남아 있지 않", "남아있지 않", "동났", "동이 났", "바닥났", "품절", "다 나갔", "다 빠졌", "다 가져갔", "가져가서", "하나도 안 남아", "하나도 안 남았"))
+        // 하기 싫다·하고 싶지 않다 — 동사 어간과 활용 어미의 조합
+        val verbStems = listOf("쓰기", "사용하기", "하기", "잡기", "들기", "쥐기", "이용하기", "만지기", "쓰고", "사용하고", "하고", "잡고", "들고", "이용하고")
+        val dislikeTails = listOf("싫어", "싫은", "싫고", "싫어서", "싫은데", "싫네", "싫다", "싫음", "싫어요", "싫으니까", "싶지 않아", "싶지 않은", "싶지 않고", "싶지 않아서", "싶지않아", "싶지 않은데", "싶지 않네요", "싶지 않다", "싶지 않음")
+        for (v in verbStems) for (t in dislikeTails) if (v.endsWith("기") == t.startsWith("싫") && v.endsWith("고") == t.startsWith("싶")) out.add("$v $t")
+        out.addAll(listOf("싫고", "싫지만", "싫으니", "싫으니까", "싫구", "싫긴", "싫은 날", "싫다고", "별로", "별로야", "별로임", "별로예요", "별로라", "별로라서", "별로네", "별로고", "별로인데", "별로지만",
+            "은 좀 그래", "는 좀 그래", "은 좀 그렇", "는 좀 그렇", "은 좀 부담", "는 좀 부담", "은 좀 꺼려", "는 좀 꺼려"))
         out.addAll(listOf("붐빔", "붐벼서", "북적여서", "북적거려서", "북적임", "혼잡해서", "혼잡하고", "혼잡함", "복잡해서 못", "만원이라서"))
         out.joinToString("|")
     }
@@ -83,7 +94,7 @@ internal object QueryLexiconConstraint {
 
     /** 대상이 표지 뒤에 오는 영어 표지 */
     val NEG_BEFORE = """
-        never|never use|never using|never do|never doing|never touch|never ever|no longer use|no longer using|not using|not touching|not gonna use|not going to use|not planning to use|not interested in|no interest in|not into|not a fan of|no fan of|not keen on|not comfortable with|not comfortable using
+        hard pass on|hard pass for|no to|nope to|nah to|say no to|saying no to|a no to|pass on|passing on|im good without|i'm good without|good without|never|never use|never using|never do|never doing|never touch|never ever|no longer use|no longer using|not using|not touching|not gonna use|not going to use|not planning to use|not interested in|no interest in|not into|not a fan of|no fan of|not keen on|not comfortable with|not comfortable using
         |dont want|don't want|do not want|dont wanna|don't wanna|dont like|don't like|do not like|dont feel like|don't feel like|dont want to use|don't want to use|dont wanna use|don't wanna use|didnt want|didn't want|wont use|won't use|wouldnt use|wouldn't use|shouldnt use|shouldn't use|should not use|must not use|refuse to use|refuse|refusing to use
         |cant use|can't use|cannot use|can not use|cant grip|can't grip|cannot grip|cant hold|can't hold|cannot hold|cant lift|can't lift|cant hang|can't hang|cant press|can't press|cant handle|can't handle|cant stand|can't stand|couldnt use|couldn't use|unable to use|unable to grip|unable to hold|not able to use|not able to grip|not able to hold|not allowed to use|not permitted to use|not supposed to use|banned from|barred from|prohibited from
         |hate|hates|hating|dislike|dislikes|disliking|despise|loathe|detest|allergic to|afraid of|scared of|terrified of
@@ -96,10 +107,11 @@ internal object QueryLexiconConstraint {
     /** 수량어·긍정 단서·행위자 — 부정 표지와 대상 사이, 또는 대상 뒤에 끼지만 의미를 더하지 않는 말 */
     val NOISE = """
         器具を使った|器具を使って|器具を使う|器具を|器具で|道具を使った|道具を使って|道具を使う|道具を|道具で|用具を|用具で|길어서|길어|길어요|길음|길다|길고
-        |곳|쪽|장소|오늘|오늘은|오늘따라|오늘도|구역|코너|영역|エリア|ゾーン|コーナー|area|zone|corner|section|stations|bored|boring|ideas|idea|variation|variations|variety|switch up|mix up
+        |둘 다|둘다|둘 모두|양쪽 다|양쪽 모두|두 개 다|두개 다|세 개 다|どちらも|両方|両方とも|どっちも|ふたつとも|二つとも|both of them|both|each|all of them
+        |bored|boring|ideas|idea|variation|variations|variety|switch up|mix up
         |라서|이라서|라서요|이라서요|라니까|이라니까|이니까|이니까요|니까요|여서|이어서|인데|인데요|이라고|이라는|라는|이었|였는데|이었는데|였어|이었어|였고|이었고
         |있음|있네|있네요|있습니다|있어서|있지만|있으니|있으니까|있거든|있거든요|있는데요|있었어|있었는데|있는 거|있는거|있는 것|있는건|있는 건|あります|あるだけ|あるのは|あるのが|あるくらい|ありまして|ありますが|あるが|あるけど|あるけれど|あるので|あるから|あるんだ|あるんです|あるんだけど|持ってる|持ってます|持っている|持っていて|持ってて|持ってるのは|having|only have|only has|only got|i have|i got|ive got|i've got|we have|we got|weve got|we've got|just have|got a|have a|have an|have some|there is|there's
-        |전부|전부다|전부 다|모두|모조리|죄다|다들|누가|누군가|누군가가|누가 다|사람들이|다른 사람이|다른 사람|어떤 사람이|옆 사람이|회원들이|트레이너가|계속|계속해서|계속 계속|내내|하루종일|하루 종일|아까부터|항상|늘|맨날|자꾸|자꾸만|줄곧|아까
+        |전부|전부다|전부 다|모두|모조리|죄다|다들|누가|누군가|누군가가|누가 다|사람들이|다른 사람이|다른 사람|어떤 사람이|옆 사람이|회원들이|트레이너가|계속|계속해서|계속 계속|내내|하루종일|하루 종일|아까부터|항상|맨날|자꾸|자꾸만|줄곧|아까
         |全部|全て|すべて|ぜんぶ|みんな|みんなが|誰か|誰かが|だれか|だれかが|いつも|ずっと|ずーっと|常に|ひっきりなし|ひっきりなしに|さっきから|朝から|一日中|今日は|今日も|今は
         |yes|yeah|yep|yup|ok|okay|alright|all right|allowed|permitted|everyone|everybody|someone|somebody|some guy|some dude|a guy|a dude|the guy|the dude|always|constantly|currently|right now|these days|all day|all the time|all day long|every single|each of the|all of the|all of them|all of these|all of those|all the|all these|all those|both of the
     """.trimIndent()
