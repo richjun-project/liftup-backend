@@ -104,13 +104,14 @@ class HybridSearch(
         // 어휘 검색이 시간 예산을 넘겨 잘렸으면 거기에 섞지 않는다(불완전한 순위에 의미 결과를 얹어 봐야 의미가 없다)
         if (!lex.complete) return Result(lex.hits, false, false)
         val constraint = engine.semanticConstraint(query, category, equipments) ?: return Result(lex.hits, true, false)
-        val hintConstraint = if (rewrite != null) engine.semanticConstraint(query, category, equipments, forHints = true) ?: constraint else constraint
         val wantSemantic = needsSemantic(query.orEmpty(), lex.hits, constraint)
         val wantRewrite = rewrite != null && needsRewrite(query.orEmpty(), lex.hits, constraint)
         if (!wantSemantic && !wantRewrite) return Result(lex.hits, true, false)
 
         // LLM 해석(네트워크, 느림)을 먼저 띄워 두고 질의 임베딩을 구한다 — 둘 중 느린 쪽이 전체 지연이 된다
         val pending: CompletableFuture<QueryRewrite?>? = if (wantRewrite) startRewrite(rewrite!!) else null
+        // 힌트 후보에 거는 조건(의도 장비 범위만 어휘 검색용보다 느슨하다) — LLM 을 기다리는 동안 만들어 둔다
+        val hintConstraint = if (wantRewrite) engine.semanticConstraint(query, category, equipments, forHints = true) ?: constraint else constraint
         val qv = if (wantSemantic) queryVector()?.let { unitVector(it) } else null
         val rw = pending?.let { await(it) }
 
@@ -158,8 +159,10 @@ class HybridSearch(
             }
         }
         val pinned = if (config.rewriteKeepProtected) config.protectScore?.let { p -> lexical.firstOrNull()?.takeIf { it.score >= p }?.doc?.id } else null
-        if (hintHits.all { it.hits.isEmpty() } && rw.forbidEquipment.isEmpty()) return null
-        return RewriteFusion.fuse(base, hintHits, rw.forbidEquipment, pinned, config.rewrite)
+        // LLM 의 제외 장비는 호출자가 고른 장비 필터와 부딪히면 따르지 않는다(필터는 하드 조건이다). 질의 속 장비 말은 사전이 틀릴 수 있어("수건"→밴드) 여기서는 LLM 을 믿는다.
+        val forbid = rw.forbidEquipment - (equipments ?: emptySet())
+        if (hintHits.all { it.hits.isEmpty() } && forbid.isEmpty()) return null
+        return RewriteFusion.fuse(base, hintHits, forbid, pinned, config.rewrite)
     }
 
     /**

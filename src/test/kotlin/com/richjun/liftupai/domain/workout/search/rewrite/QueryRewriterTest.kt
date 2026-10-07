@@ -419,6 +419,14 @@ class QueryRewriterTest {
     }
 
     @Test
+    fun `생각 조각은 건너뛰고 본문 조각만 읽는다`() {
+        val body = ObjectMapper().writeValueAsString(
+            mapOf("candidates" to listOf(mapOf("content" to mapOf("parts" to listOf(mapOf("text" to "thinking...", "thought" to true), mapOf("text" to goodJson)))))))
+        val url = startServer({ _, _, _ -> 200 to body })
+        assertEquals(goodJson, GeminiRewriteTransport("k", "m1", baseUrl = url).generate("q", 2000))
+    }
+
+    @Test
     fun `모델 이름에 경로·질의 문자가 들어가면 거부한다`() {
         for (bad in listOf("a/b", "a?key=x", "a b", "", "../x", "m:generateContent#")) {
             assertThrows(IllegalArgumentException::class.java, { GeminiRewriteTransport("k", bad) }, bad)

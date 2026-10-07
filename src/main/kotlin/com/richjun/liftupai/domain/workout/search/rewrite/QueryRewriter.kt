@@ -46,7 +46,7 @@ class QueryRewriter(
 
     override val enabled: Boolean get() = configuredEnabled && (transport != null || apiKey.isNotBlank())
 
-    private val real: RewriteTransport by lazy { transport ?: GeminiRewriteTransport(apiKey, model) }
+    private val real: RewriteTransport by lazy { transport ?: GeminiRewriteTransport(apiKey, model.trim().ifEmpty { DEFAULT_MODEL }) }
 
     internal var clock: () -> Long = System::currentTimeMillis
 
@@ -176,8 +176,11 @@ internal class GeminiRewriteTransport(
         client.newBuilder().callTimeout(timeoutMillis, TimeUnit.MILLISECONDS).build().newCall(request).execute().use { resp ->
             if (!resp.isSuccessful) throw IllegalStateException("generateContent HTTP ${resp.code}")
             val root = mapper.readTree(resp.body?.string() ?: throw IllegalStateException("empty body"))
-            return root["candidates"]?.get(0)?.get("content")?.get("parts")?.get(0)?.get("text")?.asText()
-                ?: throw IllegalStateException("no text in response")
+            // 생각(thought) 조각은 건너뛰고 본문 텍스트 조각만 이어 붙인다
+            val parts = root["candidates"]?.get(0)?.get("content")?.get("parts") ?: throw IllegalStateException("no text in response")
+            val text = parts.filter { it.has("text") && it["thought"]?.asBoolean() != true }.joinToString("") { it["text"].asText() }
+            if (text.isEmpty()) throw IllegalStateException("no text in response")
+            return text
         }
     }
 

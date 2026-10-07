@@ -255,6 +255,12 @@ class RewriteFusionTest {
     }
 
     @Test
+    fun `LLM 이 호출자의 장비 필터를 제외하라고 해도 따르지 않는다`() {
+        val r = search("good chest exercises for hypertrophy please", rw("Dumbbell Bench Press", "Dumbbell Fly", forbid = setOf(Equipment.DUMBBELL)), equipments = setOf(Equipment.DUMBBELL))
+        assertTrue(r.hits.take(5).isNotEmpty() && r.hits.take(5).all { it.doc.equipment == Equipment.DUMBBELL }, slugs(r, 5).toString())
+    }
+
+    @Test
     fun `정확한 운동 이름 질의는 LLM 을 부르지 않는다`() {
         val calls = AtomicInteger()
         val r = search("Barbell Bench Press", rw("Push-up"), calls = calls)
