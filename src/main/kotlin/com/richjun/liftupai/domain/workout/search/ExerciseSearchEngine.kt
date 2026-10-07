@@ -613,8 +613,8 @@ class ExerciseSearchEngine(
             val q = occurrenceQuality(n, t)
             if (q == OCC_NONE) { allStrict = false; continue }
             if (q == OCC_MID_WORD) allBoundary = false
-            // 부분 일치에서는 단어 중간 일치와, (마지막 단어가 아닌) 접두 일치를 일치로 치지 않는다 — sled push ↛ pushdown
-            else if (q != OCC_WORD || !isLatin(t) || t === tokens.last()) matchedLen += t.length
+            // 부분 일치에서는 단어 중간 일치와 라틴 접두 일치를 일치로 치지 않는다 — sled push ↛ pushdown
+            else if (q != OCC_WORD || !isLatin(t)) matchedLen += t.length
             if (q == OCC_EXACT && isLatin(t)) exactWords++
         }
         if (allStrict) {
@@ -638,7 +638,7 @@ class ExerciseSearchEngine(
         if (tokens.size >= 2 && matchedLen > 0 && matchedLen.toDouble() / totalLen >= PARTIAL_MIN_FRACTION) {
             if (conflicts(v, n)) return -1.0
             // 일반 단어(장비·수식어) 하나만 맞은 이름은 일치로 치지 않는다
-            if (tokens.none { t -> t !in QueryLexicon.genericWords && occurrenceQuality(n, t).let { q -> q == OCC_EXACT || (q == OCC_WORD && (!isLatin(t) || t === tokens.last())) } }) return -1.0
+            if (tokens.none { t -> t !in QueryLexicon.genericWords && occurrenceQuality(n, t).let { q -> q == OCC_EXACT || (q == OCC_WORD && !isLatin(t)) } }) return -1.0
             // 질의의 부위 단어가 이름에 없으면, 그 운동이 정말 그 부위의 것일 때만 인정한다 (leg extension ↛ triceps extension)
             if (!v.regions.isEmpty && !n.regions.intersects(v.regions) && !muscleHints.matches(doc)) return -1.0
             var s = BAND_PARTIAL + 20.0 * matchedLen / totalLen

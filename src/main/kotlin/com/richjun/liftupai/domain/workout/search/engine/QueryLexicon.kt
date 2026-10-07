@@ -369,7 +369,7 @@ internal object QueryLexicon {
      * 이런 단어 하나만 맞은 이름(예: "smith machine squat" 에 seated calf machine)은 일치로 치지 않는다.
      */
     val genericWords: Set<String> = (
-        "bar|grip|wide|close|narrow|single|double|alternate|alternating|seated|standing|lying|with|on|to|the|and|of|in|a|stretch|stretching|pose|yoga|ストレッチ|ポーズ|ヨガ|스트레칭|포즈|요가|" +
+        "bar|grip|wide|close|narrow|single|double|alternate|alternating|seated|standing|lying|with|on|to|the|and|of|in|a|up|down|out|over|under|through|forward|backward|high|low|stretch|stretching|pose|yoga|ストレッチ|ポーズ|ヨガ|스트레칭|포즈|요가|" +
             "와이드|클로즈|그립|바|시티드|스탠딩|라잉|싱글|원|인|위드|ワイド|クローズ|グリップ|バー|シーテッド|スタンディング|ライイング|シングル|ワン"
         ).split("|").map { key(it) }.filter { it.isNotEmpty() }.toSet() + ExerciseSearchLexicon.equipmentTerms.keys
 
