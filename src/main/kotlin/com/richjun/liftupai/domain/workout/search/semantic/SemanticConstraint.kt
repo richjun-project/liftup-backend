@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.workout.search.semantic
 
+import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchDoc
 
 /**
@@ -32,4 +33,22 @@ interface SemanticConstraint {
 
     /** 집에서(장비 언급·필터 없음) — 섞은 결과에서도 맨몸 운동을 먼저 보여 준다(밴드·덤벨은 그 뒤) */
     val homeBodyweightFirst: Boolean get() = false
+
+    /**
+     * "벤치프레스 보조로 삼두"처럼 어떤 운동을 돕는 목표 말투일 때 말로 언급된 그 운동 자체(들)의 id.
+     * 목표 부위 운동과 LLM 힌트가 이 운동들보다 앞서도록 융합 결과 상위에서 뒤로 미룬다. 해당 없으면 빈 집합.
+     */
+    val goalLiftIds: Set<Long> get() = emptySet()
+
+    /**
+     * 질의의 내용 토큰이 이 운동의 이름에서 통째 단어로 나오는가("삼각형" ⊂ "역삼각형" 같은 합성어 속 부분 문자열은 아니다).
+     * 이름 일치가 확실하다고 보고 LLM 을 건너뛰거나 1위를 고정하기 전에 확인한다. 내용 토큰이 없으면 true.
+     */
+    fun wholeTokenNameMatch(doc: ExerciseSearchDoc): Boolean = true
+
+    /**
+     * 질의가 직접 말한 장비("cable fly", "덤벨 컬") — LLM 이 낸 제외 장비가 사용자가 방금 요청한 장비를 지우지 못하게 융합에서 뺀다.
+     * 수건처럼 생활 사물을 장비 자리에 쓴 말(밴드 대용)은 사전이 틀릴 수 있어 여기에 넣지 않는다 — 그 경우는 LLM 의 읽기를 믿는다.
+     */
+    val requestedEquipment: Set<Equipment> get() = emptySet()
 }

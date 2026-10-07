@@ -68,6 +68,7 @@ search:
     cache-size: 2048
     breaker-failures: 5
     breaker-open-ms: 30000
+    negative-cache-ms: 600000
   # LLM 질의 해석 — 자연어 질의를 트레이너식 영어 운동 이름 힌트·제외 장비로 바꿔 하이브리드 결과에 섞는다(의미 검색이 켜져 있을 때만 쓰인다).
   # 실패·시간 초과·차단기 열림이면 하이브리드 결과 그대로. 기본은 꺼짐, prod·local 프로파일에서 켠다.
   rewrite:
@@ -77,6 +78,17 @@ search:
     cache-size: 4096
     breaker-failures: 5
     breaker-open-ms: 30000
+    negative-cache-ms: 600000
+
+  # 검색 쪽 Gemini 호출(임베딩+해석) 전역 관문 — 채팅·플랜 생성과 같은 키/쿼터를 쓰므로 검색이 그것을 굶기지 않게 한다.
+  # 분당·일일 예산을 넘으면 호출하지 않고 어휘(하이브리드) 결과로 간다. Gemini 를 기다리는 자연어 검색이 상한을 넘으면 기다리지 않고 바로 건너뛴다.
+  # 요약 로그(호출 수·실패 분류·건너뜀·캐시 적중·p50/p95)는 summary-interval-ms 마다 INFO 한 줄.
+  # 검색 전용 키: 환경변수 SEARCH_LLM_API_KEY(= search.llm.api-key)를 주면 채팅·플랜과 쿼터를 분리한다. 비워 두려면 아예 정의하지 않는다(정의하면 빈 값도 우선한다).
+  llm:
+    budget-per-minute: ${SEARCH_LLM_CALLS_PER_MINUTE:90}
+    daily-cap: ${SEARCH_LLM_DAILY_CAP:20000}
+    max-concurrent-searches: ${SEARCH_LLM_MAX_CONCURRENT:20}
+    summary-interval-ms: 300000
 
 # OAuth2 소셜 로그인 설정
 oauth:

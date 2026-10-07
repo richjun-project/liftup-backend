@@ -5,6 +5,14 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import com.richjun.liftupai.domain.workout.search.ops.LlmBreaker
+import com.richjun.liftupai.domain.workout.search.ops.LlmContentException
+import com.richjun.liftupai.domain.workout.search.ops.LlmFailureClass
+import com.richjun.liftupai.domain.workout.search.ops.LlmFailures
+import com.richjun.liftupai.domain.workout.search.ops.LlmHttpException
+import com.richjun.liftupai.domain.workout.search.ops.LlmKind
+import com.richjun.liftupai.domain.workout.search.ops.NegativeCache
+import com.richjun.liftupai.domain.workout.search.ops.SearchLlmGuard
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -12,9 +20,7 @@ import java.text.Normalizer
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 
 /** 실제 호출부(테스트는 가짜로 바꾼다). 모델이 돌려준 텍스트(JSON)를 그대로 준다. 실패하면 예외. */
 fun interface RewriteTransport {
@@ -26,25 +32,35 @@ fun interface RewriteTransport {
  *
  * - 시간 제한(기본 2.5초): 검색 요청이 LLM 때문에 그보다 더 늦어지지 않는다. 병렬로 질의 임베딩도 구하므로 둘 중 느린 쪽이 상한.
  * - 정규화한 질의 기준 LRU 캐시(성공만): 같은 질의(페이지 넘김·반복 검색)는 API 를 다시 부르지 않는다. 같은 질의가 동시에 오면 호출 하나를 공유한다.
- * - 차단기: 연속 [failureThreshold]번 실패하면 [openMillis] 동안 부르지 않는다(그 뒤 한 번 시험, 성공하면 닫힘, 실패하면 열림 시간이 두 배씩 늘어남).
- * - 응답은 [QueryRewrite.parse] 로 엄격히 검증한다. 모양이 틀리면 실패로 센다.
+ * - 내용 실패(거절·산문·잘림·JSON 오류)는 질의별 음성 캐시에 잠시 두고 차단기에 세지 않는다 — 한 사용자가 나쁜 질의로 모두의 차단기를 열 수 없다.
+ *   전송 오류·시간 초과·5xx 가 연속 [failureThreshold]번이면 [openMillis] 동안 차단(두 배씩 늘어남), 429 는 Retry-After 만큼, 인증 오류는 길게 연다([LlmBreaker]).
+ * - 전역 예산([SearchLlmGuard]): 분당·일일 한도를 넘으면 호출하지 않는다(채팅·플랜 생성과 같은 키를 굶기지 않게).
+ * - 응답은 [QueryRewrite.parse] 로 엄격히 검증한다. 모양이 틀리면 내용 실패다.
  * - 사용자 식별자는 보내지 않는다 — 질의 문자열만 간다. API 키는 x-goog-api-key 헤더로만 보내고 로그·예외 메시지에 남기지 않는다.
- * - search.rewrite.enabled=false(기본, 테스트)이거나 키가 비어 있으면 아무 일도 하지 않는다.
+ * - search.rewrite.enabled=false(기본, 테스트)이거나 키가 비어 있으면 아무 일도 하지 않는다([configured]·[keyPresent] 로 이유를 알 수 있다).
  */
 @Component
 class QueryRewriter(
     @Value("\${search.rewrite.enabled:false}") private val configuredEnabled: Boolean,
-    @Value("\${gemini.api-key:}") private val apiKey: String,
+    @Value("\${search.llm.api-key:\${gemini.api-key:}}") private val apiKey: String,
     @Value("\${search.rewrite.model:$DEFAULT_MODEL}") private val model: String,
     @Value("\${search.rewrite.timeout-ms:2500}") private val timeoutMillis: Long,
     @Value("\${search.rewrite.cache-size:4096}") cacheSize: Int,
     @Value("\${search.rewrite.breaker-failures:5}") private val failureThreshold: Int,
     @Value("\${search.rewrite.breaker-open-ms:30000}") private val openMillis: Long,
-    private val transport: RewriteTransport? = null
+    private val transport: RewriteTransport? = null,
+    private val guard: SearchLlmGuard? = null,
+    @Value("\${search.rewrite.negative-cache-ms:600000}") negativeCacheMillis: Long = 600_000L
 ) : QueryRewriteSource {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
     override val enabled: Boolean get() = configuredEnabled && (transport != null || apiKey.isNotBlank())
+
+    /** 설정으로 켜져 있는가(키와 무관) */
+    val configured: Boolean get() = configuredEnabled
+
+    /** 호출에 쓸 수 있는 키(또는 주입된 전송)가 있는가 */
+    val keyPresent: Boolean get() = transport != null || apiKey.isNotBlank()
 
     private val real: RewriteTransport by lazy { transport ?: GeminiRewriteTransport(apiKey, model.trim().ifEmpty { DEFAULT_MODEL }) }
 
@@ -54,23 +70,24 @@ class QueryRewriter(
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, QueryRewrite>?) = size > cacheSize
     }
     private val inflight = ConcurrentHashMap<String, CompletableFuture<QueryRewrite?>>()
-
-    private val consecutiveFailures = AtomicInteger()
-    private val openUntil = AtomicLong(0L)
-    private val tripCount = AtomicInteger()
-    private val probing = AtomicBoolean(false)
+    private val negative = NegativeCache(cacheSize, negativeCacheMillis) { clock() }
+    private val breaker = LlmBreaker(failureThreshold, openMillis) { clock() }
 
     /** 실제 API 호출 횟수(테스트·운영 점검용) */
     internal val callCount = AtomicInteger()
 
     internal fun cachedCount(): Int = synchronized(cache) { cache.size }
 
-    internal fun breakerOpen(): Boolean = clock() < openUntil.get()
+    internal fun negativeCount(): Int = negative.size()
+
+    internal fun breakerOpen(): Boolean = breaker.isOpen()
 
     override fun rewrite(query: String): QueryRewrite? {
         if (!enabled) return null
         val key = cacheKey(query) ?: return null
-        synchronized(cache) { cache[key] }?.let { return it }
+        synchronized(cache) { cache[key] }?.let { guard?.recordCache(LlmKind.REWRITE, true); return it }
+        if (negative.contains(key)) { guard?.recordNegativeHit(LlmKind.REWRITE); return null }
+        guard?.recordCache(LlmKind.REWRITE, false)
         // 같은 질의를 동시에 받으면 한 호출을 같이 쓴다
         val mine = CompletableFuture<QueryRewrite?>()
         val existing = inflight.putIfAbsent(key, mine)
@@ -88,28 +105,33 @@ class QueryRewriter(
     }
 
     private fun call(key: String, text: String): QueryRewrite? {
-        // 차단기: 열려 있으면 부르지 않는다. 시간이 지났으면 한 요청만 시험 호출(half-open)을 한다.
-        if (clock() < openUntil.get()) return null
-        val tripped = consecutiveFailures.get() >= failureThreshold
-        if (tripped && !probing.compareAndSet(false, true)) return null
+        val permit = breaker.tryEnter() ?: run { guard?.recordBreakerSkip(LlmKind.REWRITE); return null }
+        // 전역 예산 — 넘으면 호출하지 않는다(시험 호출 자리는 돌려준다)
+        if (guard != null && !guard.tryConsume(LlmKind.REWRITE)) { breaker.release(permit); return null }
+        callCount.incrementAndGet()
+        val started = System.nanoTime()
         try {
-            callCount.incrementAndGet()
-            val parsed = QueryRewrite.parse(real.generate(buildPrompt(text), timeoutMillis)) ?: throw IllegalStateException("malformed rewrite response")
-            consecutiveFailures.set(0)
-            tripCount.set(0)
+            val parsed = QueryRewrite.parse(real.generate(buildPrompt(text), timeoutMillis)) ?: throw LlmContentException("malformed rewrite response")
+            guard?.recordCall(LlmKind.REWRITE, (System.nanoTime() - started) / 1_000_000, null)
+            breaker.onResponded(permit)
             synchronized(cache) { cache[key] = parsed }
             return parsed
         } catch (e: Exception) {
-            val failures = consecutiveFailures.incrementAndGet()
-            if (failures >= failureThreshold) {
-                val trips = tripCount.incrementAndGet().coerceAtMost(MAX_BACKOFF_SHIFT)
-                openUntil.set(clock() + (openMillis shl (trips - 1)))
-                logger.warn("Query rewrite circuit opened after {} consecutive failures: {}", failures, safeMessage(e))
-            } else logger.debug("Query rewrite failed: {}", safeMessage(e))
+            val cls = LlmFailures.classify(e)
+            guard?.recordCall(LlmKind.REWRITE, (System.nanoTime() - started) / 1_000_000, cls)
+            if (cls == LlmFailureClass.CONTENT) negative.add(key)
+            val openedFor = breaker.onFailure(permit, cls, (e as? LlmHttpException)?.retryAfterMillis)
+            if (openedFor != null) logger.warn("Query rewrite circuit opened for {}ms ({}): {}", openedFor, cls.label, safeMessage(e))
+            else logger.debug("Query rewrite failed ({}): {}", cls.label, safeMessage(e))
             return null
         } finally {
-            if (tripped) probing.set(false)
+            breaker.release(permit)  // Error 등으로 어느 쪽 갈래도 못 탔을 때 시험 호출 자리가 영영 잠기지 않게(이미 돌려줬으면 아무 일 없음)
         }
+    }
+
+    /** 첫 요청이 클라이언트 생성 비용을 치르지 않도록 전송을 미리 만든다(네트워크 호출 없음) */
+    fun warmUp() {
+        if (enabled) runCatching { real }
     }
 
     private fun safeMessage(e: Exception): String {
@@ -119,7 +141,6 @@ class QueryRewriter(
 
     companion object {
         const val DEFAULT_MODEL = "gemini-flash-lite-latest"
-        private const val MAX_BACKOFF_SHIFT = 4
         private const val MAX_RAW_CHARS = 1000
         private const val MAX_KEY_CHARS = 200
         private val WHITESPACE = Regex("\\s+")
@@ -174,12 +195,14 @@ internal class GeminiRewriteTransport(
             .post(body.toRequestBody("application/json".toMediaType()))
             .build()
         client.newBuilder().callTimeout(timeoutMillis, TimeUnit.MILLISECONDS).build().newCall(request).execute().use { resp ->
-            if (!resp.isSuccessful) throw IllegalStateException("generateContent HTTP ${resp.code}")
-            val root = mapper.readTree(resp.body?.string() ?: throw IllegalStateException("empty body"))
+            if (!resp.isSuccessful) throw LlmHttpException(resp.code, LlmFailures.parseRetryAfter(resp.header("Retry-After")), "generateContent")
+            val bodyText = resp.body?.string() ?: throw LlmContentException("empty body")
+            val root = try { mapper.readTree(bodyText) } catch (e: com.fasterxml.jackson.core.JsonProcessingException) { throw LlmContentException("unreadable body") }
+                ?: throw LlmContentException("empty body")
             // 생각(thought) 조각은 건너뛰고 본문 텍스트 조각만 이어 붙인다
-            val parts = root["candidates"]?.get(0)?.get("content")?.get("parts") ?: throw IllegalStateException("no text in response")
+            val parts = root["candidates"]?.get(0)?.get("content")?.get("parts") ?: throw LlmContentException("no text in response")
             val text = parts.filter { it.has("text") && it["thought"]?.asBoolean() != true }.joinToString("") { it["text"].asText() }
-            if (text.isEmpty()) throw IllegalStateException("no text in response")
+            if (text.isEmpty()) throw LlmContentException("no text in response")
             return text
         }
     }
