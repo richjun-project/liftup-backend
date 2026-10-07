@@ -51,4 +51,11 @@ interface SemanticConstraint {
      * 수건처럼 생활 사물을 장비 자리에 쓴 말(밴드 대용)은 사전이 틀릴 수 있어 여기에 넣지 않는다 — 그 경우는 LLM 의 읽기를 믿는다.
      */
     val requestedEquipment: Set<Equipment> get() = emptySet()
+
+    /**
+     * 의도 질의에서 사전이 요청으로 읽어 하드 조건으로 건 장비 가운데, 사전이 모르는 말이 질의에 섞여 있어 그 읽기를 믿을 수 없는 것.
+     * 사전이 모르는 부정 관용구("ケトルベルはパスで")를 장비 요청으로 오인하면 어휘·의미 후보가 그 장비로만 좁혀져, LLM 의 올바른 제외가
+     * 걸러 낼 것이 없어 되돌려진다 — LLM 이 이 장비를 제외했고 LLM 자신의 힌트도 그 장비를 쓰지 않으면 [HybridSearch] 가 제외로 바꿔 다시 찾는다.
+     */
+    val lexiconEquipment: Set<Equipment> get() = emptySet()
 }

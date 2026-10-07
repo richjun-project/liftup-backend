@@ -48,6 +48,16 @@ internal class QueryPlan(
         )
     }
 
+    /**
+     * 사전이 요청으로 읽은 장비 [drop] 을 요청이 아니라 제외로 바꾼 계획 — 사전이 모르는 부정 관용구("ケトルベルはパスで")를 장비 요청으로 오인했을 때
+     * LLM 의 올바른 제외 장비를 따라가기 위해 쓴다. 장비 말고는 그대로다.
+     */
+    fun withEquipmentExcluded(drop: Set<Equipment>): QueryPlan = QueryPlan(
+        mode = mode, concepts = concepts, equipments = equipments - drop, home = home, stretch = stretch, level = level, regress = regress,
+        excludeEquip = excludeEquip + drop, excludeKeys = excludeKeys, injuries = injuries, numbers = numbers, highReps = highReps,
+        seeds = seeds, hasUnknown = hasUnknown, similarTo = similarTo, excludeConcepts = excludeConcepts, combineAll = combineAll
+    )
+
     val hasExclusions: Boolean get() = excludeEquip.isNotEmpty() || excludeKeys.isNotEmpty() || injuries.isNotEmpty() || excludeConcepts.isNotEmpty()
     val hasIntentSignal: Boolean get() = concepts.isNotEmpty() || equipments.isNotEmpty() || home
 }
@@ -246,6 +256,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             if (key == "free" && next in FREE_NOT_NEG_BEFORE) return false
             if (key == "less" && next.isNotEmpty() && next !in LESS_NEG_BEFORE) return false
         }
+        // 가타카나 낱말 속 부정어("チェストパス" 의 パス)는 부정이 아니다 — 가타카나로 시작하는 부정 표지는 앞 글자가 가타카나가 아닐 때만
+        if (t.role == Role.NEG && !t.particle && tok.kata[i] && i > 0 && tok.kata[i - 1]) return false
         if (t.particle) {
             if (anyKata(tok, i, j)) return false
             val needsPrev = (t.role == Role.NEG && t.targetBefore) || (t.role == Role.NOISE && key.length <= 2) || t.role == Role.CONJ
@@ -322,22 +334,85 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             return a to b
         }
 
-        fun skippable(sg: Seg) = !sg.unknown && !sg.isNum && (sg.onlyRoles(Role.NOISE, Role.CONJ) || text.substring(sg.s, sg.e) in QUANTIFIERS)
+        // 한 글자 수량어 "다"("바벨 다 쓰고 있어서")는 사전에 넣으면 "다리"·"다이어트" 같은 말 속에서도 읽히므로, 홀로 쓰인 단어일 때만 건너뛴다
+        fun loneQuantifier(sg: Seg) = sg.unknown && sg.e - sg.s == 1 && text[sg.s] == '다' && tok.isWordStart(sg.s) && tok.isWordEnd(sg.e)
+        fun skippable(sg: Seg) = if (sg.unknown) loneQuantifier(sg)
+            else !sg.isNum && (sg.onlyRoles(Role.NOISE, Role.CONJ) || text.substring(sg.s, sg.e) in QUANTIFIERS)
+
+        // 부상 맥락: 아픈 관절이 말해졌는가 — "무릎 아파서 스쿼트 못하는데"의 못하는데는 "쉬운 변형을 달라"가 아니라 "그 운동은 못 한다"
+        val injuryContext = segs.any { it.has(Role.CUE) } && segs.any { it.has(Role.JOINT) }
+        val affirmed = segs.any { sg -> !sg.unknown && !sg.isNum && text.substring(sg.s, sg.e) in AFFIRM_KEYS }
+
+        /** 가장 가까운 비건너뜀 조각(step 방향). 없으면 -1 */
+        fun nearestContent(from: Int, step: Int): Int {
+            var j = from + step
+            while (j in segs.indices && skippable(segs[j])) j += step
+            return if (j in segs.indices) j else -1
+        }
+
+        /**
+         * 같은 표지가 여러 읽기를 가지면 시도할 순서. 영어 "no/never" 가 장비 바로 뒤에 오고 뒤에 장비·운동이 없으면
+         * ("cables yes, barbells no, biceps") 앞의 장비를 부정하는 말이다. 쉼표가 사라진 토큰열이라 구조로 알아본다.
+         */
+        fun orderedNegs(idx: Int, negs: List<Term>): List<Term> {
+            val key = text.substring(segs[idx].s, segs[idx].e)
+            if (key !in POST_NEG_KEYS || idx == 0) return negs
+            val prev = segs[idx - 1]
+            if (prev.unknown || prev.isNum || !prev.has(Role.EQUIP) || consumed[idx - 1]) return negs
+            val nxt = nearestContent(idx, 1)
+            // "cables no, dumbbells yes" — 뒤 장비가 긍정 단서("yes")를 달고 있으면 "no" 는 앞 장비의 것이다
+            val nextAffirmed = nxt >= 0 && nxt + 1 in segs.indices && !segs[nxt + 1].unknown && !segs[nxt + 1].isNum && text.substring(segs[nxt + 1].s, segs[nxt + 1].e) in AFFIRM_KEYS
+            if (nxt >= 0 && !nextAffirmed && (segs[nxt].unknown || segs[nxt].has(Role.EQUIP) || segs[nxt].has(Role.NAME))) return negs
+            if (!affirmed && segs.subList(0, idx - 1).none { it.has(Role.EQUIP) }) return negs
+            return listOf(Term(Role.NEG, targetBefore = true)) + negs
+        }
+
+        /** 부정 표지 idx 에서 [before] 방향(앞이면 왼쪽)으로 같은 절 안(다른 부정 표지·숫자 전, 모르는 글자 조각까지 세어 최대 14조각)의 아직 안 쓴 장비 조각. 없으면 null */
+        fun equipmentInClause(idx: Int, before: Boolean): Int? {
+            val step = if (before) -1 else 1
+            var j = idx + step
+            var guard = 0
+            while (j in segs.indices && guard++ < 14) {
+                val sg = segs[j]
+                if (!sg.unknown && (sg.isNum || sg.has(Role.NEG))) return null
+                if (!sg.unknown && !sg.isNum && !consumed[j] && sg.has(Role.EQUIP)) return j
+                j += step
+            }
+            return null
+        }
+
+        /** "무릎 아파서 스쿼트 못하는데", "허리 때문에 바벨 못해" — 못 한다는 말이 장비를 가리키거나 부상 맥락이면 그 대상은 제외 대상이다 */
+        fun cantDoAsNeg(idx: Int): Term? {
+            val key = text.substring(segs[idx].s, segs[idx].e)
+            val latin = key.isNotEmpty() && key[0].code < 0x250
+            val t = nearestContent(idx, if (latin) 1 else -1)
+            if (t < 0 || segs[t].isNum) return null
+            // 장비를 꾸미는 모르는 말이 끼면("ケトルベルは握力的に無理") 가까운 장비를 대상으로 본다
+            if (segs[t].unknown) return if (equipmentInClause(idx, !latin) != null) Term(Role.NEG, targetBefore = !latin, avail = true) else null
+            val ok = segs[t].has(Role.EQUIP) || (injuryContext && segs[t].has(Role.NAME))
+            return if (ok) Term(Role.NEG, targetBefore = !latin, avail = true) else null
+        }
+
+        // 장비가 쓸 수 없다(점유·고장·금지)고 말해졌는가 — "바벨 다 쓰고 있어서 데드리프트 대신" 의 대안은 그 장비로 하던 운동의 다른 장비 버전이다
+        var unavailableEquipment = false
+        val altKeys = ArrayList<SigKey>()
+        /** 질의에 아직 부정되지 않은 바벨 요청이 있는가("barbell but no rack" — 랙이 없다는 말이 바벨 전체를 빼라는 뜻이 아니다) */
+        fun barbellRequested() = segs.indices.any { i -> !consumed[i] && !segs[i].unknown && !segs[i].isNum && segs[i].terms!!.any { it.role == Role.EQUIP && Equipment.BARBELL in it.equipment } }
 
         // 1) 부정: 표지 + 대상
-        for (idx in segs.indices) {
-            val neg = segs[idx].terms?.firstOrNull { it.role == Role.NEG } ?: continue
-            if (consumed[idx]) continue
+        fun negAt(idx: Int, neg: Term, avail: Boolean): Boolean {
+            // "bored of normal squats, variation ideas" — 질린 운동의 변형을 달라는 말이다. 질렸다는 말이 그 운동을 빼라는 뜻이 아니다
+            if (text.substring(segs[idx].s, segs[idx].e) in BOREDOM_KEYS && segs.any { sg -> !sg.unknown && !sg.isNum && text.substring(sg.s, sg.e) in VARIATION_KEYS }) return false
             // "背中の肉をなくしたい" — 군살·처짐을 없애고 싶다는 목표다. 그 부위를 빼라는 부정이 아니다(앞의 군살 개념은 긍정 목표로 둔다).
             if (!neg.instead && text.substring(segs[idx].s, segs[idx].e) in REDUCE_KEYS) {
                 var p = idx - 1
                 while (p >= 0 && skippable(segs[p])) p--
-                if (p >= 0 && !segs[p].unknown && !segs[p].isNum && segs[p].terms!!.any { it.role == Role.CONCEPT && it.concept != null && it.concept.id in FAT_GOAL_IDS }) { consumed[idx] = true; continue }
+                if (p >= 0 && !segs[p].unknown && !segs[p].isNum && segs[p].terms!!.any { it.role == Role.CONCEPT && it.concept != null && it.concept.id in FAT_GOAL_IDS }) { consumed[idx] = true; return true }
             }
             // "ダンベルしか空いてない", "덤벨밖에 없을 때" — "그것밖에 없다"는 그것만 쓸 수 있다는 긍정이다(그 장비를 빼라는 뜻이 아니다)
-            if (idx > 0 && !segs[idx - 1].unknown && !segs[idx - 1].isNum && text.substring(segs[idx - 1].s, segs[idx - 1].e).let { it.endsWith("しか") || it.endsWith("밖에") }) continue
+            if (idx > 0 && !segs[idx - 1].unknown && !segs[idx - 1].isNum && text.substring(segs[idx - 1].s, segs[idx - 1].e).let { it.endsWith("しか") || it.endsWith("밖에") }) return false
             // "ダンベルで代用したい" — 「で」 뒤의 代用 은 앞의 것으로 대신한다는 긍정이다(앞 장비를 빼라는 뜻이 아니다)
-            if (neg.instead && idx > 0 && !segs[idx - 1].unknown && !segs[idx - 1].isNum && text.substring(segs[idx].s, segs[idx].e) == "代用" && text.substring(segs[idx - 1].s, segs[idx - 1].e) == "で") continue
+            if (neg.instead && idx > 0 && !segs[idx - 1].unknown && !segs[idx - 1].isNum && text.substring(segs[idx].s, segs[idx].e) == "代用" && text.substring(segs[idx - 1].s, segs[idx - 1].e) == "で") return false
             // "ローラーが無いときの代わり", "랙 없을 때 대신" — 없다는 표지 바로 뒤에 대신 표지가 이어지면 이 부정은 대안 요청이다
             val insteadHere = neg.instead || run {
                 var j = idx + 1
@@ -387,6 +462,24 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                         while (equipSeg(range.first - 1) && !tok.isWordStart(segs[range.first].s) && !consumed[range.first - 1]) range = (range.first - 1)..range.last
                         while (equipSeg(range.last + 1) && !tok.isWordStart(segs[range.last + 1].s) && !consumed[range.last + 1]) range = range.first..(range.last + 1)
                     }
+                    // "bench, chest alternatives" — 대안을 물은 대상이 부위·목표(chest)면 그것으로 끝이다. 앞에 놓인 벤치는 쉼표 너머 다른 절이다
+                    if (targets.isNotEmpty() && insteadHere && !sawConj && segs[targets.first().first].let { !it.unknown && it.has(Role.CONCEPT) && !it.has(Role.NAME) && !it.has(Role.EQUIP) }) break
+                    // "케이블 머신", "cable machine" — 구체 장비 뒤(앞)에 띄어 쓴 일반 머신("머신·기구")은 같은 기구의 설명이다. 따로 대상으로 잡으면 머신 전체가 빠진다.
+                    if (!sg.unknown && sg.has(Role.EQUIP) && range.all { i -> !segs[i].unknown && segs[i].has(Role.EQUIP) }) {
+                        fun machineOnly(i: Int) = i in segs.indices && !consumed[i] && !segs[i].unknown && !segs[i].isNum &&
+                            segs[i].terms!!.filter { it.role == Role.EQUIP }.let { eq -> eq.isNotEmpty() && eq.all { it.equipment == setOf(Equipment.MACHINE) } }
+                        val rangeIsMachineOnly = range.all { machineOnly(it) }
+                        fun specificEquip(i: Int) = i in segs.indices && !consumed[i] && !segs[i].unknown && !segs[i].isNum && segs[i].has(Role.EQUIP) && !machineOnly(i)
+                        if (!rangeIsMachineOnly && machineOnly(range.last + 1)) range = range.first..(range.last + 1)
+                        else if (!rangeIsMachineOnly && machineOnly(range.first - 1) && step < 0) range = (range.first - 1)..range.last
+                        else if (rangeIsMachineOnly && specificEquip(range.first - 1)) range = (range.first - 1)..range.last
+                        else if (rangeIsMachineOnly && specificEquip(range.last + 1)) range = range.first..(range.last + 1)
+                    }
+                    // "smith machine is down" — 스미스 머신은 일반 머신 부정이 아니라 기구 이름 하나다
+                    if (!sg.unknown && sg.has(Role.EQUIP) && range.first - 1 >= 0 && !consumed[range.first - 1]) {
+                        val pv = segs[range.first - 1]
+                        if (!pv.unknown && !pv.isNum && pv.onlyRoles(Role.NAME) && text.substring(pv.s, pv.e) in MACHINE_NAME_KEYS) range = (range.first - 1)..range.last
+                    }
                     if (targets.isNotEmpty()) {
                         // 이어지는 대상은 접속어(や·と·도·and)가 있거나, 쉼표·공백으로 나열된 별개 단어일 때만 (스쿼트, 런지 없이)
                         val laterStart = if (step < 0) segs[cursor].s else segs[range.first].s
@@ -406,13 +499,19 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                 return targets
             }
             var cueOnly = false
+            var realTarget = false
             fun resolveAll(targets: List<IntRange>): Boolean {
                 var any = false
                 for (r in targets) {
                     val before = excludeKeys.size
-                    if (resolveTarget(segs, r, text, excludeEquip, excludeKeys, consumed, negConcepts, negJoints, insteadHere, insteadConcepts)) {
+                    val equipBefore = excludeEquip.size
+                    if (resolveTarget(segs, r, text, excludeEquip, excludeKeys, consumed, negConcepts, negJoints, insteadHere, insteadConcepts, avail, barbellRequested())) {
                         any = true
+                        if (!segs[r.first].unknown) realTarget = true
+                        if (avail && (excludeEquip.size > equipBefore || excludeKeys.subList(before, excludeKeys.size).any { it.key in MACHINE_NAME_KEYS })) unavailableEquipment = true
                         if (insteadHere) similarKeys.addAll(excludeKeys.subList(before, excludeKeys.size))
+                        // 점유·고장 말(avail)이 아닌 진짜 대안 표지("대신", "の代わり")가 가리킨 운동 이름
+                        if (insteadHere && !avail) altKeys.addAll(excludeKeys.subList(before, excludeKeys.size))
                     }
                     else if (r.any { segs[it].has(Role.JOINT) || segs[it].has(Role.CUE) }) { cueFlag = true; cueOnly = true }
                 }
@@ -421,8 +520,38 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             var resolved = resolveAll(collectTargets(if (neg.targetBefore) -1 else 1))
             // "pull up alternatives for home / for bad knees" — "alternatives for" 뒤의 말이 운동·장비가 아니라 상황(집·부상)이면 대안을 물은 대상은 앞에 있다
             if (!resolved && neg.instead && !neg.targetBefore) resolved = resolveAll(collectTargets(-1))
+            // "덤벨 있는 곳이 꽉 차서", "ダンベル置き場が取り合いで使えない" — 쓸 수 없다는 말 앞에 장비를 꾸미는 모르는 말이 끼어 대상이 이름 없는 덩어리뿐이면, 같은 절의 가까운 장비가 쓸 수 없는 대상이다
+            if (avail && !realTarget) equipmentInClause(idx, neg.targetBefore)?.let { i ->
+                segs[i].terms!!.firstOrNull { it.role == Role.EQUIP }?.let { t -> excludeEquip.addAll(if (t.equipment.size > 1) t.equipment - Equipment.MACHINE else t.equipment) }
+                consumed[i] = true
+                unavailableEquipment = true
+                resolved = true
+            }
             val any = resolved || cueOnly
             if (any) consumed[idx] = true
+            return any
+        }
+        for (idx in segs.indices) {
+            val terms = segs[idx].terms ?: continue
+            if (consumed[idx]) continue
+            val negs = terms.filter { it.role == Role.NEG }
+            // 같은 표지가 여러 부정 읽기를 가져도 첫 읽기만 쓴다(기존 동작) — 뒤 읽기들은 방향·대안 여부만 다른 중복 등록이라 결과를 바꾸면 안 된다
+            val tries = if (negs.isNotEmpty()) orderedNegs(idx, listOf(negs.first()))
+                else if (terms.any { it.role == Role.LEVEL && it.regress }) listOfNotNull(cantDoAsNeg(idx)) else continue
+            val avail = negs.any { it.avail } || (negs.isEmpty() && tries.isNotEmpty())
+            for (neg in tries) if (negAt(idx, neg, avail)) break
+        }
+
+        // 1.2) 장비가 점유·고장·금지라서 쓸 수 없고 어떤 운동의 "대신"을 물었으면("바벨 다 쓰고 있어서 데드리프트 대신") 대안은 그 운동을 다른 장비로 하는 것이다.
+        // 운동 이름을 통째로 빼면 덤벨·케틀벨 데드리프트까지 사라지므로, 이름은 찾을 대상(개념)으로 바꾸고 쓸 수 없는 장비만 뺀다.
+        if (unavailableEquipment && altKeys.isNotEmpty()) {
+            // 약어·접두("dl", "데드")는 다른 운동 이름("dead bug")에도 걸리므로, 같은 계열의 더 긴 표기가 있는 짧은 표기는 뺀다
+            val family = altKeys.filter { it.key !in MACHINE_NAME_KEYS && it.key.length >= 3 && altKeys.none { o -> o.key.length > it.key.length && o.key.startsWith(it.key) } }
+            if (family.isNotEmpty()) {
+                excludeKeys.removeAll { k -> altKeys.any { it === k } }
+                similarKeys.clear()
+                insteadConcepts.add(Concept("altfamily:" + family.first().key, emptySet(), emptySet(), family, emptyList(), emptySet(), emptyList(), true, false, false, family))
+            }
         }
 
         // 1.5) 부정된 관절("무릎 빼고", "without knees")은 그 관절의 부상 프로필로 — 이름 검색이 아니라 부담 큰 동작을 피한다
@@ -517,6 +646,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         var jointPlain = false
         var loneModifier = false
         var timeOnlyNumbers = true
+        val inventory = INVENTORY_PHRASES.any { text.contains(it) } ||
+            segs.any { sg -> !sg.unknown && !sg.isNum && sg.has(Role.NOISE) && text.substring(sg.s, sg.e).let { k -> k in HAVE_KEYS || HAVE_ENDINGS.any { k.endsWith(it) } } }
+        val hasEquipSeg = segs.indices.any { i -> !consumed[i] && !segs[i].unknown && !segs[i].isNum && segs[i].has(Role.EQUIP) }
 
         var idx = 0
         while (idx < segs.size) {
@@ -541,14 +673,20 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                     val terms = sg.terms!!
                     val concept = refined[idx] ?: terms.firstOrNull { it.role == Role.CONCEPT }?.concept
                     if (concept != null) concepts.add(concept)
-                    terms.firstOrNull { it.role == Role.EQUIP }?.let { equipments.addAll(it.equipment) }
+                    terms.firstOrNull { it.role == Role.EQUIP }?.let { t ->
+                        // "케이블 머신", "ケーブルマシン" — 구체 장비 바로 뒤의 일반 머신은 같은 기구의 설명이다. 머신 전체를 요청으로 읽으면 "케이블 머신만"에 일반 머신이 섞인다.
+                        val describesPrevious = t.equipment == setOf(Equipment.MACHINE) && idx > 0 && !consumed[idx - 1] && !segs[idx - 1].unknown && !segs[idx - 1].isNum &&
+                            segs[idx - 1].terms!!.any { p -> p.role == Role.EQUIP && p.equipment != setOf(Equipment.MACHINE) }
+                        if (!describesPrevious) equipments.addAll(t.equipment)
+                    }
                     if (terms.any { it.role == Role.HOME }) home = true
                     if (terms.any { it.role == Role.STRETCH }) stretch = true
                     terms.firstOrNull { it.role == Role.LEVEL }?.let { level = it.level; if (it.regress) regress = true }
                     val contentRole = terms.any { it.role == Role.CONCEPT || it.role == Role.EQUIP || it.role == Role.HOME || it.role == Role.STRETCH }
                     if (!contentRole) {
                         // 부위에 붙지 못한 수식어(front squat 의 front)는 이름의 일부 — 한 글자 한자 수식어는 무시
-                        if (terms.any { it.role == Role.NAME }) positiveName = true
+                        // "벤치랑 덤벨만 있어요" — 가진 것을 나열하는 말 속의 벤치·랙은 찾을 운동 이름이 아니라 있는 기구다
+                        if (terms.any { it.role == Role.NAME }) { if (!(inventory && hasEquipSeg && isInventoryProp(terms, text.substring(sg.s, sg.e)))) positiveName = true }
                         else if (terms.any { it.role == Role.MODIFIER } && sg.e - sg.s >= 2) loneModifier = true
                         else if (terms.any { it.role == Role.JOINT }) jointPlain = true
                     }
@@ -679,12 +817,30 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         return out
     }
 
+    /** 벤치·랙처럼 운동이 아니라 기구인 이름 조각인가 */
+    private fun isInventoryProp(terms: List<Term>, key: String): Boolean {
+        val move = terms.firstNotNullOfOrNull { it.move } ?: return false
+        return (move.id == "bench" && key in plainBenchKeys) || move.id == "rack"
+    }
+
+    /** 이름 키가 장비 이름으로 시작하면 그 장비("바벨컬" → 바벨, "cable crossover" → cable). 머신·맨몸은 뺀다 — 한 기구가 아니라 부류라서 이름 앞에 붙어도 그 부류 전체를 뜻하지 않는다. */
+    private fun equipmentPrefix(key: String): Equipment? =
+        prefixEquipment.firstOrNull { key.length > it.first.length && key.startsWith(it.first) }?.second
+
+    private val prefixEquipment: List<Pair<String, Equipment>> by lazy {
+        ExerciseSearchLexicon.equipmentTerms.entries
+            .filter { (k, v) -> k.length >= 2 && v.size == 1 && v.first() in PREFIX_EQUIPMENT }
+            .map { (k, v) -> k to v.first() }
+            .sortedByDescending { it.first.length }
+    }
+
     /** 부정 대상 하나를 해석해 제외 조건에 반영한다. 반영했으면 true. */
     private fun resolveTarget(
         segs: List<Seg>, range: IntRange, text: String,
         excludeEquip: MutableSet<Equipment>, excludeKeys: MutableList<SigKey>, consumed: BooleanArray,
         negConcepts: MutableList<Concept>, negJoints: MutableSet<Joint>,
-        instead: Boolean = false, insteadConcepts: MutableList<Concept> = ArrayList()
+        instead: Boolean = false, insteadConcepts: MutableList<Concept> = ArrayList(),
+        avail: Boolean = false, barbellRequested: Boolean = false
     ): Boolean {
         val first = segs[range.first]
         if (first.unknown) {
@@ -720,20 +876,30 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         val move = terms.firstNotNullOfOrNull { it.move }
         if (move != null) {
             val after = text.substring(minOf(text.length, segs[range.last].e))
-            if (move.id == "bench" && text.substring(first.s, first.e) in plainBenchKeys) {
+            // "alternatives to bench"(벤치프레스 대안)는 기구가 없다는 말이 아니라 운동을 빼 달라는 말이다 — 벤치가 점유·고장(avail)이거나 "없다"일 때만 기구 부재로 읽는다
+            if (move.id == "bench" && text.substring(first.s, first.e) in plainBenchKeys && (!instead || avail)) {
                 // "ベンチがなくても", "no bench" — 벤치가 없으면 벤치·랙이 필요한 바벨·머신·케이블 운동은 못 한다(벤치프레스를 빼는 것과는 다르다: 그쪽은 아래 move.keys 로만 제외)
                 excludeEquip.addAll(BENCHLESS_EXCLUDED_EQUIPMENT)
                 excludeKeys.addAll(move.keys)
             } else if (move.id == "rack" && !after.startsWith("pull") && !after.startsWith("ぷる") && !after.startsWith("풀")) {
-                // "스쿼트 랙 없이" — 랙이 없으면 바벨 스쿼트를 못 한다. 바벨을 빼고 랙 없이 하는 스쿼트류를 보여 준다.
-                excludeEquip.add(Equipment.BARBELL)
-                lex.conceptById["squatany"]?.let { insteadConcepts.add(it) }
+                if (barbellRequested) {
+                    // "바벨은 있는데 랙이 없어" — 바벨은 쓸 수 있다. 랙이 있어야 하는 스쿼트류만 빼고 랙 없이 하는 바벨 운동(데드리프트·힙 쓰러스트·로우)을 보여 준다.
+                    lex.moveGroups["squat"]?.let { excludeKeys.addAll(it.keys) }
+                    // 랙 없이 못 하는 스쿼트 이름이 질의에 같이 있으면("랙이 없어서 바벨 스쿼트 못함") 찾는 운동이 아니라 빼는 운동이다
+                    for (i in segs.indices) if (!consumed[i] && !segs[i].unknown && !segs[i].isNum && segs[i].terms!!.any { it.move?.id == "squat" }) consumed[i] = true
+                } else {
+                    // "스쿼트 랙 없이" — 랙이 없으면 바벨 스쿼트를 못 한다. 바벨을 빼고 랙 없이 하는 스쿼트류를 보여 준다.
+                    excludeEquip.add(Equipment.BARBELL)
+                    lex.conceptById["squatany"]?.let { insteadConcepts.add(it) }
+                }
             } else excludeKeys.addAll(move.keys)
             consumed[range.first] = true
             return true
         }
         if (terms.any { it.role == Role.NAME } || compound) {
             excludeKeys.add(SigKey(key, false))
+            // "케이블 크로스오버 점검중", "바벨컬은 못하겠어" — 쓸 수 없다는 말이 장비를 앞세운 이름에 걸리면 그 장비도 쓸 수 없다는 뜻이다(취향·"말고"에서는 아니다)
+            if (avail) equipmentPrefix(key)?.let { excludeEquip.add(it) }
             // 같은 동작의 다른 언어 표기도 함께 제외 (데드리프트 → deadlift, 데드리프트)
             synonyms.index[key].orEmpty().forEach { g ->
                 g.expansions.forEach { exp -> SearchText.strictKey(exp).takeIf { it.length >= 3 }?.let { excludeKeys.add(SigKey(it, false)) } }
@@ -851,6 +1017,21 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private val BEFORE_LATIN = listOf("before", "ahead of", "prior to").map { SearchText.strictKey(it) }.toSet()
         private val BEFORE_CJK = listOf("前に", "前の", "前には", "前で", "前から", "전에", "전엔", "이전에", "하기 전에", "하기전에").map { SearchText.strictKey(it) }.toSet()
         /** "machines are all busy" 의 all 처럼 이름과 철자가 겹쳐도 수량 표현이면 부정 대상을 찾을 때 건너뛴다 */
+        /** "있어요/have/あります" — 가진 것을 말하는 문장 */
+        private val HAVE_KEYS = listOf("있어요", "있어", "있음", "있는데", "있습니다", "있다", "있고", "있네", "있어서", "have", "got", "has", "あります", "ある", "あるだけ", "ありました", "持ってる", "持ってます", "持っている", "持ってい", "있는", "있어도").map { SearchText.strictKey(it) }.toSet()
+        /** "그것밖에 없다/しかない/만 있다" — 가진 것을 한정하는 말(장비 용어에 붙어 한 덩어리가 되기도 한다) */
+        private val INVENTORY_PHRASES = listOf("밖에없", "만있", "만가지고", "만갖고", "만보유", "しかない", "しかなく", "しかな", "だけある", "だけあって", "だけで", "のみ", "justhave", "onlyhave", "onlygot").map { SearchText.strictKey(it) }
+        /** "only have", "i've got" 처럼 have/got 으로 끝나는 군더더기 */
+        private val HAVE_ENDINGS = listOf("have", "has", "got", "있어요", "있음", "있어", "あります").map { SearchText.strictKey(it) }
+        private val BOREDOM_KEYS = listOf("bored of", "bored with", "tired of", "sick of", "fed up with").map { SearchText.strictKey(it) }.toSet()
+        private val VARIATION_KEYS = listOf("variation", "variations", "variety", "varieties", "변형", "バリエーション").map { SearchText.strictKey(it) }.toSet()
+        private val PREFIX_EQUIPMENT = setOf(Equipment.BARBELL, Equipment.DUMBBELL, Equipment.CABLE, Equipment.KETTLEBELL, Equipment.RESISTANCE_BAND)
+        /** 장비이지만 장비 사전에는 없는 기구 이름 — 이게 점유·고장이라는 말은 장비를 쓸 수 없다는 말이다 */
+        private val MACHINE_NAME_KEYS = listOf("스미스머신", "스미스", "smith", "smith machine", "スミス", "スミスマシン").map { SearchText.strictKey(it) }.toSet()
+        /** 뒤에서 앞 장비를 부정할 수 있는 영어 표지("barbells no") */
+        private val POST_NEG_KEYS = listOf("no", "never").map { SearchText.strictKey(it) }.toSet()
+        /** "cables yes, barbells no" 의 긍정 단서 */
+        private val AFFIRM_KEYS = listOf("yes", "yeah", "yep", "yup", "ok", "okay", "fine", "allowed", "permitted").map { SearchText.strictKey(it) }.toSet()
         private val QUANTIFIERS = listOf("all", "every", "both", "everything", "each").map { SearchText.strictKey(it) }.toSet()
         /** "なくしたい"·"없애고 싶다" 처럼 없앤다는 동사의 NEG 표기 — 군살 개념 뒤에서는 부정이 아니라 목표다 */
         private val REDUCE_KEYS = listOf("なく", "なくし", "無く", "無くし", "なくす", "無くす", "なくせ", "없애", "없애고", "없애기").map { SearchText.strictKey(it) }.toSet()

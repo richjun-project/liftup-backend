@@ -106,6 +106,9 @@ internal object ExerciseSearchLexicon {
         "런닝머신|런닝|ランニングマシーン => treadmill|트레드밀|러닝머신|トレッドミル|ランニングマシン",
                 "프리쳐 컬|프리처 컬|프리쳐컬|프리처컬|프리쳐|프리처|preacher curl|preacher|プリーチャーカール|プリーチャー|プリチャーカール => 프리처 컬|preacher curl|プリーチャーカール",
         "와이드 스쿼트|와이드스쿼트|wide squat|wide stance squat|wide stance|ワイドスクワット|ワイドスタンススクワット|ワイドスタンス => 스모 스쿼트|sumo squat|スモウスクワット|와이드 스탠스",
+        "trap bar dl|trapbar dl|trap bar dead|hex bar dl|hexbar dl|트랩바 디엘 => 트랩 바 데드리프트|trap bar deadlift|トラップバーデッドリフト",
+        "스핀 바이크|스핀바이크|스핀 자전거|スピン バイク => 스피닝 바이크|spin bike|スピンバイク",
+        "clamshell|clamshells|clam shell|클램쉘|클램셸|クラムシェル => 클램|clam|クラムシェル",
         "hex bar deadlift|hex bar|hexbar|헥스바 데드리프트|헥스바|헥스 바|ヘックスバー|ヘックスバーデッドリフト|트랩바 => 트랩 바 데드리프트|trap bar deadlift|トラップバーデッドリフト",
         "리버스 펙덱|리버스펙덱|reverse pec deck|reverse fly machine|reverse machine fly|rear delt machine| リバースペックデック|リバースフライマシン|리어델트 머신|リアデルトマシン =>> 리어 델트 플라이|rear delt fly|reverse fly|리버스 머신 플라이|reverse machine fly|リバースマシンフライ|リアデルトフライ|リバースフライ",
         "sldl|싱글 레그 데드리프트|single leg deadlift|ワンレッグデッドリフト|シングルレッグデッドリフト => 싱글 레그 데드리프트|single leg deadlift|stiff leg deadlift|スティッフレッグ",
@@ -125,7 +128,7 @@ internal object ExerciseSearchLexicon {
         "러닝|running|ランニング|조깅|jogging|jog|ジョギング => running|jogging|러닝|ランニング|ジョギング",
         "어깨|숄더|shoulder|ショルダー|肩 => 어깨|숄더|shoulder|ショルダー",
         "가슴|체스트|chest|チェスト|胸 => 가슴|체스트|chest|チェスト",
-        "삼두|삼두근|트라이셉스|triceps|tricep|トライセプス|上腕三頭筋 => 삼두|트라이셉스|triceps|トライセプス",
+        "삼두|삼두근|트라이셉스|트라이셉|triceps|tricep|トライセプス|上腕三頭筋 => 삼두|트라이셉스|triceps|トライセプス",
         "이두|이두근|바이셉스|biceps|bicep|バイセップス|上腕二頭筋 => 이두|바이셉스|biceps|バイセップス",
         "엉덩이|둔근|글루트|glute|glutes|グルート|お尻|臀筋 => 글루트|힙|glute|グルート|ヒップ",
         "복근|abs|abdominal|アブ|腹筋 => 복근|abdominal|アブドミナル|crunch",
@@ -257,7 +260,7 @@ internal object ExerciseSearchLexicon {
         addAll(equip("맨몸|맨몸운동|bodyweight|body weight|no equipment|noequipment|calisthenics|自重|器具なし|道具なし|徒手|장비없이|기구없이|without equipment|without any equipment|without equipments|no equipments|no equipment needed|equipment free|equipmentless|w/o equipment|no gear|without gear|no weights|without weights|no gym|without gym|gym free|no gym needed|器具を使わない|器具を使わずに|道具を使わない|道具を使わずに|器具無し|道具無し|器具不要|道具不要|장비 안 쓰는|장비 안 쓰고|기구 안 쓰는|기구 안 쓰고|장비 없는|기구 없는|도구 없이|도구 없는|기구 하나 없이|기구 하나도 없이|아무 기구 없이|아무 기구도 없이|장비 하나 없이|장비 하나도 없이|아무 장비 없이|아무 장비도 없이|도구 하나 없이|아무 도구 없이|아무것도 없이|아무것도 없는|맨손으로|何もなしで|何も使わずに|何も使わない|何もいらない|器具一つなしで|器具ひとつなしで|器具も何もなしで|道具も何もなしで|no equipment at all|zero equipment|without any gear|nothing at all|with nothing|using nothing", Equipment.BODYWEIGHT))
         addAll(equip(ExerciseSearchLexiconRound3.TOWEL + "|밴드|저항밴드|저항 밴드|고무밴드|band|bands|resistance band|バンド|チューブ|レジスタンスバンド", Equipment.RESISTANCE_BAND))
         addAll(equip("케틀벨|kettlebell|ケトルベル", Equipment.KETTLEBELL))
-        addAll(equip("프리웨이트|프리 웨이트|フリーウェイト|フリーウエイト|フリーウェート", Equipment.DUMBBELL, Equipment.BARBELL, Equipment.KETTLEBELL))
+        addAll(equip("프리웨이트|프리 웨이트|자유중량|자유 중량|자유중량 운동|自由重量|フリーウェイト|フリーウエイト|フリーウェート", Equipment.DUMBBELL, Equipment.BARBELL, Equipment.KETTLEBELL))
     }.toMap()
 
     /** 오타 허용 매칭 대상 장비 어휘 (자모 기준 6자 이상인 것만 — 짧은 단어는 오탐이 많다) */

@@ -165,7 +165,8 @@ class ExerciseSearchEngine(
         query: String?,
         category: ExerciseCategory? = null,
         equipments: Set<Equipment>? = null,
-        locale: String? = null
+        locale: String? = null,
+        treatAsExcluded: Set<Equipment> = emptySet()
     ): SearchOutcome {
         val raw = query.orEmpty()
         val norm = if (raw.isBlank()) "" else SearchText.normalize(raw).trim()
@@ -174,11 +175,12 @@ class ExerciseSearchEngine(
             append(norm).append('\u0000').append(category?.name).append('\u0000')
             equipments?.map { it.name }?.sorted()?.joinTo(this, ",")
             append('\u0000').append(if (norm.isEmpty()) loc else "")
+            if (treatAsExcluded.isNotEmpty()) append('\u0000').append(treatAsExcluded.map { it.name }.sorted().joinToString(","))
         }
         synchronized(cache) { cache[cacheKey] }?.let { return SearchOutcome(ArrayList(it), true) }
 
         val budget = Budget(budgetNanos)
-        val result = compute(raw, norm, category, equipments, locale, budget)
+        val result = compute(raw, norm, category, equipments, locale, budget, treatAsExcluded)
         // 시간 예산을 넘겨 일부만 훑은 결과는 캐시하지 않는다 — 한 번 느렸다고 TTL 동안 잘린 결과가 고정되지 않게
         if (!budget.exceeded) synchronized(cache) { cache[cacheKey] = result }
         return SearchOutcome(ArrayList(result), !budget.exceeded)
@@ -212,7 +214,8 @@ class ExerciseSearchEngine(
         query: String?,
         category: ExerciseCategory? = null,
         equipments: Set<Equipment>? = null,
-        forHints: Boolean = false
+        forHints: Boolean = false,
+        treatAsExcluded: Set<Equipment> = emptySet()
     ): SemanticConstraint? {
         val raw = query.orEmpty()
         val norm = if (raw.isBlank()) "" else SearchText.normalize(raw).trim()
@@ -220,8 +223,9 @@ class ExerciseSearchEngine(
         val tok = SearchText.tokenize(raw)
         if (tok.words.isEmpty() || tok.strict in exactNames) return null
         val analysis = analyzer.analyze(tok)
-        val plan = analysis.plan
-        if (plan.mode == Mode.BROWSE) return null
+        val rawPlan = analysis.plan
+        if (rawPlan.mode == Mode.BROWSE) return null
+        val plan = if (treatAsExcluded.isNotEmpty() && rawPlan.mode == Mode.INTENT) rawPlan.withEquipmentExcluded(treatAsExcluded) else rawPlan
         val pool = filtered(category, equipments)
         // "수건으로 …"처럼 장비 자리에 쓴 생활 사물(밴드 대용) — 힌트 후보의 장비 범위를 홈 장비로 넓혀도 되는 경우
         val substituteObject = forHints && plan.home && SUBSTITUTE_OBJECT_KEYS.any { tok.strict.contains(it) }
@@ -248,6 +252,8 @@ class ExerciseSearchEngine(
             override val requestedEquipment: Set<Equipment> =
                 if (SUBSTITUTE_OBJECT_KEYS.any { tok.strict.contains(it) } || plan.hasUnknown || plan.hasExclusions) emptySet() else plan.equipments
             override fun wholeTokenNameMatch(doc: ExerciseSearchDoc): Boolean = byId[doc.id]?.let { d -> wholeTokenMatch(d, contentTokens) } ?: false
+            // INTENT 에서 사전이 읽은 장비는 하드 조건이다 — 사전이 모르는 말(plan.hasUnknown)이 있을 때만 그 읽기를 의심할 수 있다(LLM 제외와 부딪히는지는 HybridSearch 가 본다)
+            override val lexiconEquipment: Set<Equipment> = if (plan.mode == Mode.INTENT && plan.hasUnknown) plan.equipments else emptySet()
             override val unrecognized: Boolean = plan.hasUnknown
             override val injuryAware: Boolean = plan.injuries.isNotEmpty()
             override val homeBodyweightFirst: Boolean = plan.home && plan.equipments.isEmpty() && equipments.isNullOrEmpty()
@@ -303,7 +309,8 @@ class ExerciseSearchEngine(
         category: ExerciseCategory?,
         equipments: Set<Equipment>?,
         locale: String?,
-        budget: Budget
+        budget: Budget,
+        treatAsExcluded: Set<Equipment> = emptySet()
     ): List<ExerciseSearchHit> {
         val pool = filtered(category, equipments)
         if (norm.isEmpty()) return browseSorted(pool, locale)
@@ -315,7 +322,7 @@ class ExerciseSearchEngine(
 
         // 질의가 어떤 운동의 이름(어느 언어든)과 정확히 같으면 해석할 것 없이 그 이름으로 찾는다 ("AB 턱", "Barbell good morning")
         val analysis = if (tok.strict in exactNames) null else analyzer.analyze(tok)
-        val plan = analysis?.plan ?: QueryPlan.nameOnly(tok.words)
+        val plan = (analysis?.plan ?: QueryPlan.nameOnly(tok.words)).let { if (treatAsExcluded.isNotEmpty() && it.mode == Mode.INTENT) it.withEquipmentExcluded(treatAsExcluded) else it }
         // "벤치프레스 보조로 삼두 키우기"처럼 어떤 운동을 돕는 목표 말투면 그 운동이 아니라 목표 부위 운동을 찾는다(그 운동 자체는 뒤로)
         if (analysis != null && plan.mode == Mode.NAME) goalSupport(raw, analysis, plan, pool)?.let { g ->
             val out = searchIntent(g.plan, pool).map { h -> if (h.doc.id in g.liftIds) ExerciseSearchHit(h.doc, h.score - GOAL_LIFT_PENALTY) else h }
