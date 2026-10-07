@@ -62,6 +62,13 @@ class SearchReviewRound2Test {
     }
 
     @Test
+    fun `입력 상한에서 단어 중간이 잘리면 그 조각 단어는 버린다`() {
+        assertEquals("dumbbell curl row", ExerciseSearchIndexService.normalizeQuery("dumbbell curl row ".repeat(450)))
+        assertEquals("squat", ExerciseSearchIndexService.normalizeQuery("squat " + "x".repeat(2000)).orEmpty().substringBefore(' '))
+        assertEquals(ExerciseSearchIndexService.MAX_QUERY_CHARS, ExerciseSearchIndexService.normalizeQuery("a".repeat(100_000))!!.length)
+    }
+
+    @Test
     fun `부정어는 반복해도 중복으로 지우지 않는다`() {
         assertEquals("no squat no lunge", ExerciseSearchIndexService.normalizeQuery("no squat no lunge"))
         assertEquals("Squat bench", ExerciseSearchIndexService.normalizeQuery("Squat squat bench SQUAT"))

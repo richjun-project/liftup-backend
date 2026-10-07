@@ -383,9 +383,15 @@ class ExerciseSearchIndexService(
         /** 제어문자 제거·공백 정리·반복 단어 제거·길이(160자)와 단어 수(14개) 제한. 비면 null(브라우즈) */
         fun normalizeQuery(raw: String?): String? {
             if (raw.isNullOrBlank()) return null
-            val cleaned = buildString(raw.length.coerceAtMost(MAX_QUERY_CHARS * 4)) {
-                for (c in raw.take(MAX_QUERY_CHARS * 4)) append(if (c.isISOControl()) ' ' else c)
+            val limit = MAX_QUERY_CHARS * 4
+            var cleaned = buildString(raw.length.coerceAtMost(limit)) {
+                for (c in raw.take(limit)) append(if (c.isISOControl()) ' ' else c)
             }.replace(WHITESPACE, " ").trim()
+            // 입력이 상한에서 단어 중간에 잘렸다면 그 조각 단어는 버린다("…dumbbell c" 같은 가짜 단어가 질의에 남지 않게). 공백 없는 한 덩어리면 그대로 둔다.
+            if (raw.length > limit && !raw[limit].isWhitespace() && !raw[limit - 1].isWhitespace()) {
+                val ws = cleaned.lastIndexOf(' ')
+                if (ws > 0) cleaned = cleaned.substring(0, ws)
+            }
             if (cleaned.isEmpty()) return null
             // 같은 단어의 반복("dumbbell curl row" × 450)은 의미 없이 비용만 키운다 — 중복을 빼고 단어 수를 제한한다.
             // 부정어("no squat no lunge" 의 두 번째 no)는 반복해도 뜻이 있어 남긴다.
