@@ -211,7 +211,8 @@ class ExerciseSearchEngine(
     fun semanticConstraint(
         query: String?,
         category: ExerciseCategory? = null,
-        equipments: Set<Equipment>? = null
+        equipments: Set<Equipment>? = null,
+        forHints: Boolean = false
     ): SemanticConstraint? {
         val raw = query.orEmpty()
         val norm = if (raw.isBlank()) "" else SearchText.normalize(raw).trim()
@@ -225,7 +226,7 @@ class ExerciseSearchEngine(
         val soft = if (plan.injuries.isNotEmpty()) softBits(plan) else null
         var cands = pool.filter { ex == null || !isExcluded(it, plan, ex) }
         if (plan.mode == Mode.INTENT) {
-            val allowedEquip = intentEquipment(plan)
+            val allowedEquip = if (forHints) hintIntentEquipment(plan) else intentEquipment(plan)
             // 스트레칭·모빌리티 의도에서 장비는 "있으면 좋은" 조건 — 그 장비의 스트레칭이 몇 개 없으면 의미 후보를 장비로 거르지 않는다
             if (allowedEquip != null) cands.filter { it.doc.equipment in allowedEquip }
                 .takeIf { it.isNotEmpty() && !(mobilityIntent(plan) && it.count { d -> d.isStretch } < SOFT_EQUIP_MIN_HITS) }?.let { cands = it }
@@ -237,7 +238,15 @@ class ExerciseSearchEngine(
             override fun allows(doc: ExerciseSearchDoc): Boolean = byId[doc.id]?.let { allowed.get(it.index) } ?: false
             override val unrecognized: Boolean = plan.hasUnknown
             override val injuryAware: Boolean = plan.injuries.isNotEmpty()
+            override val lexicalInformative: Boolean = plan.hasIntentSignal || plan.stretch || plan.level != 0 || plan.regress || plan.injuries.isNotEmpty() ||
+                plan.seeds.any { it.isNotEmpty() } || plan.hasUnknown || plan.similarTo.isNotEmpty() || plan.numbers.isNotEmpty() || plan.highReps || plan.combineAll
         }
+    }
+
+    /** 이 문자열이 어떤 운동의 이름(어느 로케일이든)과 정확히 같은가 — LLM 이 말한 이름이 카탈로그에 그대로 있는지 알아볼 때 쓴다 */
+    fun isExactName(text: String): Boolean {
+        val tok = SearchText.tokenize(text)
+        return tok.words.isNotEmpty() && tok.strict in exactNames
     }
 
     /** 브라우즈 순서: 티어 → 인기도 → 로컬라이즈 이름 */
@@ -663,6 +672,13 @@ class ExerciseSearchEngine(
         plan.concepts.any { it.id.startsWith("obj:") } -> OBJECT_EQUIPMENT
         else -> null
     }
+
+    /**
+     * LLM 힌트 후보에 거는 의도 장비 범위 — [intentEquipment] 와 같되, 집이라고 말하면서 사전이 장비로 읽은 말("수건"→밴드)이 있으면 그 장비 하나로 좁히지 않고 홈 장비 전체를 허용한다.
+     * (사전의 장비 해석이 틀릴 수 있는 곳에서 LLM 의 읽기를 살리되, "집·사물만 쓴다"는 범위는 그대로 지킨다)
+     */
+    private fun hintIntentEquipment(plan: QueryPlan): Set<Equipment>? =
+        if (plan.equipments.isNotEmpty() && plan.home) plan.equipments + ExerciseSearchLexicon.homeEquipmentPreference.keys else intentEquipment(plan)
 
     private fun relax(c: QueryLexicon.Concept) = QueryLexicon.Concept(
         c.id + "~relaxed", c.muscles, c.categories, c.sig, c.sig2, c.patterns, c.avoid, false, c.stretch, c.cardio, c.nameWords

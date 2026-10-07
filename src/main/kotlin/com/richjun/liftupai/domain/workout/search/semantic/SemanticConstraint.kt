@@ -17,4 +17,10 @@ interface SemanticConstraint {
 
     /** 부상 관절 조건이 풀려 있는가 — 이때 어휘 순위는 의미 검색이 모르는 정보(관절별 권장·주의 동작)를 담고 있다 */
     val injuryAware: Boolean get() = false
+
+    /**
+     * 어휘 검색이 질의에서 붙들 긍정 신호(개념·장비·집·스트레칭·난이도·부상·이름 조각·모르는 말)가 하나라도 있는가.
+     * false 면 질의가 부정·군더더기뿐이라("no ab wheel, similar effect") 어휘 순위는 인기 순 목록일 뿐 질의와 상관이 없다 — 융합에서 어휘 순위를 믿지 않는다.
+     */
+    val lexicalInformative: Boolean get() = true
 }

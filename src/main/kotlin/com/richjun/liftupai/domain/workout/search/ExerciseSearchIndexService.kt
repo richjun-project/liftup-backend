@@ -9,6 +9,7 @@ import com.richjun.liftupai.domain.workout.repository.ExerciseTranslationReposit
 import com.richjun.liftupai.domain.workout.search.engine.QueryLexicon
 import com.richjun.liftupai.domain.workout.search.ops.SearchSynonymRepository
 import com.richjun.liftupai.domain.workout.search.ops.SynonymLines
+import com.richjun.liftupai.domain.workout.search.rewrite.QueryRewriteSource
 import com.richjun.liftupai.domain.workout.search.semantic.ExerciseVectorStore
 import com.richjun.liftupai.domain.workout.search.semantic.HybridSearch
 import com.richjun.liftupai.domain.workout.search.semantic.QueryVectorSource
@@ -47,7 +48,9 @@ class ExerciseSearchIndexService(
     /** 질의 임베딩 — 없거나 꺼져 있거나 실패하면 어휘 검색만 쓴다(의미 검색은 어휘 결과를 보강할 뿐 대체하지 않는다) */
     private val queryVectors: QueryVectorSource? = null,
     /** 운동 문서 임베딩(리소스) */
-    private val vectorStore: ExerciseVectorStore? = null
+    private val vectorStore: ExerciseVectorStore? = null,
+    /** LLM 질의 해석(트레이너식 힌트·장비 제외) — 없거나 꺼져 있거나 실패하면 하이브리드 결과 그대로다. 의미 검색(하이브리드)이 켜져 있을 때만 쓴다. */
+    private val queryRewriter: QueryRewriteSource? = null
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -121,6 +124,17 @@ class ExerciseSearchIndexService(
 
     /** 엔진의 질의당 시간 예산(테스트에서 줄여 "예산 초과 결과는 캐시하지 않음"을 확인한다) */
     internal var engineBudgetNanos: Long = ExerciseSearchEngine.DEFAULT_BUDGET_NANOS
+
+    /** LLM 해석을 질의 임베딩과 병렬로 가져오는 스레드(네트워크 대기 전용, 요청 폭주 시에도 스레드 수 상한) */
+    private val rewriteExecutor: java.util.concurrent.Executor by lazy {
+        val pool = java.util.concurrent.ThreadPoolExecutor(
+            0, REWRITE_THREADS, 30, java.util.concurrent.TimeUnit.SECONDS, java.util.concurrent.SynchronousQueue(),
+            { r -> Thread(r, "exercise-search-rewrite").apply { isDaemon = true } },
+            // 스레드가 다 차면 호출 스레드에서 돌리지 않고 거절한다 → 호출부가 해석 없이(하이브리드) 진행
+            java.util.concurrent.ThreadPoolExecutor.AbortPolicy()
+        )
+        pool
+    }
 
     private val refresher by lazy {
         Executors.newSingleThreadExecutor { r -> Thread(r, "exercise-search-index-refresh").apply { isDaemon = true } }
@@ -243,7 +257,8 @@ class ExerciseSearchIndexService(
         val hybrid = snap.hybrid
         if (hybrid != null && q != null) {
             // 질의 임베딩이 어떤 이유로든 예외를 던져도 검색은 어휘 결과로 계속된다
-            val result = hybrid.search(q, category, equipments, locale) { runCatching { queryVectors?.embed(q) }.getOrNull() }
+            val rewriter = queryRewriter?.takeIf { it.enabled }
+            val result = hybrid.search(q, category, equipments, locale, rewriter?.let { r -> { r.rewrite(q) } }) { runCatching { queryVectors?.embed(q) }.getOrNull() }
             val ids = result.hits.map { it.doc.id }
             if (result.complete) snap.results.put(key, CachedIds(ids, if (result.degraded) clock() else null))
             return ids
@@ -371,7 +386,7 @@ class ExerciseSearchIndexService(
         val source = queryVectors ?: return null
         if (!source.enabled) return null
         val vectors = try { vectorStore?.get() } catch (e: Exception) { logger.warn("Exercise embeddings unavailable, semantic search is off: {}", e.message); null } ?: return null
-        val hybrid = HybridSearch(engine, vectors)
+        val hybrid = HybridSearch(engine, vectors, executor = rewriteExecutor)
         logger.info("Semantic search enabled: {} of {} exercises have embeddings", hybrid.coveredDocs, engine.size)
         return hybrid
     }
@@ -424,6 +439,7 @@ class ExerciseSearchIndexService(
         private const val FAILURE_BACKOFF_MILLIS = 30 * 1000L
         private const val MAX_REBUILD_ATTEMPTS = 3
         private const val RESULT_CACHE_SIZE = 512
+        private const val REWRITE_THREADS = 16
         private const val DEGRADED_RESULT_TTL_MILLIS = 30 * 1000L
         private const val FALLBACK_LIMIT = 10
         private const val FALLBACK_PER_TOKEN = 30

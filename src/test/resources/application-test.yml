@@ -40,6 +40,8 @@ gemini:
 search:
   semantic:
     enabled: false
+  rewrite:
+    enabled: false
 
 # S3는 테스트에서 실제 호출 없음 — 빈 생성용 더미 자격증명
 # (로컬에선 셸/데몬 환경변수로 우연히 통과했지만 CI 클린 환경에서 컨텍스트 로드 실패했음)

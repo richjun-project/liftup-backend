@@ -8,6 +8,7 @@ import com.richjun.liftupai.domain.workout.entity.MuscleGroup
 import com.richjun.liftupai.domain.workout.entity.RecommendationTier
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchDoc
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchEngine
+import com.richjun.liftupai.domain.workout.search.rewrite.QueryRewrite
 import com.richjun.liftupai.domain.workout.search.semantic.ExerciseVectors
 import com.richjun.liftupai.domain.workout.search.semantic.HybridSearch
 import com.richjun.liftupai.domain.workout.search.semantic.QueryEmbedder
@@ -20,6 +21,8 @@ import java.io.File
  *
  * 실행: ./gradlew test --tests 'eval.oracle.SearchDumpOracleTest' -DsearchDump.in=<eval.json> -DsearchDump.out=<out.json>
  * -DsearchDump.qvec=(질의 원문 → 실수 배열 JSON 파일) 을 주면 어휘 엔진 위에 의미 검색을 섞은 하이브리드 결과를 내고 출력에 "semantic": true 를 적는다.
+ * 거기에 -DsearchDump.rewrites=(질의 원문 → {"hints":[...],"forbid_equipment":[...]} JSON 파일)을 더하면 LLM 질의 해석까지 포함한 전체 파이프라인을 돌리고 "rewrite": true 를 적는다
+ * (질의 해석은 미리 만들어 파일로 받는다 — 테스트는 네트워크를 쓰지 않는다). rewrites 는 qvec 과 함께일 때만 쓴다.
  * 속성이 없으면 아무것도 하지 않는다(일반 테스트 실행에서는 no-op).
  */
 class SearchDumpOracleTest {
@@ -56,16 +59,21 @@ class SearchDumpOracleTest {
             val node = mapper.readTree(File(path))
             node.fields().asSequence().associate { (k, v) -> k to FloatArray(v.size()) { i -> v[i].floatValue() } }
         }
+        // LLM 질의 해석 파일 — 검증은 운영 해석기와 같은 파서(QueryRewrite.parse)로 한다
+        val rewrites: Map<String, QueryRewrite>? = if (qvec == null) null else System.getProperty("searchDump.rewrites")?.takeIf { it.isNotBlank() }?.let { path ->
+            mapper.readTree(File(path)).fields().asSequence().mapNotNull { (k, v) -> QueryRewrite.parse(v.toString(), mapper)?.let { k to it } }.toMap()
+        }
         val hybrid = qvec?.let {
             val vectors = ExerciseVectors.loadDefault() ?: error("exercise embeddings resource not found")
             val warmHybrid = HybridSearch(warm, vectors)
-            repeat(3) { cases.forEach { c -> val q = c["query"].asText(); warmHybrid.search(q, null, null, c["locale"]?.asText()) { qvec[q]?.let(QueryEmbedder::normalize) } } }
+            repeat(3) { cases.forEach { c -> val q = c["query"].asText(); warmHybrid.search(q, null, null, c["locale"]?.asText(), rewrites?.let { r -> { r[q] } }) { qvec[q]?.let(QueryEmbedder::normalize) } } }
             HybridSearch(engine, vectors)
         }
         val f = JsonNodeFactory.instance
         val out = f.objectNode()
         out.put("catalog_size", docs.size)
         if (hybrid != null) out.put("semantic", true)
+        if (hybrid != null && rewrites != null) out.put("rewrite", true)
         val rows = out.putArray("results")
         for (c in cases) {
             val category = c["category"]?.takeIf { !it.isNull && it.asText().isNotBlank() }?.asText()?.let { ExerciseCategory.valueOf(it) }
@@ -74,7 +82,7 @@ class SearchDumpOracleTest {
             val started = System.nanoTime()
             val hits = if (hybrid != null) {
                 val q = c["query"].asText()
-                hybrid.search(q, category, equipments, c["locale"]?.asText()) { qvec!![q]?.let(QueryEmbedder::normalize) }.hits
+                hybrid.search(q, category, equipments, c["locale"]?.asText(), rewrites?.let { r -> { r[q] } }) { qvec!![q]?.let(QueryEmbedder::normalize) }.hits
             } else engine.search(c["query"].asText(), category, equipments, c["locale"]?.asText())
             val micros = (System.nanoTime() - started) / 1000
             val row = rows.addObject()

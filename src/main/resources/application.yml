@@ -68,6 +68,15 @@ search:
     cache-size: 2048
     breaker-failures: 5
     breaker-open-ms: 30000
+  # LLM 질의 해석 — 자연어 질의를 트레이너식 영어 운동 이름 힌트·제외 장비로 바꿔 하이브리드 결과에 섞는다(의미 검색이 켜져 있을 때만 쓰인다).
+  # 실패·시간 초과·차단기 열림이면 하이브리드 결과 그대로. 기본은 꺼짐, prod·local 프로파일에서 켠다.
+  rewrite:
+    enabled: ${QUERY_REWRITE_ENABLED:false}
+    model: ${QUERY_REWRITE_MODEL:gemini-flash-lite-latest}
+    timeout-ms: 2500
+    cache-size: 4096
+    breaker-failures: 5
+    breaker-open-ms: 30000
 
 # OAuth2 소셜 로그인 설정
 oauth:
