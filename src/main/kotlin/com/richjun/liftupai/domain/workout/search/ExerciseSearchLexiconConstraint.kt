@@ -22,6 +22,10 @@ internal object ExerciseSearchLexiconConstraint {
         "no equipment at all", "no equipment whatsoever", "no gear whatsoever", "no gear at all", "no weights at all", "no equipment", "no equipments", "zero equipment", "zero gear", "empty handed", "empty-handed",
         "nothing but my body", "nothing but bodyweight", "nothing but body weight", "only my body", "just my body", "just my bodyweight", "just bodyweight", "only bodyweight", "only body weight", "just body weight",
         "my body only", "only my body weight", "just my body weight", "my body weight only", "only my own body weight", "only my own bodyweight", "just my own body", "just my own bodyweight", "my own body weight", "my own bodyweight", "bodyweight only", "body weight only", "only myself", "just myself", "with just my body", "using only my body", "using only my bodyweight", "equipment less", "no tools", "no tools at all", "toolless", "tool free",
+        // 헬스장이 꽉 차 쓸 장비가 하나도 없다("no equipment free" 의 free 는 비어 있다는 뜻이다 — "equipment free"(맨몸)와 "no" 로 쪼개면 맨몸을 빼 버린다)
+        "no equipment free", "no equipment available", "no equipment open", "no gear free", "no gear available", "no weights free", "no weights available",
+        "nothing free", "nothing available", "nothing open", "nothing is free", "nothing is available", "nothing's free", "nothings free", "none of it is free",
+        "all equipment taken", "all the equipment is taken", "all equipment is taken", "everything is taken", "everything taken", "everything's taken", "everythings taken", "every machine is taken",
         "without tools", "no apparatus", "with nothing", "using nothing", "without anything", "without any equipment", "without any gear", "without any tools", "no machines or weights", "no weights or machines",
         "no weights nor machines", "no weights or equipment", "no equipment or weights", "no equipment or gym", "no gym or equipment", "no gym equipment", "no gym gear", "nothing to lift", "nothing to work with", "nothing to use"
     )

@@ -616,7 +616,11 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             if (consumed[idx]) continue
             val negs = terms.filter { it.role == Role.NEG }
             // 같은 표지가 여러 부정 읽기를 가져도 첫 읽기만 쓴다(기존 동작) — 뒤 읽기들은 방향·대안 여부만 다른 중복 등록이라 결과를 바꾸면 안 된다
-            val tries = if (negs.isNotEmpty()) orderedNegs(idx, listOf(negs.first()))
+            // 영어 표지가 앞·뒤 두 방향으로 다 등록된 경우("dont have": "i dont have bands" / "bands i dont have")는 뒤의 대상을 먼저 찾는다 —
+            // 영어는 동사 뒤에 목적어가 오는 쪽이 기본이고, 앞쪽을 먼저 보면 "glute work, i dont have bands" 의 둔근을 부정해 버린다
+            val markerLatin = text[segs[idx].s].code < 0x250
+            val firstReading = negs.firstOrNull()?.let { f -> if (markerLatin && f.targetBefore) negs.firstOrNull { !it.targetBefore && it.instead == f.instead }?.let { listOf(it, f) } ?: listOf(f) else listOf(f) }
+            val tries = if (firstReading != null) orderedNegs(idx, firstReading)
                 else if (terms.any { it.role == Role.LEVEL && it.regress }) listOfNotNull(cantDoAsNeg(idx)) else continue
             val avail = negs.any { it.avail } || (negs.isEmpty() && tries.isNotEmpty())
             val dislike = negs.any { it.dislike }

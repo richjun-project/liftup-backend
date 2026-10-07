@@ -108,6 +108,9 @@ internal object QueryLexiconConstraint {
      * 그 대상이 장비를 앞세운 이름("케이블 크로스오버 점검중")이면 그 장비도 뺄 수 있게 한다. 대안 표지로서의 동작은 그대로다.
      */
     val AVAIL_EXTRA = """
+        끊어졌어|끊어졌네|끊어졌는데|끊어져서|끊어짐|끊어진|끊겼어|끊겨서|끊겼는데|찢어졌어|찢어졌네|찢어져서|찢어짐|터졌어|터져서|터졌는데|늘어나서|늘어났어|헐거워져서|삭아서|삭았어
+        |切れた|切れて|切れちゃった|切れちゃって|切れてて|ちぎれた|ちぎれて|破れた|破れて|伸びきった|伸びきって|混みすぎ|混みすぎて|混みすぎてる|混みすぎてて|混みすぎで|混み過ぎ|混み過ぎて|混み過ぎてる|待てない|待てなくて|待てません|待てないので|待てないから
+        |snapped|has snapped|is snapped|snapped on me|tore|is torn|are torn|got torn|ripped|is ripped|broke|broke on me|is worn out|are worn out|wore out
         점검중|점검 중|고장|고장나서|고장 나서|고장난|고장 난|수리 중|수리중|사용 중|사용중|가 사용 중|이 사용 중|꽉 차|가 꽉 차|이 꽉 차|가 다 차|이 다 차|가 만석|이 만석|사람 많아|사람이 많아|누가 쓰고 있|누가 쓰고있|줄 서 있|줄 서있|줄이 길|대기 줄|대기가 많|웨이팅|차지하고 있|차지하고있|점령당|누가 차지
         |が使用中|使用中|が使われている|が埋まっている|が埋まってる|埋まっている|埋まってる|が空いてない|が空いていない|空いてない|空いていない|が空いてなくて|が空いてないので|が空いてないから|が空いていなくて|が空いていないので|が空かない|が空かなくて|が空かないので|が空かず|空かなくて|空かないので|空いてなくて|空いてないので|埋まってて|埋まっていて|が埋まってて|が埋まっていて|混んでいる|混んでる|が混んでいる|が混んでる|が混んでて|が混んでいて|混んでて|混んでいて|が混雑|が混雑している|が混雑していて|混雑してて|混雑している|が占領されて|が取られて|が取られていて|が使われてて|が使われていて|故障中|故障して|故障してて|故障している|壊れてる|壊れていて|壊れてて|が壊れて|メンテ中|メンテナンス中|点検中|満員|満席
         |are down|were down|have gone down|has gone down|went down|is all down|are all down|are down today|is shut down|are shut down|is shut|are shut|shut down|are closed down|is closed down|are all broken|is all broken
@@ -117,6 +120,7 @@ internal object QueryLexiconConstraint {
 
     /** 대상이 표지 뒤에 오는 영어 표지 */
     val NEG_BEFORE = """
+        isnt|isn't|arent|aren't|that isnt|that isn't|that arent|that aren't|which isnt|which isn't|thats not|that's not|that is not|that are not|which is not|which are not
         line for|lines for|a line for|queue for|a queue for|long line for|long queue for|long wait for|waiting for|waiting forever for|waiting on|everyone is on|everyone's on|everybody is on|everyone is at|crowd at|crowd on|mob at|mob on|rush on|rush for
         |doesnt need|doesn't need|does not need|dont need|don't need|do not need|didnt need|without needing|without requiring|no need for|needs no|needing no|that need no|that needs no|requiring no|requires no|doesnt require|doesn't require|does not require|dont require|don't require|not requiring|not needing|not involving|nothing involving|nothing that needs|nothing with|nothing using|nothing that uses|nothing needing|no use of|zero use of|avoid using|avoiding any|avoid any|avoid all|non
         |hard pass on|hard pass for|no to|nope to|nah to|say no to|saying no to|a no to|pass on|passing on|im good without|i'm good without|good without|never|never use|never using|never do|never doing|never touch|never ever|no longer use|no longer using|not using|not touching|not gonna use|not going to use|not planning to use|not interested in|no interest in|not into|not a fan of|no fan of|not keen on|not comfortable with|not comfortable using
@@ -131,6 +135,7 @@ internal object QueryLexiconConstraint {
 
     /** 수량어·긍정 단서·행위자 — 부정 표지와 대상 사이, 또는 대상 뒤에 끼지만 의미를 더하지 않는 말 */
     val NOISE = """
+        stuff|some stuff|things|some things|type stuff|kind of stuff|related stuff
         器具を使った|器具を使って|器具を使う|器具を|器具で|道具を使った|道具を使って|道具を使う|道具を|道具で|用具を|用具で|길어서|길어|길어요|길음|길다|길고
         |둘 다|둘다|둘 모두|양쪽 다|양쪽 모두|두 개 다|두개 다|세 개 다|どちらも|両方|両方とも|どっちも|ふたつとも|二つとも|both of them|both|each|all of them
         |쓰는 건|쓰는건|쓰는 거|쓰는거|쓰는 게|쓰는게|쓰는 걸|쓰는걸|쓰는 것|쓰는것|하는 건|하는건|하는 게|하는게|하는 걸|하는걸|하는 것|하는것|쓰기는|쓰기가|쓰기도|사용하는 건|사용하는건|사용하는 거|사용하는 게|사용하는게|사용하기는|사용하기가

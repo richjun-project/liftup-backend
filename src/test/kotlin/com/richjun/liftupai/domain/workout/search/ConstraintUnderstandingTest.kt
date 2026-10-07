@@ -484,4 +484,57 @@ class ConstraintUnderstandingTest {
             assertTrue(Equipment.BARBELL in p.excludeEquip && Equipment.BARBELL !in p.equipments, "[$q] ${engine.explain(q)}")
         }
     }
+
+    // ── 영어 양방향 표지·축약 부정, 끊어짐·혼잡 표현, 백스톱 과반 규칙 ─────────────────────────────
+
+    @Test
+    fun `영어 dont have 는 뒤의 장비를 부정하고 앞의 부위는 목표로 남긴다`() {
+        for (q in listOf("chest day, i dont have dumbbells", "back workout but i don't have a barbell")) {
+            val p = plan(q)
+            assertTrue(p.excludeEquip.isNotEmpty(), "[$q] ${engine.explain(q)}")
+            assertTrue(p.concepts.isNotEmpty(), "[$q] 부위 목표가 부정으로 사라졌다: ${engine.explain(q)}")
+        }
+        assertExcludes(Equipment.DUMBBELL, "chest day, i dont have dumbbells")
+        // 뒤에 대상이 없으면 앞을 본다
+        assertTrue(Equipment.KETTLEBELL in plan("kettlebells? dont have").excludeEquip, engine.explain("kettlebells? dont have"))
+    }
+
+    @Test
+    fun `영어 축약 부정 isnt arent 는 뒤의 운동·장비를 뺀다`() {
+        val q = "a leg move that isn't lunges or squats"
+        val out = top(q, 8).map { it.slug }
+        assertTrue(out.none { "lunge" in it || ("squat" in it && "split" !in it) }, "[$q] $out / ${engine.explain(q)}")
+        assertExcludes(Equipment.CABLE, "triceps stuff that aren't cables")
+    }
+
+    @Test
+    fun `끊어짐·찢어짐·혼잡해서 못 기다림 표현은 그 장비를 뺀다`() {
+        assertExcludes(Equipment.RESISTANCE_BAND, "튜빙 밴드 찢어져서 어깨 운동", "밴드 끊겨서 하체")
+        assertExcludes(Equipment.CABLE, "ケーブル混みすぎてて胸できない", "ケーブルは待てないので腕")
+        assertExcludes(Equipment.RESISTANCE_BAND, "my band snapped, glutes please")
+    }
+
+    @Test
+    fun `백스톱 - 사전이 모르는 말이 낀 질의에서 힌트 소수만 그 장비면 LLM 제외를 따르고 과반이면 사전의 읽기를 둔다`() {
+        val q = "밴드 완전 너덜너덜 후면삼각근"
+        val p = plan(q)
+        assertTrue(p.hasUnknown && Equipment.RESISTANCE_BAND in p.equipments, engine.explain(q))
+        val minority = QueryRewrite(listOf("Dumbbell Rear Delt Fly", "Face Pull", "Reverse Pec Deck", "Band Pull Apart"), setOf(Equipment.RESISTANCE_BAND))
+        val out = hybrid.search(q, null, null, "ko", { minority }) { null }.hits.take(5)
+        assertTrue(out.none { it.doc.equipment == Equipment.RESISTANCE_BAND }, out.map { it.doc.slug }.toString())
+        val majority = QueryRewrite(listOf("Band Pull Apart", "Band Face Pull", "Band Rear Delt Fly", "Dumbbell Rear Delt Fly"), setOf(Equipment.RESISTANCE_BAND))
+        val kept = hybrid.search(q, null, null, "ko", { majority }) { null }.hits.take(5)
+        assertTrue(kept.any { it.doc.equipment == Equipment.RESISTANCE_BAND }, "힌트 과반이 밴드면 LLM 이 스스로 모순 — 사전의 밴드 요청을 둔다: ${kept.map { it.doc.slug }}")
+    }
+
+    @Test
+    fun `헬스장에 비어 있는 장비가 하나도 없다는 말은 맨몸 요청이다 - free 를 맨몸으로 쪼개 맨몸을 빼지 않는다`() {
+        for (q in listOf("every machine is taken, shoulders", "nothing is free right now, core workout", "no gear available today legs")) {
+            val p = plan(q)
+            assertTrue(Equipment.BODYWEIGHT !in p.excludeEquip, "[$q] 맨몸을 뺐다: ${engine.explain(q)}")
+            assertEquals(setOf(Equipment.BODYWEIGHT), p.equipments, "[$q] ${engine.explain(q)}")
+        }
+        // 비어 있다(free)는 말이 장비 뒤에 오면 그 장비를 쓸 수 있다는 긍정이다
+        assertTrue(Equipment.KETTLEBELL in plan("kettlebells are free, full body").equipments)
+    }
 }

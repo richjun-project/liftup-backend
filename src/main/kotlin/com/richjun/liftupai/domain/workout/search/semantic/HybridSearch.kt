@@ -164,16 +164,18 @@ class HybridSearch(
      * 사전이 요청으로 읽은 장비(하드 조건)를 LLM 이 제외 장비로 냈을 때, 그 읽기를 믿지 않을 장비.
      * 사전이 모르는 말이 질의에 섞여 있고([SemanticConstraint.lexiconEquipment]), LLM 의 힌트가 가리킨 운동 가운데 그 장비를 쓰는 것이 없으면
      * LLM 의 해석("ケトルベルは使わない")이 일관된 것이다. 호출자가 고른 장비 필터는 언제나 이긴다.
-     * 힌트가 그 장비 운동을 가리키면("use water bottles instead of dumbbells") LLM 스스로 모순이라 사전의 읽기를 둔다.
+     * 힌트의 절반 이상이 그 장비 운동을 가리키면("use water bottles instead of dumbbells") LLM 스스로 모순이라 사전의 읽기를 둔다.
      */
     private fun distrustedEquipment(query: String?, category: ExerciseCategory?, equipments: Set<Equipment>?, rw: QueryRewrite, constraint: SemanticConstraint): Set<Equipment> {
         if (constraint.lexiconEquipment.isEmpty() || rw.hints.isEmpty()) return emptySet()
         val contested = constraint.lexiconEquipment intersect (rw.forbidEquipment - (equipments ?: emptySet()))
         if (contested.isEmpty()) return emptySet()
-        val hintEquipment = rw.hints.mapNotNullTo(HashSet()) { hint ->
+        val hintEquipment = rw.hints.mapNotNull { hint ->
             engine.searchOutcome(hint, category, equipments, "en").hits.firstOrNull()?.doc?.equipment
         }
-        return contested - hintEquipment
+        if (hintEquipment.isEmpty()) return emptySet()
+        // 힌트 하나가 그 장비 운동이라고 LLM 전체가 모순인 것은 아니다("밴드 끊어졌어" 에 Band Pull-Apart 하나) — 힌트의 절반 이상이 그 장비를 가리킬 때만 사전의 읽기를 둔다
+        return contested.filterTo(HashSet()) { e -> hintEquipment.count { it == e } * 2 < hintEquipment.size }
     }
 
     /**
