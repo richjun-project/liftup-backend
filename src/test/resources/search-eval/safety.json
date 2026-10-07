@@ -1,34 +1,208 @@
-{"rules": [
- {"locale":"en","query":"leg workout without deadlifts","forbid_slug_regex":"deadlift","require_nonempty":true},
- {"locale":"ko","query":"데드리프트 빼고 하체","forbid_slug_regex":"deadlift","require_nonempty":true},
- {"locale":"ja","query":"デッドリフトなしの脚トレ","forbid_slug_regex":"deadlift","require_nonempty":true},
- {"locale":"en","query":"cardio no jumping","forbid_slug_regex":"jump|burpee|jack|skip|plyo|hop","require_nonempty":true},
- {"locale":"ko","query":"점프 없는 유산소","forbid_slug_regex":"jump|burpee|jack|skip|plyo|hop","require_nonempty":true},
- {"locale":"ja","query":"ジャンプしない有酸素","forbid_slug_regex":"jump|burpee|jack|skip|plyo|hop","require_nonempty":true},
- {"locale":"ja","query":"マシン以外の胸トレ","forbid_equipment":["MACHINE"],"require_nonempty":true},
- {"locale":"ko","query":"바벨 없이 하체","forbid_equipment":["BARBELL"],"require_nonempty":true},
- {"locale":"ko","query":"기구 없이 가슴운동","forbid_equipment":["BARBELL","DUMBBELL","MACHINE","CABLE","KETTLEBELL"],"require_nonempty":true},
- {"locale":"en","query":"back workout no equipment","forbid_equipment":["BARBELL","DUMBBELL","MACHINE","CABLE","KETTLEBELL"],"require_nonempty":true},
- {"locale":"en","query":"bad knees leg workout","forbid_slug_regex":"kneel|jump|pistol|sissy|plyo|box-jump|lunge-jump","require_nonempty":true},
- {"locale":"ko","query":"무릎 안 좋을 때 하체운동","forbid_slug_regex":"kneel|jump|pistol|sissy|plyo|box-jump|lunge-jump","require_nonempty":true},
- {"locale":"ja","query":"膝に優しい脚トレ","forbid_slug_regex":"kneel|jump|pistol|sissy|plyo|box-jump|lunge-jump","require_nonempty":true},
- {"locale":"ko","query":"허리 안 아픈 등운동","forbid_slug_regex":"deadlift|good-morning","require_nonempty":true},
- {"locale":"ja","query":"腰に負担がかからない背中トレ","forbid_slug_regex":"deadlift|good-morning","require_nonempty":true},
- {"locale":"en","query":"HIIT","forbid_slug_regex":"hip-thrust|glute-bridge","require_nonempty":true},
- {"locale":"ja","query":"ヒップアップ","forbid_slug_regex":"step-up|stepup","require_nonempty":true},
- {"locale":"en","query":"love handles","forbid_slug_regex":"pulldown|handle","require_nonempty":true},
- {"locale":"en","query":"bubble butt","forbid_slug_regex":"butt-kick","require_nonempty":true},
- {"locale":"ja","query":"背","forbid_slug_regex":"ankle","require_nonempty":true},
- {"locale":"ko","query":"허리","forbid_slug_regex":"military-press|rear-delt|lateral-raise","require_nonempty":true},
- {"locale":"en","query":"leg extension","forbid_slug_regex":"back-extension|hyperextension"},
- {"locale":"ko","query":"레그 익스텐션","forbid_slug_regex":"back-extension|hyperextension"},
- {"locale":"en","query":"hip adductor machine","forbid_slug_regex":"abduct"},
- {"locale":"en","query":"smith machine squat","forbid_slug_regex":"dip"},
- {"locale":"en","query":"assisted dip","forbid_slug_regex":"pull-up|pullup|chin"},
- {"locale":"ko","query":"러닝머신","forbid_slug_regex":"wall-squat|calf|farmer"},
- {"locale":"ja","query":"太ももの裏を鍛えたい","require_nonempty":true},
- {"locale":"ko","query":"등 운동하고 싶어","require_nonempty":true},
- {"locale":"en","query":"beginner chest at home","forbid_equipment":["BARBELL","MACHINE","CABLE"],"require_nonempty":true},
- {"locale":"ko","query":"유산소","forbid_slug_regex":"crunch|curl|press","require_nonempty":true},
- {"locale":"ko","query":"줄넘기","forbid_slug_regex":"row|curl","require_nonempty":true}
-]}
+{
+ "rules": [
+  {
+   "locale": "en",
+   "query": "leg workout without deadlifts",
+   "forbid_slug_regex": "deadlift",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ko",
+   "query": "데드리프트 빼고 하체",
+   "forbid_slug_regex": "deadlift",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ja",
+   "query": "デッドリフトなしの脚トレ",
+   "forbid_slug_regex": "deadlift",
+   "require_nonempty": true
+  },
+  {
+   "locale": "en",
+   "query": "cardio no jumping",
+   "forbid_slug_regex": "jump|burpee|jack|skip|plyo|hop",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ko",
+   "query": "점프 없는 유산소",
+   "forbid_slug_regex": "jump|burpee|jack|skip|plyo|hop",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ja",
+   "query": "ジャンプしない有酸素",
+   "forbid_slug_regex": "jump|burpee|jack|skip|plyo|hop",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ja",
+   "query": "マシン以外の胸トレ",
+   "forbid_equipment": [
+    "MACHINE"
+   ],
+   "require_nonempty": true
+  },
+  {
+   "locale": "ko",
+   "query": "바벨 없이 하체",
+   "forbid_equipment": [
+    "BARBELL"
+   ],
+   "require_nonempty": true
+  },
+  {
+   "locale": "ko",
+   "query": "기구 없이 가슴운동",
+   "forbid_equipment": [
+    "BARBELL",
+    "DUMBBELL",
+    "MACHINE",
+    "CABLE",
+    "KETTLEBELL"
+   ],
+   "require_nonempty": true
+  },
+  {
+   "locale": "en",
+   "query": "back workout no equipment",
+   "forbid_equipment": [
+    "BARBELL",
+    "DUMBBELL",
+    "MACHINE",
+    "CABLE",
+    "KETTLEBELL"
+   ],
+   "require_nonempty": true
+  },
+  {
+   "locale": "en",
+   "query": "bad knees leg workout",
+   "forbid_slug_regex": "kneel|jump|pistol|sissy|plyo|box-jump|lunge-jump",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ko",
+   "query": "무릎 안 좋을 때 하체운동",
+   "forbid_slug_regex": "kneel|jump|pistol|sissy|plyo|box-jump|lunge-jump",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ja",
+   "query": "膝に優しい脚トレ",
+   "forbid_slug_regex": "kneel|jump|pistol|sissy|plyo|box-jump|lunge-jump",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ko",
+   "query": "허리 안 아픈 등운동",
+   "forbid_slug_regex": "deadlift|good-morning",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ja",
+   "query": "腰に負担がかからない背中トレ",
+   "forbid_slug_regex": "deadlift|good-morning",
+   "require_nonempty": true
+  },
+  {
+   "locale": "en",
+   "query": "HIIT",
+   "forbid_slug_regex": "hip-thrust|glute-bridge",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ja",
+   "query": "ヒップアップ",
+   "forbid_slug_regex": "step-up|stepup",
+   "require_nonempty": true
+  },
+  {
+   "locale": "en",
+   "query": "love handles",
+   "forbid_slug_regex": "pulldown|handle",
+   "require_nonempty": true
+  },
+  {
+   "locale": "en",
+   "query": "bubble butt",
+   "forbid_slug_regex": "butt-kick",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ja",
+   "query": "背",
+   "forbid_slug_regex": "ankle",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ko",
+   "query": "허리",
+   "forbid_slug_regex": "military-press|rear-delt|lateral-raise",
+   "require_nonempty": true
+  },
+  {
+   "locale": "en",
+   "query": "leg extension",
+   "forbid_slug_regex": "back-extension|hyperextension"
+  },
+  {
+   "locale": "ko",
+   "query": "레그 익스텐션",
+   "forbid_slug_regex": "back-extension|hyperextension"
+  },
+  {
+   "locale": "en",
+   "query": "hip adductor machine",
+   "forbid_slug_regex": "abduct"
+  },
+  {
+   "locale": "en",
+   "query": "smith machine squat",
+   "forbid_slug_regex": "dip"
+  },
+  {
+   "locale": "en",
+   "query": "assisted dip",
+   "forbid_slug_regex": "pull-up|pullup|chin-up|chinup"
+  },
+  {
+   "locale": "ko",
+   "query": "러닝머신",
+   "forbid_slug_regex": "wall-squat|calf|farmer"
+  },
+  {
+   "locale": "ja",
+   "query": "太ももの裏を鍛えたい",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ko",
+   "query": "등 운동하고 싶어",
+   "require_nonempty": true
+  },
+  {
+   "locale": "en",
+   "query": "beginner chest at home",
+   "forbid_equipment": [
+    "BARBELL",
+    "MACHINE",
+    "CABLE"
+   ],
+   "require_nonempty": true
+  },
+  {
+   "locale": "ko",
+   "query": "유산소",
+   "forbid_slug_regex": "crunch|curl|press",
+   "require_nonempty": true
+  },
+  {
+   "locale": "ko",
+   "query": "줄넘기",
+   "forbid_slug_regex": "row|curl",
+   "require_nonempty": true
+  }
+ ]
+}

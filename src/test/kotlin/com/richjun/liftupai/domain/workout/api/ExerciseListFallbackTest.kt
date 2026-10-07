@@ -59,11 +59,16 @@ class ExerciseListFallbackTest : ApiTestSupport() {
 
     @Test
     fun `알아듣는 단어가 섞인 0건 질의는 그 부위의 대표 운동을 준다`() {
+        // 검색 엔진이 모르는 단어를 건너뛰고 아는 부위로 바로 답하면(병합 후 엔진) 결과 자체가 그 부위다.
+        // 엔진이 0건을 내면 대안(fallback)이 그 부위다. 어느 쪽이든 사용자는 가슴 운동을 받아야 한다.
         val d = page("chest qwertyuiop")
-        assertEquals(0, d.path("totalElements").asInt())
-        val fallback = d.path("fallback").toList()
-        assertTrue(fallback.size in 3..10, "대안 ${fallback.size}개")
-        assertTrue(fallback.count { it.path("category").asText() == "CHEST" } >= fallback.size / 2, fallback.map { it.path("name").asText() }.toString())
+        val items = if (d.path("totalElements").asInt() == 0) {
+            d.path("fallback").toList().also { assertTrue(it.size in 3..10, "대안 ${it.size}개") }
+        } else {
+            assertFalse(d.has("fallback"), "결과가 있으면 대안을 붙이지 않는다")
+            d.path("content").toList()
+        }
+        assertTrue(items.count { it.path("category").asText() == "CHEST" } >= items.size / 2, items.map { it.path("name").asText() }.toString())
     }
 
     @Test

@@ -18,6 +18,8 @@ object SessionDurationFitter {
     const val WARMUP_SECONDS = 300
     const val TRANSITION_SECONDS = 30
     private const val SECONDS_PER_REP = 3.0
+    /** 이 이상의 단위 없는 반복 범위는 초(또는 1초 남짓의 빠른 반복)로 본다 */
+    private const val HIGH_REP_THRESHOLD = 30.0
     private const val TIMED_SET_SECONDS = 45.0
     private const val MIN_EXERCISES = 3
     private const val COMFORT_SETS = 3
@@ -29,7 +31,7 @@ object SessionDurationFitter {
     private val repRange = Regex("""\s*(\d+)\s*(?:[-~–]\s*(\d+))?\s*""")
     private val timedRange = Regex("""\s*(\d+)\s*(?:[-~–]\s*(\d+))?\s*(s|sec|초|秒)\s*""", RegexOption.IGNORE_CASE)
 
-    /** 한 세트의 수행 시간(초). "8-10" → 27, "30-60s" → 45, 해석 불가 → 45 */
+    /** 한 세트의 수행 시간(초). "8-10" → 27, "30-60s" → 45, "30-60"(단위 없음) → 45, 해석 불가 → 45 */
     fun workSeconds(reps: String): Double {
         timedRange.matchEntire(reps)?.let { m ->
             val lo = m.groupValues[1].toDouble()
@@ -39,7 +41,9 @@ object SessionDurationFitter {
         val m = repRange.matchEntire(reps) ?: return TIMED_SET_SECONDS
         val lo = m.groupValues[1].toDouble()
         val hi = m.groupValues[2].ifEmpty { m.groupValues[1] }.toDouble()
-        return (lo + hi) / 2 * SECONDS_PER_REP
+        // 단위 없는 "30-60" 은 플랭크 같은 초 단위 처방이거나 점핑잭 같은 빠른 고반복이다 — 3초×반복으로 세면 세트당 2분이 넘게 부풀려진다
+        val perUnit = if (hi >= HIGH_REP_THRESHOLD) 1.0 else SECONDS_PER_REP
+        return (lo + hi) / 2 * perUnit
     }
 
     fun estimateSeconds(slots: List<Slot>): Int {

@@ -40,14 +40,16 @@ class SearchDumpOracleTest {
                 difficulty = n["difficulty"]?.asInt(50) ?: 50,
             )
         }
-        val engine = ExerciseSearchEngine(docs)
         val cases = mapper.readTree(File(input))["cases"]
+        // 워밍업은 별도 인스턴스로 한다(JIT 만 데우고, 엔진 내부 결과 캐시는 측정용 인스턴스와 공유되지 않는다).
+        // 같은 인스턴스로 워밍업하면 측정이 캐시 적중 시간이 되어 지연 게이트가 무력해진다(2026-10-07 발견).
+        val warm = ExerciseSearchEngine(docs)
+        repeat(3) { cases.forEach { c -> warm.search(c["query"].asText(), null, null, c["locale"]?.asText()) } }
+        val engine = ExerciseSearchEngine(docs)
         val f = JsonNodeFactory.instance
         val out = f.objectNode()
         out.put("catalog_size", docs.size)
         val rows = out.putArray("results")
-        // 워밍업(지연 측정에서 JIT·초기화 비용을 뺀다)
-        repeat(3) { cases.forEach { c -> engine.search(c["query"].asText(), null, null, c["locale"]?.asText()) } }
         for (c in cases) {
             val category = c["category"]?.takeIf { !it.isNull && it.asText().isNotBlank() }?.asText()?.let { ExerciseCategory.valueOf(it) }
             val equipments = c["equipment"]?.takeIf { !it.isNull && it.asText().isNotBlank() }?.asText()

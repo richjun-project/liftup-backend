@@ -691,8 +691,7 @@
     "dumbbell-seated-shoulder-press",
     "dumbbell-standing-overhead-press",
     "seated-shoulder-press-barbell",
-    "barbell-standing-military-press",
-    "barbell-standing-shoulder-press"
+    "barbell-standing-military-press"
    ],
    "tags": [
     "partial"
@@ -709,8 +708,7 @@
     "dumbbell-seated-shoulder-press",
     "dumbbell-standing-overhead-press",
     "seated-shoulder-press-barbell",
-    "barbell-standing-military-press",
-    "barbell-standing-shoulder-press"
+    "barbell-standing-military-press"
    ],
    "tags": [
     "spacing"
@@ -727,8 +725,7 @@
     "dumbbell-seated-shoulder-press",
     "dumbbell-standing-overhead-press",
     "seated-shoulder-press-barbell",
-    "barbell-standing-military-press",
-    "barbell-standing-shoulder-press"
+    "barbell-standing-military-press"
    ],
    "tags": [
     "abbrev",
@@ -746,8 +743,7 @@
     "dumbbell-seated-shoulder-press",
     "dumbbell-standing-overhead-press",
     "seated-shoulder-press-barbell",
-    "barbell-standing-military-press",
-    "barbell-standing-shoulder-press"
+    "barbell-standing-military-press"
    ],
    "tags": [
     "partial",
@@ -763,7 +759,6 @@
    "equipment": null,
    "acceptable": [
     "barbell-standing-military-press",
-    "barbell-standing-shoulder-press",
     "barbell-seated-overhead-press"
    ],
    "tags": [
@@ -1042,8 +1037,7 @@
    "equipment": null,
    "acceptable": [
     "barbell-bent-over-row-pronated-grip",
-    "bent-over-barbell-row",
-    "barbell-underhand-bent-over-row"
+    "barbell-bent-over-row-supinated-grip"
    ],
    "tags": [
     "alias"
@@ -1479,8 +1473,7 @@
    "acceptable": [
     "barbell-deadlift",
     "barbell-bent-over-row-pronated-grip",
-    "bent-over-barbell-row",
-    "barbell-underhand-bent-over-row",
+    "barbell-bent-over-row-supinated-grip",
     "barbell-romanian-deadlift"
    ],
    "forbid_equipment_top5": [
@@ -1797,7 +1790,6 @@
     "barbell-bent-over-row-pronated-grip",
     "dumbbell-bent-over-row",
     "cable-seated-row",
-    "bent-over-barbell-row",
     "cable-low-seated-row"
    ],
    "tags": [
@@ -2595,8 +2587,7 @@
     "dumbbell-seated-shoulder-press",
     "dumbbell-standing-overhead-press",
     "seated-shoulder-press-barbell",
-    "barbell-standing-military-press",
-    "barbell-standing-shoulder-press"
+    "barbell-standing-military-press"
    ],
    "tags": [
     "partial"
@@ -2613,8 +2604,7 @@
     "dumbbell-seated-shoulder-press",
     "dumbbell-standing-overhead-press",
     "seated-shoulder-press-barbell",
-    "barbell-standing-military-press",
-    "barbell-standing-shoulder-press"
+    "barbell-standing-military-press"
    ],
    "tags": [
     "abbrev",
@@ -2828,7 +2818,6 @@
     "barbell-bent-over-row-pronated-grip",
     "dumbbell-bent-over-row",
     "cable-seated-row",
-    "bent-over-barbell-row",
     "cable-low-seated-row"
    ],
    "tags": [
@@ -3325,8 +3314,7 @@
    "acceptable": [
     "barbell-deadlift",
     "barbell-bent-over-row-pronated-grip",
-    "bent-over-barbell-row",
-    "barbell-underhand-bent-over-row"
+    "barbell-bent-over-row-supinated-grip"
    ],
    "forbid_equipment_top5": [
     "DUMBBELL",
@@ -4094,8 +4082,7 @@
     "dumbbell-seated-shoulder-press",
     "dumbbell-standing-overhead-press",
     "seated-shoulder-press-barbell",
-    "barbell-standing-military-press",
-    "barbell-standing-shoulder-press"
+    "barbell-standing-military-press"
    ],
    "tags": [
     "abbrev"
@@ -4112,8 +4099,7 @@
     "dumbbell-seated-shoulder-press",
     "dumbbell-standing-overhead-press",
     "seated-shoulder-press-barbell",
-    "barbell-standing-military-press",
-    "barbell-standing-shoulder-press"
+    "barbell-standing-military-press"
    ],
    "tags": [
     "partial"
@@ -4130,8 +4116,7 @@
     "dumbbell-seated-shoulder-press",
     "dumbbell-standing-overhead-press",
     "seated-shoulder-press-barbell",
-    "barbell-standing-military-press",
-    "barbell-standing-shoulder-press"
+    "barbell-standing-military-press"
    ],
    "tags": [
     "partial"
@@ -4146,7 +4131,6 @@
    "equipment": null,
    "acceptable": [
     "barbell-standing-military-press",
-    "barbell-standing-shoulder-press",
     "barbell-seated-overhead-press"
    ],
    "tags": [
@@ -4507,8 +4491,7 @@
    "acceptable": [
     "barbell-bent-over-row-pronated-grip",
     "dumbbell-bent-over-row",
-    "bent-over-barbell-row",
-    "barbell-underhand-bent-over-row"
+    "barbell-bent-over-row-supinated-grip"
    ],
    "tags": [
     "partial"
@@ -5069,8 +5052,7 @@
    "acceptable": [
     "barbell-deadlift",
     "barbell-bent-over-row-pronated-grip",
-    "bent-over-barbell-row",
-    "barbell-underhand-bent-over-row"
+    "barbell-bent-over-row-supinated-grip"
    ],
    "forbid_equipment_top5": [
     "DUMBBELL",
@@ -5245,7 +5227,6 @@
     "barbell-bent-over-row-pronated-grip",
     "dumbbell-bent-over-row",
     "cable-seated-row",
-    "bent-over-barbell-row",
     "cable-low-seated-row"
    ],
    "tags": [

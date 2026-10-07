@@ -18,6 +18,14 @@ class SessionDurationFitterTest {
     }
 
     @Test
+    fun `unitless 30-60 is treated as seconds, not 45 reps of 3 seconds`() {
+        // 플랭크 "30-60" 을 반복으로 세면 135초/세트로 부풀려져 30분 세션이 과하게 잘렸다
+        assertEquals(45.0, SessionDurationFitter.workSeconds("30-60"))
+        assertEquals(30.0, SessionDurationFitter.workSeconds("30"))
+        assertEquals(60.0, SessionDurationFitter.workSeconds("15-25"))
+    }
+
+    @Test
     fun `20 minute request with four long exercises is cut down to fit`() {
         // 골든셋 g_grid_05_ko: 20분 요청에 추정 49분
         val slots = listOf(

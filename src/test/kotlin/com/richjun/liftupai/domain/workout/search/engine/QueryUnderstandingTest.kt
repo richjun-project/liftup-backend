@@ -340,7 +340,8 @@ class QueryUnderstandingTest {
     @Test
     fun `전신 질의는 스트레칭이 아니라 전신 동작이 앞선다`() {
         assertTrue(slugs("全身 トレーニング", 5).none { "stretch" in it })
-        assertTrue(slugs("kettlebell 全身", 3).all { "kettlebell" in it })
+        // 터키시 겟업처럼 이름에 kettlebell 이 없는 케틀벨 종목도 있다(카탈로그 보강) — 장비로 본다
+        assertTrue(hits("kettlebell 全身", 3).all { it.equipment == Equipment.KETTLEBELL })
         assertTrue(hits("전신 스트레칭", 10).all { it.movementPattern == "STRETCHING" })
     }
 

@@ -271,7 +271,7 @@ class ExerciseSearchIndexService(
     /**
      * 현재 켜져 있는 동의어 줄(엔진 사전과 같은 형식). 짧은 TTL 로 DB 를 다시 읽는다.
      * 형식이 틀린 줄은 건너뛰고 WARN. DB 읽기 실패 시 이전 목록(없으면 빈 목록)을 유지한다.
-     * 통합 단계에서 ExerciseSearchEngine(docs, extraSynonyms) 생성자에 이 목록을 넘긴다.
+     * 이 목록은 ExerciseSearchEngine(docs, extraSynonyms) 생성자로 넘어간다.
      */
     fun activeSynonymLines(): List<String> = loadSynonyms(force = false).lines
 
@@ -317,10 +317,9 @@ class ExerciseSearchIndexService(
         return newEngine(docs, synonymLines)
     }
 
-    /** 통합 단계에서 `ExerciseSearchEngine(docs, synonymLines)` 로 바꾼다 (검색 엔진 리프가 extraSynonyms 생성자를 추가한 뒤) */
-    @Suppress("UNUSED_PARAMETER")
+    /** DB 동의어(search_synonyms)를 내장 사전 뒤에 붙여 엔진을 만든다 — 재배포 없이 검색 결과를 조정하는 경로 */
     private fun newEngine(docs: List<ExerciseSearchDoc>, synonymLines: List<String>): ExerciseSearchEngine =
-        ExerciseSearchEngine(docs)
+        ExerciseSearchEngine(docs, synonymLines)
 
     private fun toDoc(e: Exercise, translated: Map<String, String>): ExerciseSearchDoc {
         val names = LinkedHashMap<String, String>()

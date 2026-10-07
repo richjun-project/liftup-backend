@@ -11,7 +11,9 @@ import com.richjun.liftupai.domain.workout.repository.TemplateDayRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutPlanTemplateRepository
 import com.richjun.liftupai.domain.workout.search.ExerciseCatalogChangedEvent
 import org.slf4j.LoggerFactory
-import org.springframework.context.event.EventListener
+import org.springframework.transaction.event.TransactionPhase
+import org.springframework.transaction.event.TransactionalEventListener
+import java.util.concurrent.atomic.AtomicLong
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -36,14 +38,19 @@ class TemplateRecommendationService(
     private class Snapshot(
         val templates: List<TemplateRecommendationEngine.RecoTemplate>,
         val builtAtMillis: Long,
+        val generation: Long,
     )
 
     @Volatile
     private var snapshot: Snapshot? = null
     private val lock = Any()
+    /** 카탈로그 변경 세대 — 변경 이벤트가 빌드 도중에 오면 그 빌드 결과는 캐시에 남기지 않는다(검색 인덱스와 같은 규칙) */
+    private val generation = AtomicLong()
 
-    @EventListener(ExerciseCatalogChangedEvent::class)
+    /** 커밋된 뒤에만 무효화한다 — 커밋 전 데이터로 다시 만든 스냅샷이 TTL 동안 남는 경합을 막는다 */
+    @TransactionalEventListener(classes = [ExerciseCatalogChangedEvent::class], phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     fun invalidate() {
+        generation.incrementAndGet()
         snapshot = null
     }
 
@@ -60,10 +67,11 @@ class TemplateRecommendationService(
         )
         val outcome = TemplateRecommendationEngine(snap.templates, adapter).recommend(profile)
         val alternatives = outcome.ranked.drop(1).take(MAX_ALTERNATIVES).map { it.template.code }
+        // 사용자 식별자·부상 같은 건강 정보는 INFO 로그에 남기지 않는다(운영 로그 개인정보 최소화)
         log.info(
-            "Template recommended for user {}: {} (score={}, survival={}, days={}/{}, injuries={}, focus={})",
-            user.id, outcome.best.template.code, "%.1f".format(outcome.best.total), "%.2f".format(outcome.best.survival),
-            outcome.best.template.totalDays, profile.weeklyDays, profile.injuries, profile.focus
+            "Template recommended: {} (score={}, survival={}, days={}/{})",
+            outcome.best.template.code, "%.1f".format(outcome.best.total), "%.2f".format(outcome.best.survival),
+            outcome.best.template.totalDays, profile.weeklyDays
         )
         return TemplateRecommendationResponse(
             templateCode = outcome.best.template.code,
@@ -104,15 +112,19 @@ class TemplateRecommendationService(
 
     private fun snapshot(): Snapshot {
         val current = snapshot
-        if (current != null && System.currentTimeMillis() - current.builtAtMillis < TTL_MILLIS) return current
+        if (current != null && current.generation == generation.get() && System.currentTimeMillis() - current.builtAtMillis < TTL_MILLIS) return current
         synchronized(lock) {
             val again = snapshot
-            if (again != null && System.currentTimeMillis() - again.builtAtMillis < TTL_MILLIS) return again
-            return build().also { snapshot = it }
+            if (again != null && again.generation == generation.get() && System.currentTimeMillis() - again.builtAtMillis < TTL_MILLIS) return again
+            val startedAt = generation.get()
+            val built = build(startedAt)
+            // 빌드 중에 카탈로그가 바뀌었으면 이번 결과는 이 요청에만 쓰고 캐시하지 않는다
+            if (generation.get() == startedAt) snapshot = built
+            return built
         }
     }
 
-    private fun build(): Snapshot {
+    private fun build(startedGeneration: Long): Snapshot {
         val byId = catalogCache.get().byId
         val templates = templateRepository.findByIsActiveTrueAndSourceTypeOrderBySortOrder(PlanSourceType.PRESET).map { t ->
             val days = templateDayRepository.findByTemplateIdOrderByDayNumber(t.id).map { d ->
@@ -129,7 +141,7 @@ class TemplateRecommendationService(
             )
         }.filter { it.days.isNotEmpty() }
         log.info("Template recommendation snapshot built: {} templates", templates.size)
-        return Snapshot(templates, System.currentTimeMillis())
+        return Snapshot(templates, System.currentTimeMillis(), startedGeneration)
     }
 
     companion object {
