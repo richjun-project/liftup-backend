@@ -356,9 +356,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         val typoWord = unknownChunks.isNotEmpty() && tok.words.any { w ->
             val start = tok.strict.indexOf(w)
             start >= 0 && segs.any { sg -> sg.unknown && !consumed[segs.indexOf(sg)] && sg.s >= start && sg.e <= start + w.length } &&
-                w.length >= 4 && vocab.nearest(w).isNotEmpty()
+                w.length >= 4 && vocab.nearest(w, relaxed = true).isNotEmpty()
         }
-        val nameLikeUnknown = typoWord || unknownChunks.any { chunk -> chunk.length >= 2 && vocab.nearest(chunk).isNotEmpty() } ||
+        val nameLikeUnknown = typoWord || unknownChunks.any { chunk -> chunk.length >= 2 && vocab.nearest(chunk, relaxed = true).isNotEmpty() } ||
             // 장비만 알아들었고 나머지를 모르면 그 나머지는 운동 이름일 가능성이 높다("바벨 로오")
             (unknownChunks.isNotEmpty() && effectiveConcepts.isEmpty() && !home && equipments.isNotEmpty())
         val hasContentSignal = effectiveConcepts.isNotEmpty() || equipments.isNotEmpty() || home
@@ -485,7 +485,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
      */
     private fun buildSeeds(tok: SearchText.Tokenized, segs: List<Seg>, consumed: BooleanArray): List<List<String>> {
         val text = tok.strict
-        fun build(keepAmbiguous: Boolean): List<String> {
+        fun build(keepAmbiguous: Boolean, splitSegments: Boolean = false): List<String> {
             val words = ArrayList<String>()
             val cur = StringBuilder()
             fun flush() { if (cur.isNotEmpty()) { words.add(cur.toString()); cur.setLength(0) } }
@@ -507,6 +507,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                     }
                 }
                 if (!keep) { flush(); continue }
+                // 붙여 쓴 CJK 복합어를 사전 조각 단위로 쪼개 본다 (シーテッドロウマシン → シーテッド / ロウ / マシン)
+                if (splitSegments && !sg.unknown) flush()
                 // 한 조각이 원문의 여러 단어에 걸쳐 있어도(예: "cable fly" 동의어) 원문 단어 경계는 유지한다
                 for (p in sg.s until sg.e) {
                     if (cur.isNotEmpty() && tok.isWordStart(p)) flush()
@@ -522,6 +524,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         // 이름에도 쓰이는 군더더기를 남긴 쪽이 더 구체적이라 먼저, 모두 뗀 쪽은 그다음(엔진이 약간 감점한다)
         if (b.isNotEmpty() && b != a) out.add(b)
         if (a.isNotEmpty()) out.add(a)
+        // 붙여 쓴 복합어를 조각으로 쪼갠 후보는 마지막 보조 후보(앞선 후보들로 확실한 일치가 없을 때만 쓰인다)
+        val c = build(false, splitSegments = true)
+        if (c.size > 1 && c !in out) out.add(c)
         return out
     }
 

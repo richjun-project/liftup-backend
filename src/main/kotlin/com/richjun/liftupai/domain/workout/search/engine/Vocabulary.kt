@@ -19,6 +19,9 @@ internal class Vocabulary(
 
     private val byLooseLength: Map<Int, List<Entry>>
 
+    /** 한글·가나 단어의 글자 수별 목록 (글자 단위 오타 교정용) */
+    private val byStrictLength: Map<Int, List<Entry>>
+
     init {
         val freq = HashMap<String, Int>()
         for (doc in names) {
@@ -32,35 +35,50 @@ internal class Vocabulary(
         words = freq.filterKeys { isUsable(it) }
         val entries = words.map { (w, f) -> Entry(w, SearchText.looseKey(w), f) }.filter { it.loose.length >= MIN_CORRECT_LEN }
         byLooseLength = entries.groupBy { it.loose.length }
+        byStrictLength = words.filterKeys { it.length >= 2 && it[0].code >= 0x250 }.map { (w, f) -> Entry(w, SearchText.looseKey(w), f) }.groupBy { it.word.length }
     }
 
     fun contains(word: String): Boolean = word in words
 
     /**
      * 어휘에 없는 단어의 교정 후보(가까운 순, 같은 거리면 많이 쓰이는 순). 후보가 없거나 이미 어휘에 있으면 빈 목록.
-     * 자모 기준 4 미만은 교정하지 않고, 6 미만은 흔한 단어 하나가 뚜렷할 때만 교정한다(오탐 방지).
+     * 두 가지 거리로 찾는다: (a) 자모·문자 편집거리(스쿼투 → 스쿼트), (b) 한글·가나는 글자(음절) 단위 한 칸 오타 —
+     * 치환·삽입·삭제·인접 전치(쿼스트 → 스쿼트, 롤웃 → 롤아웃).
+     * 짧은 단어는 이웃이 많아 흔한 단어 하나가 뚜렷하게 앞설 때만 교정한다(로오 → 로우).
+     * relaxed 는 "이 덩어리가 오타 난 이름일까?"를 가늠할 때 쓰는 느슨한 기준(자모 2개까지).
      */
-    fun nearest(token: String, limit: Int = 2): List<String> {
+    fun nearest(token: String, limit: Int = 2, relaxed: Boolean = false): List<String> {
         if (token in words) return emptyList()
+        if (relaxed && token.length < RELAXED_MIN_CHARS) return emptyList()  // 2글자 이하 덩어리는 이름인지 가늠하지 않는다(군더더기가 많다)
         val loose = SearchText.looseKey(token)
-        if (loose.length < MIN_CORRECT_LEN) return emptyList()
-        val k = minOf(2, SearchText.allowedTypos(loose.length))
-        if (k == 0) return emptyList()
-        var bestD = k + 1
-        val found = ArrayList<Pair<Entry, Int>>()
-        for (len in (loose.length - k)..(loose.length + k)) {
-            for (e in byLooseLength[len].orEmpty()) {
-                val d = SearchText.editDistance(loose, e.loose, minOf(k, bestD))
-                if (d > k) continue
-                if (d < bestD) bestD = d
-                found.add(e to d)
+        val found = HashMap<String, Pair<Entry, Int>>()
+        fun add(e: Entry, d: Int) { val cur = found[e.word]; if (cur == null || d < cur.second) found[e.word] = e to d }
+
+        if (loose.length >= MIN_CORRECT_LEN) {
+            var k = minOf(2, SearchText.allowedTypos(loose.length))
+            if (relaxed && loose.length >= RELAXED_LEN) k = 2
+            if (k > 0) {
+                for (len in (loose.length - k)..(loose.length + k)) {
+                    for (e in byLooseLength[len].orEmpty()) {
+                        val d = SearchText.editDistance(loose, e.loose, k)
+                        if (d <= k) add(e, d)
+                    }
+                }
             }
         }
-        val ranked = found.filter { it.second <= bestD }
+        if (token.length >= 2 && token[0].code >= 0x250) {
+            for (len in (token.length - 1)..(token.length + 1)) {
+                for (e in byStrictLength[len].orEmpty()) {
+                    if (SearchText.editDistance(token, e.word, 1) <= 1) add(e, 1)
+                }
+            }
+        }
+        if (found.isEmpty()) return emptyList()
+        val bestD = found.values.minOf { it.second }
+        val ranked = found.values.filter { it.second <= bestD }
             .sortedWith(compareBy<Pair<Entry, Int>> { it.second }.thenByDescending { it.first.freq }.thenBy { it.first.word })
-        if (loose.length < CONFIDENT_LEN) {
-            // 짧은 단어는 이웃이 많다 — 흔한 단어 하나가 뚜렷하게 앞설 때만 교정한다 (로오 → 로우)
-            val top = ranked.firstOrNull() ?: return emptyList()
+        if (loose.length < CONFIDENT_LEN || token.length <= 2) {
+            val top = ranked.first()
             if (top.first.freq < MIN_SHORT_FREQ) return emptyList()
             val second = ranked.getOrNull(1)
             if (second != null && second.second == top.second && top.first.freq < 2 * second.first.freq) return emptyList()
@@ -75,5 +93,7 @@ internal class Vocabulary(
         private const val MIN_CORRECT_LEN = 4
         private const val CONFIDENT_LEN = 6
         private const val MIN_SHORT_FREQ = 8
+        private const val RELAXED_LEN = 6
+        private const val RELAXED_MIN_CHARS = 3
     }
 }

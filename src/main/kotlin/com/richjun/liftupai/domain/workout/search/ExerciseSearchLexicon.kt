@@ -242,7 +242,7 @@ internal object ExerciseSearchLexicon {
         terms.split("|").map { key(it) }.filter { it.isNotEmpty() }.map { it to eq.toSet() }
 
     val equipmentTerms: Map<String, Set<Equipment>> = buildList {
-        addAll(equip("덤벨|아령|dumbbell|dumbbells|db|ダンベル", Equipment.DUMBBELL))
+        addAll(equip("덤벨|아령|dumbbell|dumbbells|db|ダンベル|one dumbbell|single dumbbell|a dumbbell|1 dumbbell|two dumbbells|a pair of dumbbells|pair of dumbbells|ダンベル1個|ダンベル一個|ダンベル一つ|ダンベル2個|덤벨 하나|덤벨 한개|덤벨 한 개|덤벨 1개|덤벨 두 개|덤벨 2개|덤벨 두개", Equipment.DUMBBELL))
         addAll(equip("바벨|barbell|bb|バーベル", Equipment.BARBELL))
         addAll(equip("머신|기구|machine|マシン", Equipment.MACHINE))
         addAll(equip("케이블|cable|ケーブル", Equipment.CABLE))

@@ -62,7 +62,7 @@ class ExerciseSearchEngine(
         val looseWords: List<String> = words.map { SearchText.looseKey(it) }
 
         /** 일반 단어(장비·수식어·stretch)를 뺀 핵심 키 — 퍼지·바이그램은 이것으로 비교한다(frog stretch 가 모든 stretch 에 걸리지 않게) */
-        val coreLoose: String = SearchText.looseKey(SearchText.strictKey(words.filter { it !in QueryLexicon.genericWords }))
+        val coreLoose: String = SearchText.looseKey(SearchText.strictKey(words.filter { it !in QueryLexicon.fuzzyIgnorable }))
 
         /** 이 변형이 말하는 동작 단어(머리 단어)와 부위 묶음 */
         val heads: BitSet = BitSet().also { b ->
@@ -70,6 +70,10 @@ class ExerciseSearchEngine(
             val tail = words.lastOrNull().orEmpty()
             QueryLexicon.headWords.forEachIndexed { i, k -> if (strict.contains(k.key) || (tail.length >= 3 && k.key.length > tail.length && k.key.contains(tail))) b.set(i) }
         }
+        /** 부위만 가리키는 단어(chest, 가슴, 脚) — 부분 일치에서 이것만 맞은 이름은 일치로 치지 않는다 */
+        val regionWords: Set<String> = words.filter { w ->
+            QueryLexicon.regionGroups.any { g -> g.any { k -> if (k.latin) w == k.key else w.contains(k.key) } }
+        }.toSet()
         val regions: BitSet = BitSet().also { b ->
             // 라틴 표기는 단어가 같을 때만, 한글·가나 표기는 붙여 쓴 복합어(レッグエクステンション) 안에서도 부위로 본다
             QueryLexicon.regionGroups.forEachIndexed { i, g ->
@@ -146,7 +150,7 @@ class ExerciseSearchEngine(
     /** 질의 해석 결과(진단·테스트용) */
     internal fun analyze(query: String): QueryPlan = analyzer.analyze(SearchText.tokenize(query)).plan
 
-    internal fun nearestDebug(word: String): List<String> = vocabulary.nearest(SearchText.words(word).firstOrNull().orEmpty())
+    internal fun nearestDebug(word: String): List<String> = vocabulary.nearest(SearchText.words(word).firstOrNull().orEmpty(), relaxed = true)
 
     /** 질의 해석을 사람이 읽는 문자열로(진단용): 분해된 조각과 계획 */
     internal fun explain(query: String): String {
@@ -638,7 +642,7 @@ class ExerciseSearchEngine(
         if (tokens.size >= 2 && matchedLen > 0 && matchedLen.toDouble() / totalLen >= PARTIAL_MIN_FRACTION) {
             if (conflicts(v, n)) return -1.0
             // 일반 단어(장비·수식어) 하나만 맞은 이름은 일치로 치지 않는다
-            if (tokens.none { t -> t !in QueryLexicon.genericWords && occurrenceQuality(n, t).let { q -> q == OCC_EXACT || (q == OCC_WORD && !isLatin(t)) } }) return -1.0
+            if (tokens.none { t -> t !in QueryLexicon.genericWords && t !in v.regionWords && occurrenceQuality(n, t).let { q -> q == OCC_EXACT || (q == OCC_WORD && !isLatin(t)) } }) return -1.0
             // 질의의 부위 단어가 이름에 없으면, 그 운동이 정말 그 부위의 것일 때만 인정한다 (leg extension ↛ triceps extension)
             if (!v.regions.isEmpty && !n.regions.intersects(v.regions) && !muscleHints.matches(doc)) return -1.0
             var s = BAND_PARTIAL + 20.0 * matchedLen / totalLen
@@ -746,7 +750,8 @@ class ExerciseSearchEngine(
 
     private fun buildVariants(seeds: List<List<String>>): Pair<List<Variant>, Set<Equipment>> {
         val all = LinkedHashMap<String, Variant>()
-        fun put(v: Variant): Boolean = all.size < MAX_VARIANTS_TOTAL && all.putIfAbsent(v.strict + "|" + v.words.size, v) == null
+        var cap = MAX_VARIANTS_TOTAL
+        fun put(v: Variant): Boolean = all.size < cap && all.putIfAbsent(v.strict + "|" + v.words.size, v) == null
 
         val bases = ArrayList<Variant>()
         for ((i, sd) in seeds.withIndex()) { val v = Variant(sd, if (i == 0) 0.0 else SEED_ALT_PENALTY, if (i == 0) BAND_EXACT else BAND_EXACT_VARIANT); if (put(v)) bases.add(v) }
@@ -784,7 +789,8 @@ class ExerciseSearchEngine(
         // 서로 다른 자리의 동의어가 둘 이상 겹치는 질의("원핸드 로우")는 조합까지 만든다
         for (seed in seedsAll) if (seed.words.size <= MAX_COMBO_WORDS) combineSynonyms(seed).forEach { put(it) }
 
-        // 2) 장비 단어 분리 (이름에 장비가 안 들어 있는 운동도 장비로 우선 정렬)
+        // 2) 장비 단어 분리 (이름에 장비가 안 들어 있는 운동도 장비로 우선 정렬) — 변형 수 상한과 별도 예산을 쓴다
+        cap += MAX_STRIP_VARIANTS
         val equipPref = HashSet<Equipment>()
         val extra = ArrayList<Variant>()
         for (v in all.values.toList()) {
@@ -919,6 +925,7 @@ class ExerciseSearchEngine(
         private const val FUZZY_MIN_LATIN = 4
         private const val PARTIAL_MIN_FRACTION = 0.4
         private const val MAX_VARIANTS_TOTAL = 28
+        private const val MAX_STRIP_VARIANTS = 14
         private const val MAX_SYN_VARIANTS = 16
         private const val MAX_TYPO_VARIANTS = 4
         private const val MAX_COMBOS = 40
