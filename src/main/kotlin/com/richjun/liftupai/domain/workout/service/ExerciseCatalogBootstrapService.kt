@@ -40,6 +40,11 @@ class ExerciseCatalogBootstrapService(
 
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    companion object {
+        /** 사라진 slug → 남는 slug (중복 정리 기록). 마이그레이션이 이 목록으로 사용자 기록을 옮긴다 */
+        const val DUPLICATE_MAP_RESOURCE = "catalog/duplicate-map.json"
+    }
+
     override fun run(args: ApplicationArguments) {
         val mode = bootstrapMode.trim().lowercase()
         if (mode == "never") {
@@ -88,30 +93,17 @@ class ExerciseCatalogBootstrapService(
         val catalog: List<ExerciseCatalogRecord> = resource.inputStream.use { inputStream ->
             objectMapper.readValue(inputStream, catalogType)
         }
+        importCatalog(catalog)
+    }
 
+    @Transactional
+    fun importCatalog(catalog: List<ExerciseCatalogRecord>) {
         if (catalog.isEmpty()) {
             logger.warn("Exercise catalog resource is empty: {}", resourcePath)
             return
         }
 
-        val exercises: List<Exercise> = catalog.map { record: ExerciseCatalogRecord ->
-            Exercise(
-                slug = record.slug,
-                name = record.primaryTranslation().name,
-                defaultLocale = record.defaultLocale,
-                category = record.category,
-                movementPattern = record.movementPattern,
-                muscleGroups = record.muscleGroups.toMutableSet(),
-                equipment = record.equipment,
-                instructions = record.primaryTranslation().instructions,
-                popularity = record.popularity,
-                difficulty = record.difficulty,
-                isBasicExercise = record.basicExercise,
-                recommendationTier = record.recommendationTier,
-                isPlanEligible = record.isPlanEligible,
-                planCategory = record.planCategory
-            )
-        }
+        val exercises: List<Exercise> = catalog.map { record: ExerciseCatalogRecord -> newExercise(record) }
 
         val savedExercises: List<Exercise> = exerciseRepository.saveAllAndFlush(exercises).toList()
         val exerciseBySlug = savedExercises.associateBy { it.slug }
@@ -135,30 +127,43 @@ class ExerciseCatalogBootstrapService(
     }
 
     /**
-     * 카탈로그의 큐레이션 필드와 번역을 기존 운동 행에 반영한다.
+     * 카탈로그 JSON 을 운영 DB 에 맞춘다 (멱등).
      *
-     * 카탈로그 JSON이 추천 품질의 단일 진실 소스이므로, 부트스트랩 이후에도
-     * 큐레이션 결과(부위/동작패턴/난이도/인기도/추천등급/플랜풀)를 매 기동 시 동기화한다.
-     * 이 동기화가 없으면 카탈로그를 고쳐도 이미 시딩된 환경에는 영원히 반영되지 않는다.
+     * - 카탈로그에만 있는 새 slug 는 운동·근육 태그·번역을 삽입한다 (벡터 인덱스는 vectorId 가 비어 있어 기동 시 벡터 마이그레이션이 채운다).
+     * - 이미 있는 slug 는 큐레이션 필드(부위/장비/동작패턴/난이도/인기도/티어/플랜 풀)와 이름·설명, 로케일별 번역을 카탈로그 값으로 갱신한다.
+     * - 카탈로그에서 사라진 운동(중복 정리)은 여기서 지우지 않는다. 사용자 기록을 옮기는 일은 db/migration/catalog 의 마이그레이션이 하고,
+     *   이 동기화는 남아 있으면 경고만 남긴다. 사용자 데이터(vectorId, 세션/기록 등)는 절대 건드리지 않는다.
      *
-     * 사용자 데이터(vectorId, 세션/기록 등)는 건드리지 않는다.
+     * 자기 호출(run → syncCatalog)이라 트랜잭션으로 묶이지 않고 행마다 확정된다. 그래서 한 건의 데이터 문제가 나머지를 막지 않는다.
+     * (locale+display_name 유니크 제약 위반으로 프로덕션이 부팅 크래시 루프에 빠진 적이 있어 번역은 충돌을 미리 계산해 안전한 순서로만 쓴다)
      */
-    @Transactional
-    fun syncCatalog(resource: ClassPathResource) {
+    fun syncCatalog(resource: ClassPathResource): CatalogSyncResult {
         val catalogType = objectMapper.typeFactory.constructCollectionType(List::class.java, ExerciseCatalogRecord::class.java)
         val catalog: List<ExerciseCatalogRecord> = resource.inputStream.use { objectMapper.readValue(it, catalogType) }
+        return syncCatalog(catalog)
+    }
 
-        val allExercises = exerciseRepository.findAll().associateBy { it.slug }
-        var updated = 0
+    fun syncCatalog(catalog: List<ExerciseCatalogRecord>): CatalogSyncResult {
+        val existingBySlug = exerciseRepository.findAll().associateBy { it.slug }.toMutableMap()
+
+        // 1) 새 slug 삽입
+        val missing = catalog.filter { it.slug !in existingBySlug }
+        val missingSlugs = missing.mapTo(HashSet()) { it.slug }
         var created = 0
+        if (missing.isNotEmpty()) {
+            val saved = exerciseRepository.saveAllAndFlush(missing.map { newExercise(it) })
+            saved.forEach { existingBySlug[it.slug] = it }
+            created = saved.size
+        }
 
+        // 2) 기존 slug 의 큐레이션 필드·이름·설명 갱신
         var curationUpdated = 0
-        var failed = 0
         for (record in catalog) {
-            val exercise = allExercises[record.slug] ?: continue
-
-            // 큐레이션 필드 동기화 — 추천/플랜 파이프라인이 이 값들로 후보를 고른다
-            val needsCurationSync = exercise.category != record.category ||
+            val exercise = existingBySlug[record.slug] ?: continue
+            if (record.slug in missingSlugs) continue // 방금 카탈로그 값 그대로 삽입했다
+            val primary = record.primaryTranslation()
+            val nextInstructions = primary.instructions ?: exercise.instructions
+            val needsSync = exercise.category != record.category ||
                 exercise.movementPattern != record.movementPattern ||
                 exercise.equipment != record.equipment ||
                 exercise.difficulty != record.difficulty ||
@@ -167,14 +172,20 @@ class ExerciseCatalogBootstrapService(
                 exercise.isBasicExercise != record.basicExercise ||
                 exercise.isPlanEligible != record.isPlanEligible ||
                 exercise.planCategory != record.planCategory ||
-                exercise.muscleGroups != record.muscleGroups
-
-            if (needsCurationSync) {
+                exercise.muscleGroups != record.muscleGroups ||
+                exercise.name != primary.name ||
+                exercise.defaultLocale != record.defaultLocale ||
+                exercise.instructions != nextInstructions
+            if (!needsSync) continue
+            try {
                 // copy() 는 vectorId(var) 까지 그대로 옮기므로 Qdrant 인덱스 연결이 유지된다
                 exerciseRepository.save(exercise.copy(
+                    name = primary.name,
+                    defaultLocale = record.defaultLocale,
                     category = record.category,
                     movementPattern = record.movementPattern,
                     equipment = record.equipment,
+                    instructions = nextInstructions,
                     difficulty = record.difficulty,
                     popularity = record.popularity,
                     recommendationTier = record.recommendationTier,
@@ -184,57 +195,191 @@ class ExerciseCatalogBootstrapService(
                     muscleGroups = record.muscleGroups.toMutableSet()
                 ))
                 curationUpdated++
-            }
-
-            for (translation in record.translations) {
-                // 카탈로그 한 건의 데이터 문제로 서버 기동 전체가 실패하면 안 된다
-                // (locale+display_name 유니크 제약 위반으로 프로덕션이 부팅 크래시 루프에 빠진 적이 있다)
-                try {
-                    val existing = exerciseTranslationRepository.findByExerciseIdAndLocale(exercise.id, translation.locale)
-                    if (existing != null) {
-                        // 이름뿐 아니라 설명/팁이 새로 생긴 경우도 반영해야 한다
-                        // (이름만 비교하면 ko처럼 이름이 이미 있는 로케일에 instructions/tips가 영원히 안 채워진다)
-                        val nextInstructions = translation.instructions ?: existing.instructions
-                        val nextTips = translation.tips ?: existing.tips
-                        if (existing.displayName != translation.name ||
-                            existing.instructions != nextInstructions ||
-                            existing.tips != nextTips
-                        ) {
-                            exerciseTranslationRepository.save(existing.copy(
-                                displayName = translation.name,
-                                instructions = nextInstructions,
-                                tips = nextTips
-                            ))
-                            updated++
-                        }
-                    } else {
-                        exerciseTranslationRepository.save(ExerciseTranslation(
-                            exercise = exercise,
-                            locale = translation.locale,
-                            displayName = translation.name,
-                            instructions = translation.instructions,
-                            tips = translation.tips
-                        ))
-                        created++
-                    }
-                } catch (e: Exception) {
-                    failed++
-                    logger.error(
-                        "Catalog translation sync failed: slug={} locale={} name={} — {}",
-                        record.slug, translation.locale, translation.name, e.message
-                    )
-                }
+            } catch (e: Exception) {
+                logger.error("Catalog exercise sync failed: slug={} — {}", record.slug, e.message)
             }
         }
-        if (updated > 0 || created > 0 || curationUpdated > 0) {
+
+        // 3) 번역
+        val tx = syncTranslations(catalog, existingBySlug)
+
+        // 4) 중복 정리 마이그레이션이 아직 안 돈 환경 경고
+        val stale = staleDuplicateSlugs(existingBySlug.keys)
+        if (stale.isNotEmpty()) {
+            logger.warn("Catalog sync: 중복 정리 마이그레이션(V20261008100)이 적용되지 않은 운동 {}개가 남아 있다: {}", stale.size, stale.take(10))
+        }
+
+        val result = CatalogSyncResult(
+            exercisesCreated = created,
+            exercisesUpdated = curationUpdated,
+            translationsCreated = tx.created,
+            translationsUpdated = tx.updated,
+            translationsFailed = tx.failed,
+            staleDuplicates = stale.size
+        )
+        if (result.changed) {
             // 이름/큐레이션 필드가 바뀌었으니 검색 인덱스를 다시 만들게 한다
             applicationContext.publishEvent(ExerciseCatalogChangedEvent())
         }
-        if (updated > 0 || created > 0 || curationUpdated > 0 || failed > 0) {
+        if (result.changed || result.translationsFailed > 0) {
             logger.info(
-                "Catalog sync: translations {}/{} updated/created, {} failed, curation fields {} rows updated",
-                updated, created, failed, curationUpdated
+                "Catalog sync: exercises {} created/{} updated, translations {} created/{} updated/{} failed",
+                result.exercisesCreated, result.exercisesUpdated, result.translationsCreated, result.translationsUpdated, result.translationsFailed
             )
+        }
+        return result
+    }
+
+    private fun newExercise(record: ExerciseCatalogRecord): Exercise {
+        val primary = record.primaryTranslation()
+        return Exercise(
+            slug = record.slug,
+            name = primary.name,
+            defaultLocale = record.defaultLocale,
+            category = record.category,
+            movementPattern = record.movementPattern,
+            muscleGroups = record.muscleGroups.toMutableSet(),
+            equipment = record.equipment,
+            instructions = primary.instructions,
+            popularity = record.popularity,
+            difficulty = record.difficulty,
+            isBasicExercise = record.basicExercise,
+            recommendationTier = record.recommendationTier,
+            isPlanEligible = record.isPlanEligible,
+            planCategory = record.planCategory
+        )
+    }
+
+    private data class TranslationRow(
+        val id: Long,
+        val exerciseId: Long,
+        val locale: String,
+        val name: String,
+        val instructions: String?,
+        val tips: String?
+    )
+
+    private data class TranslationChange(
+        val exerciseId: Long,
+        val locale: String,
+        val row: TranslationRow?,
+        val name: String,
+        val instructions: String?,
+        val tips: String?,
+        val slug: String
+    )
+
+    private data class TranslationSyncCounts(var created: Int = 0, var updated: Int = 0, var failed: Int = 0)
+
+    /**
+     * 번역 행을 카탈로그와 맞춘다. DB 에는 (locale, display_name) 유니크 제약이 있어서, 이름을 바꾸거나 새로 넣을 때
+     * 그 이름을 지금 다른 운동이 쓰고 있으면 충돌한다. 그 다른 운동도 곧 이름이 바뀔 예정이면 먼저 바뀌게 순서를 잡고(고정점 반복),
+     * 끝까지 풀리지 않는 충돌(진짜 데이터 충돌)은 건너뛰고 로그만 남긴다.
+     */
+    private fun syncTranslations(catalog: List<ExerciseCatalogRecord>, exerciseBySlug: Map<String, Exercise>): TranslationSyncCounts {
+        val counts = TranslationSyncCounts()
+        val rows = jdbcTemplate.query(
+            "SELECT id, exercise_id, locale, display_name, instructions, tips FROM exercise_translations"
+        ) { rs, _ ->
+            TranslationRow(rs.getLong(1), rs.getLong(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6))
+        }
+        val rowByKey = HashMap<Pair<Long, String>, TranslationRow>(rows.size * 2)
+        val ownerByName = HashMap<Pair<String, String>, Long>(rows.size * 2)
+        for (row in rows) {
+            rowByKey[row.exerciseId to row.locale] = row
+            ownerByName[row.locale to row.name] = row.exerciseId
+        }
+
+        val pending = ArrayList<TranslationChange>()
+        for (record in catalog) {
+            val exercise = exerciseBySlug[record.slug] ?: continue
+            for (t in record.translations) {
+                val row = rowByKey[exercise.id to t.locale]
+                if (row == null) {
+                    pending += TranslationChange(exercise.id, t.locale, null, t.name, t.instructions, t.tips, record.slug)
+                    continue
+                }
+                // 이름뿐 아니라 설명/팁이 새로 생긴 경우도 반영해야 한다
+                // (이름만 비교하면 ko처럼 이름이 이미 있는 로케일에 instructions/tips가 영원히 안 채워진다)
+                val nextInstructions = t.instructions ?: row.instructions
+                val nextTips = t.tips ?: row.tips
+                if (row.name != t.name || row.instructions != nextInstructions || row.tips != nextTips) {
+                    pending += TranslationChange(exercise.id, t.locale, row, t.name, nextInstructions, nextTips, record.slug)
+                }
+            }
+        }
+
+        fun apply(change: TranslationChange): Boolean {
+            try {
+                val row = change.row
+                if (row == null) {
+                    jdbcTemplate.update(
+                        "INSERT INTO exercise_translations (exercise_id, locale, display_name, instructions, tips) VALUES (?, ?, ?, ?, ?)",
+                        change.exerciseId, change.locale, change.name, change.instructions, change.tips
+                    )
+                    counts.created++
+                } else {
+                    jdbcTemplate.update(
+                        "UPDATE exercise_translations SET display_name = ?, instructions = ?, tips = ? WHERE id = ?",
+                        change.name, change.instructions, change.tips, row.id
+                    )
+                    ownerByName.remove(row.locale to row.name)
+                    counts.updated++
+                }
+                ownerByName[change.locale to change.name] = change.exerciseId
+                return true
+            } catch (e: Exception) {
+                counts.failed++
+                logger.error(
+                    "Catalog translation sync failed: slug={} locale={} name={} — {}",
+                    change.slug, change.locale, change.name, e.message
+                )
+                return false
+            }
+        }
+
+        var queue: List<TranslationChange> = pending
+        while (queue.isNotEmpty()) {
+            val deferred = ArrayList<TranslationChange>()
+            var progressed = false
+            for (change in queue) {
+                val owner = ownerByName[change.locale to change.name]
+                val nameFree = owner == null || owner == change.exerciseId
+                val renames = change.row == null || change.row.name != change.name
+                if (renames && !nameFree) {
+                    deferred += change
+                    continue
+                }
+                progressed = true
+                apply(change)
+            }
+            if (!progressed) {
+                deferred.forEach {
+                    counts.failed++
+                    logger.error(
+                        "Catalog translation sync skipped (name already used by exercise {}): slug={} locale={} name={}",
+                        ownerByName[it.locale to it.name], it.slug, it.locale, it.name
+                    )
+                }
+                break
+            }
+            queue = deferred
+        }
+        return counts
+    }
+
+    /** duplicate-map.json 의 사라진 slug 가 DB 에 아직 남아 있으면(마이그레이션 미적용) 그 slug 목록 */
+    private fun staleDuplicateSlugs(existingSlugs: Set<String>): List<String> {
+        val resource = ClassPathResource(DUPLICATE_MAP_RESOURCE)
+        if (!resource.exists()) return emptyList()
+        return try {
+            val map: Map<String, String> = resource.inputStream.use {
+                objectMapper.readValue(it, objectMapper.typeFactory.constructMapType(Map::class.java, String::class.java, String::class.java))
+            }
+            map.keys.filter { it in existingSlugs }.sorted()
+        } catch (e: Exception) {
+            logger.warn("duplicate-map.json 을 읽지 못했다: {}", e.message)
+            emptyList()
         }
     }
 
@@ -272,6 +417,19 @@ class ExerciseCatalogBootstrapService(
         val exitCode = SpringApplication.exit(applicationContext, { 0 })
         exitProcess(exitCode)
     }
+}
+
+/** 카탈로그 동기화 결과 — 같은 카탈로그를 다시 동기화하면 변경 수가 모두 0 이어야 한다(멱등) */
+data class CatalogSyncResult(
+    val exercisesCreated: Int,
+    val exercisesUpdated: Int,
+    val translationsCreated: Int,
+    val translationsUpdated: Int,
+    val translationsFailed: Int,
+    val staleDuplicates: Int
+) {
+    val changed: Boolean
+        get() = exercisesCreated > 0 || exercisesUpdated > 0 || translationsCreated > 0 || translationsUpdated > 0
 }
 
 @JsonIgnoreProperties(ignoreUnknown = true)
