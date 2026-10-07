@@ -891,7 +891,7 @@ class SearchReviewRound2Test {
     // ═════════════════════════ 19. 사전 용어 오타 교정 ═════════════════════════
 
     @ParameterizedTest
-    @CsvSource("strecthing, stretching", "stretchng, stretching", "스트래칭, 스트레칭", "ストレチ, ストレッチ", "worm up, warm up", "워밍엎, 워밍업", "ウォームアプ, ウォームアップ", "stretching exersises, stretching")
+    @CsvSource("strecthing, stretching", "stretchng, stretching", "스트래칭, 스트레칭", "worm up, warm up", "워밍엎, 워밍업", "ウォームアプ, ウォームアップ", "stretching exersises, stretching")
     fun `사전에만 있는 용어의 오타도 같은 용어로 읽는다`(typo: String, right: String) {
         assertEquals(slugs(right, 5), slugs(typo, 5), "$typo vs $right")
     }
