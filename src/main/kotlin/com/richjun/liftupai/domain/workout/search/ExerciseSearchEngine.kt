@@ -104,10 +104,6 @@ class ExerciseSearchEngine(
 
     val size: Int get() = indexed.size
 
-    init {
-        warmUp()
-    }
-
     /** 대표 질의 몇 개를 미리 돌려 클래스 로딩·JIT 비용을 첫 요청이 아니라 빌드 시점에 치른다 */
     fun warmUp() {
         runCatching {
@@ -184,7 +180,7 @@ class ExerciseSearchEngine(
 
         val plan = analyzer.analyze(tok).plan
         var result = when (plan.mode) {
-            Mode.BROWSE -> excludeFrom(browseSorted(pool, locale), plan)
+            Mode.BROWSE -> browseSorted(excludeFrom(pool, plan), locale)
             Mode.INTENT -> searchIntent(plan, pool)
             Mode.NAME -> searchName(plan, pool, deadline)
         }
@@ -212,14 +208,11 @@ class ExerciseSearchEngine(
         ).map { ExerciseSearchHit(it.doc, it.rank) }
     }
 
-    private fun excludeFrom(hits: List<ExerciseSearchHit>, plan: QueryPlan): List<ExerciseSearchHit> {
-        if (!plan.hasExclusions) return hits
+    private fun excludeFrom(pool: List<IDoc>, plan: QueryPlan): List<IDoc> {
+        if (!plan.hasExclusions) return pool
         val ex = exclusionSet(plan)
-        return hits.filter { h -> !isExcluded(indexed[indexOf(h.doc)], plan, ex) }
+        return pool.filter { !isExcluded(it, plan, ex) }
     }
-
-    private val indexById: Map<Long, Int> = indexed.associate { it.doc.id to it.index }
-    private fun indexOf(d: ExerciseSearchDoc): Int = indexById.getValue(d.id)
 
     private fun tierScore(t: RecommendationTier) = when (t) {
         RecommendationTier.ESSENTIAL -> 2
@@ -458,7 +451,7 @@ class ExerciseSearchEngine(
         val results = HashMap<Long, Double>()
         val docById = HashMap<Long, IDoc>()
 
-        fun consider(d: IDoc, base: Double, nameUsed: NameKey?, variantUsed: Variant? = null) {
+        fun consider(d: IDoc, base: Double, nameUsed: NameKey?) {
             var s = base + d.rank - SIMPLICITY_WEIGHT * d.wordCount
             // 질의에 없는 수식어(어시스트, 한 팔)가 붙은 변형은 기본 동작 뒤로 미룬다
             if (unwantedModifiers.any { g -> d.names.any { n -> g.any { n.strict.contains(it) } } }) s -= MODIFIER_PENALTY
@@ -481,13 +474,12 @@ class ExerciseSearchEngine(
         for (d in pool) {
             var best = -1.0
             var bestName: NameKey? = null
-            var bestVariant: Variant? = null
             for (v in variants) for (n in d.names) {
                 val s = matchTokens(v, n, muscleHints, d.doc)
-                if (s > best) { best = s; bestName = n; bestVariant = v }
+                if (s > best) { best = s; bestName = n }
             }
             if (best >= 0) {
-                consider(d, best, bestName, bestVariant)
+                consider(d, best, bestName)
                 if (best >= BAND_LOOSE) solid++
             }
             if ((++counter and 127) == 0 && System.nanoTime() > deadline) break
@@ -878,6 +870,10 @@ class ExerciseSearchEngine(
 
     private fun rankSorted(hits: List<ExerciseSearchHit>): List<ExerciseSearchHit> =
         hits.sortedWith(compareByDescending<ExerciseSearchHit> { it.score }.thenBy { it.doc.id })
+
+    init {
+        warmUp()  // 반드시 모든 프로퍼티가 초기화된 뒤(클래스 맨 끝)에 돌린다
+    }
 
     companion object {
         // band 간격(20)은 장비 우선 가중치(15)·타이브레이커(<=9)보다 크게 유지

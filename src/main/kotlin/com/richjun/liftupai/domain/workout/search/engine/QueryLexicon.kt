@@ -148,9 +148,9 @@ internal object QueryLexicon {
 
     // ── 부상 단서 ────────────────────────────────────────────────────────────────────────────
     private val CUES = """
-        痛い|痛み|痛めた|痛めている|痛めてる|痛くない|痛くならない|痛めない|痛くなる|優しい|やさしい|負担がかからない|負担がかからず|負担がない|負担の少ない|負担少ない|負担を減らす|負担をかけない|負担をかけずに|負担軽減|負担が少ない|負担が小さい|負担にならない|怪我|ケガ|けが|故障|違和感|悪い|不安|庇う|保護|リハビリ|痛む|傷める|傷めた|炎症|痛くて|痛くても|大丈夫|安全|安全な|安心|弱い|弱め|軽め|無理なく|無理のない
-        |안좋은데|안좋은데도|아픈데|아프지만|안좋을때|안좋을 때|안좋은|안좋아|안좋다|안좋을|안 좋을 때|아픈|아플|아플때|아프|아파|아프지않은|아프지않게|아프지않는|안아픈|안아프게|통증|부담|부담없는|부담적은|부담이적은|부담을줄이는|부담안되는|부담이안되는|약한|약할|약해|부상|재활|보호|다쳤|다친|다쳐서|조심|조심해서|무리없는|무리없이|염증|불편|불편한|불안|안전한|안전하게|안전|괜찮은|괜찮게|편한|편하게|디스크|시큰|시큰거리는|뻐근|뻐근한
-        |bad|sore|weak|injured|injury|injuries|pain|painful|painless|hurt|hurts|hurting|friendly|safe|safely|gentle|gently|rehab|rehabilitation|protect|protecting|careful|carefully|issues|issue|problems|problem|trouble|troubles|ache|aches|aching|stiff|tender|inflamed|pulled|strained|strain|sprain|sprained|surgery|recovering|recovery|post-op|easy-on|easy on|easyon|kind to|gentle on|low-stress
+        痛い|痛み|痛めた|痛めている|痛めてる|痛くない|痛くならない|痛めない|痛くなる|優しい|やさしい|負担がかからない|負担がかからず|負担がない|負担の少ない|負担少ない|負担を減らす|負担をかけない|負担をかけずに|負担軽減|負担が少ない|負担が小さい|負担にならない|怪我|ケガ|けが|故障|違和感|悪い|不安|庇う|保護|リハビリ|痛む|傷める|傷めた|炎症|痛くて|痛くても|大丈夫|安全|安全な|安心|弱い|弱め|軽め|無理なく|無理のない|ケガしにくい|怪我しにくい|痛めにくい|傷めにくい|怪我予防|ケガ予防|痛くなりにくい
+        |안좋은데|안좋은데도|아픈데|아프지만|안좋을때|안좋을 때|안좋은|안좋아|안좋다|안좋을|안 좋을 때|아픈|아플|아플때|아프|아파|아프지않은|아프지않게|아프지않는|안아픈|안아프게|통증|부담|부담없는|부담적은|부담이적은|부담을줄이는|부담안되는|부담이안되는|약한|약할|약해|부상|재활|보호|다쳤|다친|다쳐서|조심|조심해서|무리없는|무리없이|염증|불편|불편한|불안|안전한|안전하게|안전|무리가안가는|무리안가는|무리가가지않는|무리가 안 가는|무리 안 가는|괜찮은|괜찮게|편한|편하게|디스크|시큰|시큰거리는|뻐근|뻐근한
+        |bad|sore|weak|injured|injury|injuries|pain|painful|painless|hurt|hurts|hurting|friendly|safe|safely|gentle|gently|rehab|rehabilitation|protect|protecting|careful|carefully|issues|issue|problems|problem|trouble|troubles|ache|aches|aching|stiff|tender|inflamed|pulled|strained|strain|sprain|sprained|surgery|recovering|recovery|post-op|easy-on|easy on|easyon|kind to|gentle on|low-stress|prehab|prevent injury|injury prevention|injury-proof|bulletproof|wont hurt|doesnt hurt|aggravate|aggravating|irritate|irritating|flare up|flareup
     """.trimIndent()
 
     /** 충격·소음을 피하는 표현 — 점프류를 제외한다 */
