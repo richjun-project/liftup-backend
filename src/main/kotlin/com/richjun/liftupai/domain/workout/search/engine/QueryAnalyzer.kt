@@ -124,8 +124,12 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         fun hasUnknown(i: Int): Boolean {
             val st = tok.starts[i]
             val end = minOf(unknownMask.size, st + words[i].length)
-            for (p in st until end) if (unknownMask[p]) return true
-            return false
+            var unknownChars = 0
+            for (p in st until end) if (unknownMask[p]) unknownChars++
+            if (unknownChars == 0) return false
+            // 한글·가나·한자 단어에서 이미 알아들은 부분(윗복근 의 복근, ダンベルカ 의 ダンベル)이 절반 이상이면 오타가 아니라 새 말이다
+            val known = (end - st) - unknownChars
+            return words[i][0].code < 0x250 || known < 2 || known * 2 < (end - st)
         }
         fun unknown(i: Int): Boolean {
             val w = words[i]

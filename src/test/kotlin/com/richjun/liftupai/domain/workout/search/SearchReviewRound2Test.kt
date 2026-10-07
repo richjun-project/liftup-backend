@@ -903,6 +903,18 @@ class SearchReviewRound2Test {
     }
 
     @Test
+    fun `알아들은 부분이 절반 이상인 한글·가나 단어는 다른 용어로 바꾸지 않는다`() {
+        // 윗복근 → 비복근(종아리) 로, ダンベルカ-ル → ダンベル 로 잘못 고치면 안 된다
+        assertTrue(top("윗복근", 5).all { it.category == ExerciseCategory.CORE }, "${slugs("윗복근", 5)}")
+        assertTrue(top("ダンベルカ-ル", 3).all { it.equipment == Equipment.DUMBBELL && it.slug.contains("curl") }, "${slugs("ダンベルカ-ル", 3)}")
+    }
+
+    @Test
+    fun `요가는 요가 이름이 든 운동을 먼저 보여 준다`() {
+        assertTrue(slugs("ヨガ", 2).all { it.contains("yoga") }, "${slugs("ヨガ", 3)}")
+    }
+
+    @Test
     fun `짧은 낯선 단어는 사전 용어로 함부로 바꾸지 않는다`() {
         assertEquals(slugs("cord", 3), slugs("cord", 3))
         assertFalse(engine.analyze("trxx").hasIntentSignal)
