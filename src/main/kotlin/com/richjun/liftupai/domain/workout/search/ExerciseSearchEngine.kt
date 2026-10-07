@@ -441,6 +441,7 @@ class ExerciseSearchEngine(
         val pool = if (ex != null) rawPool.filter { !isExcluded(it, plan, ex) } else rawPool
         val soft = if (plan.injuries.isNotEmpty()) softBits(plan) else null
         val prefer = if (plan.injuries.isNotEmpty()) preferBits(plan) else null
+        val regressBits = if (plan.regress) sigIndex.anyOf(QueryLexicon.regressionKeys) else null
 
         val flat = SearchText.strictKey(seeds.first())
         if (isShort(flat) && synonymGroups(flat) == null) return searchShort(flat, pool)
@@ -469,6 +470,7 @@ class ExerciseSearchEngine(
             }
             if (plan.numbers.isNotEmpty() && plan.numbers.any { num -> d.names.any { it.strict.contains(num) } }) s += NUMBER_BOOST
             s += levelAdjust(d.doc, plan.level)
+            if (regressBits != null && regressBits.get(d.index)) s += REGRESS_BOOST
             if (soft != null && prefer != null) s += injuryAdjust(d, plan, soft, prefer)
             val cur = results[d.doc.id]
             if (cur == null || s > cur) { results[d.doc.id] = s; docById[d.doc.id] = d }
@@ -914,6 +916,7 @@ class ExerciseSearchEngine(
         private const val NUMBER_BOOST = 1.5
         private const val HOME_PREF_WEIGHT = 12.0
         private const val LEVEL_ADJUST = 5.0
+        private const val REGRESS_BOOST = 14.0
         private const val INJURY_SOFT_PENALTY = 14.0
         private const val INJURY_PREFER_BONUS = 10.0
         private const val FUZZY_TRIGGER = 10

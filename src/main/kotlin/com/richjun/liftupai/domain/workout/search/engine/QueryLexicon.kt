@@ -65,7 +65,9 @@ internal object QueryLexicon {
         val move: MoveGroup? = null,
         val mod: Mod? = null,
         /** NEG: "대신/instead of/代わりに" — 제외하되 그 운동과 비슷한 운동을 대신 보여 준다 */
-        val instead: Boolean = false
+        val instead: Boolean = false,
+        /** LEVEL: "X 못 해요/できない/can't do X" — X 의 쉬운 변형(어시스트·무릎·인클라인)을 앞세운다 */
+        val regress: Boolean = false
     )
 
     class MoveGroup(val id: String, val keys: List<SigKey>)
@@ -162,7 +164,19 @@ internal object QueryLexicon {
 
     // ── 수준 ─────────────────────────────────────────────────────────────────────────────────
     private val BEGINNER = "beginner friendly|beginners friendly|newbie friendly|novice friendly|初心者にやさしい|初心者に優しい|초보자 친화|초보도 쉬운|easy|쉬운|楽な|初心者|初心者向け|入門|入門者|ビギナー|初級|初級者|ビギナー向け|はじめて|初めて|초보|초보자|초보자용|초보용|초심자|입문|입문자|왕초보|처음|처음하는|beginner|beginners|beginner-friendly|novice|newbie|starter|starters|entry level|entrylevel|first time|first-time|noob|rookie|beginning"
-    private val ADVANCED = "上級者|上級|上級者向け|中上級|ハード|きつい|エキスパート|고급|고급자|상급|상급자|고수|상급자용|하드|힘든|advanced|expert|hardcore|intense|challenging|elite|pro|harder|hardest"
+    /** "못 해요" 류 — 그 운동을 못 하는 사람에게는 쉬운 변형이 먼저다 */
+    private val CANT_DO = """
+        ができない|できない|出来ない|できなくて|できません|できなかった|やれない|無理|きつい|辛い|つらい|苦手
+        |못해|못해요|못하는|못 하는|못할때|못할 때|못 해요|못하겠|못 하겠어|안돼요|안되는|힘들어|힘든|힘들다|어려워|어려운|어렵다|못 올라|못올라
+        |cant do|can't do|cannot do|cant|unable to do|unable to|struggle with|struggling with|struggle|hard to do|too hard|too difficult|difficult|can not do
+    """.trimIndent()
+
+    /** 쉬운 변형을 가리키는 이름 표기 */
+    val regressionKeys: List<SigKey> = listOf(
+        "assisted|knee|kneeling|incline push|wall push|negative|modified|supported|band assisted|partial|eccentric|アシスト|ニー|膝つき|ネガティブ|インクライン|어시스트|니 푸시업|무릎 푸시업|네거티브|인클라인"
+    ).flatMap { it.split("|") }.mapNotNull { sigKey(it) }
+
+    private val ADVANCED = "上級者|上級|上級者向け|中上級|ハード|エキスパート|고급|고급자|상급|상급자|고수|상급자용|하드|힘든|advanced|expert|hardcore|intense|challenging|elite|pro|harder|hardest"
 
     // ── 세부 부위 수식어 (부위 + 수식어 → 세부 개념) ─────────────────────────────────────────
     private val MODIFIER_RULES = """
@@ -394,6 +408,7 @@ internal object QueryLexicon {
         for (k in splitRules(QUIET)) add(key(k), Term(Role.QUIET))
         for (k in BEGINNER.split("|")) add(key(k), Term(Role.LEVEL, level = -1))
         for (k in ADVANCED.split("|")) add(key(k), Term(Role.LEVEL, level = 1))
+        for (k in splitRules(CANT_DO)) add(key(k), Term(Role.LEVEL, level = -1, regress = true))
         for (k in STRETCH.split("|")) add(key(k), Term(Role.STRETCH))
 
         for (k in listOf("産後", "産後ケア", "산후", "산후 운동", "postpartum", "post partum", "postnatal", "after pregnancy", "임산부", "pregnancy", "prenatal", "妊娠", "妊婦", "diastasis recti", "diastasis")) add(key(k), Term(Role.QUIET))

@@ -40,7 +40,7 @@ internal object ExerciseSearchLexicon {
         "데드리프트|데드|데들|데드 리프트|dead lift|deadlift|dl|デッドリフト|デッド|デットリフト => 데드리프트|deadlift|デッドリフト",
         "루마니안 데드리프트|루마니안|rdl|romanian deadlift|ルーマニアン => 루마니안 데드리프트|romanian deadlift|ルーマニアンデッドリフト",
         "스티프 레그 데드리프트|스티프|stiff leg deadlift|stiff leg|スティッフレッグ => 스티프 레그 데드리프트|stiff leg deadlift|スティッフレッグ",
-        "스쿼트|스콰트|스쿼드|스쿠아트|스퀏|squat|スクワット|スクワツト => 스쿼트|squat|スクワット",
+        "스쿼트|스콰트|스쿼드|스쿠아트|스퀏|squat|スクワット|スクワツト|スクウォット|スクォット|スクヮット|スクワァット|スクワッド|스쿠와트|스쿼또 => 스쿼트|squat|スクワット",
         "백스쿼트|백 스쿼트|back squat|バックスクワット|풀 스쿼트|full squat|フルスクワット => 풀 스쿼트|full squat|フルスクワット|back squat",
         "프론트 스쿼트|front squat|フロントスクワット => 프론트 스쿼트|front squat|フロントスクワット",
         "불가리안|bulgarian|ブルガリアン => 불가리안|bulgarian|ブルガリアン",
@@ -94,6 +94,17 @@ internal object ExerciseSearchLexicon {
         "코브라 자세|コブラのポーズ|cobra pose|bhujangasana => 코브라 요가 포즈|cobra yoga pose|コブラヨガポーズ",
         "로드바이크|ロードバイク|road bike|クロスバイク|실내 자전거|실내자전거|室内バイク|ルームバイク => 스테이셔너리 바이크|stationary exercise bike|エクササイズバイク",
         "조정|조정 머신|조정머신|ボート漕ぎ|ボートこぎ|ボート|rower|로워|ローワー => 로잉 머신|rowing machine|ローイングマシン",
+        "인클|인클라인프레스|인클라인 벤치|インクラインベンチ|incline bench|incline press|인벤 => 인클라인 벤치프레스|incline bench press|インクラインベンチプレス",
+        "플랭|plank hold|プランクホールド => 플랭크|plank|プランク",
+        "크런|クランチ운동|ab crunch => 크런치|crunch|クランチ",
+        "힙쓰|힙트|힙쓰러|힙스|ヒプスラ|ヒップスラ => 힙 쓰러스트|hip thrust|ヒップスラスト",
+        "ブルスク|ブルガリ|불스|불가스 => 불가리안 스플릿 스쿼트|bulgarian split squat|ブルガリアンスプリットスクワット",
+        "フロスク|프론스|프스 => 프론트 스쿼트|front squat|フロントスクワット",
+        "ハックスク|ハンスク|핵스 => 핵 스쿼트|hack squat|ハックスクワット",
+        "ベンプレ|ベンプ => 벤치프레스|bench press|ベンチプレス",
+        "ダンプレ|ダンベルプレ => 덤벨 프레스|dumbbell press|ダンベルプレス",
+        "런닝머신|런닝|ランニングマシーン => treadmill|트레드밀|러닝머신|トレッドミル|ランニングマシン",
+        "스텝퍼|stepper|ステッパー|stair climber|stairmaster|스텝밀|ステアクライマー => step up|스텝업|ステップアップ|stepper|스텝퍼",
         "프리쳐 컬|프리처 컬|프리쳐컬|프리처컬|프리쳐|프리처|preacher curl|preacher|プリーチャーカール|プリーチャー|プリチャーカール => 프리처 컬|preacher curl|プリーチャーカール",
         "와이드 스쿼트|와이드스쿼트|wide squat|wide stance squat|wide stance|ワイドスクワット|ワイドスタンススクワット|ワイドスタンス => 스모 스쿼트|sumo squat|スモウスクワット|와이드 스탠스",
         "hex bar deadlift|hex bar|hexbar|헥스바 데드리프트|헥스바|헥스 바|ヘックスバー|ヘックスバーデッドリフト|트랩바 => 트랩 바 데드리프트|trap bar deadlift|トラップバーデッドリフト",
@@ -183,14 +194,14 @@ internal object ExerciseSearchLexicon {
     val muscleTerms: Map<String, MuscleTerm> = buildList {
         addAll(muscle("하체|다리|下半身|美脚|脚線美|脚長|脚|足|レッグ|레그|legs|leg|lower body|lowerbody|하체운동|脚トレ|脚やせ|다리살|다리 운동|下肢|leg day|legday", setOf(G.LEGS, G.QUADRICEPS, G.HAMSTRINGS, G.GLUTES, G.CALVES), setOf(C.LEGS)))
         addAll(muscle("허벅지|대퇴사두|대퇴사두근|太もも|ふともも|大腿四頭筋|四頭筋|大腿四頭|quads|quad|quadriceps|thigh|thighs|前もも|前腿|앞허벅지|앞벅지|앞 허벅지|front thigh|クワッド|쿼드|허벅지살|太もも痩せ", setOf(G.QUADRICEPS, G.LEGS), setOf(C.LEGS)))
-        addAll(muscle("햄스트링|ハムストリング|ハムストリングス|裏もも|裏腿|太ももの裏|ももの裏|もも裏|大腿二頭筋|ハム|hamstrings|hamstring|대퇴이두|허벅지 뒤|허벅지 뒤쪽|허벅지 뒷쪽|허벅지 뒷|뒷벅지|뒤허벅지|뒷 허벅지|back of thigh|back of thighs|back of the thigh|back of legs|thigh back|posterior chain", setOf(G.HAMSTRINGS), setOf(C.LEGS)))
+        addAll(muscle("햄스트링|hams|hammies|ham|ハムストリング|ハムストリングス|裏もも|裏腿|太ももの裏|ももの裏|もも裏|大腿二頭筋|ハム|hamstrings|hamstring|대퇴이두|허벅지 뒤|허벅지 뒤쪽|허벅지 뒷쪽|허벅지 뒷|뒷벅지|뒤허벅지|뒷 허벅지|back of thigh|back of thighs|back of the thigh|back of legs|thigh back|posterior chain", setOf(G.HAMSTRINGS), setOf(C.LEGS)))
         addAll(muscle("엉덩이|둔근|대둔근|중둔근|소둔근|힙|お尻|おしり|尻|ヒップ|臀筋|大臀筋|殿筋|グルート|글루트|大殿筋|둔부|glutes|glute|butt|bum|hip|hips|엉덩이살|お尻痩せ", setOf(G.GLUTES), emptySet()))
         addAll(muscle("등|등운동|광배|광배근|バック|背中|広背筋|広背|背筋|背|背部|등근육|등 근육|back muscles|back|lats|lat|upper back|上背部|등 윗부분|윗등|ラット|랫", setOf(G.BACK, G.LATS, G.TRAPS), setOf(C.BACK)))
         addAll(muscle("가슴|대흉근|胸|大胸筋|大胸|チェスト|체스트|胸板|가슴근육|chest|pecs|pec|pectorals|pectoral|胸筋", setOf(G.CHEST), setOf(C.CHEST)))
         addAll(muscle("어깨|삼각근|肩|三角筋|ショルダー|숄더|肩の筋肉|shoulders|shoulder|delts|delt|deltoids|deltoid", setOf(G.SHOULDERS), setOf(C.SHOULDERS)))
         addAll(muscle("팔|腕|アーム|arms|arm|상완|팔운동|腕トレ|upper arm|upper arms", setOf(G.BICEPS, G.TRICEPS, G.FOREARMS), setOf(C.ARMS)))
-        addAll(muscle("이두|이두근|上腕二頭筋|二頭筋|二頭|上腕二頭|力こぶ|バイセップス|바이셉스|biceps|bicep", setOf(G.BICEPS), setOf(C.ARMS)))
-        addAll(muscle("삼두|삼두근|上腕三頭筋|三頭筋|三頭|上腕三頭|二の腕|二の腕痩せ|振袖肉|トライセプス|트라이셉스|팔뚝살|팔뚝|underarm flab|underarm fat|arm flab|arm fat|flabby arms|upper arm fat|bat wings|batwings|arm jiggle|triceps|tricep", setOf(G.TRICEPS), setOf(C.ARMS)))
+        addAll(muscle("이두|이두근|bis|bi|biceps brachii|上腕二頭筋|二頭筋|二頭|上腕二頭|力こぶ|バイセップス|바이셉스|biceps|bicep", setOf(G.BICEPS), setOf(C.ARMS)))
+        addAll(muscle("삼두|삼두근|tris|tri|triceps brachii|上腕三頭筋|三頭筋|三頭|上腕三頭|二の腕|二の腕痩せ|振袖肉|トライセプス|트라이셉스|팔뚝살|팔뚝|underarm flab|underarm fat|arm flab|arm fat|flabby arms|upper arm fat|bat wings|batwings|arm jiggle|triceps|tricep", setOf(G.TRICEPS), setOf(C.ARMS)))
         addAll(muscle("전완|전완근|前腕|forearms|forearm", setOf(G.FOREARMS), setOf(C.ARMS)))
         addAll(muscle("복근|코어|배|복|복부|복직근|복횡근|식스팩|6팩|腹筋|腹直筋|腹横筋|体幹|お腹|腹|コア|アブ|abs|ab|core|abdominals|abdominal|rectus abdominis|transverse abdominis|stomach|belly|six pack|sixpack", setOf(G.ABS, G.CORE), setOf(C.CORE)))
         addAll(muscle("종아리|비복근|가자미근|ふくらはぎ|腓腹筋|ヒラメ筋|カーフ|calves|calve|calf|gastrocnemius|soleus", setOf(G.CALVES), setOf(C.LEGS)))

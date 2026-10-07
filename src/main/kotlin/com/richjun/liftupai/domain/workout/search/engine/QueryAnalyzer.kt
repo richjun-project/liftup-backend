@@ -19,6 +19,8 @@ internal class QueryPlan(
     val stretch: Boolean,
     /** -1 초보 선호, 0 없음, +1 상급 선호 */
     val level: Int,
+    /** 못 하는 운동의 쉬운 변형을 앞세운다 */
+    val regress: Boolean,
     val excludeEquip: Set<Equipment>,
     val excludeKeys: List<SigKey>,
     val injuries: Set<Joint>,
@@ -292,6 +294,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         var home = quiet
         var stretch = false
         var level = 0
+        var regress = false
         val numbers = ArrayList<String>()
         var highReps = false
         var positiveName = false
@@ -323,7 +326,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                     terms.firstOrNull { it.role == Role.EQUIP }?.let { equipments.addAll(it.equipment) }
                     if (terms.any { it.role == Role.HOME }) home = true
                     if (terms.any { it.role == Role.STRETCH }) stretch = true
-                    terms.firstOrNull { it.role == Role.LEVEL }?.let { level = it.level }
+                    terms.firstOrNull { it.role == Role.LEVEL }?.let { level = it.level; if (it.regress) regress = true }
                     val contentRole = terms.any { it.role == Role.CONCEPT || it.role == Role.EQUIP || it.role == Role.HOME || it.role == Role.STRETCH }
                     if (!contentRole) {
                         // 부위에 붙지 못한 수식어(front squat 의 front)는 이름의 일부 — 한 글자 한자 수식어는 무시
@@ -349,7 +352,13 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             }
         }
 
-        val nameLikeUnknown = unknownChunks.any { chunk -> chunk.length >= 2 && vocab.nearest(chunk).isNotEmpty() } ||
+        // 모르는 덩어리가 든 "단어 전체"가 카탈로그 어휘의 오타로 보이면("レッグレーズ" ≈ レッグレイズ) 이름이다
+        val typoWord = unknownChunks.isNotEmpty() && tok.words.any { w ->
+            val start = tok.strict.indexOf(w)
+            start >= 0 && segs.any { sg -> sg.unknown && !consumed[segs.indexOf(sg)] && sg.s >= start && sg.e <= start + w.length } &&
+                w.length >= 4 && vocab.nearest(w).isNotEmpty()
+        }
+        val nameLikeUnknown = typoWord || unknownChunks.any { chunk -> chunk.length >= 2 && vocab.nearest(chunk).isNotEmpty() } ||
             // 장비만 알아들었고 나머지를 모르면 그 나머지는 운동 이름일 가능성이 높다("바벨 로오")
             (unknownChunks.isNotEmpty() && effectiveConcepts.isEmpty() && !home && equipments.isNotEmpty())
         val hasContentSignal = effectiveConcepts.isNotEmpty() || equipments.isNotEmpty() || home
@@ -373,7 +382,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         }
         if (mode == Mode.NAME && finalSeeds.isEmpty()) finalSeeds = listOf(tok.words)
         return QueryPlan(
-            mode = mode, concepts = effectiveConcepts, equipments = equipments, home = home, stretch = stretch, level = level,
+            mode = mode, concepts = effectiveConcepts, equipments = equipments, home = home, stretch = stretch, level = level, regress = regress,
             excludeEquip = excludeEquip, excludeKeys = excludeKeys, injuries = injuries, numbers = numbers, highReps = highReps,
             seeds = finalSeeds, hasUnknown = unknownChunks.isNotEmpty(), similarTo = similarKeys
         )
