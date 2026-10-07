@@ -433,6 +433,11 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
 
         // 1) 부정: 표지 + 대상
         fun negAt(idx: Int, neg: Term, avail: Boolean, dislike: Boolean = false): Boolean {
+            // "free weight swaps" — 자유중량으로 바꾸는 방법("swaps")이지 자유중량을 빼라는 말이 아니다
+            if (neg.instead && text.substring(segs[idx].s, segs[idx].e) in SWAP_NOUN_KEYS) {
+                val p = nearestContent(idx, -1)
+                if (p >= 0 && !segs[p].unknown && !segs[p].isNum && segs[p].terms!!.any { it.role == Role.EQUIP && it.equipment == FREE_WEIGHT_SET }) return false
+            }
             // "the gym is crowded", "ジムが混んでる" — 헬스장 자체가 붐빈다는 말은 어떤 장비도 쓸 수 없다는 말이 아니다(건너뛰는 군더더기 뒤의 장비를 대상으로 잡지 않는다)
             if (avail && neg.targetBefore) {
                 var j = idx - 1
@@ -1112,6 +1117,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private val NOT_ONLY = Regex("notonly|뿐만아니라|だけでなく|だけじゃなく|만이아니라|만아니라|뿐아니라|だけではなく")
         private val GYM_WORDS = listOf("gym", "gyms", "헬스장", "헬스", "체육관", "ジム", "ジムが", "fitness center", "weight room", "weightroom").map { SearchText.strictKey(it) }.toSet()
         private val FREE_VACANT_BEFORE = setOf("is", "are", "be", "was", "were", "been", "still", "currently", "totally", "completely", "also", "now", "today", "all", "really", "pretty", "mostly", "plenty").map { SearchText.strictKey(it) }.toSet()
+        private val SWAP_NOUN_KEYS = listOf("swaps", "swap", "swapouts", "swap outs", "swap ideas").map { SearchText.strictKey(it) }.toSet()
         private val FREE_WEIGHT_SET = setOf(Equipment.DUMBBELL, Equipment.BARBELL, Equipment.KETTLEBELL)
         private val PREFIX_EQUIPMENT = setOf(Equipment.BARBELL, Equipment.DUMBBELL, Equipment.CABLE, Equipment.KETTLEBELL, Equipment.RESISTANCE_BAND)
         /** 장비이지만 장비 사전에는 없는 기구 이름 — 이게 점유·고장이라는 말은 장비를 쓸 수 없다는 말이다 */
