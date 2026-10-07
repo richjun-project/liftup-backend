@@ -486,7 +486,7 @@ internal object QueryLexicon {
 
         // 3) 개념
         val conceptMap = LinkedHashMap<String, Concept>()
-        for (line in (QueryLexiconRound3.CONCEPT_RULES + "\n" + CONCEPT_RULES).lines().map { it.trim() }.filter { it.isNotEmpty() }) {
+        for (line in (QueryLexiconRound3.CONCEPT_RULES + "\n" + CONCEPT_RULES + "\n" + QueryLexiconRound3.CONCEPT_ALIASES).lines().map { it.trim() }.filter { it.isNotEmpty() }) {
             val (left, right) = line.split("=>", limit = 2).map { it.trim() }
             val fields = right.split(";").map { it.trim() }
             val id = fields[0]

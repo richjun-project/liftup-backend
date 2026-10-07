@@ -81,7 +81,7 @@ internal object DescriptionLexicon {
         "waist" to "腰|허리|waist|lower back",
         // 동작
         "bend" to "曲げ|屈曲|折り曲げ|折りたた|たたん|畳|굽히|접어|접고|접는|굴곡|bend|bends|bending|bent|flex|flexion|fold|folded|tuck|tucked",
-        "extend" to "伸ばし|伸ばす|伸ば|伸展|のばし|伸び|펴고|펴서|펴며|펴|폄|펼|뻗|신전|extend|extended|extending|extension|straighten|straightened|straight|reach|reaching",
+        "extend" to "反らす|反らし|反ら|反り|伸ばし|伸ばす|伸ば|伸展|のばし|伸び|젖히|젖혀|뒤로 젖|arch|arching|arched|펴고|펴서|펴며|펴|폄|펼|뻗|신전|extend|extended|extending|extension|straighten|straightened|straight|reach|reaching",
         "raise" to "上げ|持上げ|上昇|들어 올|들어올|들고|들어서|올리|거상|raise|raises|raising|lift|lifts|lifting|elevate|hoist|bring up|pick up",
         "lower" to "下ろし|下降|내리|낮추|낮춰|하강|lower|lowers|lowering|descend|descending|drop|dropping",
         "pull" to "引く|引い|引っ張|引きつけ|引き寄せ|引き上げ|ひく|당기|끌어|pull|pulls|pulling|draw|drawing|retract",

@@ -446,6 +446,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         val unknownChunks = ArrayList<String>()
         var jointPlain = false
         var loneModifier = false
+        var timeOnlyNumbers = true
 
         var idx = 0
         while (idx < segs.size) {
@@ -465,6 +466,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                     val nextKey = next?.let { text.substring(it.s, it.e) }
                     val v = digits.toIntOrNull()
                     if (v != null && v >= HIGH_REPS && nextKey != null && nextKey in REP_UNITS) highReps = true
+                    if (nextKey == null || nextKey !in TIME_UNITS) timeOnlyNumbers = false
                 } else {
                     val terms = sg.terms!!
                     val concept = refined[idx] ?: terms.firstOrNull { it.role == Role.CONCEPT }?.concept
@@ -548,7 +550,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             // 이름에도 쓰이는 군더더기("lift", "set")만 남은 질의는 그 단어 자체로 이름 검색한다
             val keepAmbiguous = seeds.firstOrNull().orEmpty()
             if (keepAmbiguous.isNotEmpty()) { mode = Mode.NAME; finalSeeds = listOf(keepAmbiguous) }
-            else if (numbers.isNotEmpty() || text.length <= 2) { mode = Mode.NAME; finalSeeds = listOf(tok.words) }
+            // "朝5분でできる運動", "10 minute workout" — 시간만 말한 수치는 이름이 아니라 군더더기라서 목록(브라우즈)이다
+            else if ((numbers.isNotEmpty() && !timeOnlyNumbers) || text.length <= 2) { mode = Mode.NAME; finalSeeds = listOf(tok.words) }
         }
         if (mode == Mode.NAME && finalSeeds.isEmpty()) finalSeeds = listOf(tok.words)
         return QueryPlan(
@@ -774,6 +777,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private const val HIGH_REPS = 20
         private val FREE_NOT_NEG_BEFORE = setOf("weight", "motion", "hand", "style", "form", "flow", "fall", "standing", "range", "running", "lift", "lifting").map { SearchText.strictKey(it) }.toSet()
         private val LESS_NEG_BEFORE = setOf("workout", "exercise", "training", "routine", "program", "plan").map { SearchText.strictKey(it) }.toSet()
+        private val TIME_UNITS = setOf("분", "分", "分間", "min", "mins", "minute", "minutes", "분간", "초", "秒", "sec", "secs", "second", "seconds", "時間", "시간", "hour", "hours", "hr", "hrs", "日", "일", "day", "days", "週", "주", "week", "weeks", "ヶ月", "개월", "month", "months").map { SearchText.strictKey(it) }.toSet()
         private val REP_UNITS = setOf("회", "개", "回", "번", "rep", "time", "個").map { SearchText.strictKey(it) }.toSet()
     }
 }

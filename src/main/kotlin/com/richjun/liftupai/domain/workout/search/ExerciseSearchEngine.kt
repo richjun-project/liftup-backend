@@ -539,7 +539,7 @@ class ExerciseSearchEngine(
             if (similar.isNotEmpty()) return rankSorted(scoreIntent(plan, similar, emptyList(), soft, prefer, fits))
         }
         var out = scoreIntent(plan, cands, evals, soft, prefer)
-        if (plan.combineAll && out.size < COMBINE_MIN_HITS) {
+        if (plan.combineAll && out.size < COMBINE_MIN_HITS && plan.concepts.none { it.id == "foamroll" }) {
             // 두 조건에 모두 맞는 운동이 적으면("가슴 웜업") 한쪽만 맞는 운동으로 채우되, 둘 다 맞는 것을 위에 둔다
             val both = out.associateBy { it.doc.id }
             out = scoreIntent(plan, cands, evals, soft, prefer, requireAll = false)
