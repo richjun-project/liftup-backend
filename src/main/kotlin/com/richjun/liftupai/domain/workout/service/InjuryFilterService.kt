@@ -60,6 +60,74 @@ class InjuryFilterService(
         /** 큐레이션 테이블 조회 캐시 TTL. 테이블은 사실상 정적이고(현재 0행) 부상 세트도 몇 종류 안 된다. */
         private const val RESTRICTION_CACHE_TTL_MS = 60_000L
         private const val RESTRICTION_CACHE_MAX = 256
+
+        fun ruleRestricts(exercise: Exercise, injuries: Set<String>): Boolean {
+            val parts = injuries.map { it.substringBefore(':').trim().lowercase() }.toSet()
+            val pattern = exercise.movementPattern?.uppercase().orEmpty()
+            val muscles = exercise.muscleGroups.map { it.name }.toSet()
+
+            fun hitsPattern(vararg p: String) = p.any { pattern == it }
+            fun hitsMuscle(vararg m: String) = m.any { it in muscles }
+
+            for (part in parts) {
+                val restricted = when (part) {
+                    // 힙쓰러스트·글루트 브릿지는 무릎 굽힘 하중이 거의 없어 무릎 재활에서도 쓰는 둔근 운동이다.
+                    // 햄스트링 보조 동원 때문에 통째로 막히던 것을 풀되, 패턴 태그만 믿지 않고 종목명(슬러그) 허용 목록으로만 푼다.
+                    // 무릎 꿇기·네발 자세(킥백·힙쓰러스트 온 니즈)는 무릎 관절에 하중이 실리고, 일부는 트라이셉스 킥백이 잘못 태깅된 것이다.
+                    "knee" -> (hitsPattern("SQUAT", "LUNGE", "LEG_PRESS", "LEG_EXTENSION", "LEG_CURL", "PLYOMETRIC") ||
+                        hitsMuscle("QUADRICEPS", "HAMSTRINGS", "CALVES")) &&
+                        !isKneeSafeGluteBridge(exercise, pattern, muscles)
+                    "hip" -> hitsPattern("SQUAT", "LUNGE", "HIP_HINGE", "DEADLIFT", "GLUTE_FOCUSED", "LEG_PRESS", "PLYOMETRIC") ||
+                        hitsMuscle("GLUTES", "HAMSTRINGS")
+                    // 허리는 "선 자세로 척추에 하중이 실리는" 동작 전반이 문제다.
+                    // 런지와 스탠딩 바벨 오버헤드 프레스도 여기 포함된다(치환 검토 중 누락 발견).
+                    "lower_back", "back", "lowerback" ->
+                        hitsPattern(
+                            "DEADLIFT", "HIP_HINGE", "BARBELL_ROW", "SQUAT", "LUNGE",
+                            "CLEAN", "SNATCH", "ROTATION", "CARRY", "COMPOUND_COMPLEX",
+                            "VERTICAL_PRESS_BARBELL"
+                        ) || isUnsupportedBentOverRow(exercise, pattern)
+                    "shoulder" -> hitsPattern(
+                        "VERTICAL_PRESS_BARBELL", "VERTICAL_PRESS_DUMBBELL", "VERTICAL_PRESS_MACHINE",
+                        "INCLINE_PRESS_BARBELL", "INCLINE_PRESS_DUMBBELL", "HORIZONTAL_PRESS_BARBELL",
+                        "HORIZONTAL_PRESS_DUMBBELL", "DIPS", "PUSHUP", "FLY", "LATERAL_RAISE", "FRONT_RAISE",
+                        "UPRIGHT_ROW", "PULLUP_CHINUP", "SNATCH", "CLEAN"
+                    ) || hitsMuscle("SHOULDERS")
+                    "elbow" -> hitsPattern(
+                        "BICEP_CURL_BARBELL", "BICEP_CURL_DUMBBELL", "BICEP_CURL_CABLE",
+                        "TRICEP_OVERHEAD", "TRICEP_LYING", "TRICEP_PUSHDOWN", "DIPS", "PUSHUP", "PULLUP_CHINUP"
+                    ) || hitsMuscle("BICEPS", "TRICEPS")
+                    "wrist" -> hitsPattern(
+                        "PUSHUP", "PLANK", "ROLLOUT", "CLEAN", "SNATCH", "CARRY",
+                        "HORIZONTAL_PRESS_BARBELL", "VERTICAL_PRESS_BARBELL"
+                    ) || hitsMuscle("FOREARMS")
+                    else -> false
+                }
+                if (restricted) return true
+            }
+            return false
+        }
+
+        /**
+         * 무릎 재활에서도 쓰는 둔근 운동(힙쓰러스트·글루트 브릿지)만 허용한다. 애매하면 제한하는 쪽이다.
+         * 대퇴사두·종아리를 함께 쓰는 변형과, 무릎 꿇기·네발 자세·킥백류는 허용하지 않는다.
+         */
+        private fun isKneeSafeGluteBridge(exercise: Exercise, pattern: String, muscles: Set<String>): Boolean {
+            if (pattern != "GLUTE_FOCUSED") return false
+            if ("QUADRICEPS" in muscles || "CALVES" in muscles) return false
+            val slug = exercise.slug.lowercase()
+            if (!(slug.contains("hip-thrust") || slug.contains("glute-bridge"))) return false
+            return listOf("kneel", "on-knees", "knee", "kickback", "donkey", "quadruped").none { slug.contains(it) }
+        }
+
+        /**
+         * 가슴 지지 없이 상체를 숙여 버티는 로우(덤벨·케이블 벤트오버 로우)도 허리에 바벨 로우와 같은 부하가 걸린다.
+         * 패턴이 DUMBBELL_ROW/CABLE_ROW 라 위 목록에 안 걸려 허리 부상자에게 추천됐다(골든셋 2026-09-25).
+         * 벤치에 손·무릎을 대는 원암 로우, 체스트 서포티드 로우는 그대로 허용한다.
+         */
+        private fun isUnsupportedBentOverRow(exercise: Exercise, pattern: String): Boolean =
+            pattern.endsWith("_ROW") && exercise.slug.contains("bent-over") &&
+                !exercise.slug.contains("rear-delt") && !exercise.slug.contains("supported")
     }
 
     /** injuries 집합 → (계산 시각, 제한 운동 id). 플랜 가드가 후보 수백 개를 순회하며 isExerciseRestricted 를 부르는 동안 DB 를 한 번만 친다. */
@@ -237,73 +305,7 @@ class InjuryFilterService(
      * 안전망으로 남는다. 애매하면 제한하는 쪽(보수적)으로 판단한다 — 부상 부위를 쓰는 운동을
      * 한 번 빼먹는 비용이, 잘못 넣어 다치게 하는 비용보다 훨씬 싸다.
      */
-    fun isRestrictedByRule(exercise: Exercise, injuries: Set<String>): Boolean {
-        val parts = injuries.map { it.substringBefore(':').trim().lowercase() }.toSet()
-        val pattern = exercise.movementPattern?.uppercase().orEmpty()
-        val muscles = exercise.muscleGroups.map { it.name }.toSet()
-
-        fun hitsPattern(vararg p: String) = p.any { pattern == it }
-        fun hitsMuscle(vararg m: String) = m.any { it in muscles }
-
-        for (part in parts) {
-            val restricted = when (part) {
-                // 힙쓰러스트·글루트 브릿지는 무릎 굽힘 하중이 거의 없어 무릎 재활에서도 쓰는 둔근 운동이다.
-                // 햄스트링 보조 동원 때문에 통째로 막히던 것을 풀되, 패턴 태그만 믿지 않고 종목명(슬러그) 허용 목록으로만 푼다.
-                // 무릎 꿇기·네발 자세(킥백·힙쓰러스트 온 니즈)는 무릎 관절에 하중이 실리고, 일부는 트라이셉스 킥백이 잘못 태깅된 것이다.
-                "knee" -> (hitsPattern("SQUAT", "LUNGE", "LEG_PRESS", "LEG_EXTENSION", "LEG_CURL", "PLYOMETRIC") ||
-                    hitsMuscle("QUADRICEPS", "HAMSTRINGS", "CALVES")) &&
-                    !isKneeSafeGluteBridge(exercise, pattern, muscles)
-                "hip" -> hitsPattern("SQUAT", "LUNGE", "HIP_HINGE", "DEADLIFT", "GLUTE_FOCUSED", "LEG_PRESS", "PLYOMETRIC") ||
-                    hitsMuscle("GLUTES", "HAMSTRINGS")
-                // 허리는 "선 자세로 척추에 하중이 실리는" 동작 전반이 문제다.
-                // 런지와 스탠딩 바벨 오버헤드 프레스도 여기 포함된다(치환 검토 중 누락 발견).
-                "lower_back", "back", "lowerback" ->
-                    hitsPattern(
-                        "DEADLIFT", "HIP_HINGE", "BARBELL_ROW", "SQUAT", "LUNGE",
-                        "CLEAN", "SNATCH", "ROTATION", "CARRY", "COMPOUND_COMPLEX",
-                        "VERTICAL_PRESS_BARBELL"
-                    ) || isUnsupportedBentOverRow(exercise, pattern)
-                "shoulder" -> hitsPattern(
-                    "VERTICAL_PRESS_BARBELL", "VERTICAL_PRESS_DUMBBELL", "VERTICAL_PRESS_MACHINE",
-                    "INCLINE_PRESS_BARBELL", "INCLINE_PRESS_DUMBBELL", "HORIZONTAL_PRESS_BARBELL",
-                    "HORIZONTAL_PRESS_DUMBBELL", "DIPS", "PUSHUP", "FLY", "LATERAL_RAISE", "FRONT_RAISE",
-                    "UPRIGHT_ROW", "PULLUP_CHINUP", "SNATCH", "CLEAN"
-                ) || hitsMuscle("SHOULDERS")
-                "elbow" -> hitsPattern(
-                    "BICEP_CURL_BARBELL", "BICEP_CURL_DUMBBELL", "BICEP_CURL_CABLE",
-                    "TRICEP_OVERHEAD", "TRICEP_LYING", "TRICEP_PUSHDOWN", "DIPS", "PUSHUP", "PULLUP_CHINUP"
-                ) || hitsMuscle("BICEPS", "TRICEPS")
-                "wrist" -> hitsPattern(
-                    "PUSHUP", "PLANK", "ROLLOUT", "CLEAN", "SNATCH", "CARRY",
-                    "HORIZONTAL_PRESS_BARBELL", "VERTICAL_PRESS_BARBELL"
-                ) || hitsMuscle("FOREARMS")
-                else -> false
-            }
-            if (restricted) return true
-        }
-        return false
-    }
-
-    /**
-     * 무릎 재활에서도 쓰는 둔근 운동(힙쓰러스트·글루트 브릿지)만 허용한다. 애매하면 제한하는 쪽이다.
-     * 대퇴사두·종아리를 함께 쓰는 변형과, 무릎 꿇기·네발 자세·킥백류는 허용하지 않는다.
-     */
-    private fun isKneeSafeGluteBridge(exercise: Exercise, pattern: String, muscles: Set<String>): Boolean {
-        if (pattern != "GLUTE_FOCUSED") return false
-        if ("QUADRICEPS" in muscles || "CALVES" in muscles) return false
-        val slug = exercise.slug.lowercase()
-        if (!(slug.contains("hip-thrust") || slug.contains("glute-bridge"))) return false
-        return listOf("kneel", "on-knees", "knee", "kickback", "donkey", "quadruped").none { slug.contains(it) }
-    }
-
-    /**
-     * 가슴 지지 없이 상체를 숙여 버티는 로우(덤벨·케이블 벤트오버 로우)도 허리에 바벨 로우와 같은 부하가 걸린다.
-     * 패턴이 DUMBBELL_ROW/CABLE_ROW 라 위 목록에 안 걸려 허리 부상자에게 추천됐다(골든셋 2026-09-25).
-     * 벤치에 손·무릎을 대는 원암 로우, 체스트 서포티드 로우는 그대로 허용한다.
-     */
-    private fun isUnsupportedBentOverRow(exercise: Exercise, pattern: String): Boolean =
-        pattern.endsWith("_ROW") && exercise.slug.contains("bent-over") &&
-            !exercise.slug.contains("rear-delt") && !exercise.slug.contains("supported")
+    fun isRestrictedByRule(exercise: Exercise, injuries: Set<String>): Boolean = ruleRestricts(exercise, injuries)
 
     // ─── 자동 대체 운동 적용 ─────────────────────────────────────────
 

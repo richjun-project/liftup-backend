@@ -1,5 +1,7 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+
 import com.richjun.liftupai.domain.workout.entity.Exercise
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
@@ -21,18 +23,20 @@ class CuratedExercisePoolService(
      * Generate a formatted exercise list for AI prompt injection.
      * Groups by planCategory, includes id + name + equipment + difficulty.
      */
-    fun getPromptReadyExerciseList(availableEquipment: Set<String> = emptySet()): String {
-        val allowedEquipment = availableEquipment
-            .map { it.trim().uppercase().replace(" ", "_").replace("-", "_") }
-            .filter { it.isNotBlank() }
-            .toSet()
+    fun getPromptReadyExerciseList(
+        availableEquipment: Set<String> = emptySet(),
+        /** 부상·수준 규칙 등 추가 필터. 기본은 전부 허용 */
+        isAllowed: (Exercise) -> Boolean = { true },
+    ): String {
+        val allowedEquipment = RecoRules.normalizeEquipment(availableEquipment)
         val exercises = exerciseRepository.findAllByIsPlanEligibleTrue()
             .filter { exercise ->
                 val equipmentName = exercise.equipment?.name
-                allowedEquipment.isEmpty() ||
+                (allowedEquipment.isEmpty() ||
                     equipmentName == null ||
                     equipmentName == "BODYWEIGHT" ||
-                    equipmentName in allowedEquipment
+                    equipmentName == "OTHER" ||
+                    equipmentName in allowedEquipment) && isAllowed(exercise)
             }
         if (exercises.isEmpty()) return "No exercises available."
 

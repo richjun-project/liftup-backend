@@ -1,5 +1,8 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+import com.richjun.liftupai.domain.workout.service.new.SessionFit
+
 /**
  * 온보딩 답변으로 프리셋 템플릿을 고르는 순수 로직 (DB·Spring 비의존).
  *
@@ -43,6 +46,8 @@ class TemplateRecommendationEngine(
         val equipment: Set<String>,
         val injuries: Set<String>,
         val focus: List<FocusArea>,
+        /** 나이. 미성년·고령이면 이 사람에게 맞지 않는 동작(철봉·폭발적 동작·바벨)을 템플릿에서 걸러 낸다 */
+        val age: Int? = null,
     )
 
     data class Scored(
@@ -82,12 +87,23 @@ class TemplateRecommendationEngine(
     fun adaptWithFocus(template: RecoTemplate, profile: RecoProfile): List<TemplatePlanAdapter.AdaptedDay> =
         adapter.adapt(template.days.map { it.toSource() }, context(profile, withFocus = true))
 
-    private fun context(profile: RecoProfile, withFocus: Boolean) = TemplatePlanAdapter.Context(
-        allowedEquipment = profile.equipment,
-        injuries = profile.injuries,
-        focus = if (withFocus) profile.focus else emptyList(),
-        maxDifficulty = TemplatePlanAdapter.maxDifficultyFor(profile.experience),
-    )
+    private fun context(profile: RecoProfile, withFocus: Boolean): TemplatePlanAdapter.Context {
+        val level = RecoRules.parseLevel(profile.experience) ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
+        return TemplatePlanAdapter.Context(
+            allowedEquipment = profile.equipment,
+            injuries = profile.injuries,
+            focus = if (withFocus) profile.focus else emptyList(),
+            maxDifficulty = TemplatePlanAdapter.maxDifficultyFor(profile.experience),
+            sessionMinutes = profile.sessionDuration,
+            suitable = RecoRules.suitability(profile.equipment, level, profile.age),
+            level = level,
+            age = profile.age,
+            repeatCap = TemplatePlanAdapter.repeatCapFor(profile.equipment, profile.injuries),
+        )
+    }
+
+    private fun RecoDay.computedMinutes(): Int =
+        if (exercises.isEmpty()) estimatedMinutes else SessionFit.minutes(exercises.map { TemplatePlanAdapter.slotOf(it, null, null, false) })
 
     private fun RecoDay.toSource() = TemplatePlanAdapter.SourceDay(dayNumber, workoutType, exercises)
 
@@ -118,10 +134,12 @@ class TemplateRecommendationEngine(
             else -> -30.0
         }
         // 시간: 회당 시간을 넘기면 감점, 많이 남아도 소폭 감점
-        val avgMinutes = t.days.map { it.estimatedMinutes }.average()
+        // 템플릿에 적힌 분(예: 50)이 아니라 운동 구성이 실제로 걸리는 시간 — 적힌 분은 실제보다 평균 25% 부풀려져 있었다
+        val avgMinutes = t.days.map { it.computedMinutes() }.average()
         val over = avgMinutes - p.sessionDuration
+        // 짧은 세션(30분 이하)에 긴 템플릿은 세트·종목이 잘려 나가 별로다 — 더 크게 감점한다
         parts["duration"] = when {
-            over > 0 -> -minOf(14.0, over * 0.6)
+            over > 0 -> -minOf(if (p.sessionDuration <= 30) 24.0 else 14.0, over * if (p.sessionDuration <= 30) 1.4 else 0.6)
             over < -30 -> -minOf(6.0, (-over - 30) * 0.2)
             else -> 0.0
         }
@@ -135,15 +153,30 @@ class TemplateRecommendationEngine(
         parts["focus"] = if (p.focus.isEmpty()) 0.0 else {
             val weights = listOf(1.0, 0.7, 0.5)
             val planSize = adapted.sumOf { it.exercises.size }.coerceAtLeast(1)
-            var num = 0.0
+            // 집중 볼륨을 더한 실제 적용 결과 — 이 템플릿 구조에서 집중 부위 목표 개수를 채울 수 있나(밀기 날이 하루뿐인 하체 템플릿으로는 가슴 집중을 못 채운다)
+            val applied = adaptWithFocus(t, p)
+            val need = TemplatePlanAdapter.focusTargetPerWeek(applied.size)
+            var natNum = 0.0
+            var achNum = 0.0
             var den = 0.0
             p.focus.forEachIndexed { i, area ->
                 val w = weights.getOrElse(i) { 0.4 }
                 // 주간 운동 중 그 부위 비중 — 해당 부위 전용 템플릿(하체·둔근 집중 등)이 전신 템플릿보다 앞서게 한다
-                num += w * minOf(1.0, (natural[area] ?: 0).toDouble() / planSize / FOCUS_FULL_SHARE)
+                natNum += w * minOf(1.0, (natural[area] ?: 0).toDouble() / planSize / FOCUS_FULL_SHARE)
+                val hits = applied.sumOf { d -> d.exercises.count { area.hits(it.exercise) } }
+                achNum += w * minOf(1.0, hits.toDouble() / need)
                 den += w
             }
-            20.0 * (num / den)
+            14.0 * (natNum / den) + 8.0 * (achNum / den)
+        }
+        // 전문화 불일치: 한 부위가 절반 이상을 차지하는 전용 템플릿(하체·둔근 집중 등)인데 그 부위가 사용자의 집중 부위가 아니면 감점.
+        // 가슴·팔 집중 사용자에게 하체 전용 템플릿이 점수 근소 차이로 뽑히던 것을 막는다.
+        if (p.focus.isNotEmpty()) {
+            val planSize = adapted.sumOf { it.exercises.size }.coerceAtLeast(1)
+            val dominant = FocusArea.values().filter { area ->
+                adapted.sumOf { d -> d.exercises.count { area.hits(it.exercise) } }.toDouble() / planSize >= DOMINANT_SHARE
+            }
+            if (dominant.isNotEmpty() && dominant.none { it in p.focus }) parts["mismatch"] = -8.0
         }
         val total = parts.values.sum()
         return Scored(
@@ -216,6 +249,8 @@ class TemplateRecommendationEngine(
         private const val GENERAL = "general_fitness"
         private const val MIN_COMFORTABLE_PER_DAY = 4
         private const val FOCUS_FULL_SHARE = 0.45
+        /** 한 부위가 이 비율 이상이면 그 부위 전용 템플릿으로 본다 */
+        private const val DOMINANT_SHARE = 0.5
         private val GYM_EQUIPMENT = setOf("BARBELL", "MACHINE", "CABLE")
 
         /** 경험 → 순위. 초보·노비스 0, 중급 1, 고급·전문가 2 */

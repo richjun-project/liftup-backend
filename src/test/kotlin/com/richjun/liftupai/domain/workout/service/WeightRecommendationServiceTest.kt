@@ -1,5 +1,7 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.auth.entity.UserLevel
@@ -104,11 +106,14 @@ class WeightRecommendationServiceTest {
         val bw = c.profile.bodyInfo!!.weight!!
         mainLifts.forEach { lift ->
             val w = service.suggestFromProfile(c.profile, lift, targetReps = 10).weight
-            assertTrue(w > 0.0 && w <= bw * 1.3, "${c.name} / ${lift.slug}: $w 가 (0, ${bw * 1.3}] 밖")
+            // 바벨 종목은 빈 봉(20kg)이 바닥이다 — 체구가 작아도 20kg 아래(0 초과)는 없다
+            val ceiling = if (lift.equipment == Equipment.BARBELL) maxOf(bw * 1.3, RecoRules.BAR_WEIGHT) else bw * 1.3
+            assertTrue(w > 0.0 && w <= ceiling, "${c.name} / ${lift.slug}: $w 가 (0, $ceiling] 밖")
+            if (lift.equipment == Equipment.BARBELL) assertTrue(w >= RecoRules.BAR_WEIGHT, "${c.name} / ${lift.slug}: 바벨 $w < 20kg")
             assertEquals(0.0, (w * 10).toLong() % 25 / 10.0, 0.0001, "${c.name} / ${lift.slug}: $w 는 2.5 단위가 아님")
         }
         val benchW = service.suggestFromProfile(c.profile, bench, 10).weight
-        assertTrue(benchW <= bw * c.benchMax + 1.25, "${c.name}: 벤치 $benchW > 상한 ${bw * c.benchMax}")
+        assertTrue(benchW <= maxOf(bw * c.benchMax + 1.25, RecoRules.BAR_WEIGHT), "${c.name}: 벤치 $benchW > 상한 ${bw * c.benchMax} (바벨 하한 20kg)")
         assertTrue(benchW >= bw * c.benchMin - 1.25, "${c.name}: 벤치 $benchW < 하한 ${bw * c.benchMin}")
         val squatW = service.suggestFromProfile(c.profile, squat, 10).weight
         assertTrue(squatW <= bw * c.squatMax + 1.25, "${c.name}: 스쿼트 $squatW > 상한 ${bw * c.squatMax}")
@@ -126,14 +131,17 @@ class WeightRecommendationServiceTest {
     }
 
     @Test
-    @DisplayName("15세 42kg 여성 초보에게 바벨 20kg 이상을 강요하지 않는다")
-    fun minorUnderweightFemaleNoBarbellForced() {
+    @DisplayName("15세 42kg 여성 초보의 바벨 종목은 빈 봉(20kg)에서 시작한다 — 20kg 미만(0 초과) 무게는 없고, 플랜은 이런 사용자에게 바벨 종목 자체를 주지 않는다")
+    fun minorUnderweightFemaleStartsAtEmptyBar() {
         noPr()
         val minor = profile(42.0, "female", 15, ExperienceLevel.BEGINNER)
         listOf(bench, ohp, row).forEach { lift ->
             val w = service.suggestFromProfile(minor, lift, 10).weight
-            assertTrue(w < 20.0, "${lift.slug}: $w 는 빈 바(20kg) 미만이어야 한다")
+            assertEquals(RecoRules.BAR_WEIGHT, w, 0.0001, "${lift.slug}: $w — 바벨은 빈 봉(20kg) 밑으로 내려가지 않는다")
+            assertTrue(!RecoRules.suitable(lift, emptySet(), ExperienceLevel.BEGINNER, 15), "${lift.slug}: 미성년 초보에게 바벨 종목은 맞지 않는다")
         }
+        // 덤벨 변형은 가볍게 시작할 수 있다
+        assertTrue(service.suggestFromProfile(minor, dbBench, 10).weight < 20.0)
     }
 
     @Test

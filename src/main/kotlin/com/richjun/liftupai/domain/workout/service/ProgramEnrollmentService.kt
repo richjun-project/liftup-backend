@@ -37,7 +37,9 @@ class ProgramEnrollmentService(
     private val programDayRepository: ProgramDayRepository,
     private val programDayExerciseRepository: ProgramDayExerciseRepository,
     private val exerciseSubstitutionRepository: ExerciseSubstitutionRepository,
-    private val userExerciseOverrideRepository: UserExerciseOverrideRepository
+    private val userExerciseOverrideRepository: UserExerciseOverrideRepository,
+    /** 부상·장비의 단일 출처 */
+    private val trainingContext: UserTrainingContextResolver = UserTrainingContextResolver(userSettingsRepository, userProfileRepository),
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -64,22 +66,19 @@ class ProgramEnrollmentService(
         )
         val saved = userProgramEnrollmentRepository.save(enrollment)
 
-        // Auto-apply injury-based overrides from user settings
-        // injuries come from user.profile.injuries (legacy) or user_settings_injuries
-        val injuries = collectUserInjuries(user)
+        // 등록 시점의 부상·장비 오버라이드는 큐레이션 표(현재 비어 있음)와 대체 목록에만 의존하는 1회성 힌트다.
+        // 실제 안전은 ProgramWorkoutGeneratorService 가 운동 생성 시점마다 단일 해석기의 부상(프로필 ∪ 설정)·장비·수준 규칙으로 지킨다.
+        val ctx = trainingContext.resolve(user.id)
+        val injuries = ctx.injuries
         if (injuries.isNotEmpty()) {
             injuryFilterService.autoApplyOverrides(saved, injuries)
             logger.info("Applied injury overrides for user={} injuries={}", user.id, injuries)
         }
 
-        // Auto-apply equipment-based overrides
-        val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
-        val availableEquipment = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.availableEquipment
-            ?: profile?.availableEquipment ?: emptySet()
-
-        if (availableEquipment.isNotEmpty()) {
-            autoApplyEquipmentOverrides(saved, availableEquipment)
-            logger.info("Applied equipment overrides for user={} equipment={}", user.id, availableEquipment)
+        // Auto-apply equipment-based overrides (장비 정보가 없거나 헬스장 전체면 제한 없음 — 건너뛴다)
+        if (ctx.equipment.isNotEmpty()) {
+            autoApplyEquipmentOverrides(saved, ctx.equipment)
+            logger.info("Applied equipment overrides for user={} equipment={}", user.id, ctx.equipment)
         }
 
         return saved
@@ -155,7 +154,8 @@ class ProgramEnrollmentService(
             val exercises = programDayExerciseRepository.findByDayIdWithExercises(day.id)
             exercises.forEach { pde ->
                 val exerciseEquipment = pde.exercise.equipment?.name?.uppercase()
-                if (exerciseEquipment != null && !availableEquipment.any { it.uppercase() == exerciseEquipment }) {
+                // 맨몸·기타(밴드·철봉) 운동은 장비가 필요 없다 — 문자열 일치만 보면 맨몸 운동까지 "장비 없음" 으로 바꿔 버린다
+                if (exerciseEquipment != null && !TemplatePlanAdapter.equipmentAllowed(pde.exercise, availableEquipment)) {
                     // Exercise requires equipment user doesn't have → find substitute
                     val existingOverride = userExerciseOverrideRepository
                         .findByEnrollmentIdAndOriginalExerciseId(enrollment.id, pde.exercise.id)
@@ -163,10 +163,7 @@ class ProgramEnrollmentService(
 
                     val substitute = exerciseSubstitutionRepository
                         .findByOriginalExerciseIdOrderByPriority(pde.exercise.id)
-                        .firstOrNull { sub ->
-                            sub.substituteExercise.equipment == null ||
-                                availableEquipment.any { it.uppercase() == sub.substituteExercise.equipment?.name?.uppercase() }
-                        }
+                        .firstOrNull { sub -> TemplatePlanAdapter.equipmentAllowed(sub.substituteExercise, availableEquipment) }
 
                     if (substitute != null) {
                         val override = UserExerciseOverride(
@@ -184,11 +181,5 @@ class ProgramEnrollmentService(
                 }
             }
         }
-    }
-
-    private fun collectUserInjuries(user: User): Set<String> {
-        val profileInjuries = userProfileRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
-        val settingsInjuries = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.injuries ?: emptySet()
-        return (profileInjuries + settingsInjuries)
     }
 }

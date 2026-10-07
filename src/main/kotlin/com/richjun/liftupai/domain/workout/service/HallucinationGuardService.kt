@@ -1,5 +1,7 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+
 import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.richjun.liftupai.domain.workout.repository.ExerciseRepository
@@ -92,7 +94,9 @@ data class ValidatedPlan(
 data class PlanConstraints(
     val allowedEquipment: Set<String> = emptySet(),
     val injuries: Set<String> = emptySet(),
-    val isRestricted: (Exercise) -> Boolean = { false }
+    val isRestricted: (Exercise) -> Boolean = { false },
+    /** 이 사람이 실제로 할 수 있는 운동인가(철봉·너무 어려운 동작). 기본은 전부 허용 */
+    val isSuitable: (Exercise) -> Boolean = { true },
 ) {
     fun equipmentAllowed(exercise: Exercise): Boolean {
         val name = exercise.equipment?.name ?: return true
@@ -101,15 +105,13 @@ data class PlanConstraints(
     }
 
     fun accepts(exercise: Exercise): Boolean =
-        exercise.isPlanEligible && equipmentAllowed(exercise) && !isRestricted(exercise)
+        exercise.isPlanEligible && equipmentAllowed(exercise) && !isRestricted(exercise) && isSuitable(exercise)
 
     companion object {
         val NONE = PlanConstraints()
 
-        fun normalizeEquipment(raw: Collection<String>): Set<String> = raw
-            .map { it.trim().uppercase().replace(" ", "_").replace("-", "_") }
-            .filter { it.isNotBlank() }
-            .toSet()
+        /** 모든 경로가 같은 정규화(RecoRules): 별칭 정리, 헬스장 전체 토큰은 "제한 없음" */
+        fun normalizeEquipment(raw: Collection<String>): Set<String> = RecoRules.normalizeEquipment(raw)
     }
 }
 

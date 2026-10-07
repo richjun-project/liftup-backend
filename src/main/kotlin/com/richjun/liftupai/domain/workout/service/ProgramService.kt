@@ -279,17 +279,24 @@ class ProgramService(
         val normalizedLocale = localizationService.normalizeLocale(locale)
         val ctx = userId?.let { userTrainingContextResolver.resolve(it) } ?: UserTrainingContextResolver.Context.EMPTY
         val restricted = injuryFilterService.restrictionChecker(ctx.injuries)
-        val allowed: (Exercise) -> Boolean = { ex -> TemplatePlanAdapter.equipmentAllowed(ex, ctx.equipment) && !restricted(ex) }
 
         val staticByExerciseId = exerciseSubstitutionRepository
             .findByOriginalExerciseIdOrderByPriority(exerciseId)
             .associateBy { it.substituteExercise.id }
 
-        val ranked = SubstituteRanker.rank(
+        // 비로그인(ctx 비어 있음)은 장비·부상 제한 없이 — 수준 규칙도 정보가 없으니 걸지 않는다
+        val ranked = if (userId == null) SubstituteRanker.rank(
             original = exercise,
             pool = exerciseCatalogCache.get().all,
             curatedIds = staticByExerciseId.keys,
-            isAllowed = allowed,
+            isAllowed = { true },
+            limit = MAX_SUBSTITUTES,
+        ) else SubstituteRanker.rankForUser(
+            original = exercise,
+            pool = exerciseCatalogCache.get().all,
+            curatedIds = staticByExerciseId.keys,
+            ctx = ctx,
+            isRestricted = restricted,
             limit = MAX_SUBSTITUTES,
         )
 

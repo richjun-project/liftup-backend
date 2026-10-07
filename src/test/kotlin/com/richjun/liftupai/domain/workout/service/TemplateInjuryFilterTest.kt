@@ -85,11 +85,11 @@ class TemplateInjuryFilterTest {
     }
 
     @Test
-    @DisplayName("요청에 부상이 담겨 오면 그것을 우선한다")
-    fun requestTakesPrecedence() {
+    @DisplayName("요청에 부상이 담겨 와도 저장된 부상을 가리지 않는다 — 프로필 ∪ 설정 ∪ 요청의 합집합")
+    fun requestDoesNotHideStoredInjuries() {
         val user = userWithSettingsInjuries("knee")
         val resolved = service().resolveInjuries(user, ApplyTemplateRequest(injuries = listOf("shoulder")))
-        assertThat(resolved).containsExactly("shoulder")
+        assertThat(resolved).containsExactlyInAnyOrder("knee", "shoulder")
     }
 
     @Test

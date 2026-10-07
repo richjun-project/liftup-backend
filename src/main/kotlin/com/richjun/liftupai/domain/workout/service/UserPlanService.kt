@@ -1,5 +1,8 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+import com.richjun.liftupai.domain.workout.service.new.SessionFit
+
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.workout.dto.request.ApplyTemplateRequest
 import com.richjun.liftupai.domain.workout.dto.request.CreateCustomPlanRequest
@@ -32,7 +35,10 @@ class UserPlanService(
     private val progressiveOverloadService: ProgramProgressiveOverloadService,
     private val planWorkoutEnricher: PlanWorkoutEnricher,
     private val userProfileRepository: com.richjun.liftupai.domain.user.repository.UserProfileRepository,
-    private val exerciseTranslationRepository: ExerciseTranslationRepository
+    private val exerciseTranslationRepository: ExerciseTranslationRepository,
+    /** 장비·부상·경험·나이·세션 시간·집중 부위의 단일 출처 (요청 값은 이 위에 덮어쓴다) */
+    private val trainingContext: UserTrainingContextResolver = UserTrainingContextResolver(userSettingsRepository, userProfileRepository),
+    private val trainingProfileResolver: ExerciseTrainingProfileResolver = ExerciseTrainingProfileResolver(ExercisePatternClassifier()),
 ) {
     private val log = LoggerFactory.getLogger(UserPlanService::class.java)
 
@@ -95,24 +101,24 @@ class UserPlanService(
     internal fun equipmentAllowed(ex: Exercise, allowedEquipment: Set<String>): Boolean =
         TemplatePlanAdapter.equipmentAllowed(ex, allowedEquipment)
 
-    /** 요청 장비 → 설정 장비 순. 비어 있으면 제한 없음. 표기는 Equipment enum 이름(BARBELL 등)으로 정규화. */
-    internal fun resolveAllowedEquipment(user: User, request: ApplyTemplateRequest?): Set<String> {
-        val fromRequest = request?.equipment?.filter { it.isNotBlank() }.orEmpty()
-        // 기기 가입(AuthService)은 프로필에만 장비를 쓰고, 온보딩 완료(UserService)는 설정에도 쓴다 — 둘 다 본다.
-        val raw = if (fromRequest.isNotEmpty()) fromRequest else
-            userSettingsRepository.findByUser_Id(user.id).orElse(null)?.availableEquipment?.takeIf { it.isNotEmpty() }?.toList()
-                ?: userProfileRepository.findByUser_Id(user.id).orElse(null)?.availableEquipment?.toList().orEmpty()
-        return raw.map { it.trim().uppercase().replace(" ", "_").replace("-", "_") }.filter { it.isNotBlank() }.toSet()
-    }
+    /** 요청 장비 → 설정 장비 → 프로필 장비 순. 비어 있으면 제한 없음. 표기는 Equipment enum 이름(BARBELL 등)으로 정규화. */
+    internal fun resolveAllowedEquipment(user: User, request: ApplyTemplateRequest?): Set<String> =
+        trainingContext.resolve(user.id, overridesOf(request)).equipment
+
+    internal fun overridesOf(request: ApplyTemplateRequest?) = UserTrainingContextResolver.Overrides(
+        equipment = request?.equipment, injuries = request?.injuries, experience = request?.experienceLevel,
+        focusGoals = null, sessionMinutes = request?.sessionDuration, age = request?.age,
+    )
 
     fun getPlanDashboard(userId: Long, locale: String = "en"): PlanDashboardResponse {
         val plan = getActivePlan(userId)
             ?: throw ResourceNotFoundException("No active plan found")
 
         val days = userPlanDayRepository.findByPlanIdOrderByDayNumber(plan.id)
-        val dayExerciseCounts = days.associate { day ->
-            day.id to userPlanDayExerciseRepository.findByPlanDayIdOrderByOrderInDay(day.id).size
-        }
+        val ctx = trainingContext.resolve(userId)
+        // 날마다 운동 목록과 개인화된 추정 시간(getDayWorkout 과 같은 세트·휴식 맞춤)을 함께 읽는다
+        val dayRows = days.associate { day -> day.id to userPlanDayExerciseRepository.findByPlanDayIdWithExerciseOrderByOrderInDay(day.id) }
+        val dayExerciseCounts = dayRows.mapValues { it.value.size }
 
         return PlanDashboardResponse(
             planId = plan.id,
@@ -129,7 +135,7 @@ class UserPlanService(
                     dayNumber = day.dayNumber,
                     dayName = translatedPlanDayName(plan, day.dayNumber, day.dayName, locale),
                     workoutType = day.workoutType.name,
-                    estimatedDuration = day.estimatedDurationMinutes,
+                    estimatedDuration = personalizedMinutes(dayRows[day.id].orEmpty(), ctx) ?: day.estimatedDurationMinutes,
                     exerciseCount = dayExerciseCounts[day.id] ?: 0,
                     totalCompletions = day.totalCompletions,
                     lastCompletedAt = day.lastCompletedAt?.toString(),
@@ -142,6 +148,21 @@ class UserPlanService(
         )
     }
 
+    /**
+     * 하루 운동 목록의 추정 시간(분). 세션 시간이 저장돼 있으면 getDayWorkout 과 같은 세트·휴식 맞춤을 거친 값,
+     * 없으면 저장된 처방 그대로의 값. 목록이 비면 null.
+     */
+    internal fun personalizedMinutes(rows: List<UserPlanDayExercise>, ctx: UserTrainingContextResolver.Context): Int? {
+        if (rows.isEmpty()) return null
+        val level = ctx.level
+        val slots = rows.map { r ->
+            val src = TemplatePlanAdapter.SourceExercise(r.exercise, r.sets, r.minReps, r.maxReps, r.restSeconds, r.isCompound, r.targetRPE, r.notes)
+            TemplatePlanAdapter.slotOf(src, RecoRules.maxSetsFor(r.exercise, level, ctx.age, r.isCompound, ctx.sessionMinutes).coerceAtLeast(r.sets), null, true)
+        }
+        val target = ctx.sessionMinutes ?: return SessionFit.minutes(slots)
+        return SessionFit.minutes(SessionFit.fit(slots, target).slots)
+    }
+
     fun getDayWorkout(userId: Long, dayNumber: Int, subjectiveReadiness: Int? = null, locale: String = "ko"): DayWorkoutResponse {
         val plan = getActivePlan(userId)
             ?: throw ResourceNotFoundException("No active plan found")
@@ -150,8 +171,9 @@ class UserPlanService(
             ?: throw ResourceNotFoundException("Day $dayNumber not found in plan")
 
         val exercises = userPlanDayExerciseRepository.findByPlanDayIdWithExerciseOrderByOrderInDay(day.id)
+        val ctx = trainingContext.resolve(userId)
 
-        // 한글 이름 일괄 조회
+        // 이름 일괄 조회(사용자 언어)
         val exerciseIds = exercises.map { it.exercise.id }
         val translatedNames = if (locale != "en") {
             exerciseTranslationRepository.findByExerciseIdInAndLocale(exerciseIds, locale)
@@ -187,8 +209,10 @@ class UserPlanService(
                 ) ?: weightRecommendationService.calculateSuggestedWeight(
                     userId, ex.exercise.id, targetReps
                 )
-                val warmupSets = if (ex.isCompound && suggestedWeight > 20.0) {
-                    generateWarmupSets(suggestedWeight)
+                // 모든 경로가 같은 마지막 관문(2.5kg 단위·바벨 20kg 하한)을 거친다
+                val finalWeight = RecoRules.finalizeWeight(ex.exercise, suggestedWeight)
+                val warmupSets = if (ex.isCompound) {
+                    RecoRules.warmups(ex.exercise, finalWeight, ctx.age).map { (w, reps) -> WarmupSetDto(weight = w, reps = reps) }
                 } else {
                     emptyList()
                 }
@@ -205,7 +229,7 @@ class UserPlanService(
                     restSeconds = ex.restSeconds,
                     isCompound = ex.isCompound,
                     targetRPE = ex.targetRPE,
-                    suggestedWeight = suggestedWeight,
+                    suggestedWeight = finalWeight,
                     warmupSets = warmupSets,
                     notes = ex.notes,
                     targetMuscles = ex.exercise.muscleGroups.map { WorkoutLocalization.muscleGroupName(it, locale) }
@@ -214,8 +238,7 @@ class UserPlanService(
         )
 
         // Enrich with advanced features
-        val userAge = userProfileRepository.findByUser_Id(userId).orElse(null)?.age
-        return planWorkoutEnricher.enrich(baseResponse, plan, userAge, subjectiveReadiness)
+        return planWorkoutEnricher.enrich(baseResponse, plan, ctx.age, subjectiveReadiness, locale)
     }
 
     @Transactional
@@ -225,10 +248,13 @@ class UserPlanService(
 
         // 부상 정보는 요청값을 우선하되, 없으면 온보딩에서 저장된 설정값을 쓴다.
         // (앱이 요청에 injuries 를 안 실어 보내는 경로가 있어 설정값 폴백이 필요하다)
-        val injuries = resolveInjuries(user, request)
-        val allowedEquipment = resolveAllowedEquipment(user, request)
-        val focus = resolveFocusAreas(user, request)
-        val maxDifficulty = TemplatePlanAdapter.maxDifficultyFor(resolveExperience(user, request))
+        // 장비·부상·경험·나이·세션 시간은 추천(recommend)과 같은 단일 해석기를 거친다 — 두 경로가 갈라지지 않게.
+        val ctx = trainingContext.resolve(user.id, overridesOf(request))
+        val injuries = ctx.injuries
+        val allowedEquipment = ctx.equipment
+        val focus = FocusArea.resolve(request?.goals, request?.focusAreas).ifEmpty { ctx.focusAreas }
+        val maxDifficulty = TemplatePlanAdapter.maxDifficultyFor(ctx.experience)
+        val level = ctx.level ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
 
         // Abandon existing active plan
         abandonActivePlan(user.id)
@@ -268,7 +294,13 @@ class UserPlanService(
         )
         val adaptedDays = adapter.adapt(
             sourceDays,
-            TemplatePlanAdapter.Context(allowedEquipment, injuries, focus, maxDifficulty)
+            TemplatePlanAdapter.Context(
+                allowedEquipment = allowedEquipment, injuries = injuries, focus = focus, maxDifficulty = maxDifficulty,
+                sessionMinutes = ctx.sessionMinutesOrDefault(),
+                suitable = RecoRules.suitability(allowedEquipment, level, ctx.age),
+                level = level, age = ctx.age,
+                repeatCap = TemplatePlanAdapter.repeatCapFor(allowedEquipment, injuries),
+            )
         ).associateBy { it.dayNumber }
 
         var skippedForInjury = 0
@@ -283,7 +315,8 @@ class UserPlanService(
                     dayNumber = templateDay.dayNumber,
                     dayName = WorkoutLocalization.maybeMessage("template.${template.code}.day.${templateDay.dayNumber}.name", locale) ?: templateDay.dayName,
                     workoutType = templateDay.workoutType,
-                    estimatedDurationMinutes = templateDay.estimatedDurationMinutes
+                    // 템플릿이 적어 둔 분이 아니라 이 사람에게 맞춘 하루의 실제 추정 시간
+                    estimatedDurationMinutes = adapted.estimatedMinutes().takeIf { adapted.exercises.isNotEmpty() } ?: templateDay.estimatedDurationMinutes
                 )
             )
             adapted.exercises.forEachIndexed { i, planned ->
@@ -317,28 +350,11 @@ class UserPlanService(
     }
 
     /**
-     * 부상 목록 해석. 요청에 담겨 오면 그것을, 없으면 온보딩에서 저장된 UserSettings 값을 쓴다.
+     * 부상 목록 해석 — 프로필 ∪ 설정 ∪ 요청의 합집합(UserTrainingContextResolver). 요청이 저장된 부상을 가리지 않는다.
      * 저장 형식이 "knee:severe" 처럼 심각도가 붙어 오는 경우가 있어 부위만 남긴다.
      */
-    internal fun resolveInjuries(user: User, request: ApplyTemplateRequest?): Set<String> {
-        val fromRequest = request?.injuries?.filter { it.isNotBlank() }.orEmpty()
-        val raw = if (fromRequest.isNotEmpty()) {
-            fromRequest
-        } else {
-            // 부상이 두 테이블에 나뉘어 저장된다 — 하나만 보면 필터가 조용히 무력화된다.
-            //   기기 가입(AuthService)      → user_profile_injuries
-            //   온보딩 설정(UserService)    → user_settings_injuries
-            // 실제로 한쪽만 읽었다가 무릎 부상 사용자의 플랜에 하체 운동이 그대로 들어갔다.
-            val fromProfile = userProfileRepository.findByUser_Id(user.id)
-                .orElse(null)?.injuries?.toList().orEmpty()
-            val fromSettings = userSettingsRepository.findByUser_Id(user.id)
-                .orElse(null)?.injuries?.toList().orEmpty()
-            fromProfile + fromSettings
-        }
-        return raw.map { it.substringBefore(':').trim().lowercase() }
-            .filter { it.isNotEmpty() && it != "none" }
-            .toSet()
-    }
+    internal fun resolveInjuries(user: User, request: ApplyTemplateRequest?): Set<String> =
+        trainingContext.resolve(user.id, overridesOf(request)).injuries
 
     /** 플랜 후보 풀(카테고리별 인기순). 한 번의 적용 안에서 같은 카테고리를 여러 번 읽지 않게 캐시한다. */
     private fun planPool(): (ExerciseCategory) -> List<Exercise> {
@@ -348,19 +364,14 @@ class UserPlanService(
 
     /** 경험 수준: 요청값 → 프로필. 채워 넣는 운동의 난이도 상한에 쓴다. */
     internal fun resolveExperience(user: User, request: ApplyTemplateRequest?): String? =
-        request?.experienceLevel?.takeIf { it.isNotBlank() }
-            ?: userProfileRepository.findByUser_Id(user.id).orElse(null)?.experienceLevel?.name
+        trainingContext.resolve(user.id, overridesOf(request)).experience?.uppercase()
 
     /**
      * 집중 부위: 요청(goals·focus_areas) → 온보딩에서 저장한 세부 목표(UserSettings.focusGoals).
      * FitnessGoal 은 6종뿐이라 thick_legs·glutes 같은 세부 목표는 별도로 저장해 둔 값을 읽는다.
      */
-    internal fun resolveFocusAreas(user: User, request: ApplyTemplateRequest?): List<FocusArea> {
-        val fromRequest = FocusArea.resolve(request?.goals, request?.focusAreas)
-        if (fromRequest.isNotEmpty()) return fromRequest
-        val stored = userSettingsRepository.findByUser_Id(user.id).orElse(null)?.focusGoals?.toList().orEmpty()
-        return FocusArea.resolve(stored)
-    }
+    internal fun resolveFocusAreas(user: User, request: ApplyTemplateRequest?): List<FocusArea> =
+        FocusArea.resolve(request?.goals, request?.focusAreas).ifEmpty { trainingContext.resolve(user.id).focusAreas }
 
     @Transactional
     fun createCustomPlan(user: User, request: CreateCustomPlanRequest): PlanDashboardResponse {
@@ -394,17 +405,20 @@ class UserPlanService(
 
         for ((dayIndex, dayReq) in request.days.withIndex()) {
             val workoutType = try { WorkoutType.valueOf(dayReq.workoutType.uppercase()) } catch (_: Exception) { WorkoutType.FULL_BODY }
+            val dayExercises = dayReq.exercises.mapNotNull { exReq ->
+                exerciseRepository.findById(exReq.exerciseId).orElse(null)?.let { exReq to it }
+            }
             val planDay = UserPlanDay(
                 plan = savedPlan,
                 dayNumber = dayIndex + 1,
                 dayName = dayReq.dayName,
                 workoutType = workoutType,
-                estimatedDurationMinutes = dayReq.exercises.size * 8 // rough estimate
+                estimatedDurationMinutes = customDayMinutes(dayExercises)
             )
             val savedDay = userPlanDayRepository.save(planDay)
 
-            for ((exIndex, exReq) in dayReq.exercises.withIndex()) {
-                val exercise = exerciseRepository.findById(exReq.exerciseId).orElse(null) ?: continue
+            for ((exIndex, pair) in dayExercises.withIndex()) {
+                val (exReq, exercise) = pair
                 val planExercise = UserPlanDayExercise(
                     planDay = savedDay,
                     exercise = exercise,
@@ -413,7 +427,8 @@ class UserPlanService(
                     minReps = exReq.minReps,
                     maxReps = exReq.maxReps,
                     restSeconds = exReq.restSeconds,
-                    isCompound = exercise.movementPattern?.lowercase()?.contains("compound") == true
+                    // 복합운동 판정은 템플릿·추천과 같은 단일 규칙 — 예전엔 패턴 이름에 "compound" 가 든 것만 true 라 웜업 세트가 안 나왔다
+                    isCompound = RecoRules.isCompound(exercise)
                 )
                 userPlanDayExerciseRepository.save(planExercise)
             }
@@ -421,6 +436,14 @@ class UserPlanService(
 
         log.info("User {} created custom plan {} with {} days", user.id, savedPlan.id, request.days.size)
         return getPlanDashboard(user.id)
+    }
+
+    /** 맞춤 플랜 하루의 추정 시간 — 종목 수 × 8분 같은 어림이 아니라 세트·반복·휴식으로 계산한다(추천·AI 와 같은 식). */
+    internal fun customDayMinutes(exercises: List<Pair<com.richjun.liftupai.domain.workout.dto.request.CustomPlanExerciseRequest, Exercise>>): Int {
+        if (exercises.isEmpty()) return 0
+        return SessionFit.minutes(exercises.map { (req, ex) ->
+            SessionFit.Slot(req.sets, "${req.minReps}-${req.maxReps}", req.restSeconds)
+        })
     }
 
     /**
@@ -446,28 +469,48 @@ class UserPlanService(
         val substitute = exerciseRepository.findById(substituteExerciseId)
             .orElseThrow { BadRequestException("Substitute exercise not found: $substituteExerciseId") }
 
+        // 대체 후보 목록(C3)과 같은 규칙으로 직접 지정한 대체도 막는다 — 부상 부위·없는 장비·수준에 안 맞는 동작은 받지 않는다.
+        val ctx = trainingContext.resolve(userId)
+        if (ctx.injuries.isNotEmpty() && injuryFilterService.restrictionChecker(ctx.injuries)(substitute)) {
+            throw BadRequestException("Substitute exercise $substituteExerciseId is restricted by your injuries")
+        }
+        if (!TemplatePlanAdapter.equipmentAllowed(substitute, ctx.equipment)) {
+            throw BadRequestException("Substitute exercise $substituteExerciseId needs equipment you do not have")
+        }
+        if (!RecoRules.suitable(substitute, ctx.equipment, ctx.level, ctx.age)) {
+            throw BadRequestException("Substitute exercise $substituteExerciseId is not suitable for your level")
+        }
+        val goals = userProfileRepository.findByUser_Id(userId).orElse(null)?.goals.orEmpty()
+
         val days = userPlanDayRepository.findByPlanIdOrderByDayNumber(plan.id)
         var replaced = 0
+        var skippedAsDuplicate = 0
         for (day in days) {
             val exercises = userPlanDayExerciseRepository
                 .findByPlanDayIdWithExerciseOrderByOrderInDay(day.id)
+            val targets = exercises.filter { it.exercise.id == originalExerciseId }
             // 같은 날에 이미 대체 운동이 있으면 중복 배치가 되므로 건너뛴다
             if (exercises.any { it.exercise.id == substituteExerciseId }) {
+                skippedAsDuplicate += targets.size
                 log.info(
                     "Skipping substitution on day {} — plan already contains exercise {}",
                     day.dayNumber, substituteExerciseId
                 )
                 continue
             }
-            for (planExercise in exercises.filter { it.exercise.id == originalExerciseId }) {
+            for (planExercise in targets) {
                 planExercise.exercise = substitute
-                planExercise.isCompound = substitute.muscleGroups.size >= 2
+                // 처방(세트·반복·휴식·복합 여부)을 새 운동 기준으로 다시 정한다 — 스쿼트 4x6-8/180초가 레그 익스텐션에 그대로 남지 않게
+                applyPrescription(planExercise, substitute, ctx, goals)
                 userPlanDayExerciseRepository.save(planExercise)
                 replaced++
             }
         }
 
         if (replaced == 0) {
+            if (skippedAsDuplicate > 0) {
+                throw BadRequestException("Substitute exercise $substituteExerciseId is already in every day that contains exercise $originalExerciseId")
+            }
             throw BadRequestException("Exercise $originalExerciseId is not part of the active plan")
         }
         plan.updatedAt = LocalDateTime.now()
@@ -477,6 +520,34 @@ class UserPlanService(
             userId, originalExerciseId, substituteExerciseId, plan.id, replaced
         )
         return replaced
+    }
+
+    /** 새 운동의 훈련 특성(주력 복합·보조 복합·고립·코어)과 이 사람의 수준·목표로 처방을 다시 정한다. */
+    internal fun applyPrescription(
+        row: UserPlanDayExercise,
+        exercise: Exercise,
+        ctx: UserTrainingContextResolver.Context,
+        goals: Set<com.richjun.liftupai.domain.user.entity.FitnessGoal>,
+    ) {
+        val compound = RecoRules.isCompound(exercise)
+        row.isCompound = compound
+        row.notes = null
+        val profile = trainingProfileResolver.resolveProfile(exercise)
+        val config = trainingProfileResolver.applyGoal(
+            trainingProfileResolver.getConfig(PTRecommendationEngine.PeriodizationPhase.ACCUMULATION, profile), profile, goals
+        )
+        val parts = Regex("""(\d+)\s*(?:-\s*(\d+))?""").find(config.reps)
+        // 시간 기반(유산소 등)은 반복수로 표현할 수 없어 원래 자리의 값을 둔다
+        if (parts == null || config.reps.contains("time")) return
+        val lo = parts.groupValues[1].toInt()
+        val hi = parts.groupValues[2].ifEmpty { parts.groupValues[1] }.toInt()
+        var rx = RecoRules.Rx(config.sets, lo, hi, config.restSeconds)
+        if (RecoRules.isBeginnerBand(ctx.level) && ctx.level != null) rx = RecoRules.beginnerRx(exercise, rx, compound)
+        val cap = RecoRules.maxSetsFor(exercise, ctx.level, ctx.age, compound)
+        row.sets = rx.sets.coerceAtMost(cap).coerceAtLeast(1)
+        row.minReps = rx.minReps
+        row.maxReps = rx.maxReps
+        row.restSeconds = rx.restSeconds
     }
 
     @Transactional
@@ -555,22 +626,6 @@ class UserPlanService(
             canUseAIPlan = true, // Will be checked by subscription on frontend
             currentPlan = currentPlan
         )
-    }
-
-    private fun generateWarmupSets(workingWeight: Double): List<WarmupSetDto> {
-        val sets = mutableListOf<WarmupSetDto>()
-        // Empty bar
-        sets.add(WarmupSetDto(weight = 20.0, reps = 10))
-        if (workingWeight > 40.0) {
-            sets.add(WarmupSetDto(weight = (workingWeight * 0.50).roundToNearest(2.5), reps = 8))
-        }
-        if (workingWeight > 60.0) {
-            sets.add(WarmupSetDto(weight = (workingWeight * 0.70).roundToNearest(2.5), reps = 5))
-        }
-        if (workingWeight > 80.0) {
-            sets.add(WarmupSetDto(weight = (workingWeight * 0.85).roundToNearest(2.5), reps = 3))
-        }
-        return sets
     }
 
     private fun Double.roundToNearest(step: Double): Double {

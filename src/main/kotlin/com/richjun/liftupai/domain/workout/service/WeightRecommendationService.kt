@@ -1,5 +1,7 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.richjun.liftupai.domain.user.entity.ExperienceLevel
@@ -48,14 +50,23 @@ class WeightRecommendationService(
      * 추천 무게 계산. 항상 non-null 반환.
      */
     fun calculateSuggestedWeight(userId: Long, exerciseId: Long, targetReps: Int): Double {
-        val fromPR = calculateFromPR(userId, exerciseId, targetReps)
-        if (fromPR != null) return fromPR
-
         val exercise = exerciseRepository.findById(exerciseId).orElse(null)
-            ?: return 20.0 // 운동 정보 없으면 최소 기본값
+        val fromPR = calculateFromPR(userId, exerciseId, targetReps)
+        // 모든 경로가 같은 마지막 관문을 거친다: 2.5kg 단위, 바벨은 빈 봉(20kg) 아래로 내려가지 않는다
+        if (fromPR != null) return if (exercise != null) RecoRules.finalizeWeight(exercise, fromPR) else fromPR
+
+        if (exercise == null) return 20.0 // 운동 정보 없으면 최소 기본값
         val profile = userProfileRepository.findByUser_Id(userId).orElse(null)
         return suggestFromProfile(profile, exercise, targetReps).weight
     }
+
+    /**
+     * 첫 세션(이력·PR 없음)의 무게 — 플랜 화면·채팅/퀵 추천(PT 엔진)·하루 운동(enricher)·프로그램이 모두 이 값에서 출발한다.
+     * 나이·성별·경험은 기본값 표(defaultWorkingWeight)에서 한 번만 반영되고, 이후 경로가 다시 곱하지 않는다
+     * (예전엔 enricher 가 나이를 한 번 더, 준비도를 +5% 로 곱해 같은 사람이 화면마다 다른 무게를 봤다).
+     */
+    fun firstSessionWeight(profile: UserProfile?, exercise: Exercise, targetReps: Int): Double =
+        suggestFromProfile(profile, exercise, targetReps).weight
 
     /**
      * PR 을 제외한 프로필 기반 추천(2→3→4). PT 엔진처럼 PR/이력을 따로 다루는 호출자가 쓴다.
@@ -64,12 +75,12 @@ class WeightRecommendationService(
         if (isWeightless(exercise)) return Suggestion(0.0, Source.DEFAULT)
 
         resolveWorkingWeight(profile, exercise)?.let {
-            return Suggestion(roundTo2_5(it).coerceAtLeast(2.5), Source.WORKING_WEIGHT)
+            return Suggestion(RecoRules.finalizeWeight(exercise, it), Source.WORKING_WEIGHT)
         }
         resolveEstimated1RM(profile, exercise)?.let { oneRm ->
-            return Suggestion(roundTo2_5(workingWeightFor1RM(oneRm, targetReps)).coerceAtLeast(2.5), Source.ESTIMATED_MAX)
+            return Suggestion(RecoRules.finalizeWeight(exercise, workingWeightFor1RM(oneRm, targetReps)), Source.ESTIMATED_MAX)
         }
-        return Suggestion(roundTo2_5(defaultWorkingWeight(profile, exercise)).coerceAtLeast(2.5), Source.DEFAULT)
+        return Suggestion(RecoRules.finalizeWeight(exercise, defaultWorkingWeight(profile, exercise).coerceAtLeast(2.5)), Source.DEFAULT)
     }
 
     /** 1RM(개인 기록 또는 추정) — PT 엔진이 %1RM 밴드 계산에 쓴다. */

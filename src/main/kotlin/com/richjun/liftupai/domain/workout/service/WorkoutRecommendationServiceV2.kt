@@ -1,5 +1,8 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.RecoRules
+import com.richjun.liftupai.domain.workout.service.new.SessionFit
+
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.recovery.repository.MuscleRecoveryRepository
 import com.richjun.liftupai.domain.user.entity.UserProfile
@@ -165,6 +168,10 @@ class WorkoutRecommendationServiceV2(
         val activeSession = workoutSessionRepository.findFirstByUserAndStatusOrderByStartTimeDesc(user, SessionStatus.IN_PROGRESS).orElse(null)
 
         val userProfile = userProfileRepository.findByUser_Id(userId).orElse(null)
+        // 세션 시간: 요청 → 저장된 설정 → 프로필 → 45분. 채팅 추천(/api/chat/recommendations/workout)과 같은 해석이라 두 화면의 시간이 같다.
+        val userSettings = try { userSettingsRepository.findByUser_Id(userId).orElse(null) } catch (e: Exception) { null }
+        val resolvedDuration = UserTrainingContextResolver.of(userSettings, userProfile, UserTrainingContextResolver.Overrides(sessionMinutes = duration))
+            .sessionMinutesOrDefault()
         val programContext = resolveRecommendationProgramContext(userId, user, userProfile)
         val programPosition = workoutProgressTracker.getNextWorkoutInProgram(user, programContext.programDays)
         val normalizedTargetMuscle = normalizeRecommendationTarget(targetMuscle)
@@ -199,10 +206,10 @@ class WorkoutRecommendationServiceV2(
         }
 
         // Generate main recommendation based on filters
-        val recommendation = generateQuickRecommendation(user, duration, equipment, adjustedTargetMuscle, locale)
+        val recommendation = generateQuickRecommendation(user, resolvedDuration, equipment, adjustedTargetMuscle, locale)
 
         // Generate alternatives
-        val alternatives = generateAlternativeWorkouts(duration, equipment, adjustedTargetMuscle, locale)
+        val alternatives = generateAlternativeWorkouts(resolvedDuration, equipment, adjustedTargetMuscle, locale)
 
         return QuickWorkoutRecommendationResponse(
             recommendation = recommendation,
@@ -229,13 +236,14 @@ class WorkoutRecommendationServiceV2(
         targetMuscle: String?,
         locale: String
     ): WorkoutRecommendationDetail {
-        val workoutDuration = (duration ?: 30).coerceIn(10, 180)
-        val workoutId = generateWorkoutId(workoutDuration, equipment, targetMuscle)
-
         // Get user profile to determine difficulty
         val userProfile = userProfileRepository.findByUser(user).orElse(null)
+        val userSettings = try { userSettingsRepository.findByUser_Id(user.id).orElse(null) } catch (e: Exception) { null }
+        val ctx = UserTrainingContextResolver.of(userSettings, userProfile, UserTrainingContextResolver.Overrides(sessionMinutes = duration))
+        val workoutDuration = (duration ?: ctx.sessionMinutesOrDefault()).coerceIn(10, 180)
+        val workoutId = generateWorkoutId(workoutDuration, equipment, targetMuscle)
         val difficultyKey = when (userProfile?.experienceLevel) {
-            ExperienceLevel.BEGINNER -> "beginner"
+            ExperienceLevel.BEGINNER, ExperienceLevel.NOVICE -> "beginner"
             ExperienceLevel.INTERMEDIATE -> "intermediate"
             ExperienceLevel.ADVANCED -> "advanced"
             ExperienceLevel.EXPERT -> "advanced"
@@ -270,7 +278,9 @@ class WorkoutRecommendationServiceV2(
             limit = targetExerciseCount
         )
         // 추천 출처(벡터/규칙)와 무관하게 마지막에 한 번 더 거른다 — 부상·장비·회복·중복
-        val exercises = applySafetyFilters(user, userProfile, rawExercises, minAcceptableCount, targetExerciseCount)
+        val safe = applySafetyFilters(user, userProfile, rawExercises, minAcceptableCount, targetExerciseCount)
+        // 집중 부위가 하나도 없으면 안전한 후보로 하나 보장하고, 복합 → 고립 · 대표(ESSENTIAL) · 집중 부위 순으로 정렬한다
+        val exercises = orderForSession(ensureFocus(safe, ctx, targetExerciseCount), ctx)
         val translations = sharedSupport.translationMap(exercises, locale)
 
         logger.info("Workout recommendation completed: ${exercises.size} exercises (target: $targetExerciseCount)")
@@ -284,7 +294,7 @@ class WorkoutRecommendationServiceV2(
                 null
             }
 
-            (ptRec?.minRestSeconds ?: 45) to QuickExerciseDetail(
+            (ptRec?.minRestSeconds ?: 45).coerceAtMost(ptRec?.restSeconds ?: 60) to QuickExerciseDetail(
                 exerciseId = exercise.id.toString(),
                 name = sharedSupport.localizedName(exercise, locale, translations),
                 category = exercise.category.name,
@@ -300,7 +310,11 @@ class WorkoutRecommendationServiceV2(
                 targetMuscles = exercise.muscleGroups.map { WorkoutTargetResolver.displayName(it, locale) }
             )
         }
-        val quickExercises = fitToDuration(prescribed, workoutDuration)
+        val quickExercises = fitToDuration(
+            prescribed, workoutDuration,
+            maxSetsById = exercises.associate { it.id.toString() to RecoRules.maxSetsFor(it, ctx.level, ctx.age, sessionMinutes = workoutDuration) },
+            exerciseById = exercises.associateBy { it.id }, focus = ctx.focusAreas,
+        )
 
         val targetMuscles = exercises
             .flatMap { exercise -> exercise.muscleGroups.map { muscle -> WorkoutTargetResolver.displayName(muscle, locale) } }
@@ -359,13 +373,75 @@ class WorkoutRecommendationServiceV2(
         return alternatives.take(2)
     }
 
-    /** 세트·휴식을 요청한 세션 시간에 맞춘다. 종목이 빠지면 뒤에서부터 빠진다. */
-    internal fun fitToDuration(prescribed: List<Pair<Int, QuickExerciseDetail>>, durationMinutes: Int): List<QuickExerciseDetail> {
-        val slots = prescribed.map { (minRest, e) -> SessionDurationFitter.Slot(e.sets, e.reps, e.rest, minRest) }
-        val fitted = SessionDurationFitter.fit(slots, durationMinutes)
-        return prescribed.take(fitted.size).zip(fitted).map { (pair, slot) ->
-            pair.second.copy(sets = slot.sets, rest = slot.restSeconds)
+    /**
+     * 세트·휴식을 요청한 세션 시간(85~110%)에 맞춘다. 종목별 세트 상한(초보 주력 복합 3세트 등)을 지키고,
+     * 줄여야 하면 복합·집중 부위·대표 운동이 아닌 종목부터 뺀다.
+     */
+    internal fun fitToDuration(
+        prescribed: List<Pair<Int, QuickExerciseDetail>>,
+        durationMinutes: Int,
+        maxSetsById: Map<String, Int> = emptyMap(),
+        exerciseById: Map<Long, Exercise> = emptyMap(),
+        focus: List<FocusArea> = emptyList(),
+    ): List<QuickExerciseDetail> {
+        val slots = prescribed.map { (minRest, e) ->
+            val ex = exerciseById[e.exerciseId.toLongOrNull() ?: 0L]
+            val restUp = if (ex != null) RecoRules.maxRestFor(ex, RecoRules.isCompound(ex), e.reps.substringBefore('-').trim().toIntOrNull() ?: 10) else 90
+            SessionFit.Slot(
+                sets = e.sets, reps = e.reps, restSeconds = e.rest, minRestSeconds = minRest.coerceAtMost(e.rest),
+                maxRestSeconds = restUp.coerceAtLeast(e.rest), maxSets = (maxSetsById[e.exerciseId] ?: 5).coerceAtLeast(e.sets),
+            )
         }
+        val result = SessionFit.fit(slots, durationMinutes, minExercises = MIN_SESSION_EXERCISES, pickDrop = { kept, _ ->
+            (1 until kept.size).toList().minWithOrNull(compareBy<Int>({ pos ->
+                val ex = exerciseById[prescribed[kept[pos]].second.exerciseId.toLongOrNull() ?: 0L]
+                if (ex == null) -1.0 else RecoRules.keepValue(ex, RecoRules.isCompound(ex), focus)
+            }, { pos -> -pos }))
+        })
+        return result.keptIndices.mapIndexed { pos, orig ->
+            prescribed[orig].second.copy(sets = result.slots[pos].sets, rest = result.slots[pos].restSeconds, order = pos + 1)
+        }
+    }
+
+    /** 대표(ESSENTIAL) 복합운동이 앞, 코어·유산소는 뒤. 집중 부위 운동은 같은 등급 안에서 앞. 나머지는 추천 순서 유지. */
+    internal fun orderForSession(exercises: List<Exercise>, ctx: UserTrainingContextResolver.Context): List<Exercise> {
+        val focus = ctx.focusAreas
+        return exercises.withIndex().sortedWith(
+            compareBy<IndexedValue<Exercise>>(
+                { if (it.value.category == ExerciseCategory.CORE || it.value.category == ExerciseCategory.CARDIO) 1 else 0 },
+                { if (RecoRules.isCompound(it.value)) 0 else 1 },
+                { if (it.value.recommendationTier == RecommendationTier.ESSENTIAL) 0 else 1 },
+                { if (focus.any { a -> a.hits(it.value) }) 0 else 1 },
+                { it.index },
+            )
+        ).map { it.value }
+    }
+
+    /**
+     * 집중 부위(굵은 팔·힙업 …)를 하나도 다루지 않는 추천이면 안전한 후보(부상·장비·수준 규칙 통과) 하나를 끼워 넣는다.
+     * 목표 종목 수가 이미 찼으면 고립 종목 하나를 바꾼다. 후보가 없거나 이미 포함돼 있으면 그대로.
+     */
+    internal fun ensureFocus(exercises: List<Exercise>, ctx: UserTrainingContextResolver.Context, targetCount: Int): List<Exercise> {
+        val focus = ctx.focusAreas
+        val repo = exerciseRepository
+        if (focus.isEmpty() || repo == null || exercises.any { ex -> focus.any { it.hits(ex) } }) return exercises
+        val restricted = injuryFilterService.restrictionChecker(ctx.injuries)
+        val suitable = ctx.suitability()
+        val used = exercises.map { it.id }.toSet()
+        val usedNames = exercises.map { it.name.trim().lowercase() }.toSet()
+        for (area in focus) {
+            val pick = area.candidateCategories().flatMap { cat ->
+                try { repo.findPlanEligibleByCategoryOrderByPopularity(cat) } catch (e: Exception) { emptyList() }
+            }.filter { c ->
+                area.hits(c) && c.id !in used && c.name.trim().lowercase() !in usedNames &&
+                    TemplatePlanAdapter.equipmentAllowed(c, ctx.equipment) && suitable(c) && !restricted(c)
+            }.minWithOrNull(compareBy<Exercise>({ if (it.recommendationTier == RecommendationTier.ESSENTIAL) 0 else 1 }, { -it.popularity }, { it.id })) ?: continue
+            if (exercises.size < targetCount) return exercises + pick
+            val swap = exercises.withIndex().filter { !RecoRules.isCompound(it.value) }.minByOrNull { it.value.popularity }?.index
+                ?: return exercises
+            return exercises.toMutableList().also { it[swap] = pick }
+        }
+        return exercises
     }
 
     /**
@@ -377,7 +453,9 @@ class WorkoutRecommendationServiceV2(
             duration <= 45 -> 5
             duration <= 60 -> 6
             duration <= 75 -> 7
-            else -> 8
+            duration <= 90 -> 8
+            duration <= 105 -> 9
+            else -> 10
         }
     }
 
@@ -589,14 +667,14 @@ class WorkoutRecommendationServiceV2(
         targetCount: Int = minAcceptableCount,
     ): List<Exercise> {
         val settings = try { userSettingsRepository.findByUser_Id(user.id).orElse(null) } catch (e: Exception) { null }
+        val ctx = UserTrainingContextResolver.of(settings, profile)
 
         var result = exercises
             .distinctBy { it.id }
             .distinctBy { it.name.trim().lowercase() }
 
-        // 1. 부상 — 완화 없음
-        val injuries: Set<String> = settings?.injuries?.takeIf { it.isNotEmpty() }?.toSet()
-            ?: profile?.injuries?.toSet().orEmpty()
+        // 1. 부상 — 완화 없음. 프로필 ∪ 설정(단일 해석기): 예전엔 설정에 값이 있으면 프로필의 부상을 통째로 무시했다.
+        val injuries: Set<String> = ctx.injuries
         if (injuries.isNotEmpty()) {
             val before = result.size
             result = injuryFilterService.filterExercises(result, injuries)
@@ -606,14 +684,12 @@ class WorkoutRecommendationServiceV2(
         }
 
         // 2. 보유 장비 — 맨몸/밴드류는 항상 허용
-        val available = normalizeEquipmentTokens(
-            settings?.availableEquipment?.takeIf { it.isNotEmpty() } ?: profile?.availableEquipment.orEmpty()
-        )
+        val available = ctx.equipment
 
         // 2-a. 실제로 할 수 있는가 — 철봉이 필요한 맨몸 동작(홈트), 초보·고령·미성년에게 맨몸 풀업·평행봉 딥스·점프
-        val level = profile?.experienceLevel
-        val age = profile?.age
-        fun suitable(ex: Exercise) = ExerciseSuitability.suitable(ex, available, level, age)
+        val level = ctx.level
+        val age = ctx.age
+        fun suitable(ex: Exercise) = RecoRules.suitable(ex, available, level, age)
         val feasible = result.filter(::suitable)
         if (feasible.size < result.size) {
             logger.info("Safety filter(suitability): ${result.size} -> ${feasible.size} (level=$level, age=$age, available=$available) for user ${user.id}")

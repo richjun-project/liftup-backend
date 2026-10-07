@@ -21,24 +21,24 @@ class UserPlanDayExercise(
     val orderInDay: Int,
 
     @Column(nullable = false)
-    val sets: Int,
+    var sets: Int,
 
     @Column(name = "min_reps", nullable = false)
-    val minReps: Int,
+    var minReps: Int,
 
     @Column(name = "max_reps", nullable = false)
-    val maxReps: Int,
+    var maxReps: Int,
 
     @Column(name = "rest_seconds", nullable = false)
-    val restSeconds: Int = 90,
+    var restSeconds: Int = 90,
 
     /** 대체 운동으로 교체될 때 새 운동 기준으로 재계산된다 */
     @Column(name = "is_compound", nullable = false)
     var isCompound: Boolean = false,
 
     @Column(name = "target_rpe", nullable = false)
-    val targetRPE: Double = 7.0,
+    var targetRPE: Double = 7.0,
 
     @Column(columnDefinition = "TEXT")
-    val notes: String? = null
+    var notes: String? = null
 )

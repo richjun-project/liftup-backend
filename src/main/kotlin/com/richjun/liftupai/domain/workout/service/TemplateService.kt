@@ -1,5 +1,7 @@
 package com.richjun.liftupai.domain.workout.service
 
+import com.richjun.liftupai.domain.workout.service.new.SessionFit
+
 import com.richjun.liftupai.domain.workout.dto.response.*
 import com.richjun.liftupai.domain.workout.entity.*
 import com.richjun.liftupai.domain.workout.repository.*
@@ -84,7 +86,10 @@ class TemplateService(
                 dayNumber = day.dayNumber,
                 dayName = translatedDayName(template.code, day.dayNumber, day.dayName, locale),
                 workoutType = day.workoutType.name,
-                estimatedDurationMinutes = day.estimatedDurationMinutes,
+                // 저장된 분이 아니라 운동 구성이 실제로 걸리는 시간(추천·플랜과 같은 식)
+                estimatedDurationMinutes = if (exercises.isEmpty()) day.estimatedDurationMinutes else SessionFit.minutes(
+                    exercises.map { SessionFit.Slot(it.sets, "${it.minReps}-${it.maxReps}", it.restSeconds) }
+                ),
                 exercises = exercises.map { ex ->
                     TemplateDayExerciseResponse(
                         exerciseId = ex.exercise.id,
