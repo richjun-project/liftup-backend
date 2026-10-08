@@ -1,9 +1,11 @@
 package com.richjun.liftupai.domain.notification.controller
 
+import com.richjun.liftupai.domain.analytics.ClientInfo
 import com.richjun.liftupai.domain.notification.dto.*
 import com.richjun.liftupai.domain.notification.service.NotificationService
 import com.richjun.liftupai.global.common.ApiResponse
 import com.richjun.liftupai.global.security.CustomUserDetails
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -19,9 +21,13 @@ class NotificationController(
     @PostMapping("/register")
     fun registerDevice(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Valid @RequestBody request: RegisterDeviceRequest
+        @Valid @RequestBody request: RegisterDeviceRequest,
+        httpRequest: HttpServletRequest
     ): ResponseEntity<ApiResponse<RegisterDeviceResponse>> {
-        val response = notificationService.registerDevice(userDetails.getId(), request)
+        // 본문에 앱 버전이 없으면(1.1.26 이하 앱) 모든 요청에 붙는 X-App-Version 헤더로 채운다 — 기기별 버전을 봐야 푸시 회복을 판단할 수 있다
+        val versioned = if (request.appVersion.isNullOrBlank()) request.copy(appVersion = ClientInfo.from(httpRequest).appVersion)
+            else request.copy(appVersion = ClientInfo.sanitizeVersion(request.appVersion))
+        val response = notificationService.registerDevice(userDetails.getId(), versioned)
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(ApiResponse.success(response))
     }

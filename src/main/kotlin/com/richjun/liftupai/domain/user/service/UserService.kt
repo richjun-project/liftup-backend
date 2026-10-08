@@ -609,6 +609,8 @@ class UserService(
         executeDelete("DELETE FROM user_settings WHERE user_id = :userId", userId)
         // 즐겨찾기는 user_id 일반 컬럼이라(FK 없음) 메타모델 감사에 잡히지 않는다 — 직접 지운다
         executeDelete("DELETE FROM exercise_favorites WHERE user_id = :userId", userId)
+        // 앱 활성화 이벤트도 user_id 일반 컬럼(FK 없음)이다
+        executeDelete("DELETE FROM app_events WHERE user_id = :userId", userId)
 
         // 채팅
         executeDelete("DELETE FROM chat_messages WHERE user_id = :userId", userId)
