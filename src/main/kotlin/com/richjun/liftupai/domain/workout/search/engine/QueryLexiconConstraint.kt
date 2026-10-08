@@ -108,6 +108,8 @@ internal object QueryLexiconConstraint {
      * 그 대상이 장비를 앞세운 이름("케이블 크로스오버 점검중")이면 그 장비도 뺄 수 있게 한다. 대안 표지로서의 동작은 그대로다.
      */
     val AVAIL_EXTRA = """
+        rack is empty|rack's empty|racks are empty|rack empty|racks empty|rack is bare|shelf is empty|shelves are empty|holder is empty|stand is empty|tree is empty|all gone|are all gone|is all gone|none left|nothing left|no more left|ran out|have run out|has run out|are gone|is gone
+        |랙이 비었|랙이 비어|랙 비었|랙 비어|거치대가 비었|거치대 비었|거치대가 비어|다 나갔|다 가져갔|하나도 안 남|하나도 없어|남은 게 없|ラックが空っぽ|ラックが空|ラック空っぽ|棚が空っぽ|全部出払って|出払ってる|出払っていて|一つも残ってない|残ってない
         끊어졌어|끊어졌네|끊어졌는데|끊어져서|끊어짐|끊어진|끊겼어|끊겨서|끊겼는데|찢어졌어|찢어졌네|찢어져서|찢어짐|터졌어|터져서|터졌는데|늘어나서|늘어났어|헐거워져서|삭아서|삭았어
         |切れた|切れて|切れちゃった|切れちゃって|切れてて|ちぎれた|ちぎれて|破れた|破れて|伸びきった|伸びきって|混みすぎ|混みすぎて|混みすぎてる|混みすぎてて|混みすぎで|混み過ぎ|混み過ぎて|混み過ぎてる|待てない|待てなくて|待てません|待てないので|待てないから
         |snapped|has snapped|is snapped|snapped on me|tore|is torn|are torn|got torn|ripped|is ripped|broke|broke on me|is worn out|are worn out|wore out
@@ -174,6 +176,7 @@ internal object QueryLexiconConstraint {
 
     /** 부상 감각 표현 — 관절 가까이에서 그 관절을 피할 부위로 만든다(관절이 없으면 아무 일도 하지 않는다) */
     val CUES_EXTRA = """
+        twisted my|tweaked my|rolled my|hurt my|injured my|pulled my|strained my|sprained my|busted my|jacked up my|messed up my|banged up my|twisted his|twisted her|rolled her|rolled his
         cooked|shot|trashed|wrecked|fried|messed up|screwed up|jacked up|flared up|flared|flares|flare-up|flareup|acting up|acted up|toast
         |pinch|pinches|pinching|pinched|twinge|twinges|clicking|grinding|grinds|bothers|bothering|bothered|nags|nagging|acts up|flares up|flaring up|tweaked|tweak|killing me|kills me|aches when|hurts when|hurts if|painful when|pain when|pain during|pain while|sore when|uncomfortable when
         |때문에|때문이라|때문이라서|탓에|のせいで|のせい|が原因で|が原因|because of|due to|owing to|on account of

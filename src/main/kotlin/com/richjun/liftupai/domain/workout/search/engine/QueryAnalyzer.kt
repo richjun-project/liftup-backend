@@ -384,7 +384,9 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             val nxt = nearestContent(idx, 1)
             // "cables no, dumbbells yes" — 뒤 장비가 긍정 단서("yes")를 달고 있으면 "no" 는 앞 장비의 것이다("bench no, dumbbells yes" 처럼 기구 이름이어도)
             val nextAffirmed = nxt >= 0 && nxt + 1 in segs.indices && !segs[nxt + 1].unknown && !segs[nxt + 1].isNum && text.substring(segs[nxt + 1].s, segs[nxt + 1].e) in AFFIRM_KEYS
-            if (!prev.has(Role.EQUIP) && !(nextAffirmed && prev.has(Role.NAME))) return negs
+            // "dumbbell curls fine, cable curls no" — 장비 낱말 바로 뒤의 운동 이름도 뒤의 부정(no)의 대상이다(앞 절의 긍정 단서가 있을 때)
+            val equipNamed = prev.has(Role.NAME) && affirmed && ((prevIdx - 1 >= 0 && !segs[prevIdx - 1].unknown && !segs[prevIdx - 1].isNum && segs[prevIdx - 1].has(Role.EQUIP)) || equipmentPrefix(text.substring(prev.s, prev.e)) != null)
+            if (!prev.has(Role.EQUIP) && !(nextAffirmed && prev.has(Role.NAME)) && !equipNamed) return negs
             if (nxt >= 0 && !nextAffirmed && (segs[nxt].unknown || segs[nxt].has(Role.EQUIP) || segs[nxt].has(Role.NAME))) return negs
             // "no" 는 앞에 다른 장비나 yes 단서가 있어야 장비 뒤의 부정으로 본다("cable machines no knee pain" 의 no 는 뒤 말의 부정). never·nope 는 그런 근거가 필요 없다.
             if (key !in SELF_STANDING_POST_NEG && !affirmed && segs.subList(0, prevIdx).none { it.has(Role.EQUIP) }) return negs
@@ -436,6 +438,8 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
 
         // 1) 부정: 표지 + 대상
         fun negAt(idx: Int, neg: Term, avail: Boolean, dislike: Boolean = false): Boolean {
+            // "sprained ankle, cant stand, seated …" — 부상 맥락의 "서 있을 수 없다"는 몸 상태이지 뒤의 운동·장비를 싫어한다는 말이 아니다
+            if (text.substring(segs[idx].s, segs[idx].e) in CANT_STAND_KEYS && (injuryContext || segs.any { sg -> !sg.unknown && !sg.isNum && (sg.has(Role.CUE) || sg.has(Role.JOINT)) })) { consumed[idx] = true; return true }
             // "machine area is slammed so skipping them, chest" — 부정 표지 뒤의 대명사(them·it·those)는 앞에서 말한 장비를 가리킨다. 건너뛰고 뒤의 부위를 대상으로 잡으면 안 된다.
             if (!neg.targetBefore) {
                 var j = idx + 1
@@ -517,6 +521,11 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
                         fun nameSeg(i: Int) = i in segs.indices && !segs[i].unknown && !segs[i].isNum && segs[i].onlyRoles(Role.NAME)
                         while (nameSeg(range.first) && nameSeg(range.first - 1) && !tok.isWordStart(segs[range.first].s) && !consumed[range.first - 1]) range = (range.first - 1)..range.last
                         while (nameSeg(range.last) && nameSeg(range.last + 1) && !tok.isWordStart(segs[range.last + 1].s) && !consumed[range.last + 1]) range = range.first..(range.last + 1)
+                    }
+                    // "cable curls no" — 뒤에서 부정한 이름 바로 앞의 장비 낱말은 그 이름의 일부다(이름만 빼면 덤벨 컬까지 빠진다)
+                    if (!sg.unknown && step < 0 && targets.isEmpty() && sg.onlyRoles(Role.NAME)) {
+                        val e = range.first - 1
+                        if (e >= 0 && !segs[e].unknown && !segs[e].isNum && segs[e].has(Role.EQUIP) && !consumed[e]) range = e..range.last
                     }
                     // 붙여 쓴 장비 복합어("ケーブルマシン")는 한 대상이다
                     if (!sg.unknown && sg.has(Role.EQUIP)) {
@@ -868,13 +877,20 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
             else if ((numbers.isNotEmpty() && !timeOnlyNumbers) || text.length <= 2) { mode = Mode.NAME; finalSeeds = listOf(tok.words) }
         }
         if (mode == Mode.NAME && finalSeeds.isEmpty()) finalSeeds = listOf(tok.words)
+        val onlyMarkers = segs.indices.filter { i -> isOnlyMarker(segs, i, text) }
+        val onlyEquip = equipments.isNotEmpty() && excludeEquip.isEmpty() && !text.contains(NOT_ONLY) && onlyMarkers.isNotEmpty()
+        // "bands only no weights" — "그것만" 표지가 가리킨 장비로만 좁힌다("no weights" 의 맨몸 읽기가 "밴드만"을 흐리지 않게)
+        if (onlyEquip) {
+            val marked = onlyMarkers.flatMapTo(LinkedHashSet()) { i -> onlyTargetEquipment(segs, i, text) }
+            if (marked.isNotEmpty() && marked.size < equipments.size && equipments.containsAll(marked)) equipments.retainAll(marked)
+        }
         return QueryPlan(
             mode = mode, concepts = effectiveConcepts, equipments = equipments, home = home, stretch = stretch, level = level, regress = regress,
             excludeEquip = excludeEquip, excludeKeys = excludeKeys, injuries = injuries, numbers = numbers, highReps = highReps,
             seeds = finalSeeds, hasUnknown = unknownChunks.isNotEmpty() || unknownTargetUsed, similarTo = similarKeys,
             excludeConcepts = negConcepts.distinctBy { it.id },
             combineAll = effectiveConcepts.size > 1 && effectiveConcepts.any { it.id in COMBINE_IDS },
-            onlyEquip = equipments.isNotEmpty() && excludeEquip.isEmpty() && !text.contains(NOT_ONLY) && segs.indices.any { i -> isOnlyMarker(segs, i, text) }
+            onlyEquip = onlyEquip
         )
     }
 
@@ -931,7 +947,18 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         if (!sg.has(Role.NOISE) && !sg.has(Role.CONJ)) return false
         val near = (i - 1 downTo maxOf(0, i - 2)).any { j -> !segs[j].unknown && !segs[j].isNum && segs[j].has(Role.EQUIP) } ||
             (i + 1..minOf(segs.size - 1, i + 2)).any { j -> !segs[j].unknown && !segs[j].isNum && segs[j].has(Role.EQUIP) }
-        return near && (key in ONLY_WORDS || (key in ONLY_PARTICLES && i > 0 && !segs[i - 1].unknown && !segs[i - 1].isNum && segs[i - 1].has(Role.EQUIP)))
+        // "seated dumbbell work for shoulders only" — 끝에 붙은 only 는 질의에 하나뿐인 장비에 걸린다
+        val trailing = i == segs.lastIndex && key in ONLY_WORDS && segs.count { !it.unknown && !it.isNum && it.has(Role.EQUIP) } == 1
+        return (near && (key in ONLY_WORDS || (key in ONLY_PARTICLES && i > 0 && !segs[i - 1].unknown && !segs[i - 1].isNum && segs[i - 1].has(Role.EQUIP)))) || trailing
+    }
+
+    /** "그것만" 표지 i 가 가리키는 장비 — 장비에 붙은 표지면 그 장비, 아니면 바로 앞(없으면 뒤) 두 조각 안의 장비, 끝의 only 면 질의의 유일한 장비 */
+    private fun onlyTargetEquipment(segs: List<Seg>, i: Int, text: String): Set<Equipment> {
+        fun eq(j: Int) = if (j in segs.indices && !segs[j].unknown && !segs[j].isNum) segs[j].terms!!.filter { it.role == Role.EQUIP }.flatMap { it.equipment }.toSet() else emptySet()
+        eq(i).takeIf { it.isNotEmpty() }?.let { return it }
+        for (j in (i - 1) downTo maxOf(0, i - 2)) eq(j).takeIf { it.isNotEmpty() }?.let { return it }
+        for (j in (i + 1)..minOf(segs.size - 1, i + 2)) eq(j).takeIf { it.isNotEmpty() }?.let { return it }
+        return segs.indices.flatMap { eq(it) }.toSet()
     }
 
     /** 벤치·랙처럼 운동이 아니라 기구인 이름 조각인가 */
@@ -1153,6 +1180,7 @@ internal class QueryAnalyzer(private val vocab: Vocabulary, private val synonyms
         private val OK_CUE_KEYS = listOf("괜찮은", "괜찮게", "괜찮", "大丈夫", "だいじょうぶ", "安心", "무난한").map { SearchText.strictKey(it) }.toSet()
         private val ONLY_MARKERS = listOf("만", "밖에", "뿐", "로만", "으로만", "のみ", "だけ", "しか", "しかない", "only", "만가지고", "만쓸수", "밖에없").map { SearchText.strictKey(it) }
         private val ONLY_WORDS = listOf("only", "just", "onlyhave", "onlygot", "justhave", "onlyhas", "nothingbut", "allihave", "allwehave", "のみ", "だけ", "しか", "밖에", "뿐").map { SearchText.strictKey(it) }.toSet()
+        private val CANT_STAND_KEYS = listOf("cant stand", "can't stand", "cannot stand", "can not stand", "unable to stand").map { SearchText.strictKey(it) }.toSet()
         private val ONLY_PARTICLES = listOf("만", "로만", "으로만", "만으로", "만가지고").map { SearchText.strictKey(it) }.toSet()
         private val NOT_ONLY = Regex("notonly|뿐만아니라|だけでなく|だけじゃなく|만이아니라|만아니라|뿐아니라|だけではなく")
         private val GYM_WORDS = listOf("gym", "gyms", "헬스장", "헬스", "체육관", "ジム", "ジムが", "fitness center", "weight room", "weightroom").map { SearchText.strictKey(it) }.toSet()

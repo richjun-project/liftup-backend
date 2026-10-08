@@ -537,4 +537,40 @@ class ConstraintUnderstandingTest {
         // 비어 있다(free)는 말이 장비 뒤에 오면 그 장비를 쓸 수 있다는 긍정이다
         assertTrue(Equipment.KETTLEBELL in plan("kettlebells are free, full body").equipments)
     }
+
+    // ── 거치대가 빔·장비+이름 뒤 부정·부상 맥락의 cant stand·끝의 only·"그것만"이 가리킨 장비 ───────────────
+
+    @Test
+    fun `장비 거치대가 비었다는 말은 그 장비를 쓸 수 없다는 뜻이다 - 기구 자리가 비었다는 말과 다르다`() {
+        assertExcludes(Equipment.DUMBBELL, "dumbbell rack is empty today, arms", "덤벨 거치대가 비었어 어깨")
+        assertExcludes(Equipment.KETTLEBELL, "ケトルベルのラックが空っぽ 全身")
+        // 기구 자리 자체가 비어 있다는 말은 쓸 수 있다는 긍정이다
+        assertTrue(Equipment.KETTLEBELL !in plan("kettlebells are free, full body").excludeEquip)
+    }
+
+    @Test
+    fun `장비 낱말 뒤 운동 이름에 붙은 뒤 부정은 그 장비 버전만 뺀다`() {
+        val q = "barbell rows ok, cable rows no"
+        val p = plan(q)
+        assertTrue(Equipment.CABLE in p.excludeEquip || p.excludeKeys.isNotEmpty(), engine.explain(q))
+        val out = top(q, 8)
+        assertTrue(out.none { it.equipment == Equipment.CABLE }, out.map { it.slug }.toString())
+        assertTrue(out.any { it.equipment == Equipment.BARBELL && "row" in it.slug }, "긍정한 바벨 로우는 남는다: ${out.map { it.slug }}")
+    }
+
+    @Test
+    fun `부상 맥락의 cant stand 는 서 있을 수 없다는 몸 상태이고 싫다는 뜻이 아니다`() {
+        val q = "twisted my knee, cant stand, seated kettlebell arms only"
+        val p = plan(q)
+        assertTrue(Equipment.KETTLEBELL !in p.excludeEquip && Equipment.KETTLEBELL in p.equipments, engine.explain(q))
+        // 부상 맥락이 없으면 cant stand 는 싫다는 말이다
+        assertTrue(plan("i cant stand lunges, legs").excludeKeys.isNotEmpty(), engine.explain("i cant stand lunges, legs"))
+    }
+
+    @Test
+    fun `끝의 only 와 "그것만" 표지는 그 장비로만 좁히고 no weights 의 맨몸 읽기로 넓히지 않는다`() {
+        assertEquals(setOf(Equipment.DUMBBELL), plan("seated dumbbell stuff for biceps only").equipments, engine.explain("seated dumbbell stuff for biceps only"))
+        assertEquals(setOf(Equipment.RESISTANCE_BAND), plan("shoulder prehab, tubing only no weights").equipments, engine.explain("shoulder prehab, tubing only no weights"))
+        assertTrue(top("shoulder prehab, tubing only no weights", 5).all { it.equipment == Equipment.RESISTANCE_BAND }, top("shoulder prehab, tubing only no weights", 5).map { it.slug }.toString())
+    }
 }
