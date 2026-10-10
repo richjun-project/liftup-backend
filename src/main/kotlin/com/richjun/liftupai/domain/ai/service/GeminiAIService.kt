@@ -88,6 +88,7 @@ class GeminiAIService(
         user: User,
         history: List<Pair<String, String>>,
         trainerContext: String? = null,
+        imageUrls: List<String> = emptyList(),
     ): ChatReply {
         return try {
             // 저장된 설정보다 "사용자가 실제로 쓴 언어"를 우선한다.
@@ -128,9 +129,12 @@ class GeminiAIService(
                 )
             }
 
-            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history, risk, facts, trainerContext = trainerContext)
+            // 첨부 사진: 허용 호스트(우리 S3·API)에서만 내려받아 요청에 함께 넣는다. 못 불러오면 본 척하지 않게 알린다.
+            val images = loadChatImages(imageUrls)
+            val imageNote = chatImageNote(requested = imageUrls.size.coerceAtMost(MAX_CHAT_IMAGES), loaded = images.size)
+            val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history, risk, facts, trainerContext = trainerContext) + imageNote
             // 버튼 태그는 사용자에게 보이면 안 되고 언어 검사도 흐리므로 먼저 떼고 검사한다.
-            val first = callChatModel(prompt, user.id)?.let(ChatActionParser::extract)
+            val first = callChatModel(prompt, user.id, images)?.let(ChatActionParser::extract)
             // 닉네임은 어떤 문자든 올 수 있다(한글 닉네임의 일본어 사용자). 언어 검사에서 뺀다.
             // 2026-09-16 운영: 한글 닉네임 때문에 일본어 답변이 LANGUAGE_MISMATCH 로 두 번 거부돼 폴백만 나갔다.
             val firstViolations = chatSafety.validate(maskNickname(first?.text, user.nickname), risk)
@@ -144,8 +148,8 @@ class GeminiAIService(
                 message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history, risk, facts,
                 rejection = chatSafety.rejectionBlock(firstViolations, risk),
                 trainerContext = trainerContext,
-            )
-            val second = callChatModel(retryPrompt, user.id)?.let(ChatActionParser::extract)
+            ) + imageNote
+            val second = callChatModel(retryPrompt, user.id, images)?.let(ChatActionParser::extract)
             val secondViolations = chatSafety.validate(maskNickname(second?.text, user.nickname), risk)
             if (secondViolations.isEmpty()) {
                 return ChatReply(second!!.text, safeActions(second.actions, risk, message))
@@ -1024,11 +1028,17 @@ class GeminiAIService(
     private fun maskNickname(reply: String?, nickname: String?): String? =
         if (reply == null || nickname.isNullOrBlank() || nickname.length < 3) reply else reply.replace(nickname, "")
 
-    private fun callChatModel(prompt: String, userId: Long): String? {
-        val first = executeChatRequest(prompt, chatThinkingLevel.takeIf { it.isNotBlank() })
+    /** 채팅 첨부 사진을 내려받아 Gemini inline 데이터로 만든다(최대 [MAX_CHAT_IMAGES]장, 허용 호스트만). */
+    private fun loadChatImages(urls: List<String>): List<InlineData> =
+        urls.asSequence().filter { it.isNotBlank() }.distinct().take(MAX_CHAT_IMAGES).mapNotNull { url ->
+            downloadAndEncodeImage(url)?.let { InlineData(mimeType = imageMimeType(url), data = it) }
+        }.toList()
+
+    private fun callChatModel(prompt: String, userId: Long, images: List<InlineData> = emptyList()): String? {
+        val first = executeChatRequest(prompt, chatThinkingLevel.takeIf { it.isNotBlank() }, images)
         val result = if (first is ChatCallResult.Rejected && shouldRetryWithoutThinking(first.code, first.body, chatThinkingLevel)) {
             log.warn("[AI-CHAT] thinking 설정이 거부되어 설정 없이 재시도한다: code={} body={}", first.code, first.body.take(200))
-            executeChatRequest(prompt, null)
+            executeChatRequest(prompt, null, images)
         } else {
             first
         }
@@ -1055,11 +1065,11 @@ class GeminiAIService(
         }
     }
 
-    private fun executeChatRequest(prompt: String, thinkingLevel: String?): ChatCallResult {
+    private fun executeChatRequest(prompt: String, thinkingLevel: String?, images: List<InlineData> = emptyList()): ChatCallResult {
         val started = System.currentTimeMillis()
         return try {
             val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
-            val body = objectMapper.writeValueAsString(buildChatRequest(prompt, temperature, maxTokens, thinkingLevel))
+            val body = objectMapper.writeValueAsString(buildChatRequest(prompt, temperature, maxTokens, thinkingLevel, images))
             val request = Request.Builder()
                 .url(url)
                 .post(body.toRequestBody("application/json".toMediaType()))
@@ -1238,8 +1248,8 @@ internal fun nonChatGenerationConfig(temperature: Double, requestedMaxTokens: In
 /** 채팅 외 호출의 최소 출력 한도 — thinking 토큰이 한도에서 빠지므로 JSON 응답이 잘리지 않게 넉넉히 */
 internal const val NON_CHAT_MIN_OUTPUT_TOKENS = 8192
 
-internal fun buildChatRequest(prompt: String, temperature: Double, maxTokens: Int, thinkingLevel: String?) = GeminiRequest(
-    contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
+internal fun buildChatRequest(prompt: String, temperature: Double, maxTokens: Int, thinkingLevel: String?, images: List<InlineData> = emptyList()) = GeminiRequest(
+    contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)) + images.map { GeminiPart(inlineData = it) })),
     generationConfig = GenerationConfig(
         temperature = temperature,
         maxOutputTokens = maxTokens,
@@ -1257,3 +1267,27 @@ internal fun shouldRetryWithoutThinking(code: Int, body: String, sentThinkingLev
 private val PAIN_MENTION = Regex(
     "(아프|아파|통증|다쳤|부상|삐었|결려|저려|쑤셔|(?i:\\bpain|hurts?\\b|injur|sprain|sore\\b)|痛|ケガ|怪我|捻挫)"
 )
+
+/** 채팅 첨부 사진은 이만큼만 모델에 보낸다(비용·지연 상한) */
+internal const val MAX_CHAT_IMAGES = 3
+
+/** URL 확장자로 이미지 MIME 을 고른다(모르면 JPEG — 업로드는 jpg/png/gif/webp 만 받는다) */
+internal fun imageMimeType(url: String): String {
+    val ext = url.substringBefore('?').substringAfterLast('.', "").lowercase()
+    return when (ext) {
+        "png" -> "image/png"
+        "webp" -> "image/webp"
+        "gif" -> "image/gif"
+        else -> "image/jpeg"
+    }
+}
+
+/**
+ * 첨부 사진 상태를 모델에게 알리는 문장(프롬프트 끝에 붙인다). 사진을 못 불러왔는데 모델이 내용을 지어내면 안 된다 —
+ * 예전에는 사진이 서버에 닿지 않는데도 "사진 분석" 요청 문구만 가서 모델이 본 척 답했다.
+ */
+internal fun chatImageNote(requested: Int, loaded: Int): String = when {
+    requested <= 0 -> ""
+    loaded > 0 -> "\n\n[ATTACHED PHOTO] The user attached $loaded photo(s); they are included below this text. Look at what is actually visible and answer about it. If it is not related to fitness, food or the body, say so briefly."
+    else -> "\n\n[ATTACHED PHOTO FAILED] The user tried to attach a photo but it could not be loaded. Tell them you could not see the photo and ask them to send it again. Do not guess or describe its content."
+}

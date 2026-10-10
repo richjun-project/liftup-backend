@@ -34,6 +34,18 @@ class FileUploadService(
     companion object {
         const val MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
         val ALLOWED_EXTENSIONS = setOf("jpg", "jpeg", "png", "gif", "webp")
+        /** 저장 경로(uploads/<type>/<userId>)와 S3 키에 들어가는 값이라 허용 목록만 받는다(../ 같은 경로 조작 차단) */
+        val ALLOWED_TYPES = setOf("chat", "meal", "profile", "progress", "form")
+        const val DEFAULT_TYPE = "chat"
+
+        /** 요청의 type 을 허용 목록 값으로 바꾼다. 없으면 chat, 목록 밖이면 400 */
+        fun resolveType(raw: String?): String {
+            val t = raw?.trim()?.lowercase()
+            if (t.isNullOrEmpty()) return DEFAULT_TYPE
+            if (t !in ALLOWED_TYPES) throw com.richjun.liftupai.global.exception.BadRequestException("Unsupported upload type")
+            return t
+        }
+
         val ALLOWED_MIME_TYPES = setOf(
             "image/jpeg",
             "image/png",
@@ -55,6 +67,8 @@ class FileUploadService(
     ): ImageUploadResponse {
         // Validate file
         validateImageFile(file)
+        // 내부 호출(식단 등)도 경로에 쓰이는 값이므로 다시 확인한다
+        val type = resolveType(type)
 
         // Use S3 if enabled
         if (useS3 && s3Service != null) {

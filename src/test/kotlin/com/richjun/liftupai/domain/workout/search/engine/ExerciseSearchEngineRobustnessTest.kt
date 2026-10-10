@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.workout.search.engine
 
+import com.richjun.liftupai.domain.workout.search.QUALITY_BUDGET_NANOS
 import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchDoc
@@ -29,7 +30,7 @@ class ExerciseSearchEngineRobustnessTest {
     @BeforeAll
     fun setUp() {
         docs = ExerciseSearchEvalTest.loadCatalogDocs()
-        engine = ExerciseSearchEngine(docs)
+        engine = ExerciseSearchEngine(docs, emptyList(), QUALITY_BUDGET_NANOS)
         // 클래스 로딩·JIT 를 미리 치른다
         listOf("squat", "スクワット", "하체운동", "without deadlifts", "chest at home", "ab".repeat(150)).forEach { engine.search(it) }
     }

@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.workout.search.semantic
 
+import com.richjun.liftupai.domain.workout.search.QUALITY_BUDGET_NANOS
 import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.entity.MuscleGroup
@@ -31,7 +32,7 @@ class HybridSearchTest {
     @BeforeAll
     fun setUp() {
         docs = ExerciseSearchEvalTest.loadCatalogDocs()
-        engine = ExerciseSearchEngine(docs)
+        engine = ExerciseSearchEngine(docs, emptyList(), QUALITY_BUDGET_NANOS)
         vectors = ExerciseVectors.loadDefault() ?: error("embeddings missing")
         hybrid = HybridSearch(engine, vectors)
     }

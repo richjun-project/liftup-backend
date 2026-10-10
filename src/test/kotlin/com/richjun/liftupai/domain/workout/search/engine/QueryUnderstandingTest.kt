@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.workout.search.engine
 
+import com.richjun.liftupai.domain.workout.search.QUALITY_BUDGET_NANOS
 import com.richjun.liftupai.domain.workout.entity.Equipment
 import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
 import com.richjun.liftupai.domain.workout.search.ExerciseSearchDoc
@@ -25,7 +26,7 @@ class QueryUnderstandingTest {
     @BeforeAll
     fun setUp() {
         docs = ExerciseSearchEvalTest.loadCatalogDocs()
-        engine = ExerciseSearchEngine(docs)
+        engine = ExerciseSearchEngine(docs, emptyList(), QUALITY_BUDGET_NANOS)
     }
 
     private fun hits(q: String, n: Int = 5, category: ExerciseCategory? = null, equipments: Set<Equipment>? = null) =

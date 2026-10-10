@@ -46,7 +46,7 @@ class SearchRound3Test {
     @BeforeAll
     fun setUp() {
         docs = ExerciseSearchEvalTest.loadCatalogDocs()
-        engine = ExerciseSearchEngine(docs)
+        engine = ExerciseSearchEngine(docs, emptyList(), QUALITY_BUDGET_NANOS)
     }
 
     private fun top(q: String, n: Int = 5) = engine.search(q).take(n).map { it.doc }

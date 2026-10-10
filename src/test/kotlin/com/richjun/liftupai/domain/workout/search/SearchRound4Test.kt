@@ -25,7 +25,7 @@ class SearchRound4Test {
 
     @BeforeAll
     fun setUp() {
-        engine = ExerciseSearchEngine(ExerciseSearchEvalTest.loadCatalogDocs())
+        engine = ExerciseSearchEngine(ExerciseSearchEvalTest.loadCatalogDocs(), emptyList(), QUALITY_BUDGET_NANOS)
     }
 
     private fun top(q: String, n: Int = 5) = engine.search(q, null, null, null).take(n).map { it.doc }

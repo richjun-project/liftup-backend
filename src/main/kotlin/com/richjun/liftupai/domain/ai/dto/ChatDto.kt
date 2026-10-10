@@ -7,7 +7,10 @@ data class ChatRequest(
     @field:NotBlank(message = "Message is required")
     val message: String,
 
-    val context: ChatContext? = null
+    val context: ChatContext? = null,
+
+    /** 채팅에 첨부한 사진 URL(업로드 API 가 돌려준 것). 앱은 예전부터 보냈지만 서버가 받지 않아 트레이너가 사진을 못 봤다. 최대 3장만 쓴다. */
+    val images: List<String>? = null
 )
 
 data class ChatResponse(

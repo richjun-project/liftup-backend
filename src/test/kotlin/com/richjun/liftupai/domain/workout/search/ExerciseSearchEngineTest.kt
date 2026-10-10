@@ -46,7 +46,7 @@ class ExerciseSearchEngineTest {
         doc("skull-crusher", "Skull crusher", "스컬 크러셔", "スカルクラッシャー", ExerciseCategory.ARMS, Equipment.BARBELL, setOf(MuscleGroup.TRICEPS), RecommendationTier.ESSENTIAL, 92)
     )
 
-    private val engine = ExerciseSearchEngine(docs)
+    private val engine = ExerciseSearchEngine(docs, emptyList(), QUALITY_BUDGET_NANOS)
 
     private fun slugs(query: String?, category: ExerciseCategory? = null, equipments: Set<Equipment>? = null, locale: String? = null) =
         engine.search(query, category, equipments, locale).map { it.doc.slug }

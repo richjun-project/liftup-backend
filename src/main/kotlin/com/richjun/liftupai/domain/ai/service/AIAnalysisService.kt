@@ -240,7 +240,7 @@ class AIAnalysisService(
         // Gemini AI에게 응답 요청
         val startTime = System.currentTimeMillis()
         val reply = try {
-            geminiAIService.generateReply(enhancedMessage, user, history, trainer?.block)
+            geminiAIService.generateReply(enhancedMessage, user, history, trainer?.block, request.images.orEmpty())
         } catch (e: Exception) {
             // 에러 발생 시 실패 메시지 저장
             val errorMessage = ChatMessage(
@@ -267,7 +267,8 @@ class AIAnalysisService(
             messageType = MessageType.TEXT,
             status = MessageStatus.COMPLETED,
             responseTime = responseTime,
-            actions = ChatAction.join(actions)
+            actions = ChatAction.join(actions),
+            attachmentUrl = request.images?.firstOrNull()?.takeIf { it.startsWith("https://") }
         )
 
         val savedMessage = chatMessageRepository.save(chatMessage)
