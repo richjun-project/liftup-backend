@@ -727,8 +727,8 @@ class WorkoutSessionService(
                 )
                 workoutExerciseRepository.save(newWorkoutExercise)
             } else {
-                // 기존 운동 유지 (순서는 변경할 수 없으므로 그대로 사용)
-                existingWorkoutExercise
+                // 앱(1.1.28+)은 운동 중 순서를 바꿀 수 있다 — 보낸 순서를 그대로 따른다
+                existingWorkoutExercise.also { it.orderInSession = exerciseData.orderIndex }
             }
 
             // 기존 세트 삭제

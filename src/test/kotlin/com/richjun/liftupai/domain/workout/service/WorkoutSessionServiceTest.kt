@@ -171,5 +171,46 @@ class WorkoutSessionServiceTest {
             assertEquals(640.0, workoutExercise.totalVolume)
             assertEquals(640.0, session.totalVolume)
         }
+
+        @Test
+        fun `updateSession applies the client's exercise order to existing exercises`() {
+            val session = WorkoutSession(
+                id = 99L,
+                user = testUser,
+                startTime = LocalDateTime.of(2026, 1, 1, 10, 0),
+                status = SessionStatus.IN_PROGRESS
+            )
+            val row = Exercise(id = 2L, slug = "barbell-row", name = "Barbell Row", category = ExerciseCategory.BACK, equipment = Equipment.BARBELL)
+            val bench = WorkoutExercise(id = 77L, session = session, exercise = testExercise, orderInSession = 0)
+            val rowWe = WorkoutExercise(id = 78L, session = session, exercise = row, orderInSession = 1)
+
+            every { userRepository.findById(1L) } returns Optional.of(testUser)
+            every { workoutSessionRepository.findById(99L) } returns Optional.of(session)
+            every { exerciseRepository.findById(1L) } returns Optional.of(testExercise)
+            every { exerciseRepository.findById(2L) } returns Optional.of(row)
+            every { workoutExerciseRepository.findBySessionIdAndExerciseId(99L, 1L) } returns bench
+            every { workoutExerciseRepository.findBySessionIdAndExerciseId(99L, 2L) } returns rowWe
+            every { exerciseSetRepository.findByWorkoutExerciseId(any()) } returns emptyList()
+            every { exerciseSetRepository.deleteAll(any<Iterable<ExerciseSet>>()) } returns Unit
+            every { exerciseSetRepository.save(any()) } answers { firstArg() }
+            every { workoutExerciseRepository.save(any()) } answers { firstArg() }
+            every { workoutExerciseRepository.findBySessionIdOrderByOrderInSession(99L) } returns listOf(rowWe, bench)
+            every { workoutSessionRepository.save(session) } returns session
+
+            // 사용자가 로우를 맨 위로 옮겼다
+            workoutSessionService.updateSession(
+                userId = 1L,
+                sessionId = 99L,
+                request = UpdateSessionRequest(
+                    exercises = listOf(
+                        UpdateExerciseData(exerciseId = 2L, orderIndex = 0, sets = listOf(UpdateSetData(setNumber = 1, weight = 40.0, reps = 10, completed = false))),
+                        UpdateExerciseData(exerciseId = 1L, orderIndex = 1, sets = listOf(UpdateSetData(setNumber = 1, weight = 60.0, reps = 8, completed = false))),
+                    )
+                )
+            )
+
+            assertEquals(0, rowWe.orderInSession)
+            assertEquals(1, bench.orderInSession)
+        }
     }
 }

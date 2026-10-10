@@ -17,8 +17,9 @@ data class WorkoutExercise(
     @JoinColumn(name = "exercise_id", nullable = false)
     val exercise: Exercise,
 
+    /** 운동 중 사용자가 순서를 바꾸면 세션 업데이트가 이 값을 갱신한다. */
     @Column(nullable = false)
-    val orderInSession: Int,
+    var orderInSession: Int,
 
     @OneToMany(mappedBy = "workoutExercise", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     val sets: MutableList<ExerciseSet> = mutableListOf(),
