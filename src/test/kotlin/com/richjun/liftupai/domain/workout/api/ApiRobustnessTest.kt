@@ -160,7 +160,7 @@ class ApiRobustnessTest : ApiTestSupport() {
         assertValidationError(recommend("""{"weekly_days":0}"""), "weekly_days=0")
         assertValidationError(recommend("""{"session_duration":-5}"""), "session_duration")
         assertValidationError(recommend("""{"age":-1}"""), "age")
-        assertValidationError(recommend("""{"goals":[${(1..11).joinToString(",") { "\"g$it\"" }}]}"""), "goals 11개")
+        assertValidationError(recommend("""{"goals":[${(1..31).joinToString(",") { "\"g$it\"" }}]}"""), "goals 31개")
         assertValidationError(recommend("""{"equipment":[${(1..21).joinToString(",") { "\"e$it\"" }}]}"""), "equipment 21개")
         assertValidationError(recommend("""{"focus_areas":[${(1..11).joinToString(",") { "\"f$it\"" }}]}"""), "focus 11개")
         assertValidationError(recommend("""{"injuries":["${"k".repeat(65)}"]}"""), "원소 길이")

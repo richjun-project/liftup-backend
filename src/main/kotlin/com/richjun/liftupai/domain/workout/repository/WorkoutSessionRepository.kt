@@ -22,6 +22,14 @@ interface WorkoutSessionRepository : JpaRepository<WorkoutSession, Long> {
     @Query("SELECT ws FROM WorkoutSession ws WHERE ws.user = :user AND ws.status = :status ORDER BY ws.startTime DESC LIMIT 1")
     fun findFirstByUserAndStatusWithLock(@Param("user") user: User, @Param("status") status: SessionStatus): Optional<WorkoutSession>
 
+    /**
+     * 같은 세션의 업데이트·완료 요청을 차례로 처리하려고 세션 행을 잠근다. 트랜잭션의 **첫 읽기**로 불러야 한다 —
+     * 앞에서 다른 행을 먼저 읽으면 그때 잡힌 스냅샷으로 세트를 읽어, 앞 요청이 지운 세트를 다시 지우다 실패한다.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT ws FROM WorkoutSession ws WHERE ws.id = :id")
+    fun findByIdForUpdate(@Param("id") id: Long): Optional<WorkoutSession>
+
     fun findByUserOrderByStartTimeDesc(user: User, pageable: Pageable): Page<WorkoutSession>
 
     fun findByUserAndStartTimeBetweenOrderByStartTimeDesc(

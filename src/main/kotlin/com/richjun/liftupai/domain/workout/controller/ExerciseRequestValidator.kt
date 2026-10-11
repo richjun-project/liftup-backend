@@ -18,7 +18,8 @@ object ExerciseRequestValidator {
     const val MAX_EXCLUDE_IDS_LENGTH = 4_000
     const val MAX_SUGGESTION_LIMIT = 30
 
-    const val MAX_GOALS = 10
+    // 온보딩 목표 선택지가 20개이고 "모두 고르라"고 묻는다 — 예전 10개 제한은 많이 고른 사용자의 추천을 400 으로 막았다
+    const val MAX_GOALS = 30
     const val MAX_EQUIPMENT = 20
     const val MAX_INJURIES = 15
     const val MAX_FOCUS_AREAS = 10

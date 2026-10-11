@@ -129,7 +129,7 @@ class WorkoutSessionServiceTest {
             val savedSet = slot<ExerciseSet>()
 
             every { userRepository.findById(1L) } returns Optional.of(testUser)
-            every { workoutSessionRepository.findById(99L) } returns Optional.of(session)
+            every { workoutSessionRepository.findByIdForUpdate(99L) } returns Optional.of(session)
             every { exerciseRepository.findById(1L) } returns Optional.of(testExercise)
             every { workoutExerciseRepository.findBySessionIdAndExerciseId(99L, 1L) } returns workoutExercise
             every { exerciseSetRepository.findByWorkoutExerciseId(77L) } returns emptyList()
@@ -185,7 +185,7 @@ class WorkoutSessionServiceTest {
             val rowWe = WorkoutExercise(id = 78L, session = session, exercise = row, orderInSession = 1)
 
             every { userRepository.findById(1L) } returns Optional.of(testUser)
-            every { workoutSessionRepository.findById(99L) } returns Optional.of(session)
+            every { workoutSessionRepository.findByIdForUpdate(99L) } returns Optional.of(session)
             every { exerciseRepository.findById(1L) } returns Optional.of(testExercise)
             every { exerciseRepository.findById(2L) } returns Optional.of(row)
             every { workoutExerciseRepository.findBySessionIdAndExerciseId(99L, 1L) } returns bench

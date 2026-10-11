@@ -80,6 +80,16 @@ class WorkoutV2SharedSupport(
         return exerciseCatalogLocalizationService.instructions(exercise, locale, translations)
     }
 
+    /** [findUserSession] 과 같지만 세션 행을 잠근다(업데이트·완료가 겹치지 않게). 트랜잭션의 첫 읽기로 부른다. */
+    fun findUserSessionForUpdate(userId: Long, sessionId: Long): WorkoutSession {
+        val session = workoutSessionRepository.findByIdForUpdate(sessionId)
+            .orElseThrow { ResourceNotFoundException("WORKOUT002: Workout session not found") }
+        if (session.user.id != userId) {
+            throw org.springframework.security.access.AccessDeniedException("Access denied")
+        }
+        return session
+    }
+
     fun findUserSession(userId: Long, sessionId: Long): WorkoutSession {
         val session = workoutSessionRepository.findById(sessionId)
             .orElseThrow { ResourceNotFoundException("WORKOUT002: Workout session not found") }

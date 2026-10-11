@@ -20,6 +20,7 @@ import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -433,9 +434,10 @@ class WorkoutSessionService(
         )
     }
 
-    @Transactional
+    // 세션 행 잠금 + READ COMMITTED: 겹친 업데이트·완료 요청을 차례로, 앞 요청이 남긴 최신 세트를 보고 처리한다
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     fun completeWorkout(userId: Long, sessionId: Long, request: CompleteWorkoutRequestV2): CompleteWorkoutResponseV2 {
-        val session = sharedSupport.findUserSession(userId, sessionId)
+        val session = sharedSupport.findUserSessionForUpdate(userId, sessionId)
         if (session.status != SessionStatus.IN_PROGRESS) {
             throw IllegalStateException("Session is already ${session.status}")
         }
@@ -463,7 +465,9 @@ class WorkoutSessionService(
         var totalSets = 0
         val personalRecords = mutableListOf<PersonalRecordInfo>()
 
-        // 완료된 운동 세트 저장
+        // 완료된 운동 세트 저장 — 운동 중 /update 가 이미 저장한 세트를 지우고 완료 요청의 세트로 바꾼다.
+        // 예전엔 기존 세트 뒤에 덧붙여, 운동을 완료할 때마다 기록·볼륨이 두 배가 됐다(2026-07~10, 13세션).
+        val replacedExerciseIds = mutableSetOf<Long>()
         request.exercises.forEach { completedExercise ->
             val exercise = completedExerciseMap.getValue(completedExercise.exerciseId)
 
@@ -477,6 +481,12 @@ class WorkoutSessionService(
                 ).also {
                     workoutExerciseRepository.save(it)
                 }
+            if (replacedExerciseIds.add(workoutExercise.id)) {
+                val existing = exerciseSetRepository.findByWorkoutExerciseId(workoutExercise.id)
+                if (existing.isNotEmpty()) exerciseSetRepository.deleteAll(existing)
+                workoutExercise.sets.clear()
+                workoutExercise.totalVolume = 0.0
+            }
 
             logger.debug("Exercise {} (ID: {}), sets: {}, completed: {}",
                 exercise.name, completedExercise.exerciseId,
@@ -488,6 +498,7 @@ class WorkoutSessionService(
                 totalSets++
                 val volume = safeWeight * safeReps
                 totalVolume += volume
+                workoutExercise.totalVolume = (workoutExercise.totalVolume ?: 0.0) + volume
 
                 val exerciseSet = ExerciseSet(
                     workoutExercise = workoutExercise,
@@ -682,15 +693,16 @@ class WorkoutSessionService(
         )
     }
 
-    @Transactional
+    // 세트 완료를 빠르게 연달아 누르면 업데이트가 겹쳐 서로 지운 세트를 다시 지우다 500(낙관적 락 실패)이 났다.
+    // 세션 행을 먼저 잠그고(READ COMMITTED) 차례로 처리한다.
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     fun updateSession(userId: Long, sessionId: Long, request: UpdateSessionRequest, localeOverride: String? = null): UpdateSessionResponse {
+        // 세션 조회(잠금) — 트랜잭션의 첫 읽기여야 한다
+        val session = workoutSessionRepository.findByIdForUpdate(sessionId)
+            .orElseThrow { ResourceNotFoundException("Workout session not found") }
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
         val locale = sharedSupport.resolveLocale(userId, localeOverride)
-
-        // 세션 조회 및 권한 확인
-        val session = workoutSessionRepository.findById(sessionId)
-            .orElseThrow { ResourceNotFoundException("Workout session not found") }
 
         if (session.user.id != userId) {
             throw org.springframework.security.access.AccessDeniedException("Access denied")
