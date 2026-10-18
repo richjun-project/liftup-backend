@@ -53,9 +53,10 @@ class UserController(
     @PostMapping("/onboarding")
     fun completeOnboarding(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Valid @RequestBody request: OnboardingRequest
+        @Valid @RequestBody request: OnboardingRequest,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<UserProfileResponse>> {
-        val profile = userService.completeOnboarding(userDetails.getId(), request)
+        val profile = userService.completeOnboarding(userDetails.getId(), request, locale)
         return ResponseEntity.ok(ApiResponse.success(profile))
     }
 

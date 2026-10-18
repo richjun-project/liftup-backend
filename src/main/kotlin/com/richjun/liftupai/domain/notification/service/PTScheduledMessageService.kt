@@ -306,6 +306,9 @@ class PTScheduledMessageService(
 
             // Now safe to delete the schedules
             notificationScheduleRepository.deleteAll(existingSchedules)
+            // 삭제는 flush 때 나가는데 새 일정 INSERT(IDENTITY)는 즉시 나간다. 호출자가 곧바로
+            // 영속성 컨텍스트를 비우면(프로필 저장의 entityManager.clear) 삭제만 사라져 옛 일정이 남았다(2026-10).
+            notificationScheduleRepository.flush()
         }
     }
 

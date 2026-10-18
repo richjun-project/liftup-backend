@@ -100,7 +100,9 @@ class GeminiAIService(
             // 클라이언트의 로케일 동기화가 어떤 이유로든 실패해도 대화는 통해야 한다.
             val storedLocale = resolveLocale(user)
             val locale = detectLocaleFromText(message)
-                ?.also { detected -> persistLocaleIfChanged(user, detected, storedLocale) }
+                ?.also { detected ->
+                    if (shouldPersistDetectedLocale(detected)) persistLocaleIfChanged(user, detected, storedLocale)
+                }
                 ?: storedLocale
             val userProfile = userProfileRepository.findByUser(user).orElse(null)
             val settingsInjuries = try {
@@ -913,6 +915,13 @@ class GeminiAIService(
         if (letters >= 8 && ascii == letters) return "en"
         return null
     }
+
+    /**
+     * 메시지 언어를 계정 언어로 저장해도 되는가. 가나(일본어)·한글(한국어)은 문자만으로 확실하지만,
+     * 라틴 문자 문장은 운동 이름("bench press form check")일 수 있다 — 일본 사용자가 영어 한 줄을
+     * 쳤다고 푸시·플랜·오류까지 영어로 영구히 바뀌면 안 된다(2026-10 점검). 그 답장만 영어로 한다.
+     */
+    internal fun shouldPersistDetectedLocale(detected: String): Boolean = detected == "ja" || detected == "ko"
 
     /**
      * 판별된 언어가 저장값과 다르면 설정을 갱신한다.

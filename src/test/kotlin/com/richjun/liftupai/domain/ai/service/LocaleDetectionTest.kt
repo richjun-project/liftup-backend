@@ -56,4 +56,13 @@ class LocaleDetectionTest {
     fun koreanWithEnglishWords() {
         assertThat(service.detectLocaleFromText("오늘 bench press 5x5 했어")).isEqualTo("ko")
     }
+
+    @Test
+    @DisplayName("영어로 판별돼도 계정 언어는 바꾸지 않는다(일본·한국 사용자가 운동 이름을 영어로 쳐도 유지)")
+    fun englishDetectionIsNotPersisted() {
+        assertThat(service.detectLocaleFromText("bench press 3x10 form check")).isEqualTo("en")
+        assertThat(service.shouldPersistDetectedLocale("en")).isFalse()
+        assertThat(service.shouldPersistDetectedLocale("ja")).isTrue()
+        assertThat(service.shouldPersistDetectedLocale("ko")).isTrue()
+    }
 }

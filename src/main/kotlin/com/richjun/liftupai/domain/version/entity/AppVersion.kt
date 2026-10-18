@@ -59,7 +59,15 @@ class AppVersion(
     var maintenanceMessage: String? = null,  // 점검 안내 메시지
 
     @Column(name = "features", columnDefinition = "JSON")
-    var features: String? = null  // 버전별 기능 플래그 (JSON)
+    var features: String? = null,  // 버전별 기능 플래그 (JSON)
+
+    /**
+     * 최신보다 낮은(필수는 아닌) 앱에 '나중에' 가 있는 권장 업데이트 안내창을 띄운다.
+     * 1.1.29 이하 앱은 update_required=true 일 때만 안내창을 띄우므로, 켜져 있으면 RECOMMENDED 와 함께
+     * update_required=true 를 보낸다(같은 기기엔 하루 한 번 — [UpdateNudgeThrottle]).
+     */
+    @Column(name = "recommend_update", nullable = false)
+    var recommendUpdate: Boolean = false
 )
 
 enum class Platform {

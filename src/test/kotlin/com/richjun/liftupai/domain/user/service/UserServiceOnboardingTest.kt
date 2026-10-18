@@ -165,4 +165,38 @@ class UserServiceOnboardingTest {
         // 집중 부위 목표만 소문자 표기로 보존(체중 감량·일반 체력 같은 일반 목표는 FitnessGoal 이 이미 담는다)
         assertEquals(setOf("thick_legs", "glutes"), savedSettings.captured.focusGoals)
     }
+
+    @Test
+    fun `설정 행이 없을 때 온보딩은 앱이 보낸 언어로 설정을 만든다(일본어)`() {
+        val user = User(id = 9L, email = "ja@example.com", nickname = "なつ")
+        val savedSettings = mutableListOf<UserSettings>()
+
+        every { userRepository.findById(9L) } returns Optional.of(user)
+        every { userProfileRepository.findByUser_Id(9L) } returns Optional.empty()
+        every { userSettingsRepository.findByUser_Id(9L) } returns Optional.empty()
+        every { userRepository.save(any()) } answers { firstArg() }
+        every { userProfileRepository.save(any()) } answers { firstArg() }
+        every { userSettingsRepository.save(capture(savedSettings)) } answers { firstArg<UserSettings>() }
+
+        val request = OnboardingRequest(
+            nickname = "なつ",
+            experienceLevel = "BEGINNER",
+            goals = listOf("STRENGTH"),
+            bodyInfo = BodyInfoUpdateDto(height = 160.0, weight = 55.0, bodyFat = null, muscleMass = null, age = 30, gender = "female"),
+            ptStyle = "BURNOUT",
+            notificationEnabled = true,
+            weeklyWorkoutDays = 3,
+            workoutSplit = "full_body",
+            availableEquipment = emptyList(),
+            preferredWorkoutTime = "evening",
+            workoutDuration = 60,
+            timeZone = null,
+            injuries = emptyList(),
+        )
+        service.completeOnboarding(userId = 9L, request = request, locale = "ja_JP")
+        assertEquals("ja", savedSettings.last().language)
+
+        service.completeOnboarding(userId = 9L, request = request, locale = "zz")
+        assertEquals("ko", savedSettings.last().language, "지원하지 않는 언어는 기존 기본값")
+    }
 }

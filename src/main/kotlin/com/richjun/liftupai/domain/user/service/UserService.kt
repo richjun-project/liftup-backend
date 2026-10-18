@@ -90,7 +90,7 @@ class UserService(
         return mapToProfileResponse(user, profile)
     }
 
-    fun completeOnboarding(userId: Long, request: OnboardingRequest): UserProfileResponse {
+    fun completeOnboarding(userId: Long, request: OnboardingRequest, locale: String? = null): UserProfileResponse {
         // [Funnel] 가입(oauth-login/signup)과 이 로그 사이에 이탈한 유저 = 온보딩 중도 포기.
         // 프로덕션에서 Apple 가입자 2명이 프로필 없이 이탈했는데 원인 로그가 전혀 없었다.
         logger.info("[Funnel] onboarding-submit: userId=$userId")
@@ -144,8 +144,10 @@ class UserService(
         profile.updatedAt = AppTime.utcNow()
 
         // Create or update settings
+        // 설정 행이 아직 없으면(앱의 언어 동기화가 실패한 경우) 기본값 'ko' 대신 앱이 붙여 보낸 언어로 시작한다 —
+        // 아니면 일본 사용자의 첫 인사·알림 일정이 한국어로 만들어진다(2026-10 점검).
         val settings = userSettingsRepository.findByUser_Id(userId).orElse(
-            UserSettings(user = user)
+            UserSettings(user = user).apply { supportedLanguage(locale)?.let { language = it } }
         )
 
         settings.workoutReminder = request.notificationEnabled
@@ -496,7 +498,8 @@ class UserService(
             }
         }
 
-        // Clear the persistence context to force re-fetch
+        // Clear the persistence context to force re-fetch — 비우기 전에 밀린 변경(일정 삭제 등)을 먼저 내보낸다
+        entityManager.flush()
         entityManager.clear()
 
         // Verify the update was persisted
@@ -750,4 +753,8 @@ class UserService(
             updatedAt = profile.updatedAt
         )
     }
+
+    /** "ja_JP"·"ja-JP"·"JA" → "ja". 지원하지 않는 언어면 null */
+    private fun supportedLanguage(locale: String?): String? =
+        locale?.trim()?.lowercase()?.take(2)?.takeIf { it in setOf("ko", "en", "ja") }
 }

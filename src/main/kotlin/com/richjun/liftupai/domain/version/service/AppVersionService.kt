@@ -18,7 +18,8 @@ import java.time.LocalDateTime
 @Transactional
 class AppVersionService(
     private val appVersionRepository: AppVersionRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val nudgeThrottle: UpdateNudgeThrottle
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -62,6 +63,10 @@ class AppVersionService(
             else -> UpdateType.OPTIONAL
         }
 
+        // 권장 업데이트 안내(필수 아님): 예전 앱은 update_required=true 여야 안내창을 띄운다 → 같은 기기엔 하루 한 번만
+        val nudge = !updateRequired && updateType == UpdateType.RECOMMENDED && latestVersion.recommendUpdate &&
+            nudgeThrottle.tryAcquire("${platform.name}:${request.deviceId.orEmpty()}")
+
         // 기능 플래그 파싱
         val features = latestVersion.features?.let {
             try {
@@ -78,10 +83,10 @@ class AppVersionService(
             latestVersionCode = latestVersion.versionCode,
             minimumVersion = latestVersion.minimumVersion,
             minimumVersionCode = latestVersion.minimumVersionCode,
-            updateRequired = updateRequired,
+            updateRequired = updateRequired || nudge,
             updateType = updateType.name,
             updateUrl = latestVersion.updateUrl,
-            releaseNotes = latestVersion.releaseNotes,
+            releaseNotes = localizedText(latestVersion.releaseNotes, locale),
             maintenanceMode = false,
             maintenanceMessage = null,
             features = features
@@ -220,6 +225,22 @@ class AppVersionService(
         appVersionRepository.save(latestVersion)
     }
 
+    /**
+     * 안내 문구를 사용자 언어로 고른다. 값이 `{"ko":"…","en":"…","ja":"…"}` JSON 이면 locale → en → 아무 값 순,
+     * 그냥 문자열이면 그대로(예전 행 호환). 예전엔 한 언어로만 저장돼 일본 사용자에게 한국어 안내가 갔다.
+     */
+    internal fun localizedText(raw: String?, locale: String?): String? {
+        val text = raw?.trim()
+        if (text.isNullOrEmpty() || !text.startsWith("{")) return raw
+        return try {
+            val byLang = objectMapper.readValue(text, Map::class.java)
+            val lang = locale?.lowercase()?.take(2) ?: "en"
+            (byLang[lang] ?: byLang["en"] ?: byLang.values.firstOrNull())?.toString()
+        } catch (e: Exception) {
+            raw
+        }
+    }
+
     private fun createMaintenanceResponse(
         request: VersionCheckRequest,
         latestVersion: AppVersion,
@@ -236,7 +257,7 @@ class AppVersionService(
             updateUrl = null,
             releaseNotes = null,
             maintenanceMode = true,
-            maintenanceMessage = maintenanceInfo.maintenanceMessage
+            maintenanceMessage = localizedText(maintenanceInfo.maintenanceMessage, request.locale)
                 ?: ErrorLocalization.message("maintenance.default_message", request.locale ?: "en"),
             features = null
         )
