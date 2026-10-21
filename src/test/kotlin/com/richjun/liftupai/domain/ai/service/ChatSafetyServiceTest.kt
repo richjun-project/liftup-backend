@@ -97,6 +97,23 @@ class ChatSafetyServiceTest {
             val ok = svc.assess(profile(), emptyList(), "오늘 600칼로리 태웠어요, 잘한 거죠?", emptyList(), "ko")
             assertThat(ok.eatingDisorderCues).isFalse(); assertThat(ok.redFlagSymptoms).isFalse()
         }
+
+        @Test
+        @DisplayName("고중량 중 갑작스러운 극심한 두통(벼락 두통)은 응급 신호다 — 가벼운 두통은 아니다")
+        fun exertionalThunderclapHeadache() {
+            assertThat(svc.assess(profile(), emptyList(), "맥스 드는데 머리가 깨질듯 아프기 시작했어요", emptyList(), "ko").redFlagSymptoms).isTrue()
+            assertThat(svc.assess(profile(), emptyList(), "Worst headache of my life right after a heavy deadlift", emptyList(), "en").redFlagSymptoms).isTrue()
+            assertThat(svc.assess(profile(), emptyList(), "スクワット中に頭が割れるように痛くなった", emptyList(), "ja").redFlagSymptoms).isTrue()
+            assertThat(svc.assess(profile(), emptyList(), "어제 잠을 못 자서 머리가 좀 아픈데 운동해도 될까?", emptyList(), "ko").redFlagSymptoms).isFalse()
+        }
+
+        @Test
+        @DisplayName("곧 쓰러질 것 같다·심장이 마구 뛴다(현재형)도 응급 신호다")
+        fun presyncopeAndPalpitations() {
+            assertThat(svc.assess(profile(), emptyList(), "My heart is racing and I feel like I'm going to pass out", emptyList(), "en").redFlagSymptoms).isTrue()
+            assertThat(svc.assess(profile(), emptyList(), "인터벌 하다가 쓰러질 것 같아요", emptyList(), "ko").redFlagSymptoms).isTrue()
+            assertThat(svc.assess(profile(), emptyList(), "My heart rate goes up fast during cardio, is that normal?", emptyList(), "en").redFlagSymptoms).isFalse()
+        }
     }
 
     @Nested

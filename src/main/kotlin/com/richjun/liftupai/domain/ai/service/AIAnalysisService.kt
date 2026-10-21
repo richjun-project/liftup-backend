@@ -71,7 +71,8 @@ class AIAnalysisService(
     private val injuryFilterService: com.richjun.liftupai.domain.workout.service.InjuryFilterService,
     private val userProgramEnrollmentRepository: UserProgramEnrollmentRepository,
     private val userExerciseOverrideRepository: UserExerciseOverrideRepository,
-    private val trainerContextBuilder: TrainerContextBuilder
+    private val trainerContextBuilder: TrainerContextBuilder,
+    private val coachAgentService: com.richjun.liftupai.domain.ai.agent.CoachAgentService,
 ) {
 
 
@@ -237,10 +238,17 @@ class AIAnalysisService(
             null
         }
 
-        // Gemini AI에게 응답 요청
+        // Gemini AI에게 응답 요청 — 에이전트가 켜진 사용자는 도구를 쓰는 에이전트 루프로(실패하면 안에서 단발 경로로 떨어진다)
         val startTime = System.currentTimeMillis()
+        var tools: List<com.richjun.liftupai.domain.ai.agent.CoachAgentService.ToolUse> = emptyList()
         val reply = try {
-            geminiAIService.generateReply(enhancedMessage, user, history, trainer?.block, request.images.orEmpty())
+            if (coachAgentService.enabledFor(user.id)) {
+                val agent = coachAgentService.reply(user, enhancedMessage, history, trainer?.block, request.images.orEmpty())
+                tools = agent.tools
+                GeminiAIService.ChatReply(agent.text, agent.actions)
+            } else {
+                geminiAIService.generateReply(enhancedMessage, user, history, trainer?.block, request.images.orEmpty())
+            }
         } catch (e: Exception) {
             // 에러 발생 시 실패 메시지 저장
             val errorMessage = ChatMessage(
@@ -268,7 +276,10 @@ class AIAnalysisService(
             status = MessageStatus.COMPLETED,
             responseTime = responseTime,
             actions = ChatAction.join(actions),
-            attachmentUrl = request.images?.firstOrNull()?.takeIf { it.startsWith("https://") }
+            attachmentUrl = request.images?.firstOrNull()?.takeIf { it.startsWith("https://") },
+            toolTrace = tools.takeIf { it.isNotEmpty() }?.joinToString(",") { t ->
+                t.name + (if (!t.ok) ":fail" else "") + (if (t.changed) ":changed" else "")
+            }?.take(500)
         )
 
         val savedMessage = chatMessageRepository.save(chatMessage)
@@ -281,7 +292,8 @@ class AIAnalysisService(
             timestamp = AppTime.formatUtcRequired(savedMessage.timestamp),
             messageId = savedMessage.id.toString(),
             suggestions = suggestions,
-            actions = actions.map { it.name }
+            actions = actions.map { it.name },
+            tools = tools.map { ToolUseDto(it.name, it.ok, it.changed) }
         )
     }
 

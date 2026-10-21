@@ -42,3 +42,8 @@ logging:
   level:
     root: WARN
     com.richjun.liftupai: INFO
+
+# AI PT 에이전트 루프 — 운영은 켠다(평가: .unlazy/agent-r1). 문제가 생기면 AI_AGENT_MODE=off 로 재기동하면 단발 경로로 돌아간다.
+ai:
+  agent:
+    mode: ${AI_AGENT_MODE:on}

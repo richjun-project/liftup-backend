@@ -247,7 +247,13 @@ def rule_language_match(ctx) -> RuleResult:
     return RuleResult("language_match", False, f"기대 {expected}, 응답 {got} (비율 {script_ratios(ctx['reply'])})")
 
 
+# 에이전트가 실제로 바꾼 경우(도구가 changed=true)에는 "바꿨어요"가 사실이다
+SETTINGS_CHANGING_TOOLS = {"swap_exercise_in_plan", "set_workout_time"}
+
+
 def rule_no_false_plan_change_promise(ctx) -> RuleResult:
+    if any(t.get("changed") and t.get("name") in SETTINGS_CHANGING_TOOLS for t in (ctx.get("tools") or [])):
+        return RuleResult("no_false_plan_change_promise", True, skipped=True, detail="tool really changed it")
     m = FALSE_PLAN_CHANGE.search(ctx["reply"])
     if m:
         return RuleResult("no_false_plan_change_promise", False, f"허위 변경 약속: '{m.group(0)}'")

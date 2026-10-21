@@ -53,7 +53,10 @@ data class ChatMessageDto(
     val status: String,
 
     /** 메시지 아래 버튼(ChatAction 이름) */
-    val actions: List<String> = emptyList()
+    val actions: List<String> = emptyList(),
+
+    /** AI PT 가 이 답을 만들며 쓴 도구(확인한 것·바꾼 것) — 에이전트 경로만 */
+    val tools: List<com.richjun.liftupai.domain.ai.dto.ToolUseDto> = emptyList()
 )
 
 data class ChatWorkoutRecommendationRequest(

@@ -347,7 +347,8 @@ class ChatService(
             attachmentUrl = message.attachmentUrl,
             timestamp = AppTime.formatUtcRequired(message.timestamp),
             status = message.status.name,
-            actions = com.richjun.liftupai.domain.chat.entity.ChatAction.parseList(message.actions).map { it.name }
+            actions = com.richjun.liftupai.domain.chat.entity.ChatAction.parseList(message.actions).map { it.name },
+            tools = com.richjun.liftupai.domain.ai.agent.CoachToolTrace.parse(message.toolTrace)
         )
     }
 }

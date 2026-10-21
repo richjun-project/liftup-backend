@@ -338,7 +338,7 @@ class ChatHarness(
         ObjectMapper().registerKotlinModule(), tracker, pt,
         mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), vector,
         mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true),
-        localization, injuryFilter, enrollmentRepo, mockk(relaxed = true), mockk(relaxed = true),
+        localization, injuryFilter, enrollmentRepo, mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true),
     )
 
     private val sessionRepo = mockk<com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository>(relaxed = true).also {

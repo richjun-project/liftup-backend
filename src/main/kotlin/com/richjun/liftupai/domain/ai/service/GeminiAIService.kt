@@ -83,6 +83,68 @@ class GeminiAIService(
     /**
      * @param trainerContext 오늘 플랜·최근 운동(TrainerContextBuilder). 없으면 일반 코칭만 한다.
      */
+    /** 한 번의 채팅 답을 만들 재료 — 단발 경로와 에이전트 경로가 같은 판정·컨텍스트를 쓴다. */
+    data class PreparedChat(
+        val locale: String,
+        val ptStyle: PTStyle,
+        val userProfile: com.richjun.liftupai.domain.user.entity.UserProfile?,
+        val nutritionContext: DailyNutritionContext?,
+        val risk: ChatSafetyService.RiskProfile,
+        val facts: ChatComputedFacts.Facts,
+        val images: List<InlineData>,
+        val imageNote: String,
+        val timeZone: String?,
+    )
+
+    internal fun prepareChat(
+        message: String,
+        user: User,
+        history: List<Pair<String, String>>,
+        imageUrls: List<String> = emptyList(),
+    ): PreparedChat {
+        // 저장된 설정보다 "사용자가 실제로 쓴 언어"를 우선한다.
+        //
+        // 2026-09-06 실사용 로그: 일본 사용자가 일본어로 질문했는데
+        // UserSettings.language 가 기본값 'ko' 라서 AI가 한국어로 답했고,
+        // "日本語にして"(일본어로 해줘)라는 요청에도 한국어로
+        // "시스템상 한국어로만 답변할 수 있다"고 답했다. 그 사용자는 다시 오지 않았다.
+        // 클라이언트의 로케일 동기화가 어떤 이유로든 실패해도 대화는 통해야 한다.
+        val storedLocale = resolveLocale(user)
+        val locale = detectLocaleFromText(message)
+            ?.also { detected ->
+                if (shouldPersistDetectedLocale(detected)) persistLocaleIfChanged(user, detected, storedLocale)
+            }
+            ?: storedLocale
+        val userProfile = userProfileRepository.findByUser(user).orElse(null)
+        val settings = try { userSettingsRepository.findByUser(user).orElse(null) } catch (e: Exception) { null }
+        val settingsInjuries = try { settings?.injuries.orEmpty() } catch (e: Exception) { emptySet() }
+        val ptStyle = userProfile?.ptStyle ?: PTStyle.GAME_MASTER
+        // 채팅 AI가 "오늘 식단 잘 하고 있어?" 같은 질문에 실데이터로 답할 수 있도록 컨텍스트 주입.
+        // 실패해도 채팅은 계속 동작해야 하므로 try/catch.
+        val nutritionContext = try {
+            nutritionContextService.buildTodayContext(user)
+        } catch (e: Exception) {
+            log.warn("[AI-CHAT] nutrition context unavailable for user {}: {}", user.id, e.message)
+            null
+        }
+
+        // 안전 판정과 수치 계산은 모델이 아니라 서버가 한다 — 프롬프트만 믿으면 샌다.
+        val risk = chatSafety.assess(userProfile, settingsInjuries, message, history, locale)
+        val facts = ChatComputedFacts.build(userProfile, message, risk)
+        if (risk.hasAnyRisk) {
+            log.info(
+                "[AI-CHAT] risk user={} minor={} underweight={} senior={} injuries={} redFlag={} eating={} pregnancy={} meds={}",
+                user.id, risk.minor, risk.underweight, risk.senior, risk.injuries, risk.redFlagSymptoms,
+                risk.eatingDisorderCues, risk.pregnancy, risk.medicationOrSupplement,
+            )
+        }
+
+        // 첨부 사진: 허용 호스트(우리 S3·API)에서만 내려받아 요청에 함께 넣는다. 못 불러오면 본 척하지 않게 알린다.
+        val images = loadChatImages(imageUrls)
+        val imageNote = chatImageNote(requested = imageUrls.size.coerceAtMost(MAX_CHAT_IMAGES), loaded = images.size)
+        return PreparedChat(locale, ptStyle, userProfile, nutritionContext, risk, facts, images, imageNote, settings?.timeZone)
+    }
+
     fun generateReply(
         message: String,
         user: User,
@@ -91,49 +153,15 @@ class GeminiAIService(
         imageUrls: List<String> = emptyList(),
     ): ChatReply {
         return try {
-            // 저장된 설정보다 "사용자가 실제로 쓴 언어"를 우선한다.
-            //
-            // 2026-09-06 실사용 로그: 일본 사용자가 일본어로 질문했는데
-            // UserSettings.language 가 기본값 'ko' 라서 AI가 한국어로 답했고,
-            // "日本語にして"(일본어로 해줘)라는 요청에도 한국어로
-            // "시스템상 한국어로만 답변할 수 있다"고 답했다. 그 사용자는 다시 오지 않았다.
-            // 클라이언트의 로케일 동기화가 어떤 이유로든 실패해도 대화는 통해야 한다.
-            val storedLocale = resolveLocale(user)
-            val locale = detectLocaleFromText(message)
-                ?.also { detected ->
-                    if (shouldPersistDetectedLocale(detected)) persistLocaleIfChanged(user, detected, storedLocale)
-                }
-                ?: storedLocale
-            val userProfile = userProfileRepository.findByUser(user).orElse(null)
-            val settingsInjuries = try {
-                userSettingsRepository.findByUser(user).orElse(null)?.injuries.orEmpty()
-            } catch (e: Exception) {
-                emptySet()
-            }
-            val ptStyle = userProfile?.ptStyle ?: PTStyle.GAME_MASTER
-            // 채팅 AI가 "오늘 식단 잘 하고 있어?" 같은 질문에 실데이터로 답할 수 있도록 컨텍스트 주입.
-            // 실패해도 채팅은 계속 동작해야 하므로 try/catch.
-            val nutritionContext = try {
-                nutritionContextService.buildTodayContext(user)
-            } catch (e: Exception) {
-                log.warn("[AI-CHAT] nutrition context unavailable for user {}: {}", user.id, e.message)
-                null
-            }
-
-            // 안전 판정과 수치 계산은 모델이 아니라 서버가 한다 — 프롬프트만 믿으면 샌다.
-            val risk = chatSafety.assess(userProfile, settingsInjuries, message, history, locale)
-            val facts = ChatComputedFacts.build(userProfile, message, risk)
-            if (risk.hasAnyRisk) {
-                log.info(
-                    "[AI-CHAT] risk user={} minor={} underweight={} senior={} injuries={} redFlag={} eating={} pregnancy={} meds={}",
-                    user.id, risk.minor, risk.underweight, risk.senior, risk.injuries, risk.redFlagSymptoms,
-                    risk.eatingDisorderCues, risk.pregnancy, risk.medicationOrSupplement,
-                )
-            }
-
-            // 첨부 사진: 허용 호스트(우리 S3·API)에서만 내려받아 요청에 함께 넣는다. 못 불러오면 본 척하지 않게 알린다.
-            val images = loadChatImages(imageUrls)
-            val imageNote = chatImageNote(requested = imageUrls.size.coerceAtMost(MAX_CHAT_IMAGES), loaded = images.size)
+            val prep = prepareChat(message, user, history, imageUrls)
+            val locale = prep.locale
+            val userProfile = prep.userProfile
+            val ptStyle = prep.ptStyle
+            val nutritionContext = prep.nutritionContext
+            val risk = prep.risk
+            val facts = prep.facts
+            val images = prep.images
+            val imageNote = prep.imageNote
             val prompt = buildChatPrompt(message, user.nickname, ptStyle, locale, userProfile, nutritionContext, history, risk, facts, trainerContext = trainerContext) + imageNote
             // 버튼 태그는 사용자에게 보이면 안 되고 언어 검사도 흐리므로 먼저 떼고 검사한다.
             val first = callChatModel(prompt, user.id, images)?.let(ChatActionParser::extract)
@@ -301,6 +329,7 @@ class GeminiAIService(
         facts: ChatComputedFacts.Facts = ChatComputedFacts.build(userProfile, message, risk),
         rejection: String? = null,
         trainerContext: String? = null,
+        agentSection: String? = null,
     ): String {
         val responseLanguage = AILocalization.responseLanguage(locale)
         val hardRules = chatSafety.hardRulesBlock(risk)
@@ -342,6 +371,8 @@ class GeminiAIService(
 
             ${trainerContext ?: ""}
 
+            ${agentSection ?: ""}
+
             $historySection
 
             $personaSection
@@ -379,7 +410,7 @@ class GeminiAIService(
             - Address the user as "$nickname" naturally (not every sentence).
             - Use the profile (age, sex, BMI category, goals, experience) and COMPUTED FACTS for any number you state.
             - When the user asks about today's diet, calories, or progress, use the "Today's Nutrition" section with concrete numbers.
-            - Never claim the app changed or started anything. The buttons let the user do it themselves.
+            - ${if (agentSection == null) "Never claim the app changed or started anything. The buttons let the user do it themselves." else "Only say something in the app changed when a tool in this conversation returned ok:true and changed:true. Otherwise never claim it — the buttons let the user do it themselves."}
             - You are their personal trainer, not a search engine: when TRAINING CONTEXT shows today's session, talk about THOSE exercises and weights.
 
             $rejectionSection
@@ -1034,7 +1065,7 @@ class GeminiAIService(
      * 사후에 알 수 없었기 때문이다.
      */
     /** 검사용 닉네임 마스킹. 2자 이하("AI","no")는 본문 단어까지 지우므로 건드리지 않는다. */
-    private fun maskNickname(reply: String?, nickname: String?): String? =
+    internal fun maskNickname(reply: String?, nickname: String?): String? =
         if (reply == null || nickname.isNullOrBlank() || nickname.length < 3) reply else reply.replace(nickname, "")
 
     /** 채팅 첨부 사진을 내려받아 Gemini inline 데이터로 만든다(최대 [MAX_CHAT_IMAGES]장, 허용 호스트만). */
@@ -1151,7 +1182,7 @@ class GeminiAIService(
         }
     }
 
-    private fun getFallbackResponse(message: String, user: User, locale: String): String {
+    internal fun getFallbackResponse(message: String, user: User, locale: String): String {
         val lowerMessage = message.lowercase()
         return when {
             AILocalization.keywordAliases("fallback.keyword.workout").any { lowerMessage.contains(it.lowercase()) } ->

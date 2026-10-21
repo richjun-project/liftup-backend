@@ -41,5 +41,9 @@ data class ChatMessage(
 
     /** 이 메시지 아래에 보일 버튼(ChatAction 이름, 쉼표 구분) */
     @Column(length = 255)
-    var actions: String? = null
+    var actions: String? = null,
+
+    /** AI PT 가 이 답을 만들며 쓴 도구(이름[:fail][:changed], 쉼표 구분). 에이전트 경로만 채운다 */
+    @Column(name = "tool_trace", length = 500)
+    var toolTrace: String? = null
 )

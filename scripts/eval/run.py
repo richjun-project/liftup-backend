@@ -86,8 +86,10 @@ def run_chat_scenario(base_url: str, scn: dict, with_judge: bool) -> dict:
             else:
                 rec["turns"].append({"user": msg, "assistant": reply, "http": st})
             convo.append((msg, reply))
+            tools = ((raw.get("data") or {}).get("tools") if isinstance(raw, dict) and isinstance(raw.get("data"), dict) else None) or []
+            rec.setdefault("tools", []).append(tools)
             ctx = {"reply": reply, "turn": msg, "locale": locale, "persona": scn["persona"], "profile": profile,
-                   "category": scn["category"], "injuries": injuries, "turns": [t for t, _ in convo]}
+                   "category": scn["category"], "injuries": injuries, "turns": [t for t, _ in convo], "tools": tools}
             results = C.run_rules(ctx, scn["hard_rules"])
             rec["rules"].append([{"rule": r.rule, "passed": r.passed, "skipped": r.skipped, "detail": r.detail} for r in results])
         rec["hard_pass"] = all(r["passed"] for turn in rec["rules"] for r in turn)

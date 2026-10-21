@@ -121,7 +121,7 @@ class AppEventService(
 
         /** 서버에 남기는 이벤트(앱 AnalyticsEvents 와 같은 이름). 활성화 퍼널과 그 원인을 보는 데 필요한 것만. */
         val ALLOWED_EVENTS: Set<String> = setOf(
-            "onboarding_start", "onboarding_abandon", "onboarding_plan_choice", "onboarding_complete", "template_apply_result",
+            "onboarding_start", "onboarding_step_done", "onboarding_abandon", "onboarding_plan_choice", "onboarding_complete", "template_apply_result",
             "workout_preview_open", "workout_start", "set_complete", "workout_screen_exit", "workout_complete",
             "first_workout_exit_prompt", "first_workout_exit_reason", "first_workout_reminder_prompt",
             "trainer_action_tap", "notification_permission_result",

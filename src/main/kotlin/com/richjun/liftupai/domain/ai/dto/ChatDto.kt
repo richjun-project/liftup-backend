@@ -19,8 +19,12 @@ data class ChatResponse(
     val messageId: String,
     val suggestions: List<String>? = null,
     /** 답 아래에 보일 버튼(ChatAction 이름). 모르는 이름은 앱이 무시한다. */
-    val actions: List<String> = emptyList()
+    val actions: List<String> = emptyList(),
+    /** AI PT 가 이 답을 만들며 쓴 도구(확인한 기록·바꾼 것). 예전 앱은 이 필드를 모르고 지나간다. */
+    val tools: List<ToolUseDto> = emptyList()
 )
+
+data class ToolUseDto(val name: String, val ok: Boolean, val changed: Boolean)
 
 data class ChatContext(
     val workoutType: String? = null,

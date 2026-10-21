@@ -49,6 +49,15 @@ jwt:
   access-token-expiration: 3600000  # 1시간
   refresh-token-expiration: 2592000000  # 30일
 
+# AI PT 에이전트 루프(도구·기억·행동). off | allowlist | on — 운영은 평가 통과 뒤 켠다(application-prod 또는 AI_AGENT_MODE)
+ai:
+  agent:
+    mode: ${AI_AGENT_MODE:off}
+    allowlist: ${AI_AGENT_ALLOWLIST:}
+    max-rounds: 5
+    soft-budget-ms: 13000
+    budget-ms: 21000
+
 # Google Gemini API 설정
 gemini:
   api-key: ${GEMINI_API_KEY}

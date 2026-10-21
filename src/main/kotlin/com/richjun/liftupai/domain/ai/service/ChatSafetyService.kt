@@ -386,9 +386,15 @@ class ChatSafetyService {
         private val RED_FLAG_KEYWORDS = listOf(
             "가슴 통증", "가슴이 아", "가슴이 답답", "흉통", "실신", "기절", "쓰러졌", "숨이 안", "숨쉬기 힘", "호흡곤란", "호흡 곤란",
             "심한 두통", "머리가 터질", "피를 토", "각혈", "심장이 너무", "부정맥", "의식을 잃",
+            // 고중량 중 갑작스러운 극심한 두통(벼락 두통) — "맥스 드는데 머리가 깨질듯 아파요"가 응급으로 안 잡혔다(골든 g_emg_05, 2026-10-21)
+            "머리가 깨질", "머리 깨질", "벼락 두통", "벼락두통", "쓰러질 것 같", "쓰러질것 같",
             "chest pain", "chest tightness", "faint", "passed out", "blacked out", "can't breathe", "cannot breathe",
             "shortness of breath", "severe headache", "coughing blood", "heart racing", "irregular heartbeat", "lost consciousness",
+            "thunderclap headache", "worst headache", "splitting headache",
+            // "My heart is racing and I feel like I'm going to pass out" 가 "heart racing"·"passed out" 에 안 걸렸다(골든 g_emg_08)
+            "pass out", "passing out", "heart is racing", "heart is pounding", "racing heart",
             "胸が痛", "胸の痛み", "胸が苦し", "失神", "気を失", "倒れ", "息が苦し", "呼吸困難", "激しい頭痛", "血を吐",
+            "頭が割れ", "割れるような頭痛", "雷鳴頭痛",
         )
         private val EATING_DISORDER_KEYWORDS = listOf(
             "굶", "안 먹", "안먹", "토했", "토해", "구토", "먹토", "폭식", "절식", "단식", "물만 먹", "하루 한 끼", "살찌는 게 무서",
