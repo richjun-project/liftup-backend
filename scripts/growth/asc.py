@@ -9,10 +9,17 @@ ISSUER = '3a7331ed-e39f-4631-9738-a664230a6b0c'
 APP = '6752910787'
 
 
+# 분석 리포트(analyticsReportRequests)는 관리자 키가 필요하다 — LiftUp 키(4HRHDTP47U)는 403.
+# 같은 팀의 관리자 키(asc-chrobox, KCBM3VV77T)로 실행하면 그 키를 쓴다: kw run asc-chrobox -- python3 ...
+ADMIN_KEY_ID = 'KCBM3VV77T'
+
+
 def token():
-    p = os.environ.get('ASC_KEY_PATH') or os.environ.get('KW_ASC_LIFTUPAI')
+    admin = os.environ.get('KW_ASC_CHROBOX')
+    p = admin or os.environ.get('KW_ASC_LIFTUPAI') or os.environ.get('ASC_KEY_PATH')
+    kid = ADMIN_KEY_ID if admin else KEY_ID
     return jwt.encode({'iss': ISSUER, 'iat': int(time.time()), 'exp': int(time.time()) + 1100, 'aud': 'appstoreconnect-v1'},
-                      open(p).read(), algorithm='ES256', headers={'kid': KEY_ID, 'typ': 'JWT'})
+                      open(p).read(), algorithm='ES256', headers={'kid': kid, 'typ': 'JWT'})
 
 
 def call(method, path, body=None):
