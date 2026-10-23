@@ -60,3 +60,6 @@ logs/
 
 # 리프트업 CEO 운영 루프 로그(Claude 출력 원문)
 growth/logs/
+# App Store 분석 리포트 원본 캐시(scripts/growth/asc_funnel.py)
+growth/asc/
+scripts/growth/__pycache__/

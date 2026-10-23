@@ -20,12 +20,15 @@ caffeinate -i -w $$ &
 for i in $(seq 1 120); do curl -s -m 5 -o /dev/null https://api.liftupai.net/ && break; sleep 30; done
 
 "$HOME/Develop/liftupai/scripts/ops/kpi_daily.sh" > "$G/kpi/$DAY.json" || echo "KPI 수집 실패"
+# iOS 스토어 퍼널(국가·유입 경로별 노출→페이지→첫 다운로드, 최근 14일). ASC 분석 리포트는 관리자 키가 필요하다
+kw run asc-chrobox -- python3 "$HOME/Develop/liftupai/scripts/growth/asc_funnel.py" --days 14 --json > "$G/kpi/$DAY.store.json" || echo "스토어 퍼널 수집 실패"
 
 PROMPT="$(cat "$G/daily_prompt.md")
 
 ## 오늘
 - 날짜: $DAY ($(date '+%a %H:%M') KST)
 - KPI 파일: $G/kpi/$DAY.json
+- iOS 스토어 퍼널(14일): $G/kpi/$DAY.store.json
 - 보고 파일: $G/reports/$DAY.md"
 
 cd "$HOME/Documents"   # 메모리(MEMORY.md)가 이 작업 폴더 기준으로 붙는다
