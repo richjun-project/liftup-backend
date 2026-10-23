@@ -2,6 +2,10 @@
 # 리프트업AI 매일 CEO 운영 루프(launchd: com.richjun.liftupai-ceo, 매일 10:20 KST).
 #   1) KPI 를 모아 growth/kpi/<날짜>.json  2) Claude Code(headless)가 daily_prompt.md 대로 오늘 일을 하고 Slack 으로 보고
 # 수동 실행: ~/Develop/liftupai/growth/daily_ceo.sh   (이미 돌고 있으면 그냥 끝난다)
+# 본문 전체를 { … exit; } 로 감쌌다 — bash 는 스크립트를 실행하면서 읽으므로, 실행 중(claude 가 일하는 동안)
+# 이 파일이 고쳐지면 옛 바이트 위치부터 이어 읽어 엉뚱한 줄을 실행한다(10-23: claude 를 두 번 띄움).
+# 감싸 두면 시작할 때 끝까지 읽고 exit 로 끝나 뒤를 다시 읽지 않는다.
+{
 set -uo pipefail
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export TZ=Asia/Seoul
@@ -56,3 +60,5 @@ PY
   kw run slack-bot-token -- python3 "$G/slack_report.py" send "$G/reports/$DAY.md" || true
 fi
 echo "=== $(date '+%F %T') end ==="
+exit 0
+}
