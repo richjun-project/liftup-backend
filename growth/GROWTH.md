@@ -56,6 +56,7 @@
 - [x] **1.1.32 출시**(10-22): 1.1.31 승인(READY_FOR_SALE) 확인 → 1.1.32+48 앱 커밋, 백엔드 배포(허용 목록), Play 100% 완료, iOS 10-23 승인·판매 중(app_versions 1.1.32 권장 안내 10-23)
 - [x] **스토어 퍼널 읽기**(10-23): `scripts/growth/asc_funnel.py`, 매일 루프가 `kpi/<날짜>.store.json` 으로 모은다. 결과: 일본 첫 다운로드(9/1~10/21) 22건 중 11건이 **ChatGPT 앱(com.openai.chat)에서 넘어옴** · 한국 검색 노출 539 → 첫 다운로드 4(0.7%, 30일)
 - [x] **일본어 GEO**(10-23): liftupai.net/ja + 가이드 7편(퍼스널짐 대안·ChatGPT 와 차이 포함), hreflang, llms.txt 일본어 절, IndexNow 제출. 랜딩 저장소 `~/AndroidStudioProjects/liftupai-landing`(main 푸시 = Vercel 배포) 687015b·f09d7b5
+- [ ] **픽셀 RPG 리디자인 — 대표 검토 대기**(10-23 대표 요청: 2D 도트·RPG 성장·주간 AI 진화·전부 애니메이션·픽셀 로고). 시안 캔버스 https://claude.ai/artifact/489pQp8245Qp1YLrcNk2hS, 에셋·도구 앱 저장소 `design/pixel-rpg/`(042f872). **대표가 검토 의견(로고 A/B/C·시작 체형·기본 화면 토글·트레이너 그림)을 주기 전에는 앱 코드에 구현하지 않는다.** 승인되면 1단계(1.2.0: 픽셀 테마·로고·트레이너 도트·레벨/XP 소급·세트/클리어/레벨업 애니메이션·스토어 스크린샷)를 최우선으로. "한국 검색 전환"·"숏폼 영상" 항목은 새 디자인 스크린샷·진화 연출을 쓰는 쪽으로 합친다.
 - [ ] **일본어 GEO 재측정**(11-06): ASC 일본 App referrer(ChatGPT)·Web referrer(liftupai.net) 페이지 조회·첫 다운로드, 캠페인 ct=web-ja, Vercel 봇 방문. 늘면 일본어 가이드를 질문별로 더 만든다
 - [x] **가격 재설정**(10-23): 한·일·미 월 ₩9,900 · ¥1,200 · $9.99, 연 ₩59,000 · ¥7,800 · $49.99. iOS 는 10-24 시작(ASC 는 내일 이후만 받음), 기존 구독자 옛 가격 유지(옛 행 preserved=true). Play 는 즉시(기존 구독자는 Play 기본대로 옛 가격). 랜딩 ja.ts 4bb9b76. 되돌리기용 이전 상태 `growth/pricing/2026-10-23-before.json`
 - [ ] **Android 자동 갱신 전환**(대표 손 필요 1건): Play 에 자동 갱신 요금제 `pro_monthly:monthly-auto`·`pro_yearly:yearly-auto` + 7일 체험(free-trial-7d) ACTIVE(10-23). 남은 것: RevenueCat default offering 의 Android $rc_monthly·$rc_annual 을 새 요금제로 바꾸기 — LiftUp RevenueCat v2 비밀 키(프로젝트 설정 읽기/쓰기)를 `kw add liftupai-rc-setup` 으로 받으면 Claude 가 한다. 앱 수정 불필요(offering 으로 고름)
@@ -110,3 +111,8 @@
 - 발견: **Play 월·연은 선불(prepaid) 요금제**라 자동 갱신·체험이 없다(9-25 원장에 "선불이라 체험 생성 불가"로만 남아 있었다). Android 결제자는 한 달 뒤 저절로 끊긴다. → 자동 갱신 요금제 `monthly-auto`·`yearly-auto`(새 가격, 174개 지역) + 7일 체험을 만들어 ACTIVE(`check_play_trial.mjs` PLAY_TRIAL_OK, 앱 저장소 85d2511). RevenueCat offering 이 아직 선불 요금제(`pro_monthly`/plan `monthly`)를 가리켜 사용자에겐 변화 없음 — 전환에 LiftUp RevenueCat v2 비밀 키가 필요해 대표에게 요청.
 - 배운 것: ① ASC 구독 가격 변경은 startDate 없이 넣으면 "초기 가격"으로 409, 오늘 날짜도 거절 — 가장 이른 날은 내일(태평양 기준). ② Play 가격 PATCH 는 regionsVersion 을 최신(2026/01)으로 줘야 한다 — 옛 버전은 AR 통화(ARS↔USD) 불일치로 400. ③ 키체인의 `revenuecat-android`·`revenuecat-ios` 는 **하트블렌딩 키**다(offering 이 hb_*) — LiftUp 공개 SDK 키는 앱 `lib/main.dart` 에 있다. ④ 실행 중인 셸 스크립트는 제자리 수정 금지.
 - 다음: Android 자동 갱신 전환(키 받는 즉시), 11-06 가격·일본어 GEO 재측정, 한국 검색 전환(1.1.33 스크린샷).
+
+#### 2026-10-23 (대화 세션) 픽셀 RPG 리디자인 시안
+- 대표 요청으로 2D 도트·RPG 성장 컨셉 시안을 만들어 검토 요청: 캔버스 10장(로고 3안·스플래시, 홈, 운동=퀘스트, 주간 진화, 트레이너 파티, UI 키트, AI PT 대화창, 캐릭터·도감, 프로 길드 결제, 성장 시스템 설계). 동작은 전부 계단식 애니메이션.
+- 에셋 37장을 Gemini 3.1 Flash Image 로 생성(장당 10~13초, 동시 6장, 약 1분) → 격자 자동 탐지 도트 정리. 진화 2~5단계는 1단계를 참조로 넣어 같은 인물 유지. 트레이너는 지금 일러스트를 참조로 SD 도트화, 주인공과 같은 100칸 격자.
+- 성장 계산: XP = 세트 10+강도 0~10, 클리어 +50, 기록 갱신 +100, 주간 보스 +300, 연속 주 ×1.1~1.3, 하루 600 상한. 누적 XP(Lv)=22×(Lv−1)^1.9, 클래스 진화 Lv.8·20·40·65(주 3회 사용자 기준 1.1주·7주·6.6개월·1.4년). Pro 주간 AI 도트 비용 월 ₩350~550/명(순매출의 8~13%).
