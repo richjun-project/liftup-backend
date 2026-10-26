@@ -138,30 +138,53 @@ class XpCalculatorTest {
             listOf(session(w * 2L + 1, base), session(w * 2L + 2, base.plusDays(1)))
         }
 
+    // 배율은 그 주 직전까지 끝난 연속 활성 주 수로 정한다: n 주 연속이면 마지막 주는 앞의 n-1 주를 본다
     @Test fun `연속 활성 주 배율 1_0 1_1 1_2 1_3`() {
         fun lastDayMult(n: Int) = calc(twoSessionWeeks(n), goal = 7).days.getValue(monday.plusDays(1)).multiplier
         assertEquals(1.0, lastDayMult(1))
-        assertEquals(1.1, lastDayMult(2))
+        assertEquals(1.0, lastDayMult(2))
         assertEquals(1.1, lastDayMult(3))
-        assertEquals(1.2, lastDayMult(4))
-        assertEquals(1.2, lastDayMult(7))
-        assertEquals(1.3, lastDayMult(8))
+        assertEquals(1.1, lastDayMult(4))
+        assertEquals(1.2, lastDayMult(5))
+        assertEquals(1.2, lastDayMult(8))
+        assertEquals(1.3, lastDayMult(9))
     }
 
     @Test fun `배율 적용 - 50XP가 55로`() {
-        val r = calc(twoSessionWeeks(2), goal = 7)
+        val r = calc(twoSessionWeeks(3), goal = 7)
         assertEquals(55, r.days.getValue(monday).cappedXp)
     }
 
-    @Test fun `활성 아닌 주는 연속이 끊긴다`() {
+    @Test fun `새 주 첫 운동도 지난주까지의 연속 배율을 받는다`() {
+        // 앞 2주 활성 + 이번 주 월요일 1회(아직 비활성) → 월요일도 ×1.1
         val sessions = twoSessionWeeks(3).filter { it.completedAt.toLocalDate() != monday.plusDays(1) }
         val r = calc(sessions, goal = 7)
-        assertEquals(0, r.streakWeeksOn(monday)) // 이번 주는 1회뿐 → 비활성
-        assertEquals(2, r.streakWeeksOn(monday.minusWeeks(1)))
+        assertEquals(2, r.streakWeeksOn(monday))
+        assertEquals(1.1, r.days.getValue(monday).multiplier)
+        assertEquals(55, r.days.getValue(monday).cappedXp)
+    }
+
+    @Test fun `같은 주 뒤 운동이 앞날 XP 를 소급해 바꾸지 않는다`() {
+        val all = twoSessionWeeks(2)
+        val withoutTuesday = all.filter { it.completedAt.toLocalDate() != monday.plusDays(1) }
+        assertEquals(
+            calc(withoutTuesday, goal = 7).days.getValue(monday).cappedXp,
+            calc(all, goal = 7).days.getValue(monday).cappedXp
+        )
+    }
+
+    @Test fun `활성 아닌 주는 연속이 끊긴다`() {
+        // 지난주가 1회뿐(비활성) → 이번 주 연속 0, 지난주 기준으로는 그 앞 1주
+        val lastTuesday = monday.minusWeeks(1).plusDays(1)
+        val sessions = twoSessionWeeks(3).filter { it.completedAt.toLocalDate() != lastTuesday }
+        val r = calc(sessions, goal = 7)
+        assertEquals(0, r.streakWeeksOn(monday))
+        assertEquals(1.0, r.days.getValue(monday).multiplier)
+        assertEquals(1, r.streakWeeksOn(monday.minusWeeks(1)))
     }
 
     @Test fun `배율은 주간 목표 보너스에 적용되지 않는다`() {
-        val r = calc(twoSessionWeeks(2), goal = 2)
+        val r = calc(twoSessionWeeks(3), goal = 2)
         val d = r.days.getValue(monday.plusDays(1))
         assertEquals(1.1, d.multiplier)
         assertEquals(300, d.weeklyGoalXp)

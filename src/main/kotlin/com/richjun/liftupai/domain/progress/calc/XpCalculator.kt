@@ -56,7 +56,12 @@ data class XpResult(
     val streakByWeek: Map<LocalDate, Int>,
     val zone: ZoneId
 ) {
-    fun streakWeeksOn(date: LocalDate): Int = streakByWeek[mondayOf(date)] ?: 0
+    /**
+     * [date] 가 속한 주 직전까지 끝난 주들의 연속 활성 주 수. 배율은 이 값으로 정한다 —
+     * 이번 주가 아직 진행 중이라 새 주 첫 운동에서 배율이 사라지지 않고,
+     * 같은 주 뒤 운동이 앞날의 XP 를 소급해 바꾸지도 않는다.
+     */
+    fun streakWeeksOn(date: LocalDate): Int = streakByWeek[mondayOf(date).minusWeeks(1)] ?: 0
     fun multiplierFor(date: LocalDate): Double = XpCalculator.multiplierForStreak(streakWeeksOn(date))
     fun cappedXpOn(date: LocalDate): Int = days[date]?.cappedXp ?: 0
 }
@@ -144,7 +149,7 @@ object XpCalculator {
             val ss = sessionXps.values.filter { it.date == d }
             val mealXp = minOf((mealsByDate[d] ?: 0) * XpRules.MEAL, XpRules.MEAL_DAILY_MAX)
             val raw = ss.sumOf { it.setXp + it.completeXp + it.prXp } + mealXp
-            val mult = multiplierForStreak(streakByWeek[mondayOf(d)] ?: 0)
+            val mult = multiplierForStreak(streakByWeek[mondayOf(d).minusWeeks(1)] ?: 0)
             val capped = minOf(Math.round(raw * mult).toInt(), XpRules.DAILY_CAP)
             val goalXp = ss.sumOf { it.weeklyGoalXp }
             val day = DayXp(d, raw, mult, capped, goalXp, mealXp)
