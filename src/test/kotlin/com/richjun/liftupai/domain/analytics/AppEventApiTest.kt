@@ -118,6 +118,36 @@ class AppEventApiTest : ApiTestSupport() {
     }
 
     @Test
+    fun `Google 망에서 온 이벤트는 헤더가 없어도 테스트 기기로 남긴다 - Play 심사자·사전 출시 로봇`() {
+        val body = """{"events":[{"name":"onboarding_complete"}]}"""
+        call(post("/api/v2/events").contentType(MediaType.APPLICATION_JSON).content(body)
+            .header(ClientInfo.HEADER_PLATFORM, "android").header("X-Forwarded-For", "66.249.84.171")
+            .with { it.remoteAddr = "172.18.0.1"; it })
+        call(post("/api/v2/events").contentType(MediaType.APPLICATION_JSON).content(body)
+            .header(ClientInfo.HEADER_PLATFORM, "ios").header("X-Forwarded-For", "126.35.1.2, 66.249.84.171")
+            .with { it.remoteAddr = "127.0.0.1"; it })
+        assertEquals(listOf(true, false), repository.findByUserIdOrderByIdAsc(user.id).map { it.testDevice })
+    }
+
+    @Test
+    fun `클라이언트 IP 는 프록시에서 온 요청일 때만 X-Forwarded-For 를 믿는다`() {
+        fun req(remote: String, xff: String?) = org.springframework.mock.web.MockHttpServletRequest().apply {
+            remoteAddr = remote
+            xff?.let { addHeader("X-Forwarded-For", it) }
+        }
+        assertEquals("74.125.214.75", ClientInfo.clientIp(req("172.18.0.1", "74.125.214.75")))
+        assertEquals("126.35.1.2", ClientInfo.clientIp(req("127.0.0.1", " 126.35.1.2 , 10.0.0.1")))
+        assertEquals("203.0.113.9", ClientInfo.clientIp(req("203.0.113.9", "66.249.84.1")), "바깥에서 직접 온 요청의 헤더는 위조일 수 있다")
+        assertTrue(ClientInfo.from(req("127.0.0.1", "64.233.172.1")).testDevice)
+        assertTrue(!ClientInfo.from(req("203.0.113.9", "66.249.84.1")).testDevice)
+        assertTrue(ClientInfo.isGoogleTestNetwork("66.249.95.255"))
+        assertTrue(!ClientInfo.isGoogleTestNetwork("66.249.96.0"))
+        assertTrue(!ClientInfo.isGoogleTestNetwork("35.200.1.1"), "Google Cloud 고객 대역은 실사용자일 수 있다")
+        assertTrue(!ClientInfo.isGoogleTestNetwork("2001:db8::1"))
+        assertTrue(!ClientInfo.isGoogleTestNetwork("not-an-ip"))
+    }
+
+    @Test
     fun `회원 탈퇴 삭제 목록에 app_events 가 있다 - FK 가 없어 메타모델 감사에 잡히지 않는 테이블이다`() {
         // H2 에는 운영에만 있는 레거시 테이블이 없어 탈퇴 전체를 실행할 수 없다 — FK 커버리지 감사와 같은 방식으로 삭제문 자체를 확인한다
         val source = java.io.File("src/main/kotlin/com/richjun/liftupai/domain/user/service/UserService.kt").readText()
