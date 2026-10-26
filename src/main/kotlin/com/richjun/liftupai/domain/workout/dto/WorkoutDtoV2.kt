@@ -99,7 +99,9 @@ data class CompleteWorkoutResponseV2(
     val success: Boolean,
     val summary: WorkoutSummaryV2,
     val achievements: AchievementsInfo,
-    val stats: WorkoutStats
+    val stats: WorkoutStats,
+    /** 레벨·XP 결과 — 구버전 앱은 모르는 필드라 무시한다. 계산 실패 시 null. */
+    val xp: com.richjun.liftupai.domain.progress.dto.WorkoutXpResult? = null
 )
 
 data class WorkoutSummaryV2(

@@ -19,7 +19,8 @@ class WorkoutControllerV2(
     private val workoutSessionService: WorkoutSessionService,
     private val workoutRecommendationServiceV2: WorkoutRecommendationServiceV2,
     private val workoutService: com.richjun.liftupai.domain.workout.service.WorkoutService,
-    private val workoutPlanService: com.richjun.liftupai.domain.workout.service.WorkoutPlanService
+    private val workoutPlanService: com.richjun.liftupai.domain.workout.service.WorkoutPlanService,
+    private val progressService: com.richjun.liftupai.domain.progress.service.ProgressService
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -104,7 +105,15 @@ class WorkoutControllerV2(
     ): ResponseEntity<ApiResponse<CompleteWorkoutResponseV2>> {
         logger.debug("completeWorkout called: userId={}, sessionId={}, exercises={}, duration={}",
             userDetails.getId(), sessionId, request.exercises.size, request.duration)
-        val response = workoutSessionService.completeWorkout(userDetails.getId(), sessionId, request)
+        val completed = workoutSessionService.completeWorkout(userDetails.getId(), sessionId, request)
+        // 레벨·XP는 부가 정보 — 계산에 실패해도 운동 완료 응답은 그대로 돌려준다.
+        val xp = try {
+            progressService.getWorkoutXp(userDetails.getId(), sessionId)
+        } catch (e: Exception) {
+            logger.warn("XP calculation failed: userId={}, sessionId={}, error={}", userDetails.getId(), sessionId, e.message)
+            null
+        }
+        val response = completed.copy(xp = xp)
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
