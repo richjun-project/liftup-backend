@@ -2,7 +2,7 @@
 # LiftUp 일일 KPI 수집기(읽기 전용, 2026-10-21). 출력: JSON 1개 — 대표 일일 리포트(~/orca/projects/daily-report)의 수집기 형식.
 #   metrics.<이름> = {last24h, prev24h, avg7d, uniq24h, uniq7d, uniq30d}  (uniq 는 사용자·건 중복 제거)
 #   state  = 현재 값(유료 구독자, 추정 MRR, 체험 중, 누적·활성 사용자)
-#   ops    = 앱 ERROR·5xx·채팅 지연(Caddy)·디스크, marketing = Threads 자동 게시 조회수, store = App Store 평점 수
+#   ops    = 앱 ERROR·5xx·채팅 지연(Caddy)·디스크, marketing = Threads 자동 게시 조회수(한국어·일본어 따로), store = App Store 평점 수
 # 운영 서버 접속은 키체인 kw(ssh-liftupai). 비밀번호·토큰은 출력하지 않는다.
 set -uo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -52,8 +52,19 @@ cut = (datetime.date.today() - datetime.timedelta(days=8)).isoformat()
 recent = [r for r in rows if (r.get('date') or '') >= cut]
 views = [((r.get('metrics') or {}).get('threads') or r.get('metrics') or {}).get('views') for r in recent]
 views = [v for v in views if isinstance(v, (int, float))]
-print(json.dumps({'threads_posts_8d': len(recent), 'threads_views_avg': round(sum(views) / len(views)) if views else None,
-                  'threads_views_max': max(views) if views else None, 'last_post_date': rows[-1].get('date') if rows else None}))
+out = {'threads_posts_8d': len(recent), 'threads_views_avg': round(sum(views) / len(views)) if views else None,
+       'threads_views_max': max(views) if views else None, 'last_post_date': rows[-1].get('date') if rows else None}
+# 일본어 실험 글(2026-10-29~, autopilot.py --lang ja): 같은 계정, history_ja.jsonl
+try:
+    ja = [json.loads(l) for l in open('/home/ubuntu/liftup-backend/marketing/history_ja.jsonl') if l.strip()]
+except FileNotFoundError:
+    ja = []
+ja_recent = [r for r in ja if (r.get('date') or '') >= cut]
+jv = [((r.get('metrics') or {}).get('threads') or {}).get('views') for r in ja_recent]
+jv = [v for v in jv if isinstance(v, (int, float))]
+out.update({'threads_ja_posts_8d': len(ja_recent), 'threads_ja_views_avg': round(sum(jv) / len(jv)) if jv else None,
+            'threads_ja_views_max': max(jv) if jv else None})
+print(json.dumps(out))
 PY
 EOS
 } > "$TMP/remote.sh"
