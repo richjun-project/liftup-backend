@@ -18,4 +18,7 @@ interface PaymentHistoryRepository : JpaRepository<PaymentHistory, Long> {
     fun findByUserAndStatus(user: User, status: PaymentStatus): List<PaymentHistory>
 
     fun findByPaymentDateBetween(startDate: LocalDateTime, endDate: LocalDateTime): List<PaymentHistory>
+
+    /** 실제로 돈을 낸 적이 있는가(체험 시작은 금액 0 으로 남는다) */
+    fun existsByUserAndStatusAndAmountGreaterThan(user: User, status: PaymentStatus, amount: Double): Boolean
 }

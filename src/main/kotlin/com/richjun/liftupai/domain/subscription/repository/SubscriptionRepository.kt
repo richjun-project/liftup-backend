@@ -26,4 +26,13 @@ interface SubscriptionRepository : JpaRepository<Subscription, Long> {
 
     @Query("SELECT COUNT(s) FROM Subscription s WHERE s.status = :status")
     fun countByStatus(status: SubscriptionStatus): Long
+
+    /** 만료가 (from, to] 사이인 스토어 구독 — 체험 종료 알림 후보. 사용자를 함께 읽는다(스케줄러는 트랜잭션 밖). */
+    @Query("SELECT s FROM Subscription s JOIN FETCH s.user WHERE s.status = :status AND s.store IN :stores AND s.expiryDate > :from AND s.expiryDate <= :to")
+    fun findStoreSubscriptionsExpiringBetween(
+        status: SubscriptionStatus,
+        stores: Collection<String>,
+        from: LocalDateTime,
+        to: LocalDateTime
+    ): List<Subscription>
 }
