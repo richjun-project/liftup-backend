@@ -49,12 +49,16 @@ class PlanWorkoutEnricher(
      * 8. Weekly volume status (MEV/MAV)
      */
     fun enrich(
-        response: DayWorkoutResponse,
+        stored: DayWorkoutResponse,
         plan: UserWorkoutPlan,
         userAge: Int?,
         subjectiveReadiness: Int? = null,
         locale: String = "ko",
     ): DayWorkoutResponse {
+        // 0. 첫 세션(완료 운동 0회)은 앞 종목 몇 개만 — FirstSessionRule
+        val firstSession = isFirstSession(plan.user)
+        val response = if (firstSession) stored.copy(exercises = stored.exercises.take(FirstSessionRule.MAX_EXERCISES)) else stored
+
         // 1. Calculate week number from total completions across all days
         val allDays = userPlanDayRepository.findByPlanIdOrderByDayNumber(plan.id)
         val totalCompletions = allDays.sumOf { it.totalCompletions }
@@ -103,7 +107,9 @@ class PlanWorkoutEnricher(
         val protectedExercises = if (beginner && weekNumber <= BEGINNER_PROTECT_WEEKS) {
             goalAdjusted.map { ex -> exerciseMap[ex.exerciseId]?.let { protectBeginner(ex, it) } ?: ex }
         } else goalAdjusted
-        val (finalExercises, estimated) = fitToSessionDuration(protectedExercises, ctx.sessionMinutes, exerciseMap, level, effectiveAge, isDeloadWeek)
+        // 첫 세션은 30분(더 짧게 골랐으면 그 값) 안으로 줄이기만 한다 — 자른 종목 수만큼 세트를 다시 늘리면 첫 세션이 짧아지지 않는다
+        val sessionTarget = if (firstSession) FirstSessionRule.minutes(ctx.sessionMinutes) else ctx.sessionMinutes
+        val (finalExercises, estimated) = fitToSessionDuration(protectedExercises, sessionTarget, exerciseMap, level, effectiveAge, shrinkOnly = isDeloadWeek || firstSession)
 
         // 7-c. 대체 운동: 대체 후보 API(C3)와 같은 순위·같은 장비/부상/수준 규칙, 사용자 언어 이름
         val withSubstitutes = finalExercises.map { ex ->
@@ -158,7 +164,7 @@ class PlanWorkoutEnricher(
         exerciseMap: Map<Long, Exercise>,
         level: com.richjun.liftupai.domain.user.entity.ExperienceLevel?,
         age: Int?,
-        deload: Boolean = false,
+        shrinkOnly: Boolean = false,
     ): Pair<List<DayExerciseDetail>, Int?> {
         if (targetMinutes == null || targetMinutes <= 0 || exercises.isEmpty()) return exercises to null
         val slots = exercises.map { ex ->
@@ -171,8 +177,8 @@ class PlanWorkoutEnricher(
                 maxRestSeconds = restUp.coerceAtLeast(ex.restSeconds), maxSets = cap.coerceAtLeast(ex.sets),
             )
         }
-        // 디로드 주간은 줄이기만 한다 — 줄여 놓은 세트를 시간 맞춤이 다시 늘리면 디로드가 아니다
-        val fitted = SessionFit.fit(slots, targetMinutes, allowGrow = !deload).slots
+        // 디로드 주간·첫 세션은 줄이기만 한다 — 줄여 놓은 세트를 시간 맞춤이 다시 늘리면 디로드가 아니다
+        val fitted = SessionFit.fit(slots, targetMinutes, allowGrow = !shrinkOnly).slots
         val adjusted = exercises.zip(fitted).map { (ex, slot) -> ex.copy(sets = slot.sets, restSeconds = slot.restSeconds) }
         return adjusted to SessionFit.minutes(fitted)
     }
@@ -446,6 +452,10 @@ class PlanWorkoutEnricher(
         "lateral_delts" -> 22
         else -> 16
     }
+
+    /** 완료한 운동이 하나도 없으면 첫 세션 — 하루 상세와 대시보드가 같은 판정을 쓴다 */
+    fun isFirstSession(user: com.richjun.liftupai.domain.auth.entity.User): Boolean =
+        workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED) == 0L
 
     private companion object {
         /** 초보·노비스 보호 처방을 적용하는 처음 몇 주 */

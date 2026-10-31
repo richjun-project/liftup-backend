@@ -123,7 +123,24 @@ class CoachToolsIntegrationTest : ApiTestSupport() {
     }
 
     @Test
+    fun `첫 세션 — 운동을 끝낸 적 없는 사용자의 오늘 운동은 앞 4종목, 한 번 끝내면 플랜 그대로`() {
+        userPlanService.applyTemplate(user, "beginner_fullbody", null, "ko")
+        val plan = userPlanService.getActivePlan(user.id)!!
+        val stored = userPlanService.getPlanDashboard(user.id, "ko")
+        val first = userPlanService.getDayWorkout(user.id, plan.currentDay, locale = "ko")
+        assertEquals(4, first.exercises.size, first.exercises.map { it.exerciseName }.toString())
+        assertEquals(first.exercises.size, stored.days.first { it.isCurrent }.exerciseCount, "대시보드 종목 수 = 하루 상세")
+
+        benchSession(1, 60.0 to 8)
+        val later = userPlanService.getDayWorkout(user.id, plan.currentDay, locale = "ko")
+        assertTrue(later.exercises.size > 4, "운동을 끝낸 뒤엔 저장된 플랜 그대로: ${later.exercises.size}")
+        assertEquals(first.exercises.map { it.exerciseId }, later.exercises.take(4).map { it.exerciseId }, "첫 세션은 앞에서 자른 것")
+    }
+
+    @Test
     fun `오늘 운동 → 플랜 종목 교체(실제로 바뀜) → 부상 부위면 서버가 거절`() {
+        // 운동을 끝내 본 사용자 — 첫 세션(FirstSessionRule)은 오늘 목록을 앞 4종목만 보여 줘, 고른 대체 운동이 숨은 뒷 종목과 겹칠 수 있다
+        benchSession(3, 60.0 to 8)
         userPlanService.applyTemplate(user, "beginner_fullbody", null, "ko")
         val today = toolbox.execute("get_today_workout", args(), ctx)
         assertTrue(today.ok)

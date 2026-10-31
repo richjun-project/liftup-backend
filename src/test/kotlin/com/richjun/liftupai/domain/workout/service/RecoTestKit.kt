@@ -15,6 +15,7 @@ import com.richjun.liftupai.domain.workout.entity.EnrollmentStatus
 import com.richjun.liftupai.domain.workout.entity.Exercise
 import com.richjun.liftupai.domain.workout.entity.PlanSourceType
 import com.richjun.liftupai.domain.workout.entity.PlanStatus
+import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.workout.entity.SplitType
 import com.richjun.liftupai.domain.workout.entity.UserPlanDay
 import com.richjun.liftupai.domain.workout.entity.UserPlanDayExercise
@@ -149,6 +150,8 @@ object RecoTestKit {
             every { dayExRepo.findByPlanDayIdOrderByOrderInDay(day.id) } returns planRows
             every { progressive.calculateWeightForPlan(any(), any(), any(), any(), any(), any(), any(), any()) } returns null
             every { sessionRepo.findTop10ByUserAndStatusInOrderByStartTimeDesc(any(), any()) } returns emptyList()
+            // 기본은 운동을 끝내 본 사용자 — 첫 세션 규칙(FirstSessionRule)은 테스트가 0 으로 바꿔 켠다
+            every { sessionRepo.countByUserAndStatus(any(), SessionStatus.COMPLETED) } returns 3L
             every { translationRepo.findByExerciseIdInAndLocale(any(), any()) } returns emptyList()
             every { catalogCache.get() } returns ExerciseCatalogCache.Snapshot(catalog, System.currentTimeMillis())
         }

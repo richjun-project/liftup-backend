@@ -119,8 +119,14 @@ class UserPlanService(
         val days = userPlanDayRepository.findByPlanIdOrderByDayNumber(plan.id)
         val ctx = trainingContext.resolve(userId)
         // 날마다 운동 목록과 개인화된 추정 시간(getDayWorkout 과 같은 세트·휴식 맞춤)을 함께 읽는다
-        val dayRows = days.associate { day -> day.id to userPlanDayExerciseRepository.findByPlanDayIdWithExerciseOrderByOrderInDay(day.id) }
+        // 첫 세션(완료 운동 0회)이면 하루 상세처럼 앞 종목만·30분 안으로 — FirstSessionRule
+        val firstSession = planWorkoutEnricher.isFirstSession(plan.user)
+        val dayRows = days.associate { day ->
+            val rows = userPlanDayExerciseRepository.findByPlanDayIdWithExerciseOrderByOrderInDay(day.id)
+            day.id to if (firstSession) rows.take(FirstSessionRule.MAX_EXERCISES) else rows
+        }
         val dayExerciseCounts = dayRows.mapValues { it.value.size }
+        val minutesCtx = if (firstSession) ctx.copy(sessionMinutes = FirstSessionRule.minutes(ctx.sessionMinutes)) else ctx
         // 하루 상세(enrich)와 같은 주차·디로드 판정 — 두 화면이 같은 분을 보여 주게 한다
         val weekNumber = (days.sumOf { it.totalCompletions } / plan.totalDays.coerceAtLeast(1)) + 1
         val deloadWeek = plan.deloadEveryNWeeks > 0 && weekNumber > 1 && (weekNumber % plan.deloadEveryNWeeks == 0)
@@ -141,7 +147,7 @@ class UserPlanService(
                     dayNumber = day.dayNumber,
                     dayName = translatedPlanDayName(plan, day.dayNumber, day.dayName, locale),
                     workoutType = day.workoutType.name,
-                    estimatedDuration = personalizedMinutes(dayRows[day.id].orEmpty(), ctx, deloadWeek, beginnerProtected) ?: day.estimatedDurationMinutes,
+                    estimatedDuration = personalizedMinutes(dayRows[day.id].orEmpty(), minutesCtx, deloadWeek || firstSession, beginnerProtected) ?: day.estimatedDurationMinutes,
                     exerciseCount = dayExerciseCounts[day.id] ?: 0,
                     totalCompletions = day.totalCompletions,
                     lastCompletedAt = day.lastCompletedAt?.toString(),
@@ -156,7 +162,7 @@ class UserPlanService(
 
     /**
      * 하루 운동 목록의 추정 시간(분). getDayWorkout(PlanWorkoutEnricher)가 화면에 보이는 값과 같아야 한다 —
-     * 세션 시간이 저장돼 있으면 같은 세트·휴식 맞춤(디로드 주간은 줄이기만, 초보 첫 4주는 주력 복합 보호 반영)을 거친 값,
+     * 세션 시간이 저장돼 있으면 같은 세트·휴식 맞춤(디로드 주간·첫 세션은 줄이기만, 초보 첫 4주는 주력 복합 보호 반영)을 거친 값,
      * 없으면 enrich 가 그대로 두는 저장값을 쓰도록 null 을 돌려준다. 목록이 비어도 null.
      */
     internal fun personalizedMinutes(
