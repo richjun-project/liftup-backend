@@ -38,13 +38,13 @@ internal object WorkoutPromptPhase {
 
     fun note(phase: String): String = when (phase) {
         DELOAD -> " (prescribe lighter intensity ~50-60% 1RM, reduced volume)"
-        FIRST_SESSION, RETURN -> " (moderate loads the user can control, about RPE 6-7)"
+        FIRST_SESSION, RETURN -> " (moderate loads, each set stopped with 2-3 reps left)"
         else -> ""
     }
 
     fun guide(phase: String): String = when (phase) {
-        FIRST_SESSION -> "This is the user's first tracked workout: choose familiar basic movements and moderate loads they can control with good form (about RPE 6-7, 2-3 reps in reserve). It is a starting session, not a deload or recovery session."
-        RETURN -> "The user is coming back after two or more weeks without training: start a little lighter than before (about RPE 6-7) and rebuild over the next sessions. Frame it as a comeback session, not a deload."
+        FIRST_SESSION -> "This is the user's first tracked workout: choose familiar basic movements and moderate loads they can control with good form, stopping each set with 2-3 reps left. It is a starting session, not a deload or recovery session. Describe effort in plain words, not RPE or %1RM."
+        RETURN -> "The user is coming back after two or more weeks without training: start a little lighter than before, stopping each set with 2-3 reps left, and rebuild over the next sessions. Frame it as a comeback session, not a deload."
         ACCUMULATION -> "Current phase is ACCUMULATION: prioritize higher volume (more reps) with moderate weight."
         INTENSIFICATION -> "Current phase is INTENSIFICATION: prioritize moderate volume with heavier weight."
         REALIZATION -> "Current phase is REALIZATION: prioritize low volume with near-maximal weight."
