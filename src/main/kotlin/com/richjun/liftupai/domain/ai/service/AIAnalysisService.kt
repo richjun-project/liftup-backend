@@ -792,45 +792,9 @@ class AIAnalysisService(
             ""
         }
 
-        // 주기화 단계 계산 (recentWorkouts 기반 간소화 버전)
-        val periodizationPhase = run {
-            val now = AppTime.utcNow()
-            val lastWorkout = recentWorkouts.firstOrNull()
-            val daysSinceLast = if (lastWorkout != null)
-                java.time.temporal.ChronoUnit.DAYS.between(lastWorkout.startTime, now)
-            else 99L
-
-            when {
-                daysSinceLast >= 14 -> "DELOAD"
-                recentWorkouts.size >= 4 && recentWorkouts.take(4)
-                    .count { java.time.temporal.ChronoUnit.DAYS.between(it.startTime, now) <= 7 } >= 5 -> "DELOAD"
-                else -> {
-                    // 4주 메소사이클: 첫 운동 날짜 기준 주차 계산
-                    val firstSession = recentWorkouts.minByOrNull { it.startTime }
-                    if (firstSession != null) {
-                        val weeksSinceFirst = java.time.temporal.ChronoUnit.WEEKS.between(firstSession.startTime, now)
-                        when ((weeksSinceFirst % 4).toInt()) {
-                            0 -> "ACCUMULATION"
-                            1 -> "INTENSIFICATION"
-                            2 -> "REALIZATION"
-                            3 -> "DELOAD"
-                            else -> "ACCUMULATION"
-                        }
-                    } else "ACCUMULATION"
-                }
-            }
-        }
-        val periodizationNote = if (periodizationPhase == "DELOAD")
-            " (prescribe lighter intensity ~50-60% 1RM, reduced volume)"
-        else ""
-
-        val currentPhaseGuide = when (periodizationPhase) {
-            "ACCUMULATION" -> "Current phase is ACCUMULATION: prioritize higher volume (more reps) with moderate weight."
-            "INTENSIFICATION" -> "Current phase is INTENSIFICATION: prioritize moderate volume with heavier weight."
-            "REALIZATION" -> "Current phase is REALIZATION: prioritize low volume with near-maximal weight."
-            "DELOAD" -> "Current phase is DELOAD: reduce both volume and intensity significantly for recovery."
-            else -> ""
-        }
+        val periodizationPhase = WorkoutPromptPhase.resolve(recentWorkouts.map { it.startTime }, AppTime.utcNow())
+        val periodizationNote = WorkoutPromptPhase.note(periodizationPhase)
+        val currentPhaseGuide = WorkoutPromptPhase.guide(periodizationPhase)
 
         return """
             Build a personalized workout program and respond with JSON only.
@@ -876,6 +840,7 @@ class AIAnalysisService(
             7. At least 70% of the selected exercises should be CORE exercises when available.
             8. All exercise IDs must come from the provided candidate list.
             9. If focus areas are listed, include at least one exercise that trains them (when today's target allows it).
+            10. Keep phase names and periodization jargon (accumulation, intensification, realization, deload) out of workout_name; describe the session in plain words.
 
             Respond with this JSON schema only:
             {

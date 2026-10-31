@@ -188,6 +188,21 @@ class AIWorkoutRecommendationInjuryTest {
     }
 
     @Test
+    @DisplayName("기록 0회 사용자의 AI 추천 프롬프트: DELOAD 가 아니라 첫 세션(운영 10-30, 신규 사용자 4명 전원이 '디로드' 제목)")
+    fun newUserPromptIsFirstSessionNotDeload() {
+        stubKneeUser(aiPicks = listOf(bench, row, ohp, pulldown))
+        val prompt = io.mockk.slot<String>()
+        every { geminiAIService.generateRecommendations(capture(prompt)) } returns
+            """{"workout_name":"x","exercises":[{"id":5,"sets":3,"reps":"8-10","rest_seconds":90,"order":1}]}"""
+
+        service.getAIWorkoutRecommendation(userId = 1L, duration = 45)
+
+        assertTrue(prompt.captured.contains("Current periodization phase: FIRST_SESSION"), "첫 세션 단계가 아니다")
+        assertFalse(prompt.captured.contains("Current phase is DELOAD"), "신규 사용자에게 디로드 지침이 나갔다")
+        assertTrue(prompt.captured.contains("out of workout_name"), "제목에 단계 용어를 넣지 말라는 규칙이 없다")
+    }
+
+    @Test
     @DisplayName("잘린 JSON 에서 인사이트 문자열 필드를 정규식으로 건진다")
     fun salvageInsights() {
         val s = service.salvageInsightsFromText("""{"a":1,"ai_insights":{"workout_rationale":"상체 \"집중\" 루틴","key_point":"호흡","next_step":"다음�""")
