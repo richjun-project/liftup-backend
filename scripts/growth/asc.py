@@ -22,17 +22,24 @@ def token():
                       open(p).read(), algorithm='ES256', headers={'kid': kid, 'typ': 'JWT'})
 
 
-def call(method, path, body=None):
-    req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path if path.startswith('/') else path, method=method,
-                                 data=json.dumps(body).encode() if body else None,
-                                 headers={'Authorization': 'Bearer ' + token(), 'Content-Type': 'application/json'})
-    try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            t = r.read()
-            return r.status, (json.loads(t) if t and t[:1] in b'[{' else {})
-    except urllib.error.HTTPError as e:
-        b = e.read()
+def call(method, path, body=None, tries=3):
+    # 연결 끊김(Connection reset·타임아웃)은 두 번 더 해 본다 — 11-01 아침 수집이 한 번 끊겨 스토어 퍼널이 통째로 비었다.
+    # HTTP 오류 응답은 다시 하지 않는다(POST 중복 생성 방지).
+    for attempt in range(tries):
+        req = urllib.request.Request('https://api.appstoreconnect.apple.com' + path if path.startswith('/') else path, method=method,
+                                     data=json.dumps(body).encode() if body else None,
+                                     headers={'Authorization': 'Bearer ' + token(), 'Content-Type': 'application/json'})
         try:
-            return e.code, json.loads(b or b'{}')
-        except Exception:
-            return e.code, {'raw': b[:300].decode('utf8', 'replace')}
+            with urllib.request.urlopen(req, timeout=120) as r:
+                t = r.read()
+                return r.status, (json.loads(t) if t and t[:1] in b'[{' else {})
+        except urllib.error.HTTPError as e:
+            b = e.read()
+            try:
+                return e.code, json.loads(b or b'{}')
+            except Exception:
+                return e.code, {'raw': b[:300].decode('utf8', 'replace')}
+        except (urllib.error.URLError, ConnectionError, TimeoutError):
+            if attempt == tries - 1 or method != 'GET':
+                raise
+            time.sleep(10 * (attempt + 1))

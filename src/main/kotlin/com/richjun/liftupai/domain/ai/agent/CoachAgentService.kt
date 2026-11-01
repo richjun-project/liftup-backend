@@ -35,6 +35,8 @@ class CoachAgentService(
     private val toolbox: CoachToolbox,
     private val memoryRepository: CoachMemoryRepository,
     private val objectMapper: ObjectMapper,
+    /** App Store 이벤트 기간에만 챌린지 규칙·진행을 프롬프트에 넣는다(없으면 생략 — 단위 테스트) */
+    private val storeChallenge: StoreChallengeService? = null,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -113,9 +115,12 @@ class CoachAgentService(
         }
         val ctx = CoachToolContext(user, prep.locale, AppTime.resolveZoneId(prep.timeZone), prep.risk)
         val memories = memoryRepository.findByUserIdOrderByUpdatedAtDesc(user.id).take(CoachMemory.MAX_PER_USER)
+        // 챌린지 진행 조회가 실패해도 채팅은 그대로 간다
+        val challenge = runCatching { storeChallenge?.section(user, ctx.zoneId) }
+            .onFailure { log.warn("[AI-AGENT] challenge section failed user={}: {}", user.id, it.message) }.getOrNull()
         val prompt = gemini.buildChatPrompt(
             message, user.nickname, prep.ptStyle, prep.locale, prep.userProfile, prep.nutritionContext, history,
-            prep.risk, prep.facts, trainerContext = trainerContext, agentSection = agentSection(user.nickname, memories),
+            prep.risk, prep.facts, trainerContext = trainerContext, agentSection = agentSection(user.nickname, memories, challenge),
         ) + prep.imageNote
 
         val contents = objectMapper.createArrayNode()
@@ -247,7 +252,7 @@ class CoachAgentService(
         val SETTINGS_CHANGING_TOOLS = setOf("swap_exercise_in_plan", "set_workout_time")
     }
 
-    internal fun agentSection(nickname: String, memories: List<CoachMemory>): String = buildString {
+    internal fun agentSection(nickname: String, memories: List<CoachMemory>, challenge: String? = null): String = buildString {
         appendLine("## YOU ARE AN AGENT WITH TOOLS")
         appendLine("You can look things up and act in the app with function calls before you answer. Be the coach who actually checks the logbook.")
         appendLine("- Look before you speak: when the answer depends on THIS user's data (past sessions, weights, PRs, progress, today's plan, recovery, today's meals), call the matching get_* tool first and use the exact numbers it returns. Never invent sessions, weights or dates.")
@@ -264,6 +269,10 @@ class CoachAgentService(
             appendLine()
             appendLine("## WHAT YOU REMEMBER ABOUT $nickname (from earlier conversations)")
             memories.forEach { appendLine("- [memory_id ${it.id}, ${it.category}] ${it.content}") }
+        }
+        if (challenge != null) {
+            appendLine()
+            appendLine(challenge)
         }
     }.trimEnd()
 }
