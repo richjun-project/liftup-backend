@@ -236,4 +236,10 @@ class CoachToolsIntegrationTest : ApiTestSupport() {
         assertEquals(listOf(true, true, false), tools.map { it.path("ok").asBoolean() })
         assertEquals(listOf(false, true, false), tools.map { it.path("changed").asBoolean() })
     }
+
+    @Test
+    fun `운영 컨텍스트에서 챌린지 서비스가 에이전트에 주입된다(선택 인자라 빠지면 조용히 꺼진다)`() {
+        val field = CoachAgentService::class.java.getDeclaredField("storeChallenge").apply { isAccessible = true }
+        assertTrue(field.get(coachAgentService) != null)
+    }
 }
