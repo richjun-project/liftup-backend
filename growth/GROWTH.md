@@ -240,3 +240,8 @@
 - **대표 손이 필요한 것(API 없음)**: Play Console ① 앱 콘텐츠 → 개인정보처리방침 → `https://liftupai.net/privacy` ② 앱 콘텐츠 → 데이터 보안 → 데이터 삭제의 계정 삭제 URL → `https://liftupai.net/delete-account` ③ 게시 개요 → "검토를 위해 변경사항 보내기". Chrome 확장은 이 세션에 연결되지 않음 — 11-02 확인: **확장 로그아웃 + 주 Chrome 의 Google 계정(ggprgrkjh2)도 로그아웃** 상태라 비밀번호 없이는 Play Console 을 열 수 없다(대표 로그인 필요). dataSafety API 는 CSV 전체 덮어쓰기라 현재 답을 모른 채 쓰면 위험해서 쓰지 않았다.
 - 배운 것: ① Play 의 "검토 보내기 대기"가 오래가면 **정책 거절 여부부터 확인**(콘솔 게시 개요·정책 상태 — API 로는 안 보인다). ② 개인정보처리방침·삭제 안내는 크롤러가 읽는 정적 HTML 이어야 한다(Notion·SPA 금지). ③ App Store `privacyPolicyUrl` 은 판매 중 앱 정보에선 409 — 새 버전을 만들면 생기는 PREPARE_FOR_SUBMISSION 앱 정보에서 바뀐다(deliver `privacy_url.txt`). ④ 인앱 이벤트 심사 중엔 버전 심사를 같이 못 낸다 — 출시와 이벤트가 겹치면 한 제출에 묶을 것.
 - 다음: 대표 콘솔 3클릭 → Play 승인·공개 확인(play.google.com `<title>`·버전) → Android app_versions 1.1.37(54) 행(공개 확인 뒤), iOS 1.1.37 자동 제출 확인, 이용약관도 사이트로 옮길지(지금은 Notion — 거절 사유는 아님).
+
+### 2026-11-02 — Play 재제출 완료(대표가 Chrome 로그인)
+- Play Console(Claude in Chrome): ① 앱 콘텐츠 → 개인정보처리방침 `https://liftupai.net/privacy` 저장 ② 데이터 보안 → 계정 삭제 URL `https://liftupai.net/delete-account` + 계정 생성 방법을 실제대로(사용자 이름·비밀번호 + OAuth + 기타(기기 ID), 전엔 기타만) 저장 — 데이터 유형·처리 답은 그대로 ③ **게시 개요 → 변경사항 12개 검토 제출**(1.1.37 프로덕션 100%, ko·en·ja 이름·간단한 설명·전체 설명, 개인정보처리방침, 데이터 보안). 관리형 게시 꺼짐 → 승인되면 바로 공개.
+- 거절 세부(정책 상태): 둘 다 "**정책 페이지에 Play 등록정보의 앱·개발자 이름이 없음**"(Notion URL 은 크롤러에 빈 페이지). 그래서 사이트 두 페이지 첫 문단에 언어별 **Play 앱 이름 그대로**(리프트업 AI 트레이너 - 헬스 PT 운동루틴 / LIFTUP AIパーソナルトレーナー・筋トレ記録 / LiftUp AI: Personal Trainer) + 개발자 kjh8870 을 넣어 배포(랜딩 71b1dc7, 6개 200 확인) 후 제출. **Play 앱 이름을 바꾸면 `src/lib/legal.ts` 도 같이 바꿀 것.**
+- 다음: Play 심사 결과(보통 1~3일) → play.google.com 공개 버전 1.1.37 확인 → Android app_versions 1.1.37(54) 행. iOS 1.1.37 은 인앱 이벤트 심사 뒤 자동 제출 대기.
