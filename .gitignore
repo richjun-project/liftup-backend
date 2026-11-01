@@ -63,3 +63,4 @@ growth/logs/
 # App Store 분석 리포트 원본 캐시(scripts/growth/asc_funnel.py)
 growth/asc/
 scripts/growth/__pycache__/
+growth/events/__pycache__/
