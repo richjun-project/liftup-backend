@@ -37,6 +37,8 @@ class FileUploadService(
         /** 저장 경로(uploads/<type>/<userId>)와 S3 키에 들어가는 값이라 허용 목록만 받는다(../ 같은 경로 조작 차단) */
         val ALLOWED_TYPES = setOf("chat", "meal", "profile", "progress", "form")
         const val DEFAULT_TYPE = "chat"
+        /** 사용자가 올린 파일이 있는 종류 — 허용 목록 + 예전 폴더 이름(form_check). 회원 탈퇴 때 이 종류만 지운다 */
+        val USER_UPLOAD_TYPES = ALLOWED_TYPES + "form_check"
 
         /** 요청의 type 을 허용 목록 값으로 바꾼다. 없으면 chat, 목록 밖이면 400 */
         fun resolveType(raw: String?): String {
@@ -237,6 +239,35 @@ class FileUploadService(
         graphics.dispose()
 
         return resizedImage
+    }
+
+    /**
+     * 회원 탈퇴: 이 사용자가 올린 사진을 지운다(S3 면 버킷의 `<종류>/<userId>/`, 아니면 `uploads/<종류>/<userId>`).
+     * 종류는 [USER_UPLOAD_TYPES] 만 — 공용 파일 폴더는 건드리지 않는다.
+     * 실패해도 탈퇴(데이터베이스 삭제)는 막지 않는다 — 경고만 남긴다. 지운 파일 수를 돌려준다.
+     */
+    fun deleteUserFiles(userId: Long): Int {
+        return try {
+            if (useS3 && s3Service != null) {
+                s3Service.deleteUserFiles(USER_UPLOAD_TYPES, userId)
+            } else {
+                var deleted = 0
+                for (type in USER_UPLOAD_TYPES) {
+                    val userDir = Paths.get(uploadDir, type, userId.toString())
+                    if (!Files.isDirectory(userDir)) continue
+                    Files.walk(userDir).use { paths ->
+                        paths.sorted(Comparator.reverseOrder()).forEach { p ->
+                            if (Files.isRegularFile(p)) deleted++
+                            Files.deleteIfExists(p)
+                        }
+                    }
+                }
+                deleted
+            }
+        } catch (e: Exception) {
+            logger.warn("Failed to delete uploaded files for user {}: {}", userId, e.message)
+            0
+        }
     }
 
     private fun createDirectories() {

@@ -150,6 +150,34 @@ class S3Service(
         }
     }
 
+    /**
+     * 회원 탈퇴: 이 사용자가 올린 파일(`<folder><종류>/<userId>/…`)을 지운다. 종류는 사용자 업로드 종류만 받는다 —
+     * 같은 버킷 폴더에 운동 영상(exercises/)·트레이너 그림(trainers/) 같은 공용 파일이 있어 버킷 전체를 훑지 않는다.
+     * 끝의 `/` 로 사용자 2 의 정리가 22 의 파일을 건드리지 않는다. 지운 개수를 돌려준다.
+     */
+    fun deleteUserFiles(types: Collection<String>, userId: Long): Int {
+        var deleted = 0
+        for (type in types) {
+            val prefix = "$folder$type/$userId/"
+            var next: String? = null
+            do {
+                val page = s3Client.listObjectsV2(
+                    ListObjectsV2Request.builder().bucket(bucketName).prefix(prefix).continuationToken(next).build()
+                )
+                val ids = page.contents().map { ObjectIdentifier.builder().key(it.key()).build() }
+                if (ids.isNotEmpty()) {
+                    s3Client.deleteObjects(
+                        DeleteObjectsRequest.builder().bucket(bucketName).delete(Delete.builder().objects(ids).build()).build()
+                    )
+                    deleted += ids.size
+                }
+                next = if (page.isTruncated) page.nextContinuationToken() else null
+            } while (next != null)
+        }
+        logger.info("Deleted {} S3 files for user {}", deleted, userId)
+        return deleted
+    }
+
     private fun getFileExtension(filename: String): String {
         return filename.substringAfterLast('.', "jpg")
     }

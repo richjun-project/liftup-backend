@@ -30,7 +30,8 @@ class UserService(
     private val userSettingsRepository: UserSettingsRepository,
     private val objectMapper: ObjectMapper,
     private val notificationService: NotificationService,
-    private val ptScheduledMessageService: PTScheduledMessageService
+    private val ptScheduledMessageService: PTScheduledMessageService,
+    private val fileUploadService: com.richjun.liftupai.domain.upload.service.FileUploadService? = null
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -570,7 +571,9 @@ class UserService(
         entityManager.flush()
         entityManager.clear()
         deleteAllUserData(userId)
-        logger.info("회원 탈퇴 완료 - userId: {}", userId)
+        // 올린 사진(채팅·식단 등)도 지운다 — 개인정보처리방침·계정 삭제 안내(liftupai.net)의 약속
+        val files = fileUploadService?.deleteUserFiles(userId) ?: 0
+        logger.info("회원 탈퇴 완료 - userId: {}, 삭제한 파일: {}", userId, files)
 
         return mapOf(
             "success" to true,
