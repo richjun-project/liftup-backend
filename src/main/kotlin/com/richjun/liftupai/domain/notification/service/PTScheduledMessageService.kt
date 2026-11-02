@@ -1,5 +1,6 @@
 package com.richjun.liftupai.domain.notification.service
 
+import com.richjun.liftupai.domain.analytics.AppEventRepository
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.chat.entity.ChatAction
@@ -11,6 +12,7 @@ import com.richjun.liftupai.domain.notification.entity.*
 import com.richjun.liftupai.domain.notification.util.NotificationLocalization
 import com.richjun.liftupai.domain.notification.util.NotificationScheduleTimeCalculator
 import com.richjun.liftupai.domain.notification.util.PtMessagePolicy
+import com.richjun.liftupai.domain.notification.repository.NotificationDeviceRepository
 import com.richjun.liftupai.domain.notification.repository.NotificationHistoryRepository
 import com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository
 import com.richjun.liftupai.domain.user.entity.PTStyle
@@ -36,7 +38,9 @@ class PTScheduledMessageService(
     private val workoutSessionRepository: WorkoutSessionRepository,
     private val chatMessageRepository: ChatMessageRepository,
     private val notificationService: NotificationService,
-    private val ptMessageTemplates: PTMessageTemplates
+    private val ptMessageTemplates: PTMessageTemplates,
+    private val appEventRepository: AppEventRepository,
+    private val notificationDeviceRepository: NotificationDeviceRepository
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -169,6 +173,21 @@ class PTScheduledMessageService(
             schedule.nextTriggerAt = notificationService.recalculateNextTrigger(schedule)
             notificationScheduleRepository.save(schedule)
             logger.debug("[PTMessage] Skipped schedule $scheduleId (${schedule.scheduleName}) for user ${schedule.user.id}, inactive ${daysInactive}d")
+            return
+        }
+
+        // 푸시가 닿을 곳이 없으면 만들지 않는다. 2026-11 로그: 48시간 코칭 13통 중 4통이 Google 테스트 기기,
+        // 3통이 활성 기기 없는 휴면 사용자 — 채팅 메시지와 알림 기록만 쌓여 '보낸 푸시' 지표를 부풀렸다.
+        val unreachable = when {
+            appEventRepository.existsByUserIdAndTestDeviceTrue(schedule.user.id) -> "test device"
+            PtMessagePolicy.reachesOnlyByPush(daysInactive) &&
+                notificationDeviceRepository.findActiveDevicesByUser(schedule.user).isEmpty() -> "no active device"
+            else -> null
+        }
+        if (unreachable != null) {
+            schedule.nextTriggerAt = notificationService.recalculateNextTrigger(schedule)
+            notificationScheduleRepository.save(schedule)
+            logger.info("[PTMessage] Skipped schedule $scheduleId (${schedule.scheduleName}) for user ${schedule.user.id}: $unreachable")
             return
         }
 

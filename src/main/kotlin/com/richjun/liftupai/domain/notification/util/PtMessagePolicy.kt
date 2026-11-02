@@ -27,4 +27,10 @@ object PtMessagePolicy {
         daysInactive in REENGAGEMENT_DAYS -> scheduleName == WORKOUT_REMINDER
         else -> false
     }
+
+    /**
+     * 앱을 하루 넘게 열지 않은 사용자에게 가는 메시지(재참여)는 푸시로만 닿는다 — 채팅에 쌓아 둬도 볼 사람이 없다.
+     * 매일 여는 사용자는 알림을 꺼 둬도 채팅에서 PT 메시지를 본다.
+     */
+    fun reachesOnlyByPush(daysInactive: Long): Boolean = daysInactive > ACTIVE_WITHIN_DAYS
 }

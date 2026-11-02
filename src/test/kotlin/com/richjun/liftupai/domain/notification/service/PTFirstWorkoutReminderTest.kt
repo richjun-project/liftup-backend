@@ -38,7 +38,9 @@ class PTFirstWorkoutReminderTest {
         workoutSessionRepository = workoutSessionRepository,
         chatMessageRepository = chatMessageRepository,
         notificationService = mockk(relaxed = true),
-        ptMessageTemplates = PTMessageTemplates()
+        ptMessageTemplates = PTMessageTemplates(),
+        appEventRepository = mockk(relaxed = true),
+        notificationDeviceRepository = mockk(relaxed = true)
     )
 
     private fun sendWorkoutReminder(completedWorkouts: Long): String {
