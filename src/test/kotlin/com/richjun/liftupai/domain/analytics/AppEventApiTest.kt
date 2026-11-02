@@ -144,6 +144,8 @@ class AppEventApiTest : ApiTestSupport() {
         assertTrue(!ClientInfo.isGoogleTestNetwork("66.249.96.0"))
         assertTrue(ClientInfo.isGoogleTestNetwork("192.178.11.105"), "1.1.34 사전 출시 로봇")
         assertTrue(!ClientInfo.isGoogleTestNetwork("192.180.0.1"))
+        assertTrue(ClientInfo.isGoogleTestNetwork("66.102.6.161"), "1.1.37 Play 심사 기기")
+        assertTrue(!ClientInfo.isGoogleTestNetwork("66.102.16.1"))
         assertTrue(!ClientInfo.isGoogleTestNetwork("35.200.1.1"), "Google Cloud 고객 대역은 실사용자일 수 있다")
         assertTrue(!ClientInfo.isGoogleTestNetwork("2001:db8::1"))
         assertTrue(!ClientInfo.isGoogleTestNetwork("not-an-ip"))
