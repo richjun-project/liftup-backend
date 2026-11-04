@@ -297,6 +297,8 @@ class ChatHarness(
         "barbell-full-squat", "barbell-bench-press", "barbell-bent-over-row-pronated-grip",
         "seated-shoulder-press-barbell", "dumbbell-curls",
     ),
+    /** 완료한 운동 수. 0 이면 첫 세션 규칙(FirstSessionRule)이 걸린다 — 기본은 기록 있는 사용자 */
+    completedSessions: Long = 3L,
 ) {
     val user = RecoTestKit.user()
     val profile = RecoTestKit.profile(user, level, age, gender, 72.0, injuries = profileInjuries, equipment = equipment, durationMinutes = profileMinutes)
@@ -336,10 +338,14 @@ class ChatHarness(
     }
     private val userRepository = mockk<UserRepository>().also { every { it.findById(1L) } returns Optional.of(user) }
 
+    private val chatSessionRepo = mockk<com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository>(relaxed = true).also {
+        every { it.countByUserAndStatus(any(), com.richjun.liftupai.domain.workout.entity.SessionStatus.COMPLETED) } returns completedSessions
+    }
+
     val chat = AIAnalysisService(
         userRepository, repos.userProfileRepository, repos.userSettingsRepository, exerciseRepo, gemini,
         ObjectMapper().registerKotlinModule(), tracker, pt,
-        mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), vector,
+        chatSessionRepo, mockk(relaxed = true), mockk(relaxed = true), vector,
         mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true),
         localization, injuryFilter, enrollmentRepo, mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true),
     )

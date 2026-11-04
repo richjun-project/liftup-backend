@@ -356,6 +356,8 @@ class AIAnalysisService(
         difficulty: String? = null,
         localeOverride: String? = null
     ): AIWorkoutRecommendationResponse {
+        // 단계별 시간 — 2026-11-03 운영 16초 중 모델 호출은 8~11초(같은 프롬프트 직접 호출)라 나머지가 어디서 나는지 본다
+        val t0 = System.nanoTime()
         val user = userRepository.findById(userId)
             .orElseThrow { ResourceNotFoundException("User not found") }
 
@@ -366,7 +368,17 @@ class AIAnalysisService(
         // 장비·부상(프로필 ∪ 설정)·수준·나이·집중 부위·세션 시간을 단일 해석기로 한 번만 읽는다.
         // 세션 시간: 요청 → 저장된 설정 → 프로필 → 45분. 예전엔 앱이 시간을 안 보내면 저장값과 무관하게 항상 30분을 만들었다(F01).
         val ctx = UserTrainingContextResolver.of(settings, profile, UserTrainingContextResolver.Overrides(sessionMinutes = duration, locale = locale))
-        val resolvedDuration = ctx.sessionMinutesOrDefault()
+        // 첫 세션(완료 운동 0회)이고 시간을 직접 고르지 않았으면 하루 상세·대시보드·트레이너 첫 인사와 같은 규칙(앞 4종목·30분 안).
+        // 2026-11-03 운영: 온보딩 직후 채팅 "오늘의 운동 추천"을 누른 초보(SPARTAN)가 트레이너 첫 인사("4종목 약 30분")와 달리
+        // 6종목·60분·난이도 중급을 받고 시작 없이 떠났다(10-30 의 283 도 같은 버튼에서 이탈). 이 경로만 규칙 밖이었다.
+        val firstSession = duration == null && workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED) == 0L
+        val resolvedDuration = if (firstSession) {
+            com.richjun.liftupai.domain.workout.service.FirstSessionRule.minutes(ctx.sessionMinutesOrDefault())
+        } else {
+            ctx.sessionMinutesOrDefault()
+        }
+        // 표시 난이도: 요청 → 사용자 수준(퀵 추천과 같은 표) → AI 값. 예전엔 AI 가 붙인 값이라 초보에게 "중급"이 나갔다.
+        val displayDifficulty = difficulty ?: difficultyKeyForLevel(ctx.level)
 
         // Check if user has started a workout today
         val hasStartedToday = workoutProgressTracker.hasStartedWorkoutToday(user)
@@ -446,7 +458,7 @@ class AIAnalysisService(
             equipment,
             availableEquipment,
             adjustedTargetMuscle,
-            difficulty,
+            displayDifficulty, // 요청이 없으면 사용자 수준 — 예전엔 "Difficulty code: intermediate" 가 초보에게도 나갔다
             programPosition,
             hasStartedToday,
             programContext.programType,
@@ -456,10 +468,21 @@ class AIAnalysisService(
         )
 
         // 3단계: AI가 후보 중에서 선택
+        val t1 = System.nanoTime()
         val aiResponse = geminiAIService.generateRecommendations(prompt)
+        val t2 = System.nanoTime()
 
         // AI 응답을 WorkoutRecommendationDetail로 파싱
-        val recommendation = parseAIWorkoutResponse(user, aiResponse, resolvedDuration, equipment, adjustedTargetMuscle, locale, userInjuries, availableEquipment, suitable, candidateExercises, ctx)
+        val recommendation = parseAIWorkoutResponse(
+            user, aiResponse, resolvedDuration, equipment, adjustedTargetMuscle, locale, userInjuries, availableEquipment, suitable, candidateExercises, ctx,
+            maxExercises = if (firstSession) com.richjun.liftupai.domain.workout.service.FirstSessionRule.MAX_EXERCISES else null,
+            displayDifficulty = displayDifficulty,
+        )
+
+        val t3 = System.nanoTime()
+        log.info("[AI-RECO] user={} first={} min={} n={} prepMs={} modelMs={} parseMs={}",
+            userId, firstSession, resolvedDuration, recommendation.exercises.size,
+            (t1 - t0) / 1_000_000, (t2 - t1) / 1_000_000, (t3 - t2) / 1_000_000)
 
         // 대체 운동 생성
         val alternatives = generateAIAlternatives(resolvedDuration, equipment, adjustedTargetMuscle, locale)
@@ -977,6 +1000,10 @@ class AIAnalysisService(
         suitable: (Exercise) -> Boolean = { true },
         topUpPool: List<Exercise> = emptyList(),
         ctx: UserTrainingContextResolver.Context = UserTrainingContextResolver.Context.EMPTY,
+        /** 첫 세션이면 [com.richjun.liftupai.domain.workout.service.FirstSessionRule.MAX_EXERCISES] — 정렬(큰 복합 먼저) 뒤 앞에서 자른다 */
+        maxExercises: Int? = null,
+        /** 표시 난이도 키(요청 또는 사용자 수준). 없으면 AI 값 */
+        displayDifficulty: String? = null,
     ): AIWorkoutDetail {
         // 응답의 duration·목표 종목 수·시간 맞춤이 모두 같은 값을 쓴다 (요청 → 저장된 세션 시간 → 45분)
         val workoutDuration = duration ?: ctx.sessionMinutesOrDefault()
@@ -990,7 +1017,7 @@ class AIAnalysisService(
             val jsonResponse = objectMapper.readValue<Map<String, Any>>(cleanedResponse)
             val aiExercisesList = jsonResponse["exercises"] as? List<Map<String, Any>> ?: emptyList()
             val estimatedCalories = (jsonResponse["estimated_calories"] as? Number)?.toInt() ?: calculateCalories(workoutDuration)
-            val difficulty = localizeDifficulty(jsonResponse["difficulty"] as? String, locale)
+            val difficulty = localizeDifficulty(displayDifficulty ?: jsonResponse["difficulty"] as? String, locale)
 
             val tips = (jsonResponse["tips"] as? List<String>) ?: emptyList()
             val progressionNote = jsonResponse["progression_note"] as? String
@@ -1135,7 +1162,7 @@ class AIAnalysisService(
                         categoryPriority[exOf(detail)?.category?.name] ?: 99
                     }.thenByDescending { detail -> exOf(detail)?.popularity ?: 0 }
                 ).mapIndexed { idx, ex -> ex.copy(order = idx + 1) }
-            }
+            }.let { sorted -> if (maxExercises != null) sorted.take(maxExercises) else sorted }
 
             // AI 가 3~5종목을 고르면 세트 수로 시간을 채운다(fitToDuration). 예전 하한(30분 5·45분 6·그 이상 7종목)은
             // 정상적인 AI 선택을 버리고 규칙 폴백으로 보냈다 — 골든셋 2026-09-28 맞춤 추천 60건 중 38건.
@@ -1186,7 +1213,7 @@ class AIAnalysisService(
 
         } catch (e: Exception) {
             println("Failed to parse AI response: ${e.message}")
-            generateFallbackRecommendation(user, workoutDuration, equipment, targetMuscle, locale, ctx)
+            generateFallbackRecommendation(user, workoutDuration, equipment, targetMuscle, locale, ctx, displayDifficulty)
         }
     }
 
@@ -1289,6 +1316,14 @@ class AIAnalysisService(
         return WorkoutLocalization.difficultyDisplayName(rawDifficulty, locale)
     }
 
+    /** 사용자 수준 → 표시 난이도 키. 퀵 추천(WorkoutRecommendationServiceV2)과 같은 표 */
+    internal fun difficultyKeyForLevel(level: ExperienceLevel?): String? = when (level) {
+        ExperienceLevel.BEGINNER, ExperienceLevel.NOVICE -> "beginner"
+        ExperienceLevel.INTERMEDIATE -> "intermediate"
+        ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT -> "advanced"
+        null -> null
+    }
+
     private fun generateFallbackRecommendation(
         user: com.richjun.liftupai.domain.auth.entity.User,
         duration: Int?,
@@ -1296,6 +1331,7 @@ class AIAnalysisService(
         targetMuscle: String?,
         locale: String,
         ctx: UserTrainingContextResolver.Context? = null,
+        displayDifficulty: String? = null,
     ): AIWorkoutDetail {
         val workoutDuration = duration ?: ctx?.sessionMinutesOrDefault() ?: UserTrainingContextResolver.DEFAULT_SESSION_MINUTES
         val exercises = getDefaultExercises(user, equipment, targetMuscle, workoutDuration, locale, ctx)
@@ -1304,7 +1340,7 @@ class AIAnalysisService(
             workoutId = "fallback_${System.currentTimeMillis()}",
             name = generateWorkoutName(workoutDuration, targetMuscle, locale),
             duration = workoutDuration,
-            difficulty = localizeDifficulty(null, locale),
+            difficulty = localizeDifficulty(displayDifficulty, locale),
             exercises = exercises,
             estimatedCalories = calculateCalories(workoutDuration),
             targetMuscles = getTargetMuscles(targetMuscle, locale),
