@@ -819,6 +819,10 @@ class AIAnalysisService(
         val periodizationNote = WorkoutPromptPhase.note(periodizationPhase)
         val currentPhaseGuide = WorkoutPromptPhase.guide(periodizationPhase)
 
+        // 응답 스키마에서 coaching_message·workout_focus·progression_note 를 뺐다(2026-11-05) — ai_insights 의
+        // 이유·핵심·다음 단계와 같은 내용이라 채팅 기록·운동 화면에 같은 설명이 두 번씩 나갔고, 모델 시간은 출력 길이에 비례한다
+        // (gemini-3.8-flash 실측: 출력 약 760 → 530토큰, 8초 → 6초. 11-03 신규 사용자는 이 버튼에서 16초를 기다렸다).
+        // 파서는 세 필드가 없으면 null 로 두고, 앱은 ai_insights 를 보여 준다.
         return """
             Build a personalized workout program and respond with JSON only.
 
@@ -881,14 +885,11 @@ class AIAnalysisService(
               ],
               "estimated_calories": 250,
               "difficulty": "beginner|intermediate|advanced",
-              "tips": ["2-3 actionable tips in $responseLanguage and in the $ptStyle persona"],
-              "progression_note": "Specific next-step progression guidance in $responseLanguage",
-              "coaching_message": "Personalized coaching message in $responseLanguage explaining why this plan fits the user",
-              "workout_focus": "One concise focus statement in $responseLanguage",
+              "tips": ["2 short actionable tips (one sentence each) in $responseLanguage and in the $ptStyle persona"],
               "ai_insights": {
-                "workout_rationale": "Required. Why this exercise selection is correct for the user, in $responseLanguage",
-                "key_point": "Required. The single most important focus point today, in $responseLanguage",
-                "next_step": "Required. A concrete next-step progression target with rationale, in $responseLanguage"
+                "workout_rationale": "Required. One or two sentences on why this exercise selection fits the user, in $responseLanguage",
+                "key_point": "Required. One sentence: the single most important focus point today, in $responseLanguage",
+                "next_step": "Required. One or two sentences: a concrete next-step progression target, in $responseLanguage"
               }
             }
 
