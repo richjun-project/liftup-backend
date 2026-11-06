@@ -7,7 +7,7 @@
 # 감싸 두면 시작할 때 끝까지 읽고 exit 로 끝나 뒤를 다시 읽지 않는다.
 {
 set -uo pipefail
-export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+export PATH="$HOME/.local/bin:$HOME/Developments/flutter/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export TZ=Asia/Seoul
 G="$HOME/Develop/liftupai/growth"
 DAY=$(date +%F)
