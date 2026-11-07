@@ -1,0 +1,2162 @@
+{
+ "us:ai personal trainer": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 4,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "CoreFlow: AI Personal Trainer",
+    0
+   ],
+   [
+    "GymStreak: AI Personal Trainer",
+    15909
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ]
+  ]
+ },
+ "us:ai fitness coach": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 1,
+  "top": [
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Athlytic: Fitness & Recovery",
+    11240
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Setune: AI Fitness Coach",
+    0
+   ]
+  ]
+ },
+ "us:ai workout planner": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 0,
+  "top": [
+   [
+    "Thelo: AI Workout Planner",
+    3134
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8468
+   ],
+   [
+    "Coachify AI: Workout Planner",
+    2014
+   ]
+  ]
+ },
+ "us:ai gym coach": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 3,
+  "top": [
+   [
+    "BodBot AI Workout Planner",
+    2896
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ],
+   [
+    "Buo: Gym, Diet & Fitness Coach",
+    118
+   ]
+  ]
+ },
+ "us:ai workout": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 1,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ],
+   [
+    "Workout Trainer AI",
+    7673
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2896
+   ]
+  ]
+ },
+ "us:ai trainer": {
+  "pos": null,
+  "n": 45,
+  "weak_top10": 4,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Gymverse: Gym Workout Planner",
+    165532
+   ],
+   [
+    "Workout Trainer AI",
+    7673
+   ]
+  ]
+ },
+ "us:personal trainer": {
+  "pos": null,
+  "n": 46,
+  "weak_top10": 0,
+  "top": [
+   [
+    "SHRED: Gym & Home Workouts",
+    40384
+   ],
+   [
+    "LADDER Strength Training Plans",
+    218438
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Trainwell: Personal Training",
+    5613
+   ],
+   [
+    "Gymverse: Gym Workout Planner",
+    165532
+   ]
+  ]
+ },
+ "us:workout planner": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 0,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289180
+   ],
+   [
+    "Workout for Women: Home & Gym",
+    532265
+   ],
+   [
+    "Strong Workout Tracker Gym Log",
+    108542
+   ],
+   [
+    "Workout Planner - Gym Life",
+    2733
+   ],
+   [
+    "LADDER Strength Training Plans",
+    217929
+   ]
+  ]
+ },
+ "us:gym workout tracker": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 2,
+  "top": [
+   [
+    "Strong Workout Tracker Gym Log",
+    108546
+   ],
+   [
+    "Hevy - Workout Tracker Gym Log",
+    102103
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Gym Workout Planner & Gym Log",
+    1408
+   ],
+   [
+    "Lyfta: Gym & Workout Tracker",
+    7283
+   ]
+  ]
+ },
+ "us:workout log": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 3,
+  "top": [
+   [
+    "Strong Workout Tracker Gym Log",
+    108542
+   ],
+   [
+    "Hevy - Workout Tracker Gym Log",
+    101938
+   ],
+   [
+    "Gym Workout Planner Log: Gript",
+    53
+   ],
+   [
+    "Fitlist Workout Log & Planner",
+    10513
+   ],
+   [
+    "Simple Workout Log - Ironotes",
+    373
+   ]
+  ]
+ },
+ "us:ai coach": {
+  "pos": null,
+  "n": 49,
+  "weak_top10": 3,
+  "top": [
+   [
+    "Grok",
+    1582846
+   ],
+   [
+    "AI Coach - Your 24/7 AI Coach",
+    0
+   ],
+   [
+    "Pi, your personal AI",
+    2544
+   ],
+   [
+    "Simple: AI Weight Loss Coach",
+    411248
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ]
+  ]
+ },
+ "us:gym coach": {
+  "pos": null,
+  "n": 46,
+  "weak_top10": 3,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Gym Workout: Trainer & Tracker",
+    4513
+   ],
+   [
+    "Gym Coach",
+    10
+   ],
+   [
+    "Fitness App: Gym Workout Plan",
+    36979
+   ],
+   [
+    "Gymverse: Gym Workout Planner",
+    165532
+   ]
+  ]
+ },
+ "us:workout generator": {
+  "pos": null,
+  "n": 46,
+  "weak_top10": 3,
+  "top": [
+   [
+    "SmartWOD Workout Generator",
+    4839
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "The WOD Generator: Workout",
+    1727
+   ],
+   [
+    "Gymverse: Gym Workout Planner",
+    165532
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ]
+  ]
+ },
+ "us:ai workout generator": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 1,
+  "top": [
+   [
+    "Gymverse: Gym Workout Planner",
+    165532
+   ],
+   [
+    "Fitness Planner Gym・Workout AI",
+    1956
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "SmartGym: Gym & Home Workouts",
+    34805
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ]
+  ]
+ },
+ "us:lifting log": {
+  "pos": null,
+  "n": 49,
+  "weak_top10": 4,
+  "top": [
+   [
+    "Hevy - Workout Tracker Gym Log",
+    102103
+   ],
+   [
+    "Gym Workout Planner Log: Gript",
+    54
+   ],
+   [
+    "Milo: Lifting Log",
+    2
+   ],
+   [
+    "Strong Workout Tracker Gym Log",
+    108546
+   ],
+   [
+    "LiftLog: Strength Tracker",
+    0
+   ]
+  ]
+ },
+ "us:home workout planner": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 0,
+  "top": [
+   [
+    "SmartGym: Gym & Home Workouts",
+    34805
+   ],
+   [
+    "Home Workout - No Equipments",
+    128964
+   ],
+   [
+    "Gymverse: Gym Workout Planner",
+    165532
+   ],
+   [
+    "Muscle Monster Workout Planner",
+    11657
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8468
+   ]
+  ]
+ },
+ "us:fitness coach": {
+  "pos": null,
+  "n": 46,
+  "weak_top10": 1,
+  "top": [
+   [
+    "Fitness Coach - Workout Plan",
+    73087
+   ],
+   [
+    "随身教练",
+    0
+   ],
+   [
+    "MyFitCoach - Workout Planner",
+    6792
+   ],
+   [
+    "Home Workout - No Equipments",
+    128964
+   ],
+   [
+    "Planet Fitness",
+    815580
+   ]
+  ]
+ },
+ "us:workout tracker": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 0,
+  "top": [
+   [
+    "Strong Workout Tracker Gym Log",
+    108546
+   ],
+   [
+    "Hevy - Workout Tracker Gym Log",
+    102103
+   ],
+   [
+    "Habit Tracker",
+    148623
+   ],
+   [
+    "RepCount - Gym Workout Tracker",
+    13520
+   ],
+   [
+    "Liftoff - Ranked Gym Workouts",
+    101590
+   ]
+  ]
+ },
+ "us:ai gym trainer": {
+  "pos": null,
+  "n": 50,
+  "weak_top10": 1,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ],
+   [
+    "GymStreak: AI Personal Trainer",
+    15909
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2415
+   ]
+  ]
+ },
+ "us:ai personal coach": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 1,
+  "top": [
+   [
+    "Saga: AI Personal Trainer",
+    738
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6253
+   ],
+   [
+    "Nox: AI Personal Coach",
+    7
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2896
+   ]
+  ]
+ },
+ "us:ai strength coach": {
+  "pos": null,
+  "n": 50,
+  "weak_top10": 6,
+  "top": [
+   [
+    "Motra AI Workout Fitness Coach",
+    3052
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Instacoach: AI Strength Coach",
+    60
+   ],
+   [
+    "AI Strength Coach - JINVO",
+    0
+   ],
+   [
+    "Dorsi: AI Strength Coach",
+    0
+   ]
+  ]
+ },
+ "us:ai workout coach": {
+  "pos": null,
+  "n": 49,
+  "weak_top10": 2,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ],
+   [
+    "Form: AI Workout Coach",
+    5
+   ],
+   [
+    "Workout Trainer AI",
+    7673
+   ]
+  ]
+ },
+ "us:ai fitness trainer": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 2,
+  "top": [
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ],
+   [
+    "SHRED: Gym & Home Workouts",
+    40384
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2415
+   ]
+  ]
+ },
+ "us:ai pt": {
+  "pos": null,
+  "n": 46,
+  "weak_top10": 3,
+  "top": [
+   [
+    "DeepSeek - AI Assistant",
+    12543
+   ],
+   [
+    "Mealo: Pocket AI Fitness Coach",
+    2228
+   ],
+   [
+    "Pete - AI PT",
+    0
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8468
+   ],
+   [
+    "Chatbot AI Assistant - Genie",
+    203223
+   ]
+  ]
+ },
+ "us:ai workout tracker": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 4,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "AI Workout Tracker - RepRise",
+    0
+   ],
+   [
+    "Apex: AI Workout Tracker",
+    0
+   ],
+   [
+    "SmartGym: Gym & Home Workouts",
+    34805
+   ],
+   [
+    "Coachify AI: Workout Planner",
+    2014
+   ]
+  ]
+ },
+ "us:ai lifting": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 2,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "JuggernautAI",
+    5654
+   ],
+   [
+    "Lift Log: #1 Weightlifting Log",
+    979
+   ],
+   [
+    "GymStreak: AI Personal Trainer",
+    15909
+   ]
+  ]
+ },
+ "us:ai gym": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 2,
+  "top": [
+   [
+    "AI Gym",
+    48
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289253
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55992
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30766
+   ],
+   [
+    "Coachify AI: Workout Planner",
+    2014
+   ]
+  ]
+ },
+ "us:liftup": {
+  "pos": 21,
+  "n": 40,
+  "weak_top10": 7,
+  "top": [
+   [
+    "Liftoff - Ranked Gym Workouts",
+    101590
+   ],
+   [
+    "LiftUp: Workout Tracker",
+    1
+   ],
+   [
+    "LiftUp Fitness and Gym Tracker",
+    0
+   ],
+   [
+    "Lift Up",
+    1
+   ],
+   [
+    "Lift Up Fitness NJ",
+    2
+   ]
+  ]
+ },
+ "kr:AI PT": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 1,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "필라이즈 - 다이어트 AI 코치, 식단, 혈당, 운동",
+    14199
+   ],
+   [
+    "Instagram",
+    1893776
+   ],
+   [
+    "애슬로직 - 운동 식단 통합 관리, 운동루틴 식단기록",
+    100
+   ],
+   [
+    "Mealo - 내 손안의 AI PT쌤",
+    224
+   ]
+  ]
+ },
+ "kr:AI 트레이너": {
+  "pos": 26,
+  "n": 50,
+  "weak_top10": 7,
+  "top": [
+   [
+    "AI 스포츠 트레이너 - 폼 분석・동작 교정・훈련 플랜",
+    1
+   ],
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "GymStreak: AI 헬스 PT 운동 루틴",
+    127
+   ],
+   [
+    "토스트 : 토익스피킹 AI 채점 트레이너, 모의고사",
+    442
+   ],
+   [
+    "KiloAI: AI 피트니스 트레이너",
+    14
+   ]
+  ]
+ },
+ "kr:헬스 루틴": {
+  "pos": null,
+  "n": 42,
+  "weak_top10": 3,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "플릭 - 운동일지, 운동기록, 운동일기, 운동루틴",
+    13814
+   ],
+   [
+    "짐워크 - 헬스 홈트 운동일지 운동기록 루틴 다이어트",
+    3516
+   ],
+   [
+    "라이즈 - 운동기록 운동일지 헬스장 루틴 피트니스 기록",
+    531
+   ],
+   [
+    "HIGHTEMP 하이템프",
+    2
+   ]
+  ]
+ },
+ "kr:운동 루틴": {
+  "pos": 24,
+  "n": 45,
+  "weak_top10": 1,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "플릭 - 운동일지, 운동기록, 운동일기, 운동루틴",
+    13814
+   ],
+   [
+    "짐워크 - 헬스 홈트 운동일지 운동기록 루틴 다이어트",
+    3516
+   ],
+   [
+    "셀핏 - 운동기록, 운동일지",
+    1024
+   ],
+   [
+    "번핏 - 헬스 운동일지 운동기록 운동루틴 다이어트",
+    7105
+   ]
+  ]
+ },
+ "kr:운동일지": {
+  "pos": null,
+  "n": 43,
+  "weak_top10": 1,
+  "top": [
+   [
+    "플릭 - 운동일지, 운동기록, 운동일기, 운동루틴",
+    13814
+   ],
+   [
+    "운동일지",
+    1413
+   ],
+   [
+    "셀핏 - 운동기록, 운동일지",
+    1024
+   ],
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "오늘의목표 - 목표 습관 루틴 챌린지 관리",
+    5140
+   ]
+  ]
+ },
+ "kr:헬스": {
+  "pos": null,
+  "n": 40,
+  "weak_top10": 1,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "짐워크 - 헬스 홈트 운동일지 운동기록 루틴 다이어트",
+    3516
+   ],
+   [
+    "플릭 - 운동일지, 운동기록, 운동일기, 운동루틴",
+    13814
+   ],
+   [
+    "번핏 - 헬스 운동일지 운동기록 운동루틴 다이어트",
+    7105
+   ],
+   [
+    "Apple 건강",
+    383
+   ]
+  ]
+ },
+ "kr:PT": {
+  "pos": null,
+  "n": 42,
+  "weak_top10": 4,
+  "top": [
+   [
+    "운동닥터 - 헬스장 PT, 필라테스 찾기 1등 앱",
+    1379
+   ],
+   [
+    "다짐(多Gym) - 운동할 땐, 다짐부터",
+    5267
+   ],
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "짐워크 - 헬스 홈트 운동일지 운동기록 루틴 다이어트",
+    3516
+   ],
+   [
+    "플릭 - 운동일지, 운동기록, 운동일기, 운동루틴",
+    13814
+   ]
+  ]
+ },
+ "kr:홈트": {
+  "pos": null,
+  "n": 42,
+  "weak_top10": 1,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "홈 운동 - 기구가 필요 없습니다",
+    4907
+   ],
+   [
+    "Nike Training Club",
+    41630
+   ],
+   [
+    "30일 안에 체중 감량",
+    3143
+   ],
+   [
+    "콰트 - 필라테스, 발레, 홈트, 다이어트",
+    1082
+   ]
+  ]
+ },
+ "kr:운동 계획": {
+  "pos": null,
+  "n": 50,
+  "weak_top10": 0,
+  "top": [
+   [
+    "셀핏 - 운동기록, 운동일지",
+    1024
+   ],
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "마이루틴: 루틴 습관 투두 플래너・ADHD 하루 계획표",
+    25105
+   ],
+   [
+    "플릭 - 운동일지, 운동기록, 운동일기, 운동루틴",
+    13814
+   ],
+   [
+    "짐워크 - 헬스 홈트 운동일지 운동기록 루틴 다이어트",
+    3516
+   ]
+  ]
+ },
+ "kr:AI 운동": {
+  "pos": null,
+  "n": 50,
+  "weak_top10": 4,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "인아웃 - 다이어트 코치 & 식단, 운동, 체중 기록",
+    57499
+   ],
+   [
+    "엑서사이트 - AI 운동 추천 헬스 다이어트 운동기록",
+    14
+   ],
+   [
+    "필라이즈 - 다이어트 AI 코치, 식단, 혈당, 운동",
+    14199
+   ],
+   [
+    "록시 - 헬스 다이어트 식단기록 운동기록 운동일지",
+    285
+   ]
+  ]
+ },
+ "kr:AI 헬스": {
+  "pos": null,
+  "n": 49,
+  "weak_top10": 2,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "필라이즈 - 다이어트 AI 코치, 식단, 혈당, 운동",
+    14199
+   ],
+   [
+    "헬스매치: AI 다이어트 코치 & 칼로리 계산기",
+    72
+   ],
+   [
+    "Yazio(야지오): AI 칼로리 계산기",
+    33645
+   ],
+   [
+    "Perplexity - 무엇이든 물어보세요",
+    93265
+   ]
+  ]
+ },
+ "kr:헬스 트레이너": {
+  "pos": 31,
+  "n": 43,
+  "weak_top10": 5,
+  "top": [
+   [
+    "운동닥터 - 헬스장 PT, 필라테스 찾기 1등 앱",
+    1379
+   ],
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "라포 Rappo - 트레이너·회원 PT 관리",
+    105
+   ],
+   [
+    "센티프 - 회원용 (신버전)",
+    4
+   ],
+   [
+    "KiloAI: AI 피트니스 트레이너",
+    14
+   ]
+  ]
+ },
+ "kr:운동 기록": {
+  "pos": null,
+  "n": 42,
+  "weak_top10": 0,
+  "top": [
+   [
+    "플릭 - 운동일지, 운동기록, 운동일기, 운동루틴",
+    13814
+   ],
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "셀핏 - 운동기록, 운동일지",
+    1024
+   ],
+   [
+    "번핏 - 헬스 운동일지 운동기록 운동루틴 다이어트",
+    7105
+   ],
+   [
+    "인아웃 - 다이어트 코치 & 식단, 운동, 체중 기록",
+    57499
+   ]
+  ]
+ },
+ "kr:퍼스널 트레이닝": {
+  "pos": 32,
+  "n": 41,
+  "weak_top10": 8,
+  "top": [
+   [
+    "스택 - 퍼스널 트레이닝 기록 (회원용)",
+    1
+   ],
+   [
+    "스택 - 퍼스널 트레이닝 기록",
+    0
+   ],
+   [
+    "라포 Rappo - 트레이너·회원 PT 관리",
+    105
+   ],
+   [
+    "모두의트레이닝",
+    264
+   ],
+   [
+    "Muscle Monster 운동 플래너",
+    97
+   ]
+  ]
+ },
+ "kr:헬스 일지": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 0,
+  "top": [
+   [
+    "플릭 - 운동일지, 운동기록, 운동일기, 운동루틴",
+    13814
+   ],
+   [
+    "번핏 - 헬스 운동일지 운동기록 운동루틴 다이어트",
+    7105
+   ],
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "Hevy - 헬스일지 운동기록 피트니스앱",
+    642
+   ],
+   [
+    "오늘의 운동 -  운동일지 운동기록 헬스루틴 헬스기록",
+    2796
+   ]
+  ]
+ },
+ "kr:오운완": {
+  "pos": null,
+  "n": 49,
+  "weak_top10": 4,
+  "top": [
+   [
+    "오운완 - 모임,개인 운동 인증/기록 서비스",
+    25
+   ],
+   [
+    "꾸주니 - 30일 챌린지",
+    1603
+   ],
+   [
+    "타임스탬프 - 인증샷 카메라",
+    142407
+   ],
+   [
+    "오운완 - 운동 시계, 타이머 (카운트 다운), 기록",
+    4
+   ],
+   [
+    "마이루틴: 루틴 습관 투두 플래너・ADHD 하루 계획표",
+    25105
+   ]
+  ]
+ },
+ "kr:운동 앱": {
+  "pos": null,
+  "n": 45,
+  "weak_top10": 0,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "Apple Fitness",
+    740
+   ],
+   [
+    "플릭 - 운동일지, 운동기록, 운동일기, 운동루틴",
+    13814
+   ],
+   [
+    "짐워크 - 헬스 홈트 운동일지 운동기록 루틴 다이어트",
+    3516
+   ],
+   [
+    "홈 운동 - 기구가 필요 없습니다",
+    4907
+   ]
+  ]
+ },
+ "kr:AI 코치": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 4,
+  "top": [
+   [
+    "필라이즈 - 다이어트 AI 코치, 식단, 혈당, 운동",
+    14199
+   ],
+   [
+    "인아웃 - 다이어트 코치 & 식단, 운동, 체중 기록",
+    57499
+   ],
+   [
+    "바디코치 : AI 코치와 다이어트, 운동, 식단기록",
+    3
+   ],
+   [
+    "cochi(코치) - 당신의 개인 AI 코치",
+    1
+   ],
+   [
+    "Yazio(야지오): AI 칼로리 계산기",
+    33645
+   ]
+  ]
+ },
+ "kr:AI 피티": {
+  "pos": null,
+  "n": 49,
+  "weak_top10": 1,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "필라이즈 - 다이어트 AI 코치, 식단, 혈당, 운동",
+    14199
+   ],
+   [
+    "Instagram",
+    1893776
+   ],
+   [
+    "애슬로직 - 운동 식단 통합 관리, 운동루틴 식단기록",
+    100
+   ],
+   [
+    "Mealo - 내 손안의 AI PT쌤",
+    224
+   ]
+  ]
+ },
+ "kr:AI 퍼스널 트레이너": {
+  "pos": 3,
+  "n": 35,
+  "weak_top10": 10,
+  "top": [
+   [
+    "Muscle Monster 운동 플래너",
+    97
+   ],
+   [
+    "라포 Rappo - 트레이너·회원 PT 관리",
+    105
+   ],
+   [
+    "리프트업 AI 트레이너 - 헬스 PT 운동루틴",
+    1
+   ],
+   [
+    "OKO, 코치와 회원을 잇는 AI 코칭 앱",
+    9
+   ],
+   [
+    "AI 스포츠 트레이너 - 폼 분석・동작 교정・훈련 플랜",
+    1
+   ]
+  ]
+ },
+ "kr:AI 헬스 트레이너": {
+  "pos": 22,
+  "n": 50,
+  "weak_top10": 6,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "핏츠 - AI 헬스 트레이너, 운동기록 식단 PT",
+    9
+   ],
+   [
+    "Quizlet: 낱말카드로 학습하기",
+    58659
+   ],
+   [
+    "KiloAI: AI 피트니스 트레이너",
+    14
+   ],
+   [
+    "GymStreak: AI 헬스 PT 운동 루틴",
+    127
+   ]
+  ]
+ },
+ "kr:헬스 PT": {
+  "pos": 39,
+  "n": 48,
+  "weak_top10": 1,
+  "top": [
+   [
+    "다짐(多Gym) - 운동할 땐, 다짐부터",
+    5267
+   ],
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "운동닥터 - 헬스장 PT, 필라테스 찾기 1등 앱",
+    1379
+   ],
+   [
+    "짐워크 - 헬스 홈트 운동일지 운동기록 루틴 다이어트",
+    3516
+   ],
+   [
+    "Instagram",
+    1893776
+   ]
+  ]
+ },
+ "kr:AI 운동 루틴": {
+  "pos": 7,
+  "n": 50,
+  "weak_top10": 8,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "피티졸업 - 운동기록, 개인맞춤화 AI 운동루틴추천",
+    7
+   ],
+   [
+    "애슬로직 - 운동 식단 통합 관리, 운동루틴 식단기록",
+    100
+   ],
+   [
+    "GymStreak: AI 헬스 PT 운동 루틴",
+    127
+   ],
+   [
+    "밀리그램 - 다이어트 식단기록, AI 코치, 그룹",
+    30480
+   ]
+  ]
+ },
+ "kr:헬스 코치": {
+  "pos": null,
+  "n": 49,
+  "weak_top10": 3,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "짐워크 - 헬스 홈트 운동일지 운동기록 루틴 다이어트",
+    3516
+   ],
+   [
+    "필라이즈 - 다이어트 AI 코치, 식단, 혈당, 운동",
+    14199
+   ],
+   [
+    "Stance: AI 운동 코치",
+    0
+   ],
+   [
+    "PeakWatch - AI 피트니스 코치",
+    240
+   ]
+  ]
+ },
+ "kr:AI 운동 추천": {
+  "pos": 12,
+  "n": 40,
+  "weak_top10": 7,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "필라이즈 - 다이어트 AI 코치, 식단, 혈당, 운동",
+    14199
+   ],
+   [
+    "피티졸업 - 운동기록, 개인맞춤화 AI 운동루틴추천",
+    7
+   ],
+   [
+    "엑서사이트 - AI 운동 추천 헬스 다이어트 운동기록",
+    14
+   ],
+   [
+    "핏부스트: AI 피트니스 헬스 루틴 추천 & 운동일지",
+    1
+   ]
+  ]
+ },
+ "kr:AI 홈트": {
+  "pos": null,
+  "n": 47,
+  "weak_top10": 3,
+  "top": [
+   [
+    "플랜핏 - 운동 루틴 추천과 헬스 홈트 다이어트 기록",
+    29611
+   ],
+   [
+    "Notability: 메모 작성, PDF, Doc",
+    64990
+   ],
+   [
+    "BoxMaxxing: AI 복싱 코치",
+    4
+   ],
+   [
+    "밀리그램 - 다이어트 식단기록, AI 코치, 그룹",
+    30480
+   ],
+   [
+    "Evernote - Notes Organizer",
+    12396
+   ]
+  ]
+ },
+ "kr:리프트업": {
+  "pos": 1,
+  "n": 49,
+  "weak_top10": 9,
+  "top": [
+   [
+    "리프트업 AI 트레이너 - 헬스 PT 운동루틴",
+    1
+   ],
+   [
+    "Hevy - 헬스일지 운동기록 피트니스앱",
+    642
+   ],
+   [
+    "Buttify: 힙업 애플힙 엉덩이운동",
+    7
+   ],
+   [
+    "Lyfta: 헬스 운동기록",
+    44
+   ],
+   [
+    "Lift5x5 - 헬스 운동 기록",
+    1
+   ]
+  ]
+ },
+ "jp:AI パーソナルトレーナー": {
+  "pos": 33,
+  "n": 50,
+  "weak_top10": 6,
+  "top": [
+   [
+    "AIパソトレ",
+    5
+   ],
+   [
+    "GymStreak: AI筋トレ・パーソナルトレーナー",
+    216
+   ],
+   [
+    "BALK",
+    0
+   ],
+   [
+    "Planfit-ジム筋トレ記録&フィットネス",
+    362
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    12
+   ]
+  ]
+ },
+ "jp:AIトレーナー": {
+  "pos": null,
+  "n": 50,
+  "weak_top10": 9,
+  "top": [
+   [
+    "AIスポーツトレーナー - フォーム動画分析&練習メニュー",
+    39
+   ],
+   [
+    "MYAKU（ヘルストレーナー）AI健康管理・ダイエットアプリ",
+    102
+   ],
+   [
+    "スポーツトレーナー AI - AIでフォーム分析・解析",
+    2
+   ],
+   [
+    "エアトレ - AIパーソナルトレーナーと運動習慣化アプリ",
+    4
+   ],
+   [
+    "AIトレーナー - 筋トレ記録＆メニュー提案",
+    2
+   ]
+  ]
+ },
+ "jp:筋トレ": {
+  "pos": null,
+  "n": 43,
+  "weak_top10": 0,
+  "top": [
+   [
+    "最強の筋トレ管理アプリ-筋トレMEMO",
+    52407
+   ],
+   [
+    "自宅ワークアウト: 筋トレ, フィットネスアプリ",
+    16041
+   ],
+   [
+    "筋トレ・タイマー",
+    56358
+   ],
+   [
+    "筋トレ記録・管理で継続＆習慣化 - バーンフィット",
+    2821
+   ],
+   [
+    "Gymwork(ジムワーク) - 筋トレ記録＆分析",
+    8370
+   ]
+  ]
+ },
+ "jp:筋トレ 記録": {
+  "pos": null,
+  "n": 45,
+  "weak_top10": 1,
+  "top": [
+   [
+    "最強の筋トレ管理アプリ-筋トレMEMO",
+    52407
+   ],
+   [
+    "継続する技術｜ダイエットも筋トレも記録・習慣化で目標達成",
+    53529
+   ],
+   [
+    "筋トレ記録・管理で継続＆習慣化 - バーンフィット",
+    2821
+   ],
+   [
+    "「筋トレ日記」- サクサク入力できる",
+    1291
+   ],
+   [
+    "筋トレ記録 & メニュー WorkoutWise",
+    446
+   ]
+  ]
+ },
+ "jp:パーソナルジム": {
+  "pos": null,
+  "n": 49,
+  "weak_top10": 4,
+  "top": [
+   [
+    "Beatfit:楽しく運動が続くパーソナルトレーニングアプリ",
+    9279
+   ],
+   [
+    "筋トレ･ダイエットの最適メニュー ジムバディGymBuddy",
+    1932
+   ],
+   [
+    "GymStreak: AI筋トレ・パーソナルトレーナー",
+    216
+   ],
+   [
+    "パーソナルジムTrigger",
+    0
+   ],
+   [
+    "Gym's パーソナルジムやフィットネスジムの顧客管理",
+    2
+   ]
+  ]
+ },
+ "jp:ジム": {
+  "pos": null,
+  "n": 46,
+  "weak_top10": 0,
+  "top": [
+   [
+    "Gymwork(ジムワーク) - 筋トレ記録＆分析",
+    8370
+   ],
+   [
+    "最強の筋トレ管理アプリ-筋トレMEMO",
+    52407
+   ],
+   [
+    "LifeFit : 全国400店舗どこでも使える",
+    23026
+   ],
+   [
+    "筋トレ記録・管理で継続＆習慣化 - バーンフィット",
+    2821
+   ],
+   [
+    "筋トレ記録 & メニュー WorkoutWise",
+    446
+   ]
+  ]
+ },
+ "jp:ワークアウト": {
+  "pos": null,
+  "n": 37,
+  "weak_top10": 2,
+  "top": [
+   [
+    "Apple Fitness",
+    1368
+   ],
+   [
+    "FitnessView アクティビティ トラッカー",
+    388
+   ],
+   [
+    "Nike Training Club",
+    81286
+   ],
+   [
+    "Timer Plus - ワークアウト用タイマー",
+    62433
+   ],
+   [
+    "自宅ワークアウト: 筋トレ, フィットネスアプリ",
+    16041
+   ]
+  ]
+ },
+ "jp:筋トレメニュー": {
+  "pos": null,
+  "n": 43,
+  "weak_top10": 1,
+  "top": [
+   [
+    "最強の筋トレ管理アプリ-筋トレMEMO",
+    52407
+   ],
+   [
+    "Gymwork(ジムワーク) - 筋トレ記録＆分析",
+    8370
+   ],
+   [
+    "Nike Training Club",
+    81286
+   ],
+   [
+    "筋トレ記録 & メニュー WorkoutWise",
+    446
+   ],
+   [
+    "自宅ワークアウト: 筋トレ, フィットネスアプリ",
+    16041
+   ]
+  ]
+ },
+ "jp:AI コーチ": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 6,
+  "top": [
+   [
+    "AIスマートコーチ",
+    35
+   ],
+   [
+    "AIスポーツトレーナー - フォーム動画分析&練習メニュー",
+    39
+   ],
+   [
+    "自分と話すノート｜悩み相談専用AI・AIメンタルコーチ",
+    11
+   ],
+   [
+    "traqqer - 陸上AIコーチ & 練習記録",
+    281
+   ],
+   [
+    "大学受験AIコーチ - 勉強計画と学習記録",
+    1
+   ]
+  ]
+ },
+ "jp:トレーニング記録": {
+  "pos": null,
+  "n": 46,
+  "weak_top10": 2,
+  "top": [
+   [
+    "最強の筋トレ管理アプリ-筋トレMEMO",
+    52407
+   ],
+   [
+    "トレメモ　筋トレ記録・トレーニング管理アプリ",
+    42
+   ],
+   [
+    "継続する技術｜ダイエットも筋トレも記録・習慣化で目標達成",
+    53529
+   ],
+   [
+    "習慣チェックカレンダー - 週間カレンダーで習慣を記録しよう",
+    3257
+   ],
+   [
+    "筋トレ記録・管理で継続＆習慣化 - バーンフィット",
+    2821
+   ]
+  ]
+ },
+ "jp:自宅トレ": {
+  "pos": null,
+  "n": 50,
+  "weak_top10": 0,
+  "top": [
+   [
+    "自宅ワークアウト: 筋トレ, フィットネスアプリ",
+    16041
+   ],
+   [
+    "30日ダイエット：女性向け自宅トレ",
+    3522
+   ],
+   [
+    "Nike Training Club",
+    81286
+   ],
+   [
+    "LEAN BODY - ダイエット・ヨガ・ピラティス",
+    3447
+   ],
+   [
+    "FitCoach: パーソナルフィットネス、痩せる アプリ",
+    6831
+   ]
+  ]
+ },
+ "jp:パーソナルトレーナー": {
+  "pos": null,
+  "n": 49,
+  "weak_top10": 3,
+  "top": [
+   [
+    "自宅ワークアウト: 筋トレ, フィットネスアプリ",
+    16041
+   ],
+   [
+    "NSCA-CPT試験対策",
+    0
+   ],
+   [
+    "Nike Training Club",
+    81286
+   ],
+   [
+    "30日でお腹の脂肪を落とす - 腹筋アプリ & 筋トレ",
+    3148
+   ],
+   [
+    "自宅で30日間フィットネスチャレンジ",
+    7188
+   ]
+  ]
+ },
+ "jp:筋トレ アプリ": {
+  "pos": null,
+  "n": 44,
+  "weak_top10": 0,
+  "top": [
+   [
+    "最強の筋トレ管理アプリ-筋トレMEMO",
+    52407
+   ],
+   [
+    "自宅ワークアウト: 筋トレ, フィットネスアプリ",
+    16041
+   ],
+   [
+    "筋トレ・タイマー",
+    56358
+   ],
+   [
+    "継続する技術｜ダイエットも筋トレも記録・習慣化で目標達成",
+    53529
+   ],
+   [
+    "筋トレ記録・管理で継続＆習慣化 - バーンフィット",
+    2821
+   ]
+  ]
+ },
+ "jp:AI 筋トレ": {
+  "pos": null,
+  "n": 50,
+  "weak_top10": 6,
+  "top": [
+   [
+    "自宅ワークアウト: 筋トレ, フィットネスアプリ",
+    16041
+   ],
+   [
+    "筋トレAIトレーナー",
+    0
+   ],
+   [
+    "MuscleMemo - AIトレーナーで筋トレ習慣化",
+    4
+   ],
+   [
+    "筋トレ記録＆メモ KINNIK - AIアドバイス",
+    104
+   ],
+   [
+    "Muscle Monster: ワークアウトプランナー",
+    560
+   ]
+  ]
+ },
+ "jp:フィットネス": {
+  "pos": null,
+  "n": 41,
+  "weak_top10": 0,
+  "top": [
+   [
+    "Apple Fitness",
+    1368
+   ],
+   [
+    "Apple ヘルスケア",
+    2289
+   ],
+   [
+    "Fitness: 筋肉, フィットネス & 筋トレアプリ",
+    3518
+   ],
+   [
+    "PUMA",
+    16113
+   ],
+   [
+    "Nike SNKRS: スニーカー、アパレル、ショッピング",
+    202596
+   ]
+  ]
+ },
+ "jp:AI パーソナルジム": {
+  "pos": 14,
+  "n": 50,
+  "weak_top10": 5,
+  "top": [
+   [
+    "GymStreak: AI筋トレ・パーソナルトレーナー",
+    216
+   ],
+   [
+    "Dr. Muscle Workouts Home & Gym",
+    1
+   ],
+   [
+    "Gloox: AI筋トレコーチ&ジム記録",
+    0
+   ],
+   [
+    "Planfit-ジム筋トレ記録&フィットネス",
+    362
+   ],
+   [
+    "スマスイ-水泳と筋トレをAI管理",
+    26
+   ]
+  ]
+ },
+ "jp:AI ジム": {
+  "pos": null,
+  "n": 50,
+  "weak_top10": 8,
+  "top": [
+   [
+    "AI Gym",
+    11
+   ],
+   [
+    "Planfit-ジム筋トレ記録&フィットネス",
+    362
+   ],
+   [
+    "スマスイ-水泳と筋トレをAI管理",
+    26
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    30
+   ],
+   [
+    "GymStreak: AI筋トレ・パーソナルトレーナー",
+    216
+   ]
+  ]
+ },
+ "jp:AI フィットネス": {
+  "pos": null,
+  "n": 46,
+  "weak_top10": 5,
+  "top": [
+   [
+    "Fito: フィットネスと運動連勝記録、AIカロリー写真計算",
+    173
+   ],
+   [
+    "PeakWatch - AIフィットネスコーチ",
+    391
+   ],
+   [
+    "KiloAI: AIフィットネストレーナー",
+    9
+   ],
+   [
+    "ワークアウトプランナー・ジムトラッカー・フィットネスプラン",
+    130
+   ],
+   [
+    "Awarefy:AIメンタルパートナー・自己理解＆セルフケア",
+    7387
+   ]
+  ]
+ },
+ "jp:筋トレ コーチ": {
+  "pos": null,
+  "n": 48,
+  "weak_top10": 8,
+  "top": [
+   [
+    "FitCoach: パーソナルフィットネス、痩せる アプリ",
+    6831
+   ],
+   [
+    "RecovaCoach - 筋トレ記録・分析",
+    34
+   ],
+   [
+    "自宅ワークアウト: 筋トレ, フィットネスアプリ",
+    16041
+   ],
+   [
+    "Form Coach: AI筋トレカウンター",
+    0
+   ],
+   [
+    "EunoFit - AI食事・献立・筋トレコーチ",
+    3
+   ]
+  ]
+ },
+ "jp:筋トレ トレーナー": {
+  "pos": null,
+  "n": 45,
+  "weak_top10": 4,
+  "top": [
+   [
+    "自宅ワークアウト: 筋トレ, フィットネスアプリ",
+    16041
+   ],
+   [
+    "GymStreak: AI筋トレ・パーソナルトレーナー",
+    216
+   ],
+   [
+    "ダイエット・筋トレアプリ：カリスマトレーナー岡部友の宅トレ",
+    71
+   ],
+   [
+    "筋トレ記録 GenkiFit 筋トレやダイエットの記録やメモ",
+    2801
+   ],
+   [
+    "MuscleMemo - AIトレーナーで筋トレ習慣化",
+    4
+   ]
+  ]
+ },
+ "jp:AI 運動": {
+  "pos": null,
+  "n": 49,
+  "weak_top10": 6,
+  "top": [
+   [
+    "Keep - AI 运动教练",
+    4784
+   ],
+   [
+    "愛運動",
+    0
+   ],
+   [
+    "天天跳绳-欢乐AI运动场",
+    110
+   ],
+   [
+    "Nurio：食事・運動ヘルスノート",
+    2
+   ],
+   [
+    "JustMove AI - 運動3日坊主の味方",
+    0
+   ]
+  ]
+ },
+ "jp:AIパーソナルトレーナー": {
+  "pos": 34,
+  "n": 50,
+  "weak_top10": 6,
+  "top": [
+   [
+    "AIパソトレ",
+    5
+   ],
+   [
+    "GymStreak: AI筋トレ・パーソナルトレーナー",
+    216
+   ],
+   [
+    "BALK",
+    0
+   ],
+   [
+    "Planfit-ジム筋トレ記録&フィットネス",
+    362
+   ],
+   [
+    "Muscle Monster: ワークアウトプランナー",
+    560
+   ]
+  ]
+ },
+ "jp:AI トレーニング": {
+  "pos": null,
+  "n": 50,
+  "weak_top10": 6,
+  "top": [
+   [
+    "Planfit-ジム筋トレ記録&フィットネス",
+    362
+   ],
+   [
+    "Coursiv - AI Certificates",
+    31
+   ],
+   [
+    "AIスポーツトレーナー - フォーム動画分析&練習メニュー",
+    39
+   ],
+   [
+    "Ball AI - Basketball Training",
+    109
+   ],
+   [
+    "男性用自宅トレーニング - ボディビルアプリ",
+    292
+   ]
+  ]
+ },
+ "jp:筋トレ 相談": {
+  "pos": 7,
+  "n": 14,
+  "weak_top10": 10,
+  "top": [
+   [
+    "筋トレを記録して強くなるAI筋トレアプリ-LiftLog",
+    1
+   ],
+   [
+    "ROCX: トレーニング・筋トレ記録",
+    7
+   ],
+   [
+    "ダイエット・筋トレアプリ：カリスマトレーナー岡部友の宅トレ",
+    71
+   ],
+   [
+    "MuscleMate",
+    1
+   ],
+   [
+    "プロテインノート - タンパク質・カロリー管理・食事記録",
+    9
+   ]
+  ]
+ },
+ "jp:リフトアップ": {
+  "pos": 31,
+  "n": 49,
+  "weak_top10": 4,
+  "top": [
+   [
+    "Liftoff - Ranked Gym Workouts",
+    1805
+   ],
+   [
+    "小顔トレーニングヨガ",
+    0
+   ],
+   [
+    "Instagram",
+    4210278
+   ],
+   [
+    "Lyft",
+    27273
+   ],
+   [
+    "Lift1up - 筋トレを、続く仕組みに",
+    2
+   ]
+  ]
+ }
+}

@@ -26,7 +26,13 @@
 - 7일 차: CPI > ₩3,000 이면 입찰을 낮추거나 그룹 2·3 을 끈다. 탭률 < 3% 인 키워드는 끈다.
 - 14일 차: 설치 30건 이상인데 체험 0 → 광고 중단, 퍼널(첫 운동·결제 화면)부터 고친다. 체험 2건 이상 → 체험→결제 전환을 7일 더 보고 예산 2배(하루 ₩20,000)와 일본 캠페인(AIパーソナルトレーナー·筋トレ 相談 계열)을 검토.
 
-## 대표 손이 필요한 것(Claude 가 할 수 없는 것: 계정 생성·결제수단)
-1. searchads.apple.com 에서 **Advanced** 계정 만들기(개발자 계정과 같은 Apple ID 권장) → 결제수단 등록 → 국가 한국.
-2. 계정 설정 → 사용자 관리에서 API 역할(API Account Manager) 사용자 초대 또는 본인에게 API 권한 → 계정 설정 → API 에 **Claude 가 만들어 줄 공개 키**를 붙여 넣으면 clientId · teamId · keyId 가 나온다 → `kw add liftupai-asa` 로 세 값(+Claude 가 만든 개인 키)을 저장.
-3. 그 뒤 캠페인 생성·키워드·입찰·매일 조정·보고는 Claude 가 Search Ads API(v5)로 한다. 2가 번거로우면 1만 하고 위 구성대로 콘솔에서 캠페인을 만들어 두면, 숫자는 대표가 주는 캡처나 리포트로 본다.
+## 대표 손이 필요한 것(Claude 가 할 수 없는 것: 계정 생성·결제수단) — 11-07 갱신: 1.1.38 공개로 귀속 준비 끝, 키·도구도 준비 끝
+1. searchads.apple.com 에서 **Advanced** 계정 만들기(개발자 계정과 같은 Apple ID 권장) → 결제수단 등록 → 국가 한국. (여기까지만 하고 2를 못 하면 위 구성대로 콘솔에서 캠페인을 만들어 두면 된다 — 숫자는 대표 캡처로 본다)
+2. API 연결(5분): 계정 설정 → 사용자 관리에서 API 역할(API Account Manager) 사용자를 초대하거나 본인에게 API 권한 → 그 사용자로 **계정 설정 → API → 아래 공개 키를 그대로 붙여 넣고 저장** → 화면에 나오는 clientId · teamId · keyId 세 값을 터미널에서 `kw set liftupai-asa-ids --env-content ASA_IDS` 로 한 줄에 띄어 써서 저장(또는 Claude 대화 세션에 붙여 넣기). 개인 키는 Claude 가 만들어 키체인 `liftupai-asa-key` 에 넣어 두었다(공개 키 원본 `growth/asa/public_key.pem`).
+```
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6ura8uu1ctmT3KA5ubPeqXWvfw7b
+h3TmFOV4XHMgUjHGEM2j1tnaPDBllSD8LZxPOdhdhASWhSwJA/OI5SBjyQ==
+-----END PUBLIC KEY-----
+```
+3. 그 뒤는 Claude 가 `growth/asa/asa.py` 로 한다: `acls`(계정 확인) → `launch`(campaign_kr.json 구성으로 **일시정지 상태** 생성 — 하루 ₩10,000 · 총 ₩140,000 · 광고 그룹 종료일 14일 뒤로 이중 상한) → 확인 뒤 `enable` → 매일 루프에서 `report`(캠페인·키워드·검색어, `asa/reports/<날짜>.json`)·입찰 조정·7/14일 판정. 자체 점검 `kw run liftupai-asa-key -- python3 growth/asa/asa.py selftest`(네트워크 없이 서명·키 쌍·예산 상한).

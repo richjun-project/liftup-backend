@@ -1,0 +1,36 @@
+{
+  "_doc": "PLAN.md 의 한국 검색 광고 소액 테스트 구성. asa.py launch 가 이 파일대로 만든다. 금액은 KRW 정수.",
+  "adamId": 6752910787,
+  "country": "KR",
+  "currency": "KRW",
+  "campaignName": "LiftUp KR 검색 테스트 2026-11",
+  "dailyBudget": 10000,
+  "totalBudget": 140000,
+  "days": 14,
+  "campaignNegatives": ["필라테스", "요가", "다이어트 식단", "칼로리", "만보기", "러닝", "트레이너 구인", "헬스장 예약", "회원 관리"],
+  "adGroups": [
+    {
+      "name": "1 AI 의도 · 정확",
+      "bid": 800,
+      "searchMatch": false,
+      "matchType": "EXACT",
+      "keywords": ["AI PT", "AI 피티", "AI 트레이너", "AI 퍼스널 트레이너", "AI 헬스 트레이너", "AI 운동", "AI 헬스",
+                   "AI 운동 루틴", "AI 운동 추천", "AI 홈트", "AI 코치", "헬스 코치"]
+    },
+    {
+      "name": "2 일반 헬스 · 정확",
+      "bid": 600,
+      "searchMatch": false,
+      "matchType": "EXACT",
+      "keywords": ["헬스 루틴", "운동 루틴", "PT", "헬스 PT", "퍼스널 트레이닝", "헬스 트레이너"]
+    },
+    {
+      "name": "3 발굴 · 검색 매치+확장",
+      "bid": 400,
+      "searchMatch": true,
+      "matchType": "BROAD",
+      "keywords": ["AI 트레이너", "AI 운동 루틴", "헬스 루틴"],
+      "negativeFromGroups": true
+    }
+  ]
+}
