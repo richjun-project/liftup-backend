@@ -40,6 +40,7 @@ class RevenueCatWebhookServiceTest {
         userRepository = userRepository,
         subscriptionRepository = subscriptionRepository,
         paymentHistoryRepository = paymentHistoryRepository,
+        appEventRepository = mockk(relaxed = true),
         webhookSecret = secret
     )
 

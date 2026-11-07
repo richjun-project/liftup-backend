@@ -36,6 +36,7 @@ class RevenueCatRepresentativeSubscriptionTest {
         userRepository = userRepository,
         subscriptionRepository = subscriptionRepository,
         paymentHistoryRepository = paymentHistoryRepository,
+        appEventRepository = mockk(relaxed = true),
         webhookSecret = "s",
     ).also {
         every { userRepository.findById(36L) } returns Optional.of(user)

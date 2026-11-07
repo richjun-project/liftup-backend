@@ -34,10 +34,10 @@ ev AS (
     FROM meal_logs m WHERE m.user_id <> 22 AND m.user_id NOT IN (SELECT user_id FROM tu)
   UNION ALL SELECT 'coach_memories_saved', FLOOR(TIMESTAMPDIFF(SECOND, cm.created_at, UTC_TIMESTAMP()) / 86400), cm.id
     FROM coach_memories cm WHERE cm.user_id <> 22 AND cm.user_id NOT IN (SELECT user_id FROM tu)
-  -- 앱 이벤트(테스트 기기 제외)
+  -- 앱 이벤트(테스트 기기 제외). store_ad_attribution = 서버가 RevenueCat 웹훅의 Apple Search Ads 귀속으로 남긴 행(체험·결제 이벤트마다, 2026-11-07)
   UNION ALL SELECT CONCAT('ev_', e.name), FLOOR(TIMESTAMPDIFF(SECOND, e.created_at, UTC_TIMESTAMP()) / 86400), e.user_id
     FROM app_events e WHERE COALESCE(e.user_id, 0) <> 22 AND COALESCE(e.test_device, 0) = 0
-     AND e.name IN ('onboarding_start', 'onboarding_complete', 'paywall_view', 'purchase_result', 'workout_start', 'workout_complete', 'notification_permission_result')
+     AND e.name IN ('onboarding_start', 'onboarding_complete', 'paywall_view', 'purchase_result', 'workout_start', 'workout_complete', 'notification_permission_result', 'store_ad_attribution')
   UNION ALL SELECT 'purchase_success', FLOOR(TIMESTAMPDIFF(SECOND, e.created_at, UTC_TIMESTAMP()) / 86400), e.user_id
     FROM app_events e WHERE e.name = 'purchase_result' AND e.params LIKE '%"success"%' AND COALESCE(e.user_id, 0) <> 22
   -- 매출: 실제 결제(금액>0, 샌드박스 제외). 체험 시작은 금액 0 결제 행으로 들어온다

@@ -1,5 +1,8 @@
 package com.richjun.liftupai.domain.subscription.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.richjun.liftupai.domain.analytics.AppEvent
+import com.richjun.liftupai.domain.analytics.AppEventRepository
 import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.subscription.dto.RevenueCatEvent
@@ -23,6 +26,7 @@ class RevenueCatWebhookService(
     private val userRepository: UserRepository,
     private val subscriptionRepository: SubscriptionRepository,
     private val paymentHistoryRepository: PaymentHistoryRepository,
+    private val appEventRepository: AppEventRepository,
     @Value("\${revenuecat.webhook-secret:}")
     private val webhookSecret: String
 ) {
@@ -56,6 +60,53 @@ class RevenueCatWebhookService(
             "TEST" -> log.info("[RevenueCat] ✅ TEST webhook received — appUserId=${event.appUserId}, product=${event.productId}")
             else -> log.info("[RevenueCat] Unhandled event type: ${event.type}")
         }
+        recordAdAttribution(event)
+    }
+
+    /**
+     * 광고 귀속(2026-11-07): 앱 1.1.38 부터 RevenueCat 이 AdServices 토큰으로 Apple Search Ads 귀속을 받아
+     * 예약 속성($mediaSource·$campaign·$adGroup·$keyword)으로 웹훅에 싣는다. 이걸 버리면 광고 테스트에서
+     * "어느 체험·결제가 광고에서 왔나"를 우리 DB 로 볼 수 없다 → 귀속이 있는 이벤트마다 app_events 에
+     * store_ad_attribution 한 줄(event_type 포함). 귀속 없는 이벤트는 남기지 않는다.
+     * 구독 처리를 막으면 안 되므로 값은 컬럼 한도 안으로 자르고 예외는 삼킨다.
+     */
+    private fun recordAdAttribution(event: RevenueCatEvent) {
+        try {
+            val row = adAttribution(event) ?: return
+            appEventRepository.save(row)
+            log.info("[RevenueCat] Ad attribution user=${row.userId} type=${event.type} params=${row.params}")
+        } catch (e: Exception) {
+            log.warn("[RevenueCat] Failed to record ad attribution: ${e.message}")
+        }
+    }
+
+    internal fun adAttribution(event: RevenueCatEvent): AppEvent? {
+        val attrs = event.subscriberAttributes ?: return null
+        fun attr(key: String) = attrs[key]?.value?.trim()?.takeIf { it.isNotEmpty() }?.take(ATTR_MAX)
+        val media = attr("\$mediaSource") ?: return null
+        val userId = event.appUserId.toLongOrNull() ?: return null
+        val params = linkedMapOf(
+            "media_source" to media,
+            "campaign" to attr("\$campaign"),
+            "ad_group" to attr("\$adGroup"),
+            "keyword" to attr("\$keyword"),
+            "event_type" to event.type.take(40),
+            "period_type" to event.periodType?.take(20),
+            "product_id" to event.productId?.take(ATTR_MAX),
+            "store" to event.store?.take(20),
+            "event_id" to event.id?.take(ATTR_MAX),
+        ).filterValues { it != null }
+        return AppEvent(
+            userId = userId,
+            name = AD_ATTRIBUTION_EVENT,
+            params = JSON.writeValueAsString(params),
+            platform = when (event.store) {
+                "APP_STORE", "MAC_APP_STORE" -> "ios"
+                "PLAY_STORE" -> "android"
+                else -> null
+            },
+            occurredAt = msToLocalDateTime(event.eventTimestampMs),
+        )
     }
 
     // === 이벤트 핸들러 ===
@@ -340,5 +391,12 @@ class RevenueCatWebhookService(
     private fun msToLocalDateTime(ms: Long?): LocalDateTime? {
         if (ms == null) return null
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(ms), ZoneOffset.UTC)
+    }
+
+    companion object {
+        const val AD_ATTRIBUTION_EVENT = "store_ad_attribution"
+        /** 값 하나 상한 — 9개 × 80자여도 params 컬럼(2000자) 안에 든다 */
+        private const val ATTR_MAX = 80
+        private val JSON = ObjectMapper()
     }
 }

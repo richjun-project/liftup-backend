@@ -15,6 +15,9 @@ data class RevenueCatWebhookEvent(
 data class RevenueCatEvent(
     val type: String,
 
+    /** 웹훅 이벤트 고유 id — 재전송이면 같은 값 */
+    val id: String? = null,
+
     @JsonProperty("app_user_id")
     val appUserId: String,
 
@@ -63,5 +66,20 @@ data class RevenueCatEvent(
     val cancelReason: String? = null,
 
     @JsonProperty("is_family_share")
-    val isFamilyShare: Boolean? = false
+    val isFamilyShare: Boolean? = false,
+
+    /**
+     * 고객 속성. Apple Search Ads 귀속(앱 1.1.38 의 AdServices 토큰)은 RevenueCat 이 예약 속성
+     * $mediaSource·$campaign·$adGroup·$keyword 로 채운다.
+     */
+    @JsonProperty("subscriber_attributes")
+    val subscriberAttributes: Map<String, RevenueCatAttribute>? = null
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class RevenueCatAttribute(
+    val value: String? = null,
+
+    @JsonProperty("updated_at_ms")
+    val updatedAtMs: Long? = null
 )
