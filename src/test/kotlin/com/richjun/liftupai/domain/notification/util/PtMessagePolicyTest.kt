@@ -29,6 +29,21 @@ class PtMessagePolicyTest {
     }
 
     @Test
+    fun `users before their first workout get only the workout reminder`() {
+        val sent = allPt.filter { PtMessagePolicy.shouldSend(it, 0, firstWorkoutPending = true) }
+        assertThat(sent).containsExactly("workout_reminder")
+        val lapsed = allPt.filter { PtMessagePolicy.shouldSend(it, 2, firstWorkoutPending = true) }
+        assertThat(lapsed).containsExactly("workout_reminder")
+    }
+
+    @Test
+    fun `meal checks are the only first-workout casualties`() {
+        assertThat(allPt.filter(PtMessagePolicy::isMealCheck))
+            .containsExactly("morning_meal_check", "lunch_meal_check", "dinner_meal_check")
+        assertThat(PtMessagePolicy.shouldSend("custom_checkin", 0, firstWorkoutPending = true)).isTrue()
+    }
+
+    @Test
     fun `unknown schedules are not filtered`() {
         assertThat(PtMessagePolicy.shouldSend("custom_checkin", 100)).isTrue()
     }

@@ -169,7 +169,10 @@ class PTScheduledMessageService(
         }
 
         val daysInactive = daysSinceLastActivity(schedule.user, now)
-        if (!PtMessagePolicy.shouldSend(schedule.scheduleName, daysInactive)) {
+        // 식사 체크일 때만 센다(운동 알림은 문구를 고를 때 resolveTemplateMessage 가 따로 센다)
+        val firstWorkoutPending = PtMessagePolicy.isMealCheck(schedule.scheduleName) &&
+            workoutSessionRepository.countByUserAndStatus(schedule.user, SessionStatus.COMPLETED) == 0L
+        if (!PtMessagePolicy.shouldSend(schedule.scheduleName, daysInactive, firstWorkoutPending)) {
             schedule.nextTriggerAt = notificationService.recalculateNextTrigger(schedule)
             notificationScheduleRepository.save(schedule)
             logger.debug("[PTMessage] Skipped schedule $scheduleId (${schedule.scheduleName}) for user ${schedule.user.id}, inactive ${daysInactive}d")

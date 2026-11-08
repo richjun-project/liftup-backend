@@ -16,6 +16,7 @@ import com.richjun.liftupai.global.time.AppTime
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.LocalTime
@@ -43,11 +44,15 @@ class PTFirstWorkoutReminderTest {
         notificationDeviceRepository = mockk(relaxed = true)
     )
 
-    private fun sendWorkoutReminder(completedWorkouts: Long): String {
+    private fun sendWorkoutReminder(completedWorkouts: Long): String =
+        send("workout_reminder", completedWorkouts)!!
+
+    /** 저장된 채팅 메시지(= 실제로 보낸 문구). 정책이 막았으면 null */
+    private fun send(scheduleName: String, completedWorkouts: Long): String? {
         val user = User(id = 5L, email = "new@example.com", nickname = "new").apply { lastLoginAt = AppTime.utcNow() }
         val schedule = NotificationSchedule(
             user = user,
-            scheduleName = "workout_reminder",
+            scheduleName = scheduleName,
             time = LocalTime.of(17, 30),
             message = "old snapshot",
             days = mutableSetOf(DayOfWeek.MON),
@@ -56,13 +61,14 @@ class PTFirstWorkoutReminderTest {
         )
         val saved = slot<ChatMessage>()
         every { scheduleRepository.findByIdForUpdate(1L) } returns schedule
+        every { scheduleRepository.save(any<NotificationSchedule>()) } answers { firstArg() }
         every { userSettingsRepository.findByUser_Id(5L) } returns Optional.of(UserSettings(user = user, language = "ko"))
         every { workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED) } returns completedWorkouts
         every { chatMessageRepository.save(capture(saved)) } answers { firstArg() }
         every { userProfileRepository.findByUser(user) } returns Optional.empty()
 
         service.sendScheduledPTMessage(1L)
-        return saved.captured.aiResponse!!
+        return if (saved.isCaptured) saved.captured.aiResponse else null
     }
 
     @Test
@@ -70,6 +76,27 @@ class PTFirstWorkoutReminderTest {
         val firstWorkout = NotificationLocalization.messages("pt.template.first_workout.default", "ko")
         assertThat(firstWorkout).hasSize(2)
         assertThat(sendWorkoutReminder(completedWorkouts = 0)).isIn(firstWorkout)
+    }
+
+    @Test
+    fun `first workout copy promises the short first session`() {
+        listOf("ko", "ja", "en").forEach { lang ->
+            NotificationLocalization.messages("pt.template.first_workout.default", lang).forEach {
+                assertThat(it).contains("30")
+            }
+        }
+    }
+
+    @Test
+    fun `users who never finished a workout get no lunch meal check`() {
+        assertThat(send("lunch_meal_check", completedWorkouts = 0)).isNull()
+        verify(exactly = 0) { chatMessageRepository.save(any()) }
+    }
+
+    @Test
+    fun `users with a finished workout still get the lunch meal check`() {
+        val lunch = NotificationLocalization.messages("pt.template.lunch_meal.default", "ko")
+        assertThat(send("lunch_meal_check", completedWorkouts = 1)).isIn(lunch)
     }
 
     @Test
