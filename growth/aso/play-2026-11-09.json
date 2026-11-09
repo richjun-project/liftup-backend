@@ -1,0 +1,237 @@
+{
+ "date": "2026-11-09",
+ "note": "첫 화면(최대 ~10위)만 보임. rank=None 은 첫 화면 밖",
+ "results": [
+  {
+   "gl": "KR",
+   "term": "리프트업",
+   "rank": 1,
+   "shown": 9,
+   "top3": [
+    "com.richjun.liftupai",
+    "me.lyft.android",
+    "com.gradation.lift"
+   ]
+  },
+  {
+   "gl": "KR",
+   "term": "AI 트레이너",
+   "rank": null,
+   "shown": 15,
+   "top3": [
+    "com.harutowatanabe.mealier",
+    "com.dreamai.synthiai",
+    "com.inoid.notter.ai.note.taker"
+   ]
+  },
+  {
+   "gl": "KR",
+   "term": "AI 퍼스널 트레이너",
+   "rank": null,
+   "shown": 50,
+   "top3": [
+    "com.gymstreak.GymStreakAI",
+    "com.bodbot.trainer",
+    "homeworkout.fitness.app"
+   ]
+  },
+  {
+   "gl": "KR",
+   "term": "AI PT",
+   "rank": null,
+   "shown": 9,
+   "top3": [
+    "com.stepup.yourpt",
+    "ai.inflection.pi",
+    "shop.ptmanager.app"
+   ]
+  },
+  {
+   "gl": "KR",
+   "term": "헬스 PT",
+   "rank": null,
+   "shown": 30,
+   "top3": [
+    "com.mih.planfit",
+    "kr.co.stone_i.www.dagym",
+    "kr.co.wetrain.woondoc"
+   ]
+  },
+  {
+   "gl": "KR",
+   "term": "헬스 트레이너",
+   "rank": null,
+   "shown": 10,
+   "top3": [
+    "com.mih.planfit",
+    "sp.repcount",
+    "gymworkout.gym.gymlog.gymtrainer"
+   ]
+  },
+  {
+   "gl": "KR",
+   "term": "AI 운동 루틴",
+   "rank": null,
+   "shown": 10,
+   "top3": [
+    "com.mih.planfit",
+    "com.aiconnects.havitWellness",
+    "homeworkout.fitness.app"
+   ]
+  },
+  {
+   "gl": "KR",
+   "term": "운동루틴",
+   "rank": null,
+   "shown": 15,
+   "top3": [
+    "com.mih.planfit",
+    "gymworkout.gym.gymlog.gymtrainer",
+    "homeworkout.fitness.app"
+   ]
+  },
+  {
+   "gl": "KR",
+   "term": "헬스 운동 루틴",
+   "rank": null,
+   "shown": 13,
+   "top3": [
+    "com.mih.planfit",
+    "gymworkout.gym.gymlog.gymtrainer",
+    "fitness.online.app"
+   ]
+  },
+  {
+   "gl": "KR",
+   "term": "AI 헬스",
+   "rank": null,
+   "shown": 13,
+   "top3": [
+    "com.mih.planfit",
+    "io.vera.app",
+    "com.gymstreak.GymStreakAI"
+   ]
+  },
+  {
+   "gl": "JP",
+   "term": "LIFTUP",
+   "rank": 2,
+   "shown": 50,
+   "top3": [
+    "com.devistairlifts",
+    "com.richjun.liftupai",
+    "com.jakestahl.gymapplocal"
+   ]
+  },
+  {
+   "gl": "JP",
+   "term": "AIパーソナルトレーナー",
+   "rank": null,
+   "shown": 30,
+   "top3": [
+    "com.ibuki0313.aipersonaltrainer",
+    "club.doando.note",
+    "coach.zing.fitness"
+   ]
+  },
+  {
+   "gl": "JP",
+   "term": "AIトレーナー",
+   "rank": null,
+   "shown": 20,
+   "top3": [
+    "com.harutowatanabe.mealier",
+    "com.tutorlily.app",
+    "com.gymstreak.GymStreakAI"
+   ]
+  },
+  {
+   "gl": "JP",
+   "term": "パーソナルトレーナー",
+   "rank": null,
+   "shown": 50,
+   "top3": [
+    "com.ibuki0313.aipersonaltrainer",
+    "club.doando.note",
+    "bio.beaubrain.bbt"
+   ]
+  },
+  {
+   "gl": "JP",
+   "term": "筋トレ 記録",
+   "rank": null,
+   "shown": 27,
+   "top3": [
+    "com.maketore.kintorememo",
+    "gymworkout.gym.gymlog.gymtrainer",
+    "th.majimesoft.workout_tracker"
+   ]
+  },
+  {
+   "gl": "JP",
+   "term": "筋トレ コーチ",
+   "rank": null,
+   "shown": 50,
+   "top3": [
+    "jp.kintorebiyori.app",
+    "com.loadguess.ptsakutto",
+    "com.brunocorreia.formiva"
+   ]
+  },
+  {
+   "gl": "JP",
+   "term": "筋トレ 相談",
+   "rank": null,
+   "shown": 29,
+   "top3": [
+    "com.dekitore.dekitore",
+    "jp.softwarehouse.kinnik",
+    "jp.bondavi.consistency"
+   ]
+  },
+  {
+   "gl": "US",
+   "term": "LiftUp AI",
+   "rank": null,
+   "shown": 30,
+   "top3": [
+    "com.lift.android.app",
+    "ai.photo.generator.editor.fotos.ai.image.app.free",
+    "com.aicouple.photogenerator.couplephoto"
+   ]
+  },
+  {
+   "gl": "US",
+   "term": "AI personal trainer",
+   "rank": null,
+   "shown": 30,
+   "top3": [
+    "com.bodbot.trainer",
+    "coach.zing.fitness",
+    "com.liteup.getgains"
+   ]
+  },
+  {
+   "gl": "US",
+   "term": "AI trainer",
+   "rank": null,
+   "shown": 29,
+   "top3": [
+    "com.bodbot.trainer",
+    "pro.fitgpt.fai",
+    "ai.rocky.app"
+   ]
+  },
+  {
+   "gl": "US",
+   "term": "AI gym coach",
+   "rank": null,
+   "shown": 30,
+   "top3": [
+    "coach.zing.fitness",
+    "com.bodbot.trainer",
+    "homeworkout.fitness.app"
+   ]
+  }
+ ]
+}

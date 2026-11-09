@@ -1,0 +1,246 @@
+{
+ "date": "2026-11-09",
+ "change": "App Store primaryLocale ko -> en-US (11-09 ~11:30 KST, API). en-GB 는 한국어 그대로(KR 보조 언어 실험, 11-11~13 판정)",
+ "window": [
+  "2026-10-26",
+  "2026-11-07"
+ ],
+ "non_kr_jp_us_total": {
+  "impressions": 64,
+  "taps": 0,
+  "page_views": 2,
+  "first_downloads": 0
+ },
+ "rows": [
+  {
+   "territory": "CN",
+   "source": "App Store browse",
+   "impressions": 7,
+   "taps": 0,
+   "page_views": 2,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "CN",
+   "source": "App Store search",
+   "impressions": 11,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "FR",
+   "source": "App Store search",
+   "impressions": 10,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "BR",
+   "source": "App Store search",
+   "impressions": 7,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "RU",
+   "source": "App Store search",
+   "impressions": 4,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "AU",
+   "source": "App Store search",
+   "impressions": 2,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "VN",
+   "source": "App Store search",
+   "impressions": 2,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "DE",
+   "source": "App Store search",
+   "impressions": 2,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "TW",
+   "source": "App Store search",
+   "impressions": 2,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "GB",
+   "source": "App Store browse",
+   "impressions": 2,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "IN",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "VN",
+   "source": "App Store browse",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "SK",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "ES",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "PL",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "RU",
+   "source": "App Store browse",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "HK",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "ZA",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "IT",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "DO",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "PH",
+   "source": "App Store browse",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "GB",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "TR",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "MY",
+   "source": "App Store search",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  },
+  {
+   "territory": "FR",
+   "source": "App Store browse",
+   "impressions": 1,
+   "taps": 0,
+   "page_views": 0,
+   "first_downloads": 0,
+   "redownloads": 0
+  }
+ ],
+ "storefront_names_before": {
+  "en-GB 기본 나라(gb,in,sg,ph,my,vn,tr,ie,za) + ca,au,nz": "리프트업 AI 홈트 코치 - 헬스 피티 (en-GB, 11-08 부터 — 그 전엔 en-US 영어로 추정)",
+  "de,fr,br,mx,tw,cn,hk": "리프트업 AI 트레이너 - 헬스 PT 운동루틴 (ko 기본 언어 대체)"
+ },
+ "judge": "11-23: ASC 14일 한·일·미 밖 노출·탭·첫 DL 을 이 기준과 비교(국가별 표시 이름은 itunes lookup country=<cc>)"
+}

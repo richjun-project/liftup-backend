@@ -1,0 +1,7818 @@
+{
+ "pro_monthly": {
+  "packageName": "com.richjun.liftupai",
+  "productId": "pro_monthly",
+  "basePlans": [
+   {
+    "basePlanId": "monthly",
+    "regionalConfigs": [
+     {
+      "regionCode": "AE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AED",
+       "units": "18",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ARS",
+       "units": "7460",
+       "nanos": 50000000
+      }
+     },
+     {
+      "regionCode": "AT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AUD",
+       "units": "7",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AZN",
+       "units": "8",
+       "nanos": 480000000
+      }
+     },
+     {
+      "regionCode": "BD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BDT",
+       "units": "700"
+      }
+     },
+     {
+      "regionCode": "BE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "BG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "BM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BOB",
+       "units": "33",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BRL",
+       "units": "25",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CAD",
+       "units": "6",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CHF",
+       "units": "4"
+      }
+     },
+     {
+      "regionCode": "CI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XOF",
+       "units": "3400"
+      }
+     },
+     {
+      "regionCode": "CL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CLP",
+       "units": "5500"
+      }
+     },
+     {
+      "regionCode": "CM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XAF",
+       "units": "3400"
+      }
+     },
+     {
+      "regionCode": "CO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "COP",
+       "units": "18500"
+      }
+     },
+     {
+      "regionCode": "CR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CRC",
+       "units": "2300"
+      }
+     },
+     {
+      "regionCode": "CY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CZK",
+       "units": "129",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "DKK",
+       "units": "40"
+      }
+     },
+     {
+      "regionCode": "DZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "DZD",
+       "units": "675"
+      }
+     },
+     {
+      "regionCode": "EC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "EE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "EG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EGP",
+       "units": "299",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ES",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "ET",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ETB",
+       "units": "790",
+       "nanos": 820000000
+      }
+     },
+     {
+      "regionCode": "FI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "FM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "FR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GBP",
+       "units": "4",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "GE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GEL",
+       "units": "14"
+      }
+     },
+     {
+      "regionCode": "GH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GHS",
+       "units": "65"
+      }
+     },
+     {
+      "regionCode": "GI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GBP",
+       "units": "3",
+       "nanos": 790000000
+      }
+     },
+     {
+      "regionCode": "GR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "HK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "HKD",
+       "units": "39",
+       "nanos": 900000000
+      }
+     },
+     {
+      "regionCode": "HR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "HU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "HUF",
+       "units": "2190"
+      }
+     },
+     {
+      "regionCode": "ID",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "IDR",
+       "units": "85000"
+      }
+     },
+     {
+      "regionCode": "IE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "IL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ILS",
+       "units": "15",
+       "nanos": 900000000
+      }
+     },
+     {
+      "regionCode": "IN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "INR",
+       "units": "550"
+      }
+     },
+     {
+      "regionCode": "IQ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "IQD",
+       "units": "6550"
+      }
+     },
+     {
+      "regionCode": "IT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "JO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "JOD",
+       "units": "3",
+       "nanos": 550000000
+      }
+     },
+     {
+      "regionCode": "JP",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "JPY",
+       "units": "1200"
+      }
+     },
+     {
+      "regionCode": "KE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KES",
+       "units": "800"
+      }
+     },
+     {
+      "regionCode": "KH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KRW",
+       "units": "9900"
+      }
+     },
+     {
+      "regionCode": "KW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KZT",
+       "units": "2790"
+      }
+     },
+     {
+      "regionCode": "LI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CHF",
+       "units": "4",
+       "nanos": 300000000
+      }
+     },
+     {
+      "regionCode": "LK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "LKR",
+       "units": "1575"
+      }
+     },
+     {
+      "regionCode": "LT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "LU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "MA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MAD",
+       "units": "55",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MMK",
+       "units": "10000"
+      }
+     },
+     {
+      "regionCode": "MN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MNT",
+       "units": "17800"
+      }
+     },
+     {
+      "regionCode": "MO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MOP",
+       "units": "39",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MX",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MXN",
+       "units": "105"
+      }
+     },
+     {
+      "regionCode": "MY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MYR",
+       "units": "21",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NGN",
+       "units": "7420"
+      }
+     },
+     {
+      "regionCode": "NL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "NO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NOK",
+       "units": "59"
+      }
+     },
+     {
+      "regionCode": "NZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NZD",
+       "units": "9",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "OM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PEN",
+       "units": "16",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PHP",
+       "units": "339"
+      }
+     },
+     {
+      "regionCode": "PK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PKR",
+       "units": "1400"
+      }
+     },
+     {
+      "regionCode": "PL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PLN",
+       "units": "22",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "PY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PYG",
+       "units": "30000"
+      }
+     },
+     {
+      "regionCode": "QA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "QAR",
+       "units": "18"
+      }
+     },
+     {
+      "regionCode": "RO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RON",
+       "units": "26",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "RS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RSD",
+       "units": "599"
+      }
+     },
+     {
+      "regionCode": "RU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RUB",
+       "units": "409"
+      }
+     },
+     {
+      "regionCode": "SA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SAR",
+       "units": "21",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SEK",
+       "units": "59"
+      }
+     },
+     {
+      "regionCode": "SG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SGD",
+       "units": "6",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "SK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "SM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 290000000
+      }
+     },
+     {
+      "regionCode": "SN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XOF",
+       "units": "3400"
+      }
+     },
+     {
+      "regionCode": "SV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "THB",
+       "units": "175"
+      }
+     },
+     {
+      "regionCode": "TR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TRY",
+       "units": "264",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TWD",
+       "units": "170"
+      }
+     },
+     {
+      "regionCode": "TZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TZS",
+       "units": "13000"
+      }
+     },
+     {
+      "regionCode": "UA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "UAH",
+       "units": "259",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "US",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "9",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "UZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "UZS",
+       "units": "67080"
+      }
+     },
+     {
+      "regionCode": "VA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 290000000
+      }
+     },
+     {
+      "regionCode": "VG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "VND",
+       "units": "131000"
+      }
+     },
+     {
+      "regionCode": "ZA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ZAR",
+       "units": "97",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BF",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "BJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "BS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CF",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "CG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ER",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "FJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "GD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "HN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "HT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "IS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 380000000
+      }
+     },
+     {
+      "regionCode": "JM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ML",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "MT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 120000000
+      }
+     },
+     {
+      "regionCode": "MU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "NI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NP",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 640000000
+      }
+     },
+     {
+      "regionCode": "PG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "RW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "TJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "UG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 890000000
+      }
+     },
+     {
+      "regionCode": "UY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "WS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "YE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ZM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ZW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     }
+    ],
+    "state": "ACTIVE",
+    "prepaidBasePlanType": {
+     "billingPeriodDuration": "P1M",
+     "timeExtension": "TIME_EXTENSION_ACTIVE"
+    },
+    "otherRegionsConfig": {
+     "usdPrice": {
+      "currencyCode": "USD",
+      "units": "4",
+      "nanos": 990000000
+     },
+     "eurPrice": {
+      "currencyCode": "EUR",
+      "units": "4",
+      "nanos": 340000000
+     },
+     "newSubscriberAvailability": true
+    }
+   },
+   {
+    "basePlanId": "monthly-auto",
+    "regionalConfigs": [
+     {
+      "regionCode": "AE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AED",
+       "units": "18",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ARS",
+       "units": "7460",
+       "nanos": 50000000
+      }
+     },
+     {
+      "regionCode": "AT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AUD",
+       "units": "7",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AZN",
+       "units": "8",
+       "nanos": 480000000
+      }
+     },
+     {
+      "regionCode": "BD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BDT",
+       "units": "700"
+      }
+     },
+     {
+      "regionCode": "BE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "BG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "BM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BOB",
+       "units": "33",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BRL",
+       "units": "25",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CAD",
+       "units": "6",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CHF",
+       "units": "4"
+      }
+     },
+     {
+      "regionCode": "CI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XOF",
+       "units": "3400"
+      }
+     },
+     {
+      "regionCode": "CL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CLP",
+       "units": "5500"
+      }
+     },
+     {
+      "regionCode": "CM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XAF",
+       "units": "3400"
+      }
+     },
+     {
+      "regionCode": "CO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "COP",
+       "units": "18500"
+      }
+     },
+     {
+      "regionCode": "CR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CRC",
+       "units": "2300"
+      }
+     },
+     {
+      "regionCode": "CY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CZK",
+       "units": "129",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "DKK",
+       "units": "40"
+      }
+     },
+     {
+      "regionCode": "DZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "DZD",
+       "units": "675"
+      }
+     },
+     {
+      "regionCode": "EC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "EE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "EG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EGP",
+       "units": "299",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ES",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "ET",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ETB",
+       "units": "790",
+       "nanos": 820000000
+      }
+     },
+     {
+      "regionCode": "FI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "FM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "FR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GBP",
+       "units": "4",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "GE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GEL",
+       "units": "14"
+      }
+     },
+     {
+      "regionCode": "GH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GHS",
+       "units": "65"
+      }
+     },
+     {
+      "regionCode": "GI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GBP",
+       "units": "3",
+       "nanos": 790000000
+      }
+     },
+     {
+      "regionCode": "GR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "HK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "HKD",
+       "units": "39",
+       "nanos": 900000000
+      }
+     },
+     {
+      "regionCode": "HR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "HU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "HUF",
+       "units": "2190"
+      }
+     },
+     {
+      "regionCode": "ID",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "IDR",
+       "units": "85000"
+      }
+     },
+     {
+      "regionCode": "IE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "IL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ILS",
+       "units": "15",
+       "nanos": 900000000
+      }
+     },
+     {
+      "regionCode": "IN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "INR",
+       "units": "550"
+      }
+     },
+     {
+      "regionCode": "IQ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "IQD",
+       "units": "6550"
+      }
+     },
+     {
+      "regionCode": "IT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "JO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "JOD",
+       "units": "3",
+       "nanos": 550000000
+      }
+     },
+     {
+      "regionCode": "JP",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "JPY",
+       "units": "1200"
+      }
+     },
+     {
+      "regionCode": "KE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KES",
+       "units": "800"
+      }
+     },
+     {
+      "regionCode": "KH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KRW",
+       "units": "9900"
+      }
+     },
+     {
+      "regionCode": "KW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KZT",
+       "units": "2790"
+      }
+     },
+     {
+      "regionCode": "LI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CHF",
+       "units": "4",
+       "nanos": 300000000
+      }
+     },
+     {
+      "regionCode": "LK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "LKR",
+       "units": "1575"
+      }
+     },
+     {
+      "regionCode": "LT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "LU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "MA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MAD",
+       "units": "55",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MMK",
+       "units": "10000"
+      }
+     },
+     {
+      "regionCode": "MN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MNT",
+       "units": "17800"
+      }
+     },
+     {
+      "regionCode": "MO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MOP",
+       "units": "39",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MX",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MXN",
+       "units": "105"
+      }
+     },
+     {
+      "regionCode": "MY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MYR",
+       "units": "21",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NGN",
+       "units": "7420"
+      }
+     },
+     {
+      "regionCode": "NL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "NO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NOK",
+       "units": "59"
+      }
+     },
+     {
+      "regionCode": "NZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NZD",
+       "units": "9",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "OM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PEN",
+       "units": "16",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PHP",
+       "units": "339"
+      }
+     },
+     {
+      "regionCode": "PK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PKR",
+       "units": "1400"
+      }
+     },
+     {
+      "regionCode": "PL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PLN",
+       "units": "22",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "PY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PYG",
+       "units": "30000"
+      }
+     },
+     {
+      "regionCode": "QA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "QAR",
+       "units": "18"
+      }
+     },
+     {
+      "regionCode": "RO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RON",
+       "units": "26",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "RS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RSD",
+       "units": "599"
+      }
+     },
+     {
+      "regionCode": "RU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RUB",
+       "units": "409"
+      }
+     },
+     {
+      "regionCode": "SA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SAR",
+       "units": "21",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SEK",
+       "units": "59"
+      }
+     },
+     {
+      "regionCode": "SG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SGD",
+       "units": "6",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "SK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "SM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 290000000
+      }
+     },
+     {
+      "regionCode": "SN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XOF",
+       "units": "3400"
+      }
+     },
+     {
+      "regionCode": "SV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "THB",
+       "units": "175"
+      }
+     },
+     {
+      "regionCode": "TR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TRY",
+       "units": "264",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TWD",
+       "units": "170"
+      }
+     },
+     {
+      "regionCode": "TZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TZS",
+       "units": "13000"
+      }
+     },
+     {
+      "regionCode": "UA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "UAH",
+       "units": "259",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "US",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "9",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "UZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "UZS",
+       "units": "67080"
+      }
+     },
+     {
+      "regionCode": "VA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 290000000
+      }
+     },
+     {
+      "regionCode": "VG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "VND",
+       "units": "131000"
+      }
+     },
+     {
+      "regionCode": "ZA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ZAR",
+       "units": "97",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BF",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "BJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "BS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CF",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "CG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ER",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "FJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "GD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "HN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "HT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "IS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 380000000
+      }
+     },
+     {
+      "regionCode": "JM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ML",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "MT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "5",
+       "nanos": 120000000
+      }
+     },
+     {
+      "regionCode": "MU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "NI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NP",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 640000000
+      }
+     },
+     {
+      "regionCode": "PG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "RW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "4",
+       "nanos": 340000000
+      }
+     },
+     {
+      "regionCode": "TJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "UG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "5",
+       "nanos": 890000000
+      }
+     },
+     {
+      "regionCode": "UY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "WS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "YE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ZM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ZW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "4",
+       "nanos": 990000000
+      }
+     }
+    ],
+    "state": "ACTIVE",
+    "autoRenewingBasePlanType": {
+     "billingPeriodDuration": "P1M",
+     "gracePeriodDuration": "P7D",
+     "resubscribeState": "RESUBSCRIBE_STATE_ACTIVE",
+     "prorationMode": "SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE",
+     "legacyCompatibleSubscriptionOfferId": ""
+    },
+    "offerTags": [
+     {
+      "tag": "auto-renew"
+     }
+    ],
+    "otherRegionsConfig": {
+     "usdPrice": {
+      "currencyCode": "USD",
+      "units": "4",
+      "nanos": 990000000
+     },
+     "eurPrice": {
+      "currencyCode": "EUR",
+      "units": "4",
+      "nanos": 340000000
+     },
+     "newSubscriberAvailability": true
+    }
+   }
+  ],
+  "listings": [
+   {
+    "title": "pro_monthly",
+    "languageCode": "ko-KR"
+   }
+  ],
+  "taxAndComplianceSettings": {
+   "eeaWithdrawalRightType": "WITHDRAWAL_RIGHT_SERVICE"
+  }
+ },
+ "pro_yearly": {
+  "packageName": "com.richjun.liftupai",
+  "productId": "pro_yearly",
+  "basePlans": [
+   {
+    "basePlanId": "yearly",
+    "regionalConfigs": [
+     {
+      "regionCode": "AE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AED",
+       "units": "134",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ARS",
+       "units": "52310",
+       "nanos": 50000000
+      }
+     },
+     {
+      "regionCode": "AT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AUD",
+       "units": "55",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AZN",
+       "units": "59",
+       "nanos": 480000000
+      }
+     },
+     {
+      "regionCode": "BD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BDT",
+       "units": "4900"
+      }
+     },
+     {
+      "regionCode": "BE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "37",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BOB",
+       "units": "239",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BRL",
+       "units": "184",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CAD",
+       "units": "48",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CHF",
+       "units": "28"
+      }
+     },
+     {
+      "regionCode": "CI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XOF",
+       "units": "23500"
+      }
+     },
+     {
+      "regionCode": "CL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CLP",
+       "units": "38400"
+      }
+     },
+     {
+      "regionCode": "CM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XAF",
+       "units": "23800"
+      }
+     },
+     {
+      "regionCode": "CO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "COP",
+       "units": "128000"
+      }
+     },
+     {
+      "regionCode": "CR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CRC",
+       "units": "16200"
+      }
+     },
+     {
+      "regionCode": "CY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CZK",
+       "units": "899",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "DKK",
+       "units": "285"
+      }
+     },
+     {
+      "regionCode": "DZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "DZD",
+       "units": "4650"
+      }
+     },
+     {
+      "regionCode": "EC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "EE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "37",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "EG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EGP",
+       "units": "2099",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ES",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ET",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ETB",
+       "units": "5545",
+       "nanos": 220000000
+      }
+     },
+     {
+      "regionCode": "FI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "37",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "FM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "FR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GBP",
+       "units": "31",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "GE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GEL",
+       "units": "99"
+      }
+     },
+     {
+      "regionCode": "GH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GHS",
+       "units": "460"
+      }
+     },
+     {
+      "regionCode": "GI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GBP",
+       "units": "26",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "GR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "37",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "HK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "HKD",
+       "units": "278"
+      }
+     },
+     {
+      "regionCode": "HR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "37",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "HU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "HUF",
+       "units": "14999"
+      }
+     },
+     {
+      "regionCode": "ID",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "IDR",
+       "units": "590000"
+      }
+     },
+     {
+      "regionCode": "IE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "IL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ILS",
+       "units": "99",
+       "nanos": 900000000
+      }
+     },
+     {
+      "regionCode": "IN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "INR",
+       "units": "3900"
+      }
+     },
+     {
+      "regionCode": "IQ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "IQD",
+       "units": "45850"
+      }
+     },
+     {
+      "regionCode": "IT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "JO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "JOD",
+       "units": "24",
+       "nanos": 800000000
+      }
+     },
+     {
+      "regionCode": "JP",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "JPY",
+       "units": "7800"
+      }
+     },
+     {
+      "regionCode": "KE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KES",
+       "units": "5300"
+      }
+     },
+     {
+      "regionCode": "KH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KRW",
+       "units": "59000"
+      }
+     },
+     {
+      "regionCode": "KW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KZT",
+       "units": "19990"
+      }
+     },
+     {
+      "regionCode": "LI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CHF",
+       "units": "30"
+      }
+     },
+     {
+      "regionCode": "LK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "LKR",
+       "units": "11000"
+      }
+     },
+     {
+      "regionCode": "LT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MAD",
+       "units": "389",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MMK",
+       "units": "74000"
+      }
+     },
+     {
+      "regionCode": "MN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MNT",
+       "units": "124700"
+      }
+     },
+     {
+      "regionCode": "MO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MOP",
+       "units": "279"
+      }
+     },
+     {
+      "regionCode": "MX",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MXN",
+       "units": "739"
+      }
+     },
+     {
+      "regionCode": "MY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MYR",
+       "units": "149",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NGN",
+       "units": "52000"
+      }
+     },
+     {
+      "regionCode": "NL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NOK",
+       "units": "425"
+      }
+     },
+     {
+      "regionCode": "NZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NZD",
+       "units": "69",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "OM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PEN",
+       "units": "119",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PHP",
+       "units": "2350"
+      }
+     },
+     {
+      "regionCode": "PK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PKR",
+       "units": "9800"
+      }
+     },
+     {
+      "regionCode": "PL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PLN",
+       "units": "159",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PYG",
+       "units": "225000"
+      }
+     },
+     {
+      "regionCode": "QA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "QAR",
+       "units": "130"
+      }
+     },
+     {
+      "regionCode": "RO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RON",
+       "units": "184",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "RS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RSD",
+       "units": "4299"
+      }
+     },
+     {
+      "regionCode": "RU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RUB",
+       "units": "2890"
+      }
+     },
+     {
+      "regionCode": "SA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SAR",
+       "units": "149",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SEK",
+       "units": "415"
+      }
+     },
+     {
+      "regionCode": "SG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SGD",
+       "units": "48",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "29",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XOF",
+       "units": "23500"
+      }
+     },
+     {
+      "regionCode": "SV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "THB",
+       "units": "1225"
+      }
+     },
+     {
+      "regionCode": "TR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TRY",
+       "units": "1869",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TWD",
+       "units": "1170"
+      }
+     },
+     {
+      "regionCode": "TZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TZS",
+       "units": "90000"
+      }
+     },
+     {
+      "regionCode": "UA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "UAH",
+       "units": "1849",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "US",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "49",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "UZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "UZS",
+       "units": "470280"
+      }
+     },
+     {
+      "regionCode": "VA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "29",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "VND",
+       "units": "922000"
+      }
+     },
+     {
+      "regionCode": "ZA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ZAR",
+       "units": "689",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "41",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BF",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "BJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "BS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "41",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CF",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "CG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ER",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "FJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "GD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "HN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "HT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "IS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "37",
+       "nanos": 700000000
+      }
+     },
+     {
+      "regionCode": "JM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "41",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ML",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "MT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 870000000
+      }
+     },
+     {
+      "regionCode": "MU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "NI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NP",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "39",
+       "nanos": 540000000
+      }
+     },
+     {
+      "regionCode": "PG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "RW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "TJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "UG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "41",
+       "nanos": 290000000
+      }
+     },
+     {
+      "regionCode": "UY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "WS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "YE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ZM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ZW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     }
+    ],
+    "state": "ACTIVE",
+    "prepaidBasePlanType": {
+     "billingPeriodDuration": "P1Y",
+     "timeExtension": "TIME_EXTENSION_ACTIVE"
+    },
+    "otherRegionsConfig": {
+     "usdPrice": {
+      "currencyCode": "USD",
+      "units": "34",
+      "nanos": 990000000
+     },
+     "eurPrice": {
+      "currencyCode": "EUR",
+      "units": "30",
+      "nanos": 400000000
+     },
+     "newSubscriberAvailability": true
+    }
+   },
+   {
+    "basePlanId": "yearly-auto",
+    "regionalConfigs": [
+     {
+      "regionCode": "AE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AED",
+       "units": "134",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ARS",
+       "units": "52310",
+       "nanos": 50000000
+      }
+     },
+     {
+      "regionCode": "AT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AUD",
+       "units": "55",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "AZN",
+       "units": "59",
+       "nanos": 480000000
+      }
+     },
+     {
+      "regionCode": "BD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BDT",
+       "units": "4900"
+      }
+     },
+     {
+      "regionCode": "BE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "37",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BOB",
+       "units": "239",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "BRL",
+       "units": "184",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CAD",
+       "units": "48",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CHF",
+       "units": "28"
+      }
+     },
+     {
+      "regionCode": "CI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XOF",
+       "units": "23500"
+      }
+     },
+     {
+      "regionCode": "CL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CLP",
+       "units": "38400"
+      }
+     },
+     {
+      "regionCode": "CM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XAF",
+       "units": "23800"
+      }
+     },
+     {
+      "regionCode": "CO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "COP",
+       "units": "128000"
+      }
+     },
+     {
+      "regionCode": "CR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CRC",
+       "units": "16200"
+      }
+     },
+     {
+      "regionCode": "CY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CZK",
+       "units": "899",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "DKK",
+       "units": "285"
+      }
+     },
+     {
+      "regionCode": "DZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "DZD",
+       "units": "4650"
+      }
+     },
+     {
+      "regionCode": "EC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "EE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "37",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "EG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EGP",
+       "units": "2099",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ES",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ET",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ETB",
+       "units": "5545",
+       "nanos": 220000000
+      }
+     },
+     {
+      "regionCode": "FI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "37",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "FM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "FR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GBP",
+       "units": "31",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "GE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GEL",
+       "units": "99"
+      }
+     },
+     {
+      "regionCode": "GH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GHS",
+       "units": "460"
+      }
+     },
+     {
+      "regionCode": "GI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "GBP",
+       "units": "26",
+       "nanos": 490000000
+      }
+     },
+     {
+      "regionCode": "GR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "37",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "HK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "HKD",
+       "units": "278"
+      }
+     },
+     {
+      "regionCode": "HR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "37",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "HU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "HUF",
+       "units": "14999"
+      }
+     },
+     {
+      "regionCode": "ID",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "IDR",
+       "units": "590000"
+      }
+     },
+     {
+      "regionCode": "IE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "IL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ILS",
+       "units": "99",
+       "nanos": 900000000
+      }
+     },
+     {
+      "regionCode": "IN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "INR",
+       "units": "3900"
+      }
+     },
+     {
+      "regionCode": "IQ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "IQD",
+       "units": "45850"
+      }
+     },
+     {
+      "regionCode": "IT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "JO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "JOD",
+       "units": "24",
+       "nanos": 800000000
+      }
+     },
+     {
+      "regionCode": "JP",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "JPY",
+       "units": "7800"
+      }
+     },
+     {
+      "regionCode": "KE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KES",
+       "units": "5300"
+      }
+     },
+     {
+      "regionCode": "KH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KRW",
+       "units": "59000"
+      }
+     },
+     {
+      "regionCode": "KW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "KZT",
+       "units": "19990"
+      }
+     },
+     {
+      "regionCode": "LI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "CHF",
+       "units": "30"
+      }
+     },
+     {
+      "regionCode": "LK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "LKR",
+       "units": "11000"
+      }
+     },
+     {
+      "regionCode": "LT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MAD",
+       "units": "389",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MMK",
+       "units": "74000"
+      }
+     },
+     {
+      "regionCode": "MN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MNT",
+       "units": "124700"
+      }
+     },
+     {
+      "regionCode": "MO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MOP",
+       "units": "279"
+      }
+     },
+     {
+      "regionCode": "MX",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MXN",
+       "units": "739"
+      }
+     },
+     {
+      "regionCode": "MY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "MYR",
+       "units": "149",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NGN",
+       "units": "52000"
+      }
+     },
+     {
+      "regionCode": "NL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NOK",
+       "units": "425"
+      }
+     },
+     {
+      "regionCode": "NZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "NZD",
+       "units": "69",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "OM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PEN",
+       "units": "119",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PHP",
+       "units": "2350"
+      }
+     },
+     {
+      "regionCode": "PK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PKR",
+       "units": "9800"
+      }
+     },
+     {
+      "regionCode": "PL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PLN",
+       "units": "159",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "PY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "PYG",
+       "units": "225000"
+      }
+     },
+     {
+      "regionCode": "QA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "QAR",
+       "units": "130"
+      }
+     },
+     {
+      "regionCode": "RO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RON",
+       "units": "184",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "RS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RSD",
+       "units": "4299"
+      }
+     },
+     {
+      "regionCode": "RU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "RUB",
+       "units": "2890"
+      }
+     },
+     {
+      "regionCode": "SA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SAR",
+       "units": "149",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SEK",
+       "units": "415"
+      }
+     },
+     {
+      "regionCode": "SG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "SGD",
+       "units": "48",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "36",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "29",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "XOF",
+       "units": "23500"
+      }
+     },
+     {
+      "regionCode": "SV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TH",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "THB",
+       "units": "1225"
+      }
+     },
+     {
+      "regionCode": "TR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TRY",
+       "units": "1869",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TWD",
+       "units": "1170"
+      }
+     },
+     {
+      "regionCode": "TZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "TZS",
+       "units": "90000"
+      }
+     },
+     {
+      "regionCode": "UA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "UAH",
+       "units": "1849",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "US",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "49",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "UZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "UZS",
+       "units": "470280"
+      }
+     },
+     {
+      "regionCode": "VA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "29",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "VND",
+       "units": "922000"
+      }
+     },
+     {
+      "regionCode": "ZA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "ZAR",
+       "units": "689",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "41",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "AW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BF",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "BJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "BS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "41",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "BZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CF",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "CG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "CV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "DO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ER",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "FJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "GD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "GW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "HN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "HT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "IS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "37",
+       "nanos": 700000000
+      }
+     },
+     {
+      "regionCode": "JM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "KN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "LY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "41",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MK",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ML",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "MT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "35",
+       "nanos": 870000000
+      }
+     },
+     {
+      "regionCode": "MU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MV",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "MZ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NA",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "NI",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "NP",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "39",
+       "nanos": 540000000
+      }
+     },
+     {
+      "regionCode": "PG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "RW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SB",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SC",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SL",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "SR",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TD",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "EUR",
+       "units": "30",
+       "nanos": 400000000
+      }
+     },
+     {
+      "regionCode": "TJ",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TN",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TO",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "TT",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "UG",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "41",
+       "nanos": 290000000
+      }
+     },
+     {
+      "regionCode": "UY",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "VU",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "WS",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "YE",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ZM",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     },
+     {
+      "regionCode": "ZW",
+      "newSubscriberAvailability": true,
+      "price": {
+       "currencyCode": "USD",
+       "units": "34",
+       "nanos": 990000000
+      }
+     }
+    ],
+    "state": "ACTIVE",
+    "autoRenewingBasePlanType": {
+     "billingPeriodDuration": "P1Y",
+     "gracePeriodDuration": "P7D",
+     "resubscribeState": "RESUBSCRIBE_STATE_ACTIVE",
+     "prorationMode": "SUBSCRIPTION_PRORATION_MODE_CHARGE_ON_NEXT_BILLING_DATE",
+     "legacyCompatibleSubscriptionOfferId": ""
+    },
+    "offerTags": [
+     {
+      "tag": "auto-renew"
+     }
+    ],
+    "otherRegionsConfig": {
+     "usdPrice": {
+      "currencyCode": "USD",
+      "units": "34",
+      "nanos": 990000000
+     },
+     "eurPrice": {
+      "currencyCode": "EUR",
+      "units": "30",
+      "nanos": 400000000
+     },
+     "newSubscriberAvailability": true
+    }
+   }
+  ],
+  "listings": [
+   {
+    "title": "pro_yearly",
+    "languageCode": "ko-KR"
+   }
+  ],
+  "taxAndComplianceSettings": {
+   "eeaWithdrawalRightType": "WITHDRAWAL_RIGHT_SERVICE"
+  }
+ },
+ "pro_lifetime": {
+  "packageName": "com.richjun.liftupai",
+  "productId": "pro_lifetime",
+  "listings": [
+   {
+    "languageCode": "ko-KR",
+    "title": "pro_lifetime",
+    "description": "pro_lifetime"
+   }
+  ],
+  "taxAndComplianceSettings": {
+   "regionalProductAgeRatingInfos": [
+    {
+     "regionCode": "US",
+     "productAgeRatingTier": "PRODUCT_AGE_RATING_TIER_EVERYONE"
+    }
+   ]
+  },
+  "purchaseOptions": [
+   {
+    "purchaseOptionId": "pro-lifetime",
+    "state": "ACTIVE",
+    "buyOption": {
+     "legacyCompatible": true
+    },
+    "regionalPricingAndAvailabilityConfigs": [
+     {
+      "regionCode": "AE",
+      "price": {
+       "currencyCode": "AED",
+       "units": "384",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "AG",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "AL",
+      "price": {
+       "currencyCode": "USD",
+       "units": "119",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "AM",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "AO",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "AR",
+      "price": {
+       "currencyCode": "ARS",
+       "units": "149485",
+       "nanos": 50000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "AT",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "AU",
+      "price": {
+       "currencyCode": "AUD",
+       "units": "159",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "AW",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "AZ",
+      "price": {
+       "currencyCode": "AZN",
+       "units": "169",
+       "nanos": 980000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BA",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BD",
+      "price": {
+       "currencyCode": "BDT",
+       "units": "14000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BE",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BF",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "86",
+       "nanos": 880000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BG",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BH",
+      "price": {
+       "currencyCode": "USD",
+       "units": "109",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BJ",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "86",
+       "nanos": 880000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BM",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BO",
+      "price": {
+       "currencyCode": "BOB",
+       "units": "689",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BR",
+      "price": {
+       "currencyCode": "BRL",
+       "units": "519",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BS",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BW",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BY",
+      "price": {
+       "currencyCode": "USD",
+       "units": "119",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "BZ",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CA",
+      "price": {
+       "currencyCode": "CAD",
+       "units": "139",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CD",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CF",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "86",
+       "nanos": 880000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CG",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CH",
+      "price": {
+       "currencyCode": "CHF",
+       "units": "80"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CI",
+      "price": {
+       "currencyCode": "XOF",
+       "units": "67300"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CL",
+      "price": {
+       "currencyCode": "CLP",
+       "units": "110000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CM",
+      "price": {
+       "currencyCode": "XAF",
+       "units": "68000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CO",
+      "price": {
+       "currencyCode": "COP",
+       "units": "367000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CR",
+      "price": {
+       "currencyCode": "CRC",
+       "units": "46400"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CV",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CY",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "CZ",
+      "price": {
+       "currencyCode": "CZK",
+       "units": "2599",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "DE",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "DJ",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "DK",
+      "price": {
+       "currencyCode": "DKK",
+       "units": "809"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "DM",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "DO",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "DZ",
+      "price": {
+       "currencyCode": "DZD",
+       "units": "13375"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "EC",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "EE",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "109",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "EG",
+      "price": {
+       "currencyCode": "EGP",
+       "units": "5999",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "ER",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "ES",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "ET",
+      "price": {
+       "currencyCode": "ETB",
+       "units": "15846",
+       "nanos": 420000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "FI",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "109",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "FJ",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "FM",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "FR",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GA",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "86",
+       "nanos": 880000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GB",
+      "price": {
+       "currencyCode": "GBP",
+       "units": "89",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GD",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GE",
+      "price": {
+       "currencyCode": "GEL",
+       "units": "324"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GH",
+      "price": {
+       "currencyCode": "GHS",
+       "units": "1300"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GI",
+      "price": {
+       "currencyCode": "GBP",
+       "units": "74",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GM",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GN",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GR",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "109",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GT",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "GW",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "86",
+       "nanos": 880000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "HK",
+      "price": {
+       "currencyCode": "HKD",
+       "units": "779"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "HN",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "HR",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "109",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "HT",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "HU",
+      "price": {
+       "currencyCode": "HUF",
+       "units": "42999"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "ID",
+      "price": {
+       "currencyCode": "IDR",
+       "units": "1690000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "IE",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "IL",
+      "price": {
+       "currencyCode": "ILS",
+       "units": "325"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "IN",
+      "price": {
+       "currencyCode": "INR",
+       "units": "11200"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "IQ",
+      "price": {
+       "currencyCode": "IQD",
+       "units": "131000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "IS",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "107",
+       "nanos": 730000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "IT",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "JM",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "JO",
+      "price": {
+       "currencyCode": "JOD",
+       "units": "71"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "JP",
+      "price": {
+       "currencyCode": "JPY",
+       "units": "17600"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "KE",
+      "price": {
+       "currencyCode": "KES",
+       "units": "15000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "KG",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "KH",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "KM",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "KN",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "KR",
+      "price": {
+       "currencyCode": "KRW",
+       "units": "150000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "KW",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "KY",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "KZ",
+      "price": {
+       "currencyCode": "KZT",
+       "units": "55990"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "LA",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "LB",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "LC",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "LI",
+      "price": {
+       "currencyCode": "CHF",
+       "units": "85"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "LK",
+      "price": {
+       "currencyCode": "LKR",
+       "units": "31375"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "LR",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "LT",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "LU",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "LV",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "LY",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MA",
+      "price": {
+       "currencyCode": "MAD",
+       "units": "1119",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MC",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MD",
+      "price": {
+       "currencyCode": "USD",
+       "units": "119",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MK",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "ML",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "86",
+       "nanos": 880000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MM",
+      "price": {
+       "currencyCode": "MMK",
+       "units": "210000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MN",
+      "price": {
+       "currencyCode": "MNT",
+       "units": "356400"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MO",
+      "price": {
+       "currencyCode": "MOP",
+       "units": "808"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MT",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "102",
+       "nanos": 520000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MU",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MV",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MX",
+      "price": {
+       "currencyCode": "MXN",
+       "units": "2099"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MY",
+      "price": {
+       "currencyCode": "MYR",
+       "units": "434",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "MZ",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "NA",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "NE",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "86",
+       "nanos": 880000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "NG",
+      "price": {
+       "currencyCode": "NGN",
+       "units": "148500"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "NI",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "NL",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "NO",
+      "price": {
+       "currencyCode": "NOK",
+       "units": "1199"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "NP",
+      "price": {
+       "currencyCode": "USD",
+       "units": "112",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "NZ",
+      "price": {
+       "currencyCode": "NZD",
+       "units": "199",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "OM",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "PA",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "PE",
+      "price": {
+       "currencyCode": "PEN",
+       "units": "349",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "PG",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "PH",
+      "price": {
+       "currencyCode": "PHP",
+       "units": "6800"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "PK",
+      "price": {
+       "currencyCode": "PKR",
+       "units": "27900"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "PL",
+      "price": {
+       "currencyCode": "PLN",
+       "units": "459",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "PT",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "PY",
+      "price": {
+       "currencyCode": "PYG",
+       "units": "650000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "QA",
+      "price": {
+       "currencyCode": "QAR",
+       "units": "365"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "RO",
+      "price": {
+       "currencyCode": "RON",
+       "units": "549",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "RS",
+      "price": {
+       "currencyCode": "RSD",
+       "units": "11999"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "RU",
+      "price": {
+       "currencyCode": "RUB",
+       "units": "8190"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "RW",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SA",
+      "price": {
+       "currencyCode": "SAR",
+       "units": "429",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SB",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SC",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SE",
+      "price": {
+       "currencyCode": "SEK",
+       "units": "1199"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SG",
+      "price": {
+       "currencyCode": "SGD",
+       "units": "139",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SI",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SK",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "104",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SL",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SM",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "84",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SN",
+      "price": {
+       "currencyCode": "XOF",
+       "units": "67300"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SO",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SR",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "SV",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TC",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TD",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TG",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "86",
+       "nanos": 880000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TH",
+      "price": {
+       "currencyCode": "THB",
+       "units": "3525"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TJ",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TM",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TN",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TO",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TR",
+      "price": {
+       "currencyCode": "TRY",
+       "units": "5329",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TT",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TW",
+      "price": {
+       "currencyCode": "TWD",
+       "units": "3350"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "TZ",
+      "price": {
+       "currencyCode": "TZS",
+       "units": "258000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "UA",
+      "price": {
+       "currencyCode": "UAH",
+       "units": "5249",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "UG",
+      "price": {
+       "currencyCode": "USD",
+       "units": "117",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "US",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "UY",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "UZ",
+      "price": {
+       "currencyCode": "UZS",
+       "units": "1343880"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "VA",
+      "price": {
+       "currencyCode": "EUR",
+       "units": "84",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "VE",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "VG",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "VN",
+      "price": {
+       "currencyCode": "VND",
+       "units": "2650000"
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "VU",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "WS",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "YE",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "ZA",
+      "price": {
+       "currencyCode": "ZAR",
+       "units": "1949",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "ZM",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     },
+     {
+      "regionCode": "ZW",
+      "price": {
+       "currencyCode": "USD",
+       "units": "99",
+       "nanos": 990000000
+      },
+      "availability": "AVAILABLE"
+     }
+    ],
+    "newRegionsConfig": {
+     "usdPrice": {
+      "currencyCode": "USD",
+      "units": "99",
+      "nanos": 990000000
+     },
+     "eurPrice": {
+      "currencyCode": "EUR",
+      "units": "86",
+      "nanos": 880000000
+     },
+     "availability": "AVAILABLE"
+    },
+    "taxAndComplianceSettings": {
+     "withdrawalRightType": "WITHDRAWAL_RIGHT_DIGITAL_CONTENT"
+    }
+   }
+  ],
+  "regionsVersion": {
+   "version": "2026/01"
+  }
+ }
+}
