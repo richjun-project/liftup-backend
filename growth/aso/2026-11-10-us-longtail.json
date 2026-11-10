@@ -1,0 +1,1882 @@
+{
+ "ai gym buddy": {
+  "n": 50,
+  "pos": null,
+  "weak10": 3,
+  "top": [
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Workout Buddy: AI Gym Coach",
+    7
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Workout Trainer AI",
+    7675
+   ],
+   [
+    "Gym Buddy: Rhino",
+    0
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Monolift: Gym Buddy & Lift Log",
+    1
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ]
+  ]
+ },
+ "ai lifting coach": {
+  "n": 50,
+  "pos": null,
+  "weak10": 6,
+  "top": [
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Liftva: AI Lifting Coach",
+    3
+   ],
+   [
+    "GymAdapt AI: Gym Workout Coach",
+    16
+   ],
+   [
+    "LiftCue: AI Lifting Coach",
+    5
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Vitalis: AI Lifting Coach",
+    0
+   ],
+   [
+    "Seen: AI Lifting Coach",
+    3
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Olympic Lifting AI: Coach",
+    0
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ]
+  ]
+ },
+ "ai hypertrophy coach": {
+  "n": 50,
+  "pos": null,
+  "weak10": 3,
+  "top": [
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Dr. Muscle AI Personal Trainer",
+    382
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Aldo Coach: AI Workout Plan",
+    15
+   ],
+   [
+    "Fit AI - Workout Planner",
+    124
+   ],
+   [
+    "Krato: AI Workout Guide & Log",
+    78
+   ]
+  ]
+ },
+ "ai workout chat": {
+  "n": 44,
+  "pos": null,
+  "weak10": 5,
+  "top": [
+   [
+    "GymLog AI: Fitness Coach",
+    7
+   ],
+   [
+    "AI Boyfriend Chat: iBoy",
+    4949
+   ],
+   [
+    "Kindroid: Your Personal AI",
+    10852
+   ],
+   [
+    "Replika - AI Companion Chat",
+    227658
+   ],
+   [
+    "FitBot AI-Powered Fitness Chat",
+    4
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Gainz AI: Chat, Train, Track",
+    2
+   ],
+   [
+    "Star AI-AI Fitness",
+    0
+   ],
+   [
+    "ChatRPE: AI Workout & Diet Log",
+    2
+   ],
+   [
+    "Tolan: Your Friendly Guide",
+    189795
+   ]
+  ]
+ },
+ "ai bodybuilding coach": {
+  "n": 49,
+  "pos": null,
+  "weak10": 1,
+  "top": [
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Fitify: Home Workout, AI Coach",
+    12115
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Aesthetics AI - Physique Coach",
+    2
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Dr. Muscle AI Personal Trainer",
+    382
+   ],
+   [
+    "JuggernautAI",
+    5655
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ]
+  ]
+ },
+ "ai calisthenics coach": {
+  "n": 50,
+  "pos": null,
+  "weak10": 1,
+  "top": [
+   [
+    "Calimax: Calisthenics Coach",
+    808
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Caspi AI - Calisthenics Coach",
+    2
+   ],
+   [
+    "Fitify: Home Workout, AI Coach",
+    12115
+   ],
+   [
+    "BetterMe Well-Being Coach",
+    714610
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Thenx: Calisthenics Training",
+    12422
+   ],
+   [
+    "Lasta Fit: Your Wellness Coach",
+    4600
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ]
+  ]
+ },
+ "ai spotter": {
+  "n": 50,
+  "pos": null,
+  "weak10": 7,
+  "top": [
+   [
+    "AI Spotter",
+    0
+   ],
+   [
+    "AI Spotter: Personal Trainer",
+    0
+   ],
+   [
+    "Kindroid: Your Personal AI",
+    10852
+   ],
+   [
+    "Spotter.ai",
+    42
+   ],
+   [
+    "Ai - open source AI Assistant",
+    2
+   ],
+   [
+    "CarBot - AI Car Spotter",
+    12
+   ],
+   [
+    "Genspark AI Workspace",
+    4448
+   ],
+   [
+    "Manus - AI Agent & Automation",
+    40296
+   ],
+   [
+    "Car Identifier & AI Scanner",
+    8
+   ],
+   [
+    "LobeHub - AI Agent Teammates",
+    14
+   ]
+  ]
+ },
+ "gym ai chat": {
+  "n": 44,
+  "pos": null,
+  "weak10": 1,
+  "top": [
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "GymLog AI: Fitness Coach",
+    7
+   ],
+   [
+    "Kindroid: Your Personal AI",
+    10852
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Workout Trainer AI",
+    7675
+   ],
+   [
+    "Chat Unlimited & Ask Brutus AI",
+    1116
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Tolan: Your Friendly Guide",
+    189795
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ]
+  ]
+ },
+ "ai weightlifting coach": {
+  "n": 49,
+  "pos": null,
+  "weak10": 2,
+  "top": [
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Kinetic: AI Coach",
+    1
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "GymAdapt AI: Gym Workout Coach",
+    16
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "JuggernautAI",
+    5655
+   ],
+   [
+    "Dr. Muscle AI Personal Trainer",
+    382
+   ]
+  ]
+ },
+ "ai powerlifting coach": {
+  "n": 49,
+  "pos": null,
+  "weak10": 3,
+  "top": [
+   [
+    "Sheiko Gold: Powerlifting AI",
+    190
+   ],
+   [
+    "JuggernautAI",
+    5655
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Iron Raven Powerlifting Coach",
+    0
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "Aldo Coach: AI Workout Plan",
+    15
+   ],
+   [
+    "Volt: Strength Training Plans",
+    16934
+   ]
+  ]
+ },
+ "ai workout buddy": {
+  "n": 49,
+  "pos": null,
+  "weak10": 3,
+  "top": [
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "WorkoutBuddy: AI Fitness Coach",
+    49
+   ],
+   [
+    "Workout Buddy: AI Gym Coach",
+    7
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Replika - AI Companion Chat",
+    227658
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Healthy Buddy: AI Health Coach",
+    144
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Fitify: Home Workout, AI Coach",
+    12115
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ]
+  ]
+ },
+ "ai fitness chat": {
+  "n": 45,
+  "pos": null,
+  "weak10": 4,
+  "top": [
+   [
+    "FitBot AI-Powered Fitness Chat",
+    4
+   ],
+   [
+    "Star AI-AI Fitness",
+    0
+   ],
+   [
+    "Workout Trainer AI",
+    7675
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "GymLog AI: Fitness Coach",
+    7
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Kindroid: Your Personal AI",
+    10852
+   ],
+   [
+    "AI Boyfriend Chat: iBoy",
+    4949
+   ],
+   [
+    "Replika - AI Companion Chat",
+    227658
+   ],
+   [
+    "ChatGymity – AI Fitness Coach",
+    0
+   ]
+  ]
+ },
+ "ai coach gym": {
+  "n": 50,
+  "pos": null,
+  "weak10": 1,
+  "top": [
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Saga: AI Personal Trainer",
+    738
+   ],
+   [
+    "GymAdapt AI: Gym Workout Coach",
+    16
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Workout Trainer AI",
+    7675
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ]
+  ]
+ },
+ "ai gym planner": {
+  "n": 49,
+  "pos": null,
+  "weak10": 1,
+  "top": [
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "uFit AI: Gym Workout Planner",
+    3885
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Coachify AI: Workout Planner",
+    2016
+   ],
+   [
+    "Fitness Planner Gym・Workout AI",
+    1963
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Stronger AI: Gym Planner",
+    13
+   ],
+   [
+    "Muscle Monster Workout Planner",
+    11692
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ]
+  ]
+ },
+ "ai gym log": {
+  "n": 50,
+  "pos": null,
+  "weak10": 4,
+  "top": [
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "uFit AI: Gym Workout Planner",
+    3885
+   ],
+   [
+    "Fitness Planner Gym・Workout AI",
+    1963
+   ],
+   [
+    "GymLog AI: Fitness Coach",
+    7
+   ],
+   [
+    "Keep Trainer: Gym Workout Log",
+    14042
+   ],
+   [
+    "Roby AI: Workout Planner & Log",
+    6
+   ],
+   [
+    "Setgraph: Gym Workout Tracker",
+    6245
+   ],
+   [
+    "Fitenium: AI Workout & Gym Log",
+    120
+   ],
+   [
+    "GymAdapt AI: Gym Workout Coach",
+    16
+   ]
+  ]
+ },
+ "ai routine generator": {
+  "n": 46,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Chatbot AI - Ask AI Chatbot",
+    4058
+   ],
+   [
+    "AI Song Generator - Zona",
+    15778
+   ],
+   [
+    "invideo: AI Video Editor",
+    28070
+   ],
+   [
+    "AI Song: AI Music Generator",
+    5606
+   ],
+   [
+    "Artist.ai - AI Art Generator",
+    13787
+   ],
+   [
+    "MIA: AI Song Generator",
+    3115
+   ],
+   [
+    "Gencraft AI Image Generator",
+    2072
+   ],
+   [
+    "AI+ Chat & Al Video Generator",
+    19266
+   ],
+   [
+    "AI ChatBot Assistant: AskEasy",
+    32456
+   ],
+   [
+    "Genspark AI Workspace",
+    4448
+   ]
+  ]
+ },
+ "ai exercise coach": {
+  "n": 49,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Bevel: AI Health Coach",
+    17849
+   ],
+   [
+    "Simple: AI Weight Loss Coach",
+    411543
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Fitify: Home Workout, AI Coach",
+    12115
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "Keep Trainer: Gym Workout Log",
+    14042
+   ],
+   [
+    "Lasta Fit: Your Wellness Coach",
+    4600
+   ]
+  ]
+ },
+ "ai exercise planner": {
+  "n": 49,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Muscle Monster Workout Planner",
+    11692
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Fitness Planner Gym・Workout AI",
+    1963
+   ],
+   [
+    "Stronger - Gym Workout Planner",
+    17619
+   ],
+   [
+    "GymStreak: AI Personal Trainer",
+    15909
+   ],
+   [
+    "Bevel: AI Health Coach",
+    17849
+   ],
+   [
+    "ChillFit: Home Workout Planner",
+    3080
+   ]
+  ]
+ },
+ "ai home workout": {
+  "n": 49,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "EasyFit AI-Home Workout",
+    4223
+   ],
+   [
+    "Fitify: Home Workout, AI Coach",
+    12115
+   ],
+   [
+    "SmartGym: Gym & Home Workouts",
+    34839
+   ],
+   [
+    "Home Workout for Men",
+    9387
+   ],
+   [
+    "Fitness Planner Gym・Workout AI",
+    1963
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Tone AI: Pilates & Workouts",
+    5339
+   ],
+   [
+    "Muscle Monster Workout Planner",
+    11692
+   ]
+  ]
+ },
+ "ai home workout coach": {
+  "n": 50,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Fitify: Home Workout, AI Coach",
+    12115
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "EasyFit AI-Home Workout",
+    4223
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "SHRED Guided Strength Training",
+    40384
+   ],
+   [
+    "Lasta Fit: Your Wellness Coach",
+    4600
+   ],
+   [
+    "Saga: AI Personal Trainer",
+    738
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ]
+  ]
+ },
+ "ai training plan": {
+  "n": 47,
+  "pos": null,
+  "weak10": 3,
+  "top": [
+   [
+    "Athletica AI Training Plans",
+    41
+   ],
+   [
+    "Volt: Strength Training Plans",
+    16934
+   ],
+   [
+    "Stopa: AI Training Plans",
+    0
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "HumanGO: AI Training Planner",
+    21
+   ],
+   [
+    "Coursiv - AI Certificates",
+    3204
+   ],
+   [
+    "SHRED Guided Strength Training",
+    40384
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "LADDER Strength Training Plans",
+    219977
+   ]
+  ]
+ },
+ "ai strength training": {
+  "n": 50,
+  "pos": null,
+  "weak10": 1,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289519
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Volt: Strength Training Plans",
+    16934
+   ],
+   [
+    "SHRED Guided Strength Training",
+    40384
+   ],
+   [
+    "TrainHeroic: Strength Training",
+    1847
+   ],
+   [
+    "LiftTrack: Strength Training",
+    155
+   ],
+   [
+    "JuggernautAI",
+    5655
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ]
+  ]
+ },
+ "ai muscle builder": {
+  "n": 49,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Muscle Monster Workout Planner",
+    11692
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Workout Trainer AI",
+    7675
+   ],
+   [
+    "Idle Gym Life: Muscle Clicker",
+    33359
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Fitness Planner Gym・Workout AI",
+    1963
+   ],
+   [
+    "BEASTLY: Build Muscle Fast",
+    368
+   ]
+  ]
+ },
+ "ai weight training": {
+  "n": 50,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "SHRED Guided Strength Training",
+    40384
+   ],
+   [
+    "Volt: Strength Training Plans",
+    16934
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "LADDER Strength Training Plans",
+    219977
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "GymStreak: AI Personal Trainer",
+    15909
+   ]
+  ]
+ },
+ "ai trainer app": {
+  "n": 47,
+  "pos": null,
+  "weak10": 2,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289519
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Gymverse: Gym Workout Planner",
+    165566
+   ],
+   [
+    "UAE AI Academy",
+    0
+   ],
+   [
+    "Workout Trainer AI",
+    7675
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "MicroCoach AI Trainer",
+    0
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "GymStreak: AI Personal Trainer",
+    15909
+   ]
+  ]
+ },
+ "personal ai trainer": {
+  "n": 49,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Workout Trainer AI",
+    7675
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "GymStreak: AI Personal Trainer",
+    15909
+   ],
+   [
+    "Dr. Muscle AI Personal Trainer",
+    382
+   ],
+   [
+    "Freeletics: Workouts & Fitness",
+    22294
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Saga: AI Personal Trainer",
+    738
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "Ray: AI Personal Trainer",
+    320
+   ]
+  ]
+ },
+ "virtual personal trainer": {
+  "n": 42,
+  "pos": null,
+  "weak10": 2,
+  "top": [
+   [
+    "Future Pro: Personal Training",
+    10800
+   ],
+   [
+    "ICG Training",
+    2610
+   ],
+   [
+    "Trainwell: Personal Training",
+    5620
+   ],
+   [
+    "Kickoff Personal Training",
+    4174
+   ],
+   [
+    "Virtual Trainer - AI & Fitness",
+    7
+   ],
+   [
+    "Workout Trainer AI",
+    7675
+   ],
+   [
+    "Online Personal Training",
+    472
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "The Conqueror Challenges",
+    12497
+   ],
+   [
+    "FitGenerator: Personal Trainer",
+    17
+   ]
+  ]
+ },
+ "virtual gym coach": {
+  "n": 49,
+  "pos": null,
+  "weak10": 1,
+  "top": [
+   [
+    "Dream Gym",
+    1707
+   ],
+   [
+    "Fitness Girl - Studio Coach",
+    19592
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Gym Workout Planner - Gym Plan",
+    678
+   ],
+   [
+    "Home Workout - No Equipments",
+    129190
+   ],
+   [
+    "Gym Fitness My Workout Planner",
+    3170
+   ],
+   [
+    "Virtuagym Coach",
+    346
+   ],
+   [
+    "FitnessKit: PT Client Coach",
+    148
+   ],
+   [
+    "ForActive: Sell Like a Gym",
+    734
+   ]
+  ]
+ },
+ "ai progressive overload": {
+  "n": 48,
+  "pos": null,
+  "weak10": 1,
+  "top": [
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Venice AI",
+    1880
+   ],
+   [
+    "Genspark AI Workspace",
+    4448
+   ],
+   [
+    "Lloyd - Your AI Superpower",
+    23627
+   ],
+   [
+    "Coursiv - AI Certificates",
+    3204
+   ],
+   [
+    "Monica AI: Ultimate AI Assist",
+    6890
+   ],
+   [
+    "You.com - Enterprise grade AI",
+    4873
+   ],
+   [
+    "DeepLearning.AI",
+    54
+   ],
+   [
+    "Magica - AI super agent",
+    748
+   ]
+  ]
+ },
+ "progressive overload tracker": {
+  "n": 47,
+  "pos": null,
+  "weak10": 4,
+  "top": [
+   [
+    "Hevy - Workout Tracker Gym Log",
+    102690
+   ],
+   [
+    "Gym Progressive Overload Track",
+    1
+   ],
+   [
+    "Overload: Gym Log",
+    7
+   ],
+   [
+    "Setgraph: Gym Workout Tracker",
+    6245
+   ],
+   [
+    "Strong Workout Tracker Gym Log",
+    108548
+   ],
+   [
+    "Boostcamp: Workout Tracker",
+    10905
+   ],
+   [
+    "Alspr: Progressive Overload",
+    4
+   ],
+   [
+    "MacroFactor Workouts: Tracker",
+    4928
+   ],
+   [
+    "OverloadPro - Lift Logs",
+    10
+   ],
+   [
+    "Stronger - Gym Workout Planner",
+    17619
+   ]
+  ]
+ },
+ "beginner gym plan": {
+  "n": 46,
+  "pos": null,
+  "weak10": 3,
+  "top": [
+   [
+    "GetJacked: Beginner Gym Plan",
+    3
+   ],
+   [
+    "Stronglifts 5x5 Workout Plan",
+    76922
+   ],
+   [
+    "Gymverse: Gym Workout Planner",
+    165566
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "Gym Workout Planner - Gym Plan",
+    678
+   ],
+   [
+    "GogoFit: Gym Workout Plan",
+    0
+   ],
+   [
+    "Gym Workout Planner For Women",
+    4972
+   ],
+   [
+    "Gym Workout For Men",
+    2617
+   ],
+   [
+    "Gym Fitness My Workout Planner",
+    3170
+   ],
+   [
+    "FirstGym: Beginner Gym Workout",
+    0
+   ]
+  ]
+ },
+ "gym plan for beginners": {
+  "n": 46,
+  "pos": null,
+  "weak10": 2,
+  "top": [
+   [
+    "GogoFit: Gym Workout Plan",
+    0
+   ],
+   [
+    "Gymverse: Gym Workout Planner",
+    165566
+   ],
+   [
+    "Gym Workout Planner For Women",
+    4972
+   ],
+   [
+    "Beginner Workout Plans for Gym",
+    6
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "Gym Workout Planner - Gym Plan",
+    678
+   ],
+   [
+    "FitMe - Easy Workout at Home",
+    80501
+   ],
+   [
+    "Gym Workout For Men",
+    2617
+   ],
+   [
+    "Gym Fitness My Workout Planner",
+    3170
+   ],
+   [
+    "JEFIT Workout Plan Gym Tracker",
+    47194
+   ]
+  ]
+ },
+ "ai beginner workout": {
+  "n": 50,
+  "pos": null,
+  "weak10": 2,
+  "top": [
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Gymax: Muscle Workout Planner",
+    186
+   ],
+   [
+    "Tai Chi Beginners & Seniors",
+    4570
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Ray: AI Personal Trainer",
+    320
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "GymAdapt AI: Gym Workout Coach",
+    16
+   ],
+   [
+    "Fitify: Home Workout, AI Coach",
+    12115
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Ditto: AI Fitness Trainer",
+    384
+   ]
+  ]
+ },
+ "ai workout split": {
+  "n": 50,
+  "pos": null,
+  "weak10": 3,
+  "top": [
+   [
+    "uFit AI: Gym Workout Planner",
+    3885
+   ],
+   [
+    "SmartGym: Gym & Home Workouts",
+    34839
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289519
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Split - Privacy Focused, No AI",
+    0
+   ],
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Brink: AI Workout & Macros",
+    366
+   ],
+   [
+    "GymAdapt AI: Gym Workout Coach",
+    16
+   ],
+   [
+    "Fit AI - Workout Planner",
+    124
+   ]
+  ]
+ },
+ "ai gym routine": {
+  "n": 50,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "uFit AI: Gym Workout Planner",
+    3885
+   ],
+   [
+    "Liftoff - Ranked Gym Workouts",
+    101997
+   ],
+   [
+    "Fitness Planner Gym・Workout AI",
+    1963
+   ],
+   [
+    "Keep Trainer: Gym Workout Log",
+    14042
+   ],
+   [
+    "Critique AI: Habit Tracker",
+    9776
+   ],
+   [
+    "Symmetry: Gym Workout Tracker",
+    6841
+   ],
+   [
+    "SHRED Guided Strength Training",
+    40384
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ]
+  ]
+ },
+ "ai fitness planner": {
+  "n": 49,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Fitness Planner Gym・Workout AI",
+    1963
+   ],
+   [
+    "Coachify AI: Workout Planner",
+    2016
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "Muscle Monster Workout Planner",
+    11692
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "uFit AI: Gym Workout Planner",
+    3885
+   ],
+   [
+    "Gym Bot Workout Planner",
+    1091
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ]
+  ]
+ },
+ "ai fitness app": {
+  "n": 48,
+  "pos": null,
+  "weak10": 2,
+  "top": [
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Cal AI - Calorie Tracker",
+    374677
+   ],
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289519
+   ],
+   [
+    "Coachify AI: Workout Planner",
+    2016
+   ],
+   [
+    "GoalBlocks: AI Fitness Coach",
+    4
+   ],
+   [
+    "Bevel: AI Health Coach",
+    17849
+   ],
+   [
+    "SHRED Guided Strength Training",
+    40384
+   ],
+   [
+    "Workout Trainer AI",
+    7675
+   ],
+   [
+    "Flex Aura - AI Fitness App",
+    4
+   ]
+  ]
+ },
+ "ai gym workout": {
+  "n": 47,
+  "pos": null,
+  "weak10": 0,
+  "top": [
+   [
+    "Fitbod: Gym & Fitness Planner",
+    289478
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55991
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ],
+   [
+    "Symmetry: Gym Workout Tracker",
+    6832
+   ],
+   [
+    "Planfit AI Gym Workout Planner",
+    8489
+   ],
+   [
+    "SmartGym: Gym & Home Workouts",
+    34834
+   ],
+   [
+    "Keep Trainer: Gym Workout Log",
+    14041
+   ],
+   [
+    "Fitness Planner Gym・Workout AI",
+    1960
+   ],
+   [
+    "Gymverse: Gym Workout Planner",
+    165563
+   ],
+   [
+    "SHRED: Gym & Home Workouts",
+    40383
+   ]
+  ]
+ },
+ "ai gym plan": {
+  "n": 50,
+  "pos": null,
+  "weak10": 2,
+  "top": [
+   [
+    "Planfit AI Gym Workout Planner",
+    8494
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "uFit AI: Gym Workout Planner",
+    3885
+   ],
+   [
+    "BodBot AI Workout Planner",
+    2897
+   ],
+   [
+    "Volt: Strength Training Plans",
+    16934
+   ],
+   [
+    "GymAdapt AI: Gym Workout Coach",
+    16
+   ],
+   [
+    "Fitness Planner Gym・Workout AI",
+    1963
+   ],
+   [
+    "LADDER Strength Training Plans",
+    219977
+   ],
+   [
+    "SHRED Guided Strength Training",
+    40384
+   ],
+   [
+    "MaxLift: AI Gym Workout Plans",
+    1
+   ]
+  ]
+ },
+ "ai training coach": {
+  "n": 50,
+  "pos": null,
+  "weak10": 3,
+  "top": [
+   [
+    "Motra AI Workout Fitness Coach",
+    3054
+   ],
+   [
+    "Judo AI: Training Coach",
+    20
+   ],
+   [
+    "Fitness AI Gym Workout Planner",
+    55993
+   ],
+   [
+    "Ball AI - Basketball Training",
+    7751
+   ],
+   [
+    "Fit PA: AI Training Coach",
+    6
+   ],
+   [
+    "V AI Training Coach",
+    8
+   ],
+   [
+    "CloserCoach - AI Sales Trainer",
+    727
+   ],
+   [
+    "Gravl: AI Personal Trainer",
+    6308
+   ],
+   [
+    "Flex AI Workout Trainer & Log",
+    2416
+   ],
+   [
+    "Zing AI: Home & Gym Workouts",
+    30771
+   ]
+  ]
+ }
+}
