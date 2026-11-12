@@ -1,8 +1,11 @@
 package com.richjun.liftupai.domain.ai.service
 
 import com.richjun.liftupai.domain.auth.entity.User
+import com.richjun.liftupai.domain.user.entity.ExperienceLevel
+import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
+import com.richjun.liftupai.domain.workout.service.FirstSessionRule
 import com.richjun.liftupai.domain.workout.service.UserPlanService
 import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
@@ -19,6 +22,7 @@ import java.time.Duration
 class TrainerContextBuilder(
     private val userPlanService: UserPlanService,
     private val workoutSessionRepository: WorkoutSessionRepository,
+    private val userProfileRepository: UserProfileRepository,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -50,9 +54,8 @@ class TrainerContextBuilder(
 
         val completed = workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED)
         if (completed == 0L) {
-            lines += "- Completed workouts so far: 0 — they have NEVER finished a workout. Your top job is getting them " +
-                "through the first one: encourage starting today's session now (the app offers a light start — the first " +
-                "3 exercises, 2 sets each) and attach [[START_TODAY_WORKOUT]] when it fits."
+            val level = try { userProfileRepository.findByUser_Id(user.id).orElse(null)?.experienceLevel } catch (e: Exception) { null }
+            lines += firstWorkoutLine(level)
         } else {
             lines += "- Completed workouts so far: $completed."
             workoutSessionRepository.findTopByUserOrderByStartTimeDesc(user)
@@ -70,6 +73,24 @@ class TrainerContextBuilder(
         val block = (listOf("## TRAINING CONTEXT (real data from the app — use it; never invent sessions, weights or dates)") + lines)
             .joinToString("\n")
         return Snapshot(hasActivePlan = plan != null, completedWorkouts = completed, block = block)
+    }
+
+    companion object {
+        /**
+         * 완료 0회 사용자 안내 줄. 첫 세션 규칙 대상이면 '가볍게 시작', 상급·전문가(규칙 밖, 2026-11-12)는 오늘 플랜 그대로.
+         * 11-11 상급·90분 실가입자에게 트레이너가 "30分だけでも"·"初日は3種目だけ"라고 해 본인이 종목을 손으로 더했다.
+         */
+        internal fun firstWorkoutLine(level: ExperienceLevel?): String =
+            if (FirstSessionRule.appliesTo(level)) {
+                "- Completed workouts so far: 0 — they have NEVER finished a workout. Your top job is getting them " +
+                    "through the first one: encourage starting today's session now (the app offers a light start — the first " +
+                    "3 exercises, 2 sets each) and attach [[START_TODAY_WORKOUT]] when it fits."
+            } else {
+                "- Completed workouts so far: 0 in this app, but they reported ${level?.name} training experience — today's " +
+                    "session above is their full plan at their chosen length. Treat them as an experienced lifter: do not tell " +
+                    "them to cut it short, do only a few exercises or keep it to 30 minutes. Encourage logging today's session " +
+                    "and attach [[START_TODAY_WORKOUT]] when it fits."
+            }
     }
 
     private fun formatKg(v: Double): String = if (v % 1.0 == 0.0) v.toLong().toString() else "%.1f".format(v)
