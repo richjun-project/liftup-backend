@@ -48,7 +48,11 @@ class PTFirstWorkoutReminderTest {
         send("workout_reminder", completedWorkouts)!!
 
     /** 저장된 채팅 메시지(= 실제로 보낸 문구). 정책이 막았으면 null */
-    private fun send(scheduleName: String, completedWorkouts: Long): String? {
+    private fun send(
+        scheduleName: String,
+        completedWorkouts: Long,
+        level: com.richjun.liftupai.domain.user.entity.ExperienceLevel? = null,
+    ): String? {
         val user = User(id = 5L, email = "new@example.com", nickname = "new").apply { lastLoginAt = AppTime.utcNow() }
         val schedule = NotificationSchedule(
             user = user,
@@ -65,7 +69,9 @@ class PTFirstWorkoutReminderTest {
         every { userSettingsRepository.findByUser_Id(5L) } returns Optional.of(UserSettings(user = user, language = "ko"))
         every { workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED) } returns completedWorkouts
         every { chatMessageRepository.save(capture(saved)) } answers { firstArg() }
-        every { userProfileRepository.findByUser(user) } returns Optional.empty()
+        every { userProfileRepository.findByUser(user) } returns
+            if (level == null) Optional.empty()
+            else Optional.of(com.richjun.liftupai.domain.user.entity.UserProfile(user = user, experienceLevel = level))
 
         service.sendScheduledPTMessage(1L)
         return if (saved.isCaptured) saved.captured.aiResponse else null
@@ -103,5 +109,22 @@ class PTFirstWorkoutReminderTest {
     fun `users with a finished workout keep the regular reminder`() {
         val regular = NotificationLocalization.messages("pt.template.workout_reminder.default", "ko")
         assertThat(sendWorkoutReminder(completedWorkouts = 3)).isIn(regular)
+    }
+
+    @Test
+    fun `advanced users before their first workout get the regular reminder, not the 30-minute promise`() {
+        // 2026-11-12: 첫 세션 규칙은 상급·전문가에게 안 걸린다(저장된 90분 그대로) → "30분 안쪽으로 짜 놨어요"는 거짓이 된다
+        // 프로필이 있으면 고른(기본) 트레이너 말투의 보통 알림 — 말투와 무관하게 '첫 운동' 문구가 아니어야 한다
+        listOf(
+            com.richjun.liftupai.domain.user.entity.ExperienceLevel.ADVANCED,
+            com.richjun.liftupai.domain.user.entity.ExperienceLevel.EXPERT,
+        ).forEach {
+            val msg = send("workout_reminder", completedWorkouts = 0, level = it)
+            assertThat(msg).doesNotContain("첫 운동").contains("30분 전")
+        }
+        // 중급은 그대로 첫 운동 문구
+        val firstWorkout = NotificationLocalization.messages("pt.template.first_workout.default", "ko")
+        assertThat(send("workout_reminder", completedWorkouts = 0,
+            level = com.richjun.liftupai.domain.user.entity.ExperienceLevel.INTERMEDIATE)).isIn(firstWorkout)
     }
 }

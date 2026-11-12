@@ -371,7 +371,10 @@ class AIAnalysisService(
         // 첫 세션(완료 운동 0회)이고 시간을 직접 고르지 않았으면 하루 상세·대시보드·트레이너 첫 인사와 같은 규칙(앞 4종목·30분 안).
         // 2026-11-03 운영: 온보딩 직후 채팅 "오늘의 운동 추천"을 누른 초보(SPARTAN)가 트레이너 첫 인사("4종목 약 30분")와 달리
         // 6종목·60분·난이도 중급을 받고 시작 없이 떠났다(10-30 의 283 도 같은 버튼에서 이탈). 이 경로만 규칙 밖이었다.
-        val firstSession = duration == null && workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED) == 0L
+        // 상급·전문가는 규칙 밖(FirstSessionRule.appliesTo, 2026-11-12)
+        val firstSession = duration == null &&
+            com.richjun.liftupai.domain.workout.service.FirstSessionRule.appliesTo(ctx.level) &&
+            workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED) == 0L
         val resolvedDuration = if (firstSession) {
             com.richjun.liftupai.domain.workout.service.FirstSessionRule.minutes(ctx.sessionMinutesOrDefault())
         } else {

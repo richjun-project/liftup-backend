@@ -20,6 +20,7 @@ import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.workout.repository.WorkoutSessionRepository
+import com.richjun.liftupai.domain.workout.service.FirstSessionRule
 import com.richjun.liftupai.global.exception.ResourceNotFoundException
 import com.richjun.liftupai.global.time.AppTime
 import org.slf4j.LoggerFactory
@@ -247,14 +248,17 @@ class PTScheduledMessageService(
     private fun resolveTemplateMessage(schedule: NotificationSchedule): String {
         val locale = resolveLocale(schedule.user.id)
         // 사용자가 고른 트레이너 말투로 보낸다(예전엔 모두 기본 문구였다).
-        val style = userProfileRepository.findByUser(schedule.user).orElse(null)?.ptStyle?.name
+        val profile = userProfileRepository.findByUser(schedule.user).orElse(null)
+        val style = profile?.ptStyle?.name
         return when (schedule.scheduleName) {
             "morning_meal_check" -> ptMessageTemplates.getMorningMealMessage(locale, style)
             "lunch_meal_check" -> ptMessageTemplates.getLunchMealMessage(locale, style)
             "workout_reminder" ->
                 // 2026-09 실측: 최근 30일 실가입 23명 중 세트를 하나라도 완료한 사람이 0명이었다.
                 // 첫 운동 전인 사용자에게는 "한 세트만" 으로 문턱을 낮춘 문구를 보낸다.
-                if (workoutSessionRepository.countByUserAndStatus(schedule.user, SessionStatus.COMPLETED) == 0L) {
+                // 문구가 "30분 안쪽으로 짜 놨어요"라 첫 세션 규칙 밖(상급·전문가 — 저장된 시간 그대로)이면 보통 알림.
+                if (FirstSessionRule.appliesTo(profile?.experienceLevel) &&
+                    workoutSessionRepository.countByUserAndStatus(schedule.user, SessionStatus.COMPLETED) == 0L) {
                     ptMessageTemplates.getFirstWorkoutMessage(locale, style)
                 } else {
                     ptMessageTemplates.getWorkoutReminderMessage(locale, style)

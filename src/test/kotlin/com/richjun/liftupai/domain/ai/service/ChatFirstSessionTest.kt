@@ -88,4 +88,13 @@ class ChatFirstSessionTest {
         val mid = ChatHarness(level = ExperienceLevel.INTERMEDIATE).chat.getAIWorkoutRecommendation(1L)
         assertEquals("중급", mid.recommendation.difficulty)
     }
+
+    @Test
+    @DisplayName("상급은 첫 세션이라도 저장된 60분 그대로(첫 세션 규칙 밖)")
+    fun advancedUsesSaved() {
+        val r = ChatHarness(level = ExperienceLevel.ADVANCED, savedMinutes = 60, completedSessions = 0L, picks = sixPicks)
+            .chat.getAIWorkoutRecommendation(1L)
+        assertEquals(60, r.recommendation.duration)
+        assertTrue(r.recommendation.exercises.size >= 5, "상급 60분인데 ${r.recommendation.exercises.size}종목")
+    }
 }

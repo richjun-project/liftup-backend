@@ -453,9 +453,13 @@ class PlanWorkoutEnricher(
         else -> 16
     }
 
-    /** 완료한 운동이 하나도 없으면 첫 세션 — 하루 상세와 대시보드가 같은 판정을 쓴다 */
+    /** 첫 세션 규칙 대상: 완료한 운동이 하나도 없고 상급·전문가가 아니면([FirstSessionRule.appliesTo]).
+     *  하루 상세와 대시보드가 같은 판정을 쓴다 */
     fun isFirstSession(user: com.richjun.liftupai.domain.auth.entity.User): Boolean =
-        workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED) == 0L
+        workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED) == 0L &&
+            FirstSessionRule.appliesTo(
+                try { trainingContext.resolve(user.id).level } catch (e: Exception) { null }
+            )
 
     private companion object {
         /** 초보·노비스 보호 처방을 적용하는 처음 몇 주 */

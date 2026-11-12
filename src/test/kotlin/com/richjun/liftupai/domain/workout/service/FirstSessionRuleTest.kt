@@ -70,4 +70,32 @@ class FirstSessionRuleTest {
         assertEquals(30, FirstSessionRule.minutes(60))
         assertEquals(30, FirstSessionRule.minutes(0))
     }
+
+    @Test
+    @DisplayName("상급·전문가는 첫 세션이라도 저장된 6종목·세션 시간 그대로(대시보드도)")
+    fun advancedSkipsRule() {
+        // 2026-11-12 운영: 상급·주 5회·90분을 고른 실가입자가 4종목·31분을 받고 미리보기에 종목 5개를 손으로 더했다
+        listOf(ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT).forEach { level ->
+            val u = RecoTestKit.user()
+            val r = RecoTestKit.Repos(RecoTestKit.profile(u, level, 30), RecoTestKit.settings(u, durationMinutes = 60))
+            val f = RecoTestKit.PlanFixture(r, slugs.map { Triple(RecoTestKit.bySlug.getValue(it), 4, 8..12) })
+            every { f.sessionRepo.countByUserAndStatus(any(), SessionStatus.COMPLETED) } returns 0L
+
+            val day = f.service.getDayWorkout(u.id, 1)
+            assertEquals(6, day.exercises.size, "$level")
+            assertTrue(day.estimatedDuration > FirstSessionRule.MAX_MINUTES, "$level 첫 세션이 줄었다: ${day.estimatedDuration}")
+            val overview = f.service.getPlanDashboard(u.id, "ko").days.single()
+            assertEquals(day.exercises.size, overview.exerciseCount)
+            assertEquals(day.estimatedDuration, overview.estimatedDuration)
+        }
+    }
+
+    @Test
+    @DisplayName("규칙 대상 수준: 초보·노비스·중급·모름은 대상, 상급·전문가는 밖")
+    fun appliesToLevels() {
+        listOf(ExperienceLevel.BEGINNER, ExperienceLevel.NOVICE, ExperienceLevel.INTERMEDIATE, null)
+            .forEach { assertTrue(FirstSessionRule.appliesTo(it), "$it") }
+        listOf(ExperienceLevel.ADVANCED, ExperienceLevel.EXPERT)
+            .forEach { assertTrue(!FirstSessionRule.appliesTo(it), "$it") }
+    }
 }
