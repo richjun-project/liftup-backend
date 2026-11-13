@@ -169,6 +169,62 @@ class CoachToolsIntegrationTest : ApiTestSupport() {
     }
 
     @Test
+    fun `오늘 Day 바꾸기 — 말하면 그 Day 가 오늘 운동이 되고, 없는 Day 는 거절, 같은 Day 는 변경 없음`() {
+        val noPlan = toolbox.execute("set_today_workout_day", args("""{"day":2}"""), ctx)
+        assertFalse(noPlan.ok)
+        assertEquals("no_active_plan", noPlan.result["error"])
+
+        userPlanService.applyTemplate(user, "advanced_pplul", null, "ko")
+        val overview = toolbox.execute("get_plan_overview", args(), ctx)
+        assertEquals(1, overview.result["current_day"], overview.result.toString())
+        @Suppress("UNCHECKED_CAST")
+        val pullName = (overview.result["days"] as List<Map<String, Any?>>).first { it["day"] == 2 }["name"]
+
+        val out = toolbox.execute("set_today_workout_day", args("""{"day":2}"""), ctx)
+        assertTrue(out.ok, out.result.toString())
+        assertTrue(out.changed)
+        assertEquals(1, out.result["previous_day"])
+        assertEquals(pullName, out.result["day_name"])
+        assertEquals(2, userPlanService.getActivePlan(user.id)!!.currentDay)
+        assertEquals(2, toolbox.execute("get_today_workout", args(), ctx).result["day"], "오늘 운동이 바뀐 Day 를 보여 준다")
+
+        val same = toolbox.execute("set_today_workout_day", args("""{"day":2}"""), ctx)
+        assertTrue(same.ok)
+        assertFalse(same.changed, "이미 오늘인 Day 는 바뀐 게 아니다")
+
+        val bad = toolbox.execute("set_today_workout_day", args("""{"day":9}"""), ctx)
+        assertFalse(bad.ok)
+        assertEquals("bad_arguments", bad.result["error"])
+        assertEquals(2, userPlanService.getActivePlan(user.id)!!.currentDay, "거절된 요청은 아무것도 안 바꾼다")
+    }
+
+    @Test
+    fun `api-ai-chat — 오늘 Day 를 바꾸면 1_1_41 이하 앱에는 플랜을 다시 받게 하는 기록을 덧붙인다`() {
+        userPlanService.applyTemplate(user, "advanced_pplul", null, "ko")
+        fun script() {
+            model.queue.clear()
+            model.queue.add("""{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"set_today_workout_day","args":{"day":2}},"thoughtSignature":"s1"}]}}]}""")
+            model.queue.add("""{"candidates":[{"content":{"role":"model","parts":[{"text":"좋아, 오늘은 당기기 날로 바꿨어. 데드리프트부터 가자.\n[[START_TODAY_WORKOUT]]"}]}}]}""")
+        }
+        fun chat(version: String) = body(call(post("/api/ai/chat").header("X-App-Version", version)
+            .contentType(MediaType.APPLICATION_JSON).content("""{"message":"오늘 풀 데이야"}"""))).path("data")
+
+        script()
+        val old = chat("1.1.41+58")
+        assertTrue(old.path("reply").asText().contains("당기기"), "바꾼 게 사실이면 '바꿨어'를 막지 않는다: $old")
+        assertEquals(listOf("set_today_workout_day", "swap_exercise_in_plan"), old.path("tools").map { it.path("name").asText() }, old.toString())
+        assertTrue(old.path("tools").all { it.path("ok").asBoolean() && it.path("changed").asBoolean() }, old.toString())
+        assertTrue(old.path("actions").map { it.asText() }.contains("START_TODAY_WORKOUT"), old.toString())
+        assertEquals(2, userPlanService.getActivePlan(user.id)!!.currentDay)
+        assertEquals("set_today_workout_day:changed", chatMessageRepository.findAll().last { it.user.id == user.id }.toolTrace, "기록엔 실제 도구만")
+
+        userPlanService.setCurrentDay(user.id, com.richjun.liftupai.domain.workout.dto.request.SetCurrentDayRequest(1))
+        script()
+        val current = chat("1.1.42+59")
+        assertEquals(listOf("set_today_workout_day"), current.path("tools").map { it.path("name").asText() }, current.toString())
+    }
+
+    @Test
     fun `운동 시간 변경 — 알림 일정이 30분 전으로 다시 만들어진다`() {
         ptScheduledMessageService.createPTSchedulesForUser(user.id)
         val out = toolbox.execute("set_workout_time", args("""{"time":"7:30"}"""), ctx)

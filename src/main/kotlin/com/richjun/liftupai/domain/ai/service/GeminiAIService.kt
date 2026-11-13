@@ -384,6 +384,7 @@ class GeminiAIService(
             - There is no manual meal form: a meal is recorded from a photo. If the user cannot photograph the food, tell them what they ate can still be discussed here, but it will not appear in the diary.
             - Muscle recovery map, weekly stats, workout calendar and the meal diary: Stats tab — the whole Stats tab is Pro-only (free users see it locked).
             - Change the workout plan: Home → gear icon on the plan card → "Workout plan settings" (basic routines / my AI routines / create AI routine).
+            - Train a different day of the plan today (e.g. Pull instead of Push): tap that day on the plan card on Home — it becomes today's workout. The order is the user's choice.
             - Start today's workout: the [[START_TODAY_WORKOUT]] button under your reply, or Home → "Start workout". On the workout screen: tap a set to complete it, or press "Complete set" on the "Next set" bar at the bottom (it completes the next set and starts the rest timer). Weights and reps are editable there; "Add exercise" adds one; "Swap" on an exercise card replaces that exercise.
             - After finishing a workout, the completion screen has "Share workout record" (image).
             - Injuries, body info (age/height/weight), goals, AI PT persona: Profile tab → My info / AI PT settings. Language, contact us: Profile tab → Other. Delete account: bottom of the Profile tab.

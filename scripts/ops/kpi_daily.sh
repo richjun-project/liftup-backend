@@ -28,7 +28,10 @@ sudo -n python3 - <<'PY' 2>/dev/null
 import json, time
 since = time.time() - 86400
 app = s5 = s4 = 0; chat = []
-for line in open('/var/log/caddy/api-access.log', errors='ignore'):
+# 2026-11-12 통합 서버(richjun-api)로 옮긴 뒤 접근 로그는 /var/log/caddy/liftupai.log(사이트별 applog) — 옛 이름은 옛 서버용
+import os
+log_path = next((p for p in ('/var/log/caddy/liftupai.log', '/var/log/caddy/api-access.log') if os.path.exists(p)), None)
+for line in (open(log_path, errors='ignore') if log_path else []):
     try: o = json.loads(line)
     except Exception: continue
     if o.get('ts', 0) < since: continue

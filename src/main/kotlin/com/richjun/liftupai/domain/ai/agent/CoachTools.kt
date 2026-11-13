@@ -467,6 +467,48 @@ class SwapExerciseTool(
     }
 }
 
+/**
+ * 오늘 할 플랜 Day 를 바꾼다(앱의 PUT /plans/active/current-day 와 같은 동작 — 저장된 플랜 내용은 그대로).
+ * 2026-11-13: 일본 상급 사용자(296)가 "오늘 풀 데이"라고 두 번 말했는데 트레이너가 "오늘은 푸시"라며 반박하고
+ * '플랜 설정에서 바꾸라'고만 했다 — 순서는 사용자가 정하는 것이고, 말하면 바뀌어야 한다.
+ */
+@Component
+class SetTodayWorkoutDayTool(private val userPlanService: UserPlanService) : CoachTool {
+    override val name = "set_today_workout_day"
+    override val mutating = true
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "CHANGES THE USER'S PLAN PROGRESS: makes another day of their active plan today's workout (e.g. Pull instead of Push). " +
+            "The plan's content is not changed; after they finish it the plan continues from that day. " +
+            "Use when the user says they want to (or will) train a different day of their plan today. Get day numbers from get_plan_overview.",
+        "parameters" to obj(mapOf(
+            "day" to prop("INTEGER", "day number from get_plan_overview"),
+        ), listOf("day")),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        val plan = userPlanService.getActivePlan(ctx.user.id)
+            ?: return mapOf("ok" to false, "error" to "no_active_plan", "detail" to "suggest choosing a plan (OPEN_PLAN)")
+        val day = args.intArg("day", 0, 0..plan.totalDays.coerceAtLeast(1) + 1)
+        if (day !in 1..plan.totalDays) throw ToolArgumentException("day must be between 1 and ${plan.totalDays}")
+        val previous = plan.currentDay
+        if (day != previous) {
+            userPlanService.setCurrentDay(ctx.user.id, com.richjun.liftupai.domain.workout.dto.request.SetCurrentDayRequest(day))
+        }
+        val today = userPlanService.getDayWorkout(ctx.user.id, day, locale = ctx.locale)
+        return buildMap {
+            put("ok", true)
+            put("changed", day != previous)
+            put("previous_day", previous)
+            put("day", today.dayNumber)
+            put("day_name", today.dayName)
+            put("estimated_minutes", today.estimatedDuration)
+            put("exercises", today.exercises.map { it.exerciseName })
+            if (day == previous) put("note", "that day was already today's workout")
+        }
+    }
+}
+
 @Component
 class WorkoutTimeTool(private val userService: UserService) : CoachTool {
     override val name = "set_workout_time"

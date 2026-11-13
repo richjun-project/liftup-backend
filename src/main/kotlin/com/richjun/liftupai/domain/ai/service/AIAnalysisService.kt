@@ -293,9 +293,19 @@ class AIAnalysisService(
             messageId = savedMessage.id.toString(),
             suggestions = suggestions,
             actions = actions.map { it.name },
-            tools = tools.map { ToolUseDto(it.name, it.ok, it.changed) }
+            tools = com.richjun.liftupai.domain.ai.dto.ToolUseCompat.forClient(
+                tools.map { ToolUseDto(it.name, it.ok, it.changed) },
+                currentAppVersion()
+            )
         )
     }
+
+    /** 지금 요청의 X-App-Version(앱이 모든 요청에 붙인다). 요청 밖(스케줄러 등)이면 null. */
+    private fun currentAppVersion(): String? =
+        (org.springframework.web.context.request.RequestContextHolder.getRequestAttributes()
+            as? org.springframework.web.context.request.ServletRequestAttributes)
+            ?.request?.getHeader(com.richjun.liftupai.domain.analytics.ClientInfo.HEADER_APP_VERSION)
+            ?.let { com.richjun.liftupai.domain.analytics.ClientInfo.sanitizeVersion(it) }
 
     private fun buildContextualMessage(message: String, context: ChatContext): String {
         val contextInfo = StringBuilder()
