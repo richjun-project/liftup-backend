@@ -96,6 +96,8 @@ class FirstWorkoutReminderTest {
                 val list = NotificationLocalization.messages("pt.template.first_workout_personal.$v", lang)
                 assertThat(list).hasSizeGreaterThanOrEqualTo(2)
                 list.forEach { assertThat(it).contains("{exercise}").contains("{minutes}") }
+                // 기구 없는 사람에게 가는 문구는 어느 것이 뽑혀도 '기구 없이'를 말한다(무작위 선택 — 하나라도 빠지면 절반 확률로 다른 말)
+                if (v == "bodyweight") list.forEach { assertThat(it).contains(mapOf("ko" to "기구 없이", "ja" to "器具なし", "en" to "no equipment").getValue(lang)) }
             }
         }
     }
