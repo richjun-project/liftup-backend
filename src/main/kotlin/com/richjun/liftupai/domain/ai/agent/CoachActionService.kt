@@ -28,6 +28,7 @@ import java.time.Duration
 interface CoachActionRecorder {
     fun capture(userId: Long): CoachActionService.State
     fun record(user: User, tool: String, before: CoachActionService.State, result: Map<String, Any?>, locale: String, source: String = "chat"): Long?
+
 }
 
 /**

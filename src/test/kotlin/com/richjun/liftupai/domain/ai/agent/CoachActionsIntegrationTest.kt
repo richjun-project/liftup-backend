@@ -128,6 +128,37 @@ class CoachActionsIntegrationTest : ApiTestSupport() {
         assertEquals(before.equipment.toSet(), userPlanService.currentEquipment(user.id))
     }
 
+    @Autowired private lateinit var txManager: org.springframework.transaction.PlatformTransactionManager
+
+    @Test
+    fun `채팅처럼 바깥 트랜잭션 안에서 장비로 플랜이 바뀌어도 커밋 뒤 상태로 기록돼 되돌릴 수 있다(운영 스모크 재현)`() {
+        toolbox.execute("set_available_equipment", args("""{"equipment":["BARBELL","DUMBBELL","MACHINE","CABLE","OTHER"]}"""), ctx)
+        userPlanService.applyTemplate(user, "beginner_split_5day", null, "ja")
+        val oldPlan = userPlanService.getActivePlan(user.id)!!
+        val before = actions.capture(user.id)
+        val countBefore = actionRepository.findTop20ByUserIdOrderByIdDesc(user.id).size
+        // AIAnalysisService.chat 은 클래스 전체가 @Transactional — 도구가 그 안에서 돈다
+        org.springframework.transaction.support.TransactionTemplate(txManager).execute {
+            val out = toolbox.execute("set_available_equipment", args("""{"equipment":["BODYWEIGHT"]}"""), ctx)
+            assertTrue(out.changed, out.result.toString())
+            assertEquals(countBefore, actionRepository.findTop20ByUserIdOrderByIdDesc(user.id).size, "커밋 전에는 기록하지 않는다")
+        }
+        val latest = actions.list(user.id).first()
+        assertEquals("set_available_equipment", latest.action.tool)
+        val r = actions.undo(user.id, latest.action.id, "ko")!!
+        assertTrue(r.ok, r.toString())
+        assertEquals(oldPlan.id, userPlanService.getActivePlan(user.id)!!.id)
+        assertEquals(before.plan!!.fingerprint(), fingerprint())
+
+        // 바깥 트랜잭션이 롤백되면(바뀐 게 없으면) 기록도 없다
+        val n = actionRepository.findTop20ByUserIdOrderByIdDesc(user.id).size
+        org.springframework.transaction.support.TransactionTemplate(txManager).execute { status ->
+            toolbox.execute("set_coach_messages", args("""{"enabled":false}"""), ctx)
+            status.setRollbackOnly()
+        }
+        assertEquals(n, actionRepository.findTop20ByUserIdOrderByIdDesc(user.id).size)
+    }
+
     @Test
     fun `가장 최근 것만 되돌리고, 그 뒤 사용자가 직접 바꾼 플랜은 덮지 않는다`() {
         userPlanService.applyTemplate(user, "beginner_fullbody", null, "ko")

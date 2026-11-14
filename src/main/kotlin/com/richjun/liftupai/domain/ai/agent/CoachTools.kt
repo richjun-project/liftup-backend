@@ -74,8 +74,7 @@ class CoachToolbox(
             val ok = result["ok"] != false
             val changed = ok && result["changed"] == true
             if (changed && before != null) {
-                runCatching { recorder?.record(ctx.user, name, before, result, ctx.locale) }
-                    .onFailure { log.warn("[AI-AGENT] coach action record failed user={} tool={}: {}", ctx.user.id, name, it.message) }
+                recordWhenCommitted(ctx, name, before, result)
             }
             Outcome(name, ok, changed, result, System.currentTimeMillis() - started)
         } catch (e: ToolArgumentException) {
@@ -83,6 +82,26 @@ class CoachToolbox(
         } catch (e: Exception) {
             log.warn("[AI-AGENT] tool {} failed user={}: {}", name, ctx.user.id, e.message)
             Outcome(name, false, false, mapOf("ok" to false, "error" to "tool_failed", "detail" to (e.message ?: e.javaClass.simpleName).take(200)), System.currentTimeMillis() - started)
+        }
+    }
+
+    /**
+     * 도구가 바깥 트랜잭션 안에서 돌았으면(채팅 AIAnalysisService.chat 은 클래스 전체가 @Transactional) 그 커밋 뒤에 기록한다.
+     * 따로 커밋하는 기록이 커밋 전 변경을 못 봐 '바뀐 뒤' 플랜을 옛 플랜으로 적었다(2026-11-14 운영 스모크: 되돌리기 changed_since).
+     * 커밋 뒤 콜백에서도 recorder(스프링 프록시)를 거쳐 불러야 REQUIRES_NEW 가 걸려 저장된다. 롤백되면 기록하지 않는다.
+     */
+    private fun recordWhenCommitted(ctx: CoachToolContext, name: String, before: CoachActionService.State, result: Map<String, Any?>) {
+        val rec = recorder ?: return
+        fun record() = runCatching { rec.record(ctx.user, name, before, result, ctx.locale) }
+            .onFailure { log.warn("[AI-AGENT] coach action record failed user={} tool={}: {}", ctx.user.id, name, it.message) }
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                object : org.springframework.transaction.support.TransactionSynchronization {
+                    override fun afterCommit() { record() }
+                },
+            )
+        } else {
+            record()
         }
     }
 }
