@@ -47,7 +47,11 @@ interface CoachTool {
 
 /** 도구를 이름으로 찾아 실행한다. 모르는 이름·잘못된 인자·예외는 모델이 읽을 수 있는 실패 결과로 바꾼다. */
 @Component
-class CoachToolbox(tools: List<CoachTool>) {
+class CoachToolbox(
+    tools: List<CoachTool>,
+    /** 플랜·설정을 바꾸는 도구의 전·후를 "코치가 한 일"로 남긴다(2026-11-14). 없으면 기록하지 않는다 — 단위 테스트 */
+    private val recorder: CoachActionRecorder? = null,
+) {
     private val log = LoggerFactory.getLogger(javaClass)
     private val byName = tools.associateBy { it.name }
 
@@ -59,10 +63,21 @@ class CoachToolbox(tools: List<CoachTool>) {
         val started = System.currentTimeMillis()
         val tool = byName[name]
             ?: return Outcome(name, false, false, mapOf("ok" to false, "error" to "unknown_tool"), 0)
+        // 되돌릴 수 있게 바꾸기 전 상태를 잡는다 — 잡지 못해도 도구는 그대로 실행한다(기록만 빠진다)
+        val rec = recorder
+        val before = if (tool.mutating && rec != null && name in CoachActionService.UNDOABLE_TOOLS) {
+            runCatching { rec.capture(ctx.user.id) }
+                .onFailure { log.warn("[AI-AGENT] capture before {} failed user={}: {}", name, ctx.user.id, it.message) }.getOrNull()
+        } else null
         return try {
             val result = tool.run(ctx, args)
             val ok = result["ok"] != false
-            Outcome(name, ok, ok && result["changed"] == true, result, System.currentTimeMillis() - started)
+            val changed = ok && result["changed"] == true
+            if (changed && before != null) {
+                runCatching { recorder?.record(ctx.user, name, before, result, ctx.locale) }
+                    .onFailure { log.warn("[AI-AGENT] coach action record failed user={} tool={}: {}", ctx.user.id, name, it.message) }
+            }
+            Outcome(name, ok, changed, result, System.currentTimeMillis() - started)
         } catch (e: ToolArgumentException) {
             Outcome(name, false, false, mapOf("ok" to false, "error" to "bad_arguments", "detail" to e.message), System.currentTimeMillis() - started)
         } catch (e: Exception) {

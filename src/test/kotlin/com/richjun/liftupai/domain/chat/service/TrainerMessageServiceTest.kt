@@ -87,6 +87,7 @@ class TrainerMessageServiceTest {
 
         service.onWorkoutCompleted(user, totalSets = 12, totalVolume = 3450.0, durationMinutes = 41)
         assertThat(saved.captured.aiResponse).contains("민수").contains("12").contains("3,450").contains("41")
-        assertThat(ChatAction.parseList(saved.captured.actions)).containsExactly(ChatAction.OPEN_STATS)
+        // 2026-11-14: 통계 탭은 PRO 전용 — 구독 정보가 없으면(무료) 플랜 버튼(WorkoutDebriefTest 가 PRO 경우를 본다)
+        assertThat(ChatAction.parseList(saved.captured.actions)).containsExactly(ChatAction.OPEN_PLAN)
     }
 }

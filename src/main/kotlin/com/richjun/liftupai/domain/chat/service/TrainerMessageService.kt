@@ -30,6 +30,8 @@ class TrainerMessageService(
     private val userSettingsRepository: UserSettingsRepository,
     // 운동 완료 경로(WorkoutSessionService)에서도 불리므로 지연 주입해 순환 의존을 피한다
     private val userPlanService: ObjectProvider<UserPlanService>,
+    /** PRO 이면 통계 버튼, 아니면 플랜 버튼(통계 탭은 PRO 전용이라 무료 사용자에겐 잠겨 있다) — 없으면 무료로 본다(단위 테스트) */
+    private val subscriptionService: ObjectProvider<com.richjun.liftupai.domain.subscription.service.SubscriptionService>? = null,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -57,17 +59,36 @@ class TrainerMessageService(
         return true
     }
 
-    /** 운동을 마친 직후 트레이너의 반응. 세트를 하나도 끝내지 않았으면 남기지 않는다.
-     *  실패해도 운동 저장이 롤백되지 않게 따로 커밋한다. */
+    /**
+     * 운동을 마친 직후 트레이너의 반응(플레이북 2 '운동 후 정리', 2026-11-14). 세트를 하나도 끝내지 않았거나 사람이 할 수 없는
+     * 속도로 끝낸 세션(SessionQuality)이면 남기지 않는다 — 누르기만 한 15세트를 칭찬하지 않는다.
+     * 그 말투의 반응 뒤에 다음 운동(Day·첫 종목)을 한 줄 붙인다(실제 플랜 값, 운동 완료 → Day 넘김 순서라 지금 Day 의 다음 Day).
+     * 버튼: PRO 는 통계, 무료는 플랜(통계 탭은 PRO 전용 — 예전엔 무료 사용자에게 잠긴 화면으로 보냈다).
+     * 실패해도 운동 저장이 롤백되지 않게 따로 커밋한다.
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    fun onWorkoutCompleted(user: User, totalSets: Int, totalVolume: Double, durationMinutes: Int) {
-        if (totalSets <= 0) return
+    fun onWorkoutCompleted(user: User, totalSets: Int, totalVolume: Double, durationMinutes: Int, implausible: Boolean = false) {
+        if (totalSets <= 0 || implausible) return
         val locale = locale(user)
-        val text = styled(
+        val reaction = styled(
             "pt.feedback", user, locale,
             user.nickname, totalSets, "%,.0f".format(totalVolume), durationMinutes,
         )
-        save(user, text, listOf(ChatAction.OPEN_STATS))
+        val next = runCatching { nextSessionLine(user, locale) }
+            .onFailure { log.warn("[Trainer] next session preview failed user={}: {}", user.id, it.message) }.getOrNull()
+        val pro = runCatching { subscriptionService?.ifAvailable?.hasActiveSubscription(user.id) == true }.getOrDefault(false)
+        save(user, if (next != null) "$reaction\n\n$next" else reaction, listOf(if (pro) ChatAction.OPEN_STATS else ChatAction.OPEN_PLAN))
+    }
+
+    /** "다음 운동은 Day 2 하체, 스쿼트부터예요." 플랜이 없거나 종목을 모르면 null */
+    private fun nextSessionLine(user: User, locale: String): String? {
+        val plans = userPlanService.ifAvailable ?: return null
+        val plan = plans.getActivePlan(user.id) ?: return null
+        if (plan.totalDays <= 0) return null
+        val nextDay = plan.currentDay % plan.totalDays + 1
+        val day = plans.getDayWorkout(user.id, nextDay, locale = locale)
+        val first = day.exercises.firstOrNull()?.exerciseName?.takeIf { it.isNotBlank() } ?: return null
+        return NotificationLocalization.message("pt.feedback.next", locale, day.dayNumber, day.dayName, first)
     }
 
     private fun styled(prefix: String, user: User, locale: String, vararg args: Any?): String {

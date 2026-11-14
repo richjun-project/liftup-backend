@@ -33,10 +33,13 @@ class ToolUseCompatTest {
     }
 
     @Test
-    fun `장비 바꾸기는 아직 아는 앱이 없다 — 플랜을 바꿨을 때만 모든 버전에 덧붙인다`() {
+    fun `장비 바꾸기는 1_1_44 부터 앱이 안다 — 그 전 앱에만 플랜을 바꿨을 때 갱신 신호를 덧붙인다`() {
         val eq = ToolUseDto("set_available_equipment", ok = true, changed = true)
-        listOf(null, "1.1.41+58", "1.1.43+60", "9.0.0").forEach { v ->
+        listOf(null, "1.1.41+58", "1.1.43+60").forEach { v ->
             assertEquals(listOf("set_available_equipment", "swap_exercise_in_plan"), ToolUseCompat.forClient(listOf(eq), v).map { it.name }, "$v")
+        }
+        listOf("1.1.44+61", "1.2.0", "9.0.0").forEach { v ->
+            assertEquals(listOf("set_available_equipment"), ToolUseCompat.forClient(listOf(eq), v).map { it.name }, "$v")
         }
         val unchanged = listOf(eq.copy(changed = false))
         assertEquals(unchanged, ToolUseCompat.forClient(unchanged, "1.1.43+60"))

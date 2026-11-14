@@ -44,7 +44,8 @@ object ToolUseCompat {
      */
     private val PLAN_TOOLS_FIRST_AWARE: Map<String, List<Int>?> = mapOf(
         TODAY_DAY_TOOL to FIRST_AWARE,
-        EQUIPMENT_TOOL to null,
+        // 1.1.44 앱이 set_available_equipment 를 보고 직접 플랜을 다시 받는다(그 전 앱은 swap 신호로)
+        EQUIPMENT_TOOL to listOf(1, 1, 44),
     )
 
     fun forClient(tools: List<ToolUseDto>, appVersion: String?): List<ToolUseDto> {

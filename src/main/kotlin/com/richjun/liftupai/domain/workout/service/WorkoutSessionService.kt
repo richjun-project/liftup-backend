@@ -579,7 +579,7 @@ class WorkoutSessionService(
 
         // 트레이너가 채팅에서 오늘 결과에 반응한다(실패해도 완료 처리는 계속)
         try {
-            trainerMessageService?.onWorkoutCompleted(session.user, totalSets, totalVolume, normalizedDuration)
+            trainerMessageService?.onWorkoutCompleted(session.user, totalSets, totalVolume, normalizedDuration, implausible)
         } catch (e: Exception) {
             logger.warn("Trainer feedback failed for user ${session.user.id}: ${e.message}")
         }
