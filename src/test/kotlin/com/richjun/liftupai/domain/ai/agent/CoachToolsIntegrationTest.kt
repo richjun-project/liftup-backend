@@ -65,6 +65,7 @@ class CoachToolsIntegrationTest : ApiTestSupport() {
     @Autowired private lateinit var ptScheduledMessageService: PTScheduledMessageService
     @Autowired private lateinit var chatMessageRepository: ChatMessageRepository
     @Autowired private lateinit var coachAgentService: CoachAgentService
+    @Autowired private lateinit var txManager: org.springframework.transaction.PlatformTransactionManager
     @Autowired private lateinit var planDayRepository: com.richjun.liftupai.domain.workout.repository.UserPlanDayRepository
     @Autowired private lateinit var planDayExerciseRepository: com.richjun.liftupai.domain.workout.repository.UserPlanDayExerciseRepository
     private val model = ScriptedAgentModel()
@@ -387,6 +388,25 @@ class CoachToolsIntegrationTest : ApiTestSupport() {
         after.forEach { (day, exercises) ->
             assertTrue(exercises.all { bodyweightOnly(it) }, "Day $day: ${exercises.map { it.name to it.equipment }}")
         }
+    }
+
+    @Test
+    fun `앱 실행 때 설정 동기화 — 저장된 장비와 안 맞는 템플릿 플랜을 바로잡는다(배포 전에 장비를 바꾼 304)`() {
+        userPlanService.applyTemplate(user, "beginner_split_5day", null, "ja")
+        assertTrue(planRows().values.flatten().any { !bodyweightOnly(it) })
+        // 예전 서버에서 장비만 바뀌고 플랜은 그대로 남은 상태
+        org.springframework.transaction.support.TransactionTemplate(txManager).executeWithoutResult {
+            settingsRepository.findByUser_Id(user.id).get().let { st -> st.availableEquipment.clear(); st.availableEquipment.add("BODYWEIGHT"); settingsRepository.save(st) }
+        }
+
+        val res = call(put("/api/users/settings?locale=ja").contentType(MediaType.APPLICATION_JSON).content("""{"app":{"language":"ja"}}"""))
+        assertEquals(200, res.status, res.contentAsString)
+        planRows().forEach { (day, exercises) ->
+            assertTrue(exercises.all { bodyweightOnly(it) }, "Day $day: ${exercises.map { it.name to it.equipment }}")
+        }
+        val fixed = userPlanService.getActivePlan(user.id)!!.id
+        call(put("/api/users/settings?locale=ja").contentType(MediaType.APPLICATION_JSON).content("""{"app":{"language":"ja"}}"""))
+        assertEquals(fixed, userPlanService.getActivePlan(user.id)!!.id, "맞는 플랜은 다시 건드리지 않는다")
     }
 
     @Test

@@ -82,9 +82,14 @@ class UserController(
     @PutMapping("/settings")
     fun updateSettings(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
-        @Valid @RequestBody request: UpdateSettingsRequest
+        @Valid @RequestBody request: UpdateSettingsRequest,
+        @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<UserSettingsResponse>> {
         val settings = userService.updateSettings(userDetails.getId(), request)
+        // 앱은 실행할 때마다 언어를 여기로 동기화한다 — 그때 저장된 장비와 안 맞는 템플릿 플랜을 바로잡는다(실패해도 설정 저장은 성공)
+        runCatching {
+            userRepository.findById(userDetails.getId()).orElse(null)?.let { equipmentPlanFit.fitIfStaleTemplatePlan(it, locale ?: settings.app?.language ?: "en") }
+        }.onFailure { org.slf4j.LoggerFactory.getLogger(UserController::class.java).warn("stale plan fit on settings sync failed user={}: {}", userDetails.getId(), it.message) }
         return ResponseEntity.ok(ApiResponse.success(settings))
     }
 
