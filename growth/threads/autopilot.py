@@ -439,7 +439,14 @@ def main():
         fname = product["file"]
     else:
         fname = f"daily/{today}.png"
-        render_card(gen["card"], os.path.join(UPLOAD_DIR, f"{today}.png"))
+        try:
+            render_card(gen["card"], os.path.join(UPLOAD_DIR, f"{today}.png"))
+        except Exception as e:
+            # 2026-11-13: 통합 서버(richjun-api)로 옮긴 뒤 Pillow 가 없어 여기서 죽고 그날 게시가 빠졌다.
+            # 운영 서버엔 패키지를 설치하지 않는다 → 카드 없이 글만 올린다(글 형식 조회수가 더 높았다).
+            print(f"카드 렌더 실패 — 글만 게시: {e}")
+            fname = None
+            gen["experiment"]["threads_format"] = "text"
     image_url = f"{base}/{fname}" if fname else None
 
     ig_id = None

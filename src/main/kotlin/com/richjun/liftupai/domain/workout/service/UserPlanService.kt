@@ -372,6 +372,115 @@ class UserPlanService(
         return getPlanDashboard(user.id)
     }
 
+    /** 지금 저장된 보유 장비(정규화된 Equipment 이름). 비어 있으면 제한 없음(헬스장 전체). */
+    fun currentEquipment(userId: Long): Set<String> = trainingContext.resolve(userId).equipment
+
+    data class EquipmentRefit(
+        val planId: Long,
+        /** 종목이 바뀐 Day 번호 */
+        val daysChanged: List<Int>,
+        /** 빠진 종목 수(이제 없는 장비가 필요한 것 등) */
+        val removed: Int,
+        /** 새로 들어간 종목 수 */
+        val added: Int,
+        /** 맞추기 전 플랜 전체 종목 수 */
+        val totalBefore: Int = 0,
+    )
+
+    /**
+     * 저장된 보유 장비가 바뀐 뒤 활성 플랜을 그 장비에 맞춘다 — 이제 없는 장비가 필요한 종목이 있는 Day 만,
+     * 그 종목을 빼고 같은 날 부위의 할 수 있는 종목으로 채운다(템플릿 적용과 같은 TemplatePlanAdapter 규칙).
+     * 플랜·진행 Day·다른 Day 는 그대로. 장비가 '제한 없음'이면 뺄 것이 없으니 아무것도 안 한다.
+     *
+     * 2026-11-13: 일본 실가입 304 는 온보딩 장비 단계(전부 미리 선택)를 그대로 넘겨 헬스장 플랜(덤벨·머신·케이블)을 받았다.
+     * 트레이너에게 "器具はありません"이라고 하자 '플랜 설정에서 바꾸라'는 답만 받았고, 프로필에서 장비를 맨몸으로 바꿨는데도
+     * 플랜은 그대로였다 — 결국 15세트를 7초 만에 눌러 넘기고 끝냈다. 장비를 말하거나 바꾸면 플랜이 따라와야 한다.
+     */
+    @Transactional
+    fun refitActivePlanToEquipment(userId: Long, dryRun: Boolean = false): EquipmentRefit? {
+        val plan = getActivePlan(userId) ?: return null
+        val ctx = trainingContext.resolve(userId)
+        val equipment = ctx.equipment
+        val days = userPlanDayRepository.findByPlanIdOrderByDayNumber(plan.id)
+        val rowsByDay = days.associate { it.id to userPlanDayExerciseRepository.findByPlanDayIdWithExerciseOrderByOrderInDay(it.id) }
+        val needsRefit = if (equipment.isEmpty()) emptyList() else days.filter { d ->
+            rowsByDay.getValue(d.id).any { !TemplatePlanAdapter.equipmentAllowed(it.exercise, equipment) }
+        }
+        val totalBefore = rowsByDay.values.sumOf { it.size }
+        if (needsRefit.isEmpty()) return EquipmentRefit(plan.id, emptyList(), 0, 0, totalBefore)
+
+        val level = ctx.level ?: com.richjun.liftupai.domain.user.entity.ExperienceLevel.BEGINNER
+        val adapter = TemplatePlanAdapter(
+            poolByCategory = planPool(),
+            isRestricted = injuryFilterService.restrictionChecker(ctx.injuries),
+        )
+        // 플랜 전체를 넘겨야 채우는 종목이 다른 날과 겹치지 않는다. 저장은 장비 때문에 바뀌어야 하는 Day 만.
+        val sourceDays = days.map { d ->
+            TemplatePlanAdapter.SourceDay(
+                dayNumber = d.dayNumber,
+                workoutType = d.workoutType.name,
+                exercises = rowsByDay.getValue(d.id).map { r ->
+                    TemplatePlanAdapter.SourceExercise(
+                        exercise = r.exercise, sets = r.sets, minReps = r.minReps, maxReps = r.maxReps,
+                        restSeconds = r.restSeconds, isCompound = r.isCompound, targetRPE = r.targetRPE, notes = r.notes
+                    )
+                }
+            )
+        }
+        val adapted = adapter.adapt(
+            sourceDays,
+            TemplatePlanAdapter.Context(
+                allowedEquipment = equipment, injuries = ctx.injuries,
+                // 집중 부위 볼륨은 처음 적용할 때 이미 들어갔다 — 다시 더하지 않는다
+                focus = emptyList(),
+                maxDifficulty = TemplatePlanAdapter.maxDifficultyFor(ctx.experience),
+                sessionMinutes = ctx.sessionMinutesOrDefault(),
+                suitable = RecoRules.suitability(equipment, level, ctx.age),
+                level = level, age = ctx.age,
+                repeatCap = TemplatePlanAdapter.repeatCapFor(equipment, ctx.injuries),
+            )
+        ).associateBy { it.dayNumber }
+
+        var removed = 0
+        var added = 0
+        val changedDays = mutableListOf<Int>()
+        for (day in needsRefit) {
+            val fitted = adapted[day.dayNumber] ?: continue
+            if (fitted.exercises.isEmpty()) continue // 맞는 후보가 하나도 없으면 빈 날을 만들지 않고 그대로 둔다
+            val oldRows = rowsByDay.getValue(day.id)
+            val oldIds = oldRows.map { it.exercise.id }.toSet()
+            val newIds = fitted.exercises.map { it.exercise.id }.toSet()
+            removed += oldIds.count { it !in newIds }
+            added += newIds.count { it !in oldIds }
+            changedDays += day.dayNumber
+            if (dryRun) continue
+            userPlanDayExerciseRepository.deleteAll(oldRows)
+            userPlanDayExerciseRepository.flush()
+            fitted.exercises.forEachIndexed { i, planned ->
+                val src = planned.source
+                userPlanDayExerciseRepository.save(
+                    UserPlanDayExercise(
+                        planDay = day, exercise = src.exercise, orderInDay = i + 1,
+                        sets = src.sets, minReps = src.minReps, maxReps = src.maxReps, restSeconds = src.restSeconds,
+                        isCompound = src.isCompound, targetRPE = src.targetRPE, notes = src.notes
+                    )
+                )
+            }
+            day.estimatedDurationMinutes = fitted.estimatedMinutes()
+            userPlanDayRepository.save(day)
+        }
+        if (dryRun) return EquipmentRefit(plan.id, changedDays, removed, added, totalBefore)
+        if (changedDays.isNotEmpty()) {
+            plan.updatedAt = LocalDateTime.now()
+            userWorkoutPlanRepository.save(plan)
+        }
+        log.info(
+            "User {} plan {} refit to equipment {}: days={} removed={} added={}",
+            userId, plan.id, equipment, changedDays, removed, added
+        )
+        return EquipmentRefit(plan.id, changedDays, removed, added, totalBefore)
+    }
+
     /**
      * 부상 목록 해석 — 프로필 ∪ 설정 ∪ 요청의 합집합(UserTrainingContextResolver). 요청이 저장된 부상을 가리지 않는다.
      * 저장 형식이 "knee:severe" 처럼 심각도가 붙어 오는 경우가 있어 부위만 남긴다.

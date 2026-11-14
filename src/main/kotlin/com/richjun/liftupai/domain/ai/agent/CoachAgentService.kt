@@ -249,7 +249,7 @@ class CoachAgentService(
 
     companion object {
         /** 사용자의 플랜·설정을 실제로 바꾸는 도구 — 성공했을 때만 "바꿨어요"를 허용한다 */
-        val SETTINGS_CHANGING_TOOLS = setOf("swap_exercise_in_plan", "set_workout_time", "set_today_workout_day")
+        val SETTINGS_CHANGING_TOOLS = setOf("swap_exercise_in_plan", "set_workout_time", "set_today_workout_day", "set_available_equipment")
     }
 
     internal fun agentSection(nickname: String, memories: List<CoachMemory>, challenge: String? = null): String = buildString {
@@ -258,9 +258,11 @@ class CoachAgentService(
         appendLine("- Look before you speak: when the answer depends on THIS user's data (past sessions, weights, PRs, progress, today's plan, recovery, today's meals), call the matching get_* tool first and use the exact numbers it returns. Never invent sessions, weights or dates.")
         appendLine("- For greetings, small talk or general knowledge, answer directly — no tools.")
         appendLine("- You may call several tools in one step. Keep it to what the question needs.")
-        appendLine("- Act only when asked: swap_exercise_in_plan, set_today_workout_day and set_workout_time change the user's app. Call them only when the user explicitly asks for that change or clearly agrees to your proposal. For a swap: get the current exercise_id (get_today_workout), find candidates (search_exercises), pick one that fits their equipment and injuries, then swap.")
+        appendLine("- Act only when asked: swap_exercise_in_plan, set_today_workout_day, set_available_equipment and set_workout_time change the user's app. Call them only when the user explicitly asks for that change or clearly agrees to your proposal. For a swap: get the current exercise_id (get_today_workout), find candidates (search_exercises), pick one that fits their equipment and injuries, then swap.")
         // 2026-11-13: "오늘 풀 데이"를 두 번 말한 사용자에게 "오늘은 푸시"라고 반박하고 설정 화면으로 보냈다(296) — 순서는 사용자가 정한다
         appendLine("- Training another day of their plan today (\"today is pull day\", \"can I do legs instead?\") is the user's call, not a mistake to correct. Do not argue with the schedule or send them to settings: find the matching day (get_plan_overview), call set_today_workout_day, then say in one line what today's session is now and add [[START_TODAY_WORKOUT]]. If no day of the plan matches, say so and offer the closest day.")
+        // 2026-11-13: "器具はありません"(기구 없음)에 '플랜 설정에서 새 플랜을 받으라'고만 답했고, 사용자가 프로필을 고쳐도 플랜은 헬스장 그대로였다(304)
+        appendLine("- Equipment is a fact about the user, and telling you about it IS the request: when they say what they can or cannot train with (\"I have no equipment\", \"only dumbbells at home\", \"there's no machine\", or that today's exercises need gear they don't have), call set_available_equipment with the FULL list they can use now — it also fits their plan. Do not send them to settings or tell them to choose another plan. Then say in one line what changed and what today's session is now, and add [[START_TODAY_WORKOUT]]. Only if it sounds temporary (travelling, this week only) ask once before changing it.")
         appendLine("- If a tool returns ok:false, say plainly that it could not be done and why, and offer another way. Never claim success without ok:true and changed:true.")
         appendLine("- Memory: when the user tells you a lasting fact about themselves (schedule, equipment at home, preferences, injury or health history, life context, goal details), call remember with a short note in their language. Not for passing moods, details of a single workout, or other people. If they ask you to forget something or a fact is outdated, call forget.")
         appendLine("- Use what you remember naturally, like a coach who knows them — do not recite the list.")

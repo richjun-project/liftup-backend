@@ -90,6 +90,9 @@ private fun prop(type: String, description: String, enum: List<String>? = null):
         if (enum != null) put("enum", enum)
     }
 
+private fun arrProp(description: String, itemEnum: List<String>): Map<String, Any> =
+    mapOf("type" to "ARRAY", "description" to description, "items" to mapOf("type" to "STRING", "enum" to itemEnum))
+
 private fun JsonNode.intArg(name: String, default: Int, range: IntRange): Int {
     val v = get(name)
     if (v == null || v.isNull) return default
@@ -506,6 +509,87 @@ class SetTodayWorkoutDayTool(private val userPlanService: UserPlanService) : Coa
             put("exercises", today.exercises.map { it.exerciseName })
             if (day == previous) put("note", "that day was already today's workout")
         }
+    }
+}
+
+/**
+ * 보유 장비를 바꾸고 활성 플랜을 그 장비에 맞춘다(이제 없는 장비가 필요한 종목만 같은 부위의 할 수 있는 종목으로).
+ * 앱 프로필의 장비 저장과 같은 경로(updateProfileV4) + UserPlanService.refitActivePlanToEquipment.
+ * 2026-11-13: 일본 실가입 304 가 "器具はありません"이라고 했는데 트레이너가 '플랜 설정에서 새 플랜을 받으라'고만 했고,
+ * 프로필에서 장비를 바꿔도 플랜(덤벨·머신·케이블)은 그대로였다.
+ */
+@Component
+class SetEquipmentTool(
+    private val userService: UserService,
+    private val userPlanService: UserPlanService,
+    private val equipmentPlanFit: com.richjun.liftupai.domain.workout.service.EquipmentPlanFitService,
+) : CoachTool {
+    override val name = "set_available_equipment"
+    override val mutating = true
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "CHANGES THE USER'S SETTINGS AND PLAN: saves the equipment they can actually use and fits their active plan to it — " +
+            "exercises that need equipment they no longer have are replaced with ones they can do (same body part); the plan and its days stay. " +
+            "Use when the user tells you what they can train with (\"I have no equipment\", \"only dumbbells at home\", \"I joined a gym\"). " +
+            "Pass the FULL list they can use now. BODYWEIGHT means no equipment. A full gym = all items.",
+        "parameters" to obj(mapOf(
+            "equipment" to arrProp(
+                "Everything they can use now. OTHER = pull-up bar. No equipment at all = [\"BODYWEIGHT\"].",
+                EQUIPMENT_VALUES,
+            ),
+        ), listOf("equipment")),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        val node = args.get("equipment")
+        val raw = when {
+            node == null || node.isNull -> emptyList()
+            node.isArray -> node.map { it.asText() }
+            else -> node.asText().split(',', ' ')
+        }
+        val requested = raw.map { it.trim().uppercase() }.filter { it.isNotEmpty() }
+        val unknown = requested.filter { it !in EQUIPMENT_VALUES }
+        if (unknown.isNotEmpty()) throw ToolArgumentException("unknown equipment: ${unknown.joinToString()} (use ${EQUIPMENT_VALUES.joinToString()})")
+        // 맨몸은 언제나 할 수 있다 — 목록이 비면 서버가 '제한 없음'으로 읽으므로 항상 넣어 둔다
+        val equipment = (requested + "BODYWEIGHT").distinct()
+        val before = userPlanService.currentEquipment(ctx.user.id)
+        userService.updateProfileV4(ctx.user.id, ProfileUpdateRequest(availableEquipment = equipment))
+        val after = userPlanService.currentEquipment(ctx.user.id)
+        val fit = equipmentPlanFit.fitToCurrentEquipment(ctx.user, ctx.locale)
+        return buildMap {
+            put("ok", true)
+            put("changed", before != after || fit.planChanged)
+            put("equipment", equipment)
+            if (fit.mode == com.richjun.liftupai.domain.workout.service.EquipmentPlanFitService.Mode.NO_PLAN) {
+                put("plan", "no active plan")
+            } else {
+                when (fit.mode) {
+                    com.richjun.liftupai.domain.workout.service.EquipmentPlanFitService.Mode.NEW_TEMPLATE ->
+                        put("plan", "most of their old plan needed equipment they don't have, so it was replaced by a plan built for this equipment (starts at day 1)")
+                    com.richjun.liftupai.domain.workout.service.EquipmentPlanFitService.Mode.REFIT -> {
+                        put("plan", "exercises that need equipment they don't have were replaced; same plan and day")
+                        put("plan_days_changed", fit.daysChanged)
+                    }
+                    else -> put("plan", "their plan already fits this equipment — nothing in it had to change")
+                }
+                put("exercises_replaced", fit.exercisesReplaced)
+                val plan = userPlanService.getActivePlan(ctx.user.id)
+                if (plan != null) {
+                    put("plan_name", plan.planName)
+                    runCatching { userPlanService.getDayWorkout(ctx.user.id, plan.currentDay, locale = ctx.locale) }.getOrNull()?.let { today ->
+                        put("today", mapOf(
+                            "day" to today.dayNumber, "day_name" to today.dayName,
+                            "estimated_minutes" to today.estimatedDuration,
+                            "exercises" to today.exercises.map { it.exerciseName },
+                        ))
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        val EQUIPMENT_VALUES = com.richjun.liftupai.domain.workout.entity.Equipment.values().map { it.name }
     }
 }
 

@@ -31,4 +31,16 @@ class ToolUseCompatTest {
         val withSwap = listOf(dayChanged, ToolUseDto("swap_exercise_in_plan", ok = true, changed = true))
         assertEquals(withSwap, ToolUseCompat.forClient(withSwap, "1.1.41+58"))
     }
+
+    @Test
+    fun `장비 바꾸기는 아직 아는 앱이 없다 — 플랜을 바꿨을 때만 모든 버전에 덧붙인다`() {
+        val eq = ToolUseDto("set_available_equipment", ok = true, changed = true)
+        listOf(null, "1.1.41+58", "1.1.43+60", "9.0.0").forEach { v ->
+            assertEquals(listOf("set_available_equipment", "swap_exercise_in_plan"), ToolUseCompat.forClient(listOf(eq), v).map { it.name }, "$v")
+        }
+        val unchanged = listOf(eq.copy(changed = false))
+        assertEquals(unchanged, ToolUseCompat.forClient(unchanged, "1.1.43+60"))
+        val both = listOf(dayChanged, eq)
+        assertEquals(listOf("set_today_workout_day", "set_available_equipment", "swap_exercise_in_plan"), ToolUseCompat.forClient(both, "1.1.42+59").map { it.name })
+    }
 }

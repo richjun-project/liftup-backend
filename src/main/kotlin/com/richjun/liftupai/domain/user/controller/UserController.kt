@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/users")
 class UserController(
-    private val userService: UserService
+    private val userService: UserService,
+    private val userPlanService: com.richjun.liftupai.domain.workout.service.UserPlanService,
+    private val equipmentPlanFit: com.richjun.liftupai.domain.workout.service.EquipmentPlanFitService,
+    private val userRepository: com.richjun.liftupai.domain.auth.repository.UserRepository,
 ) {
 
     @GetMapping("/profile")
@@ -43,7 +46,15 @@ class UserController(
         @Valid @RequestBody request: ProfileUpdateRequest,
         @RequestParam(required = false) locale: String?
     ): ResponseEntity<ApiResponse<Map<String, Any>>> {
-        val profile = userService.updateProfileV4(userDetails.getId(), request)
+        val userId = userDetails.getId()
+        val equipmentBefore = request.availableEquipment?.let { userPlanService.currentEquipment(userId) }
+        val profile = userService.updateProfileV4(userId, request)
+        // 장비를 바꿨으면 활성 플랜도 그 장비에 맞춘다(2026-11-14 — 304 가 '운동 플랜 설정'에서 맨몸으로 바꿨는데 플랜은 헬스장 그대로였다).
+        // 플랜 맞춤이 실패해도 프로필 저장은 성공으로 돌려준다.
+        if (equipmentBefore != null && userPlanService.currentEquipment(userId) != equipmentBefore) {
+            runCatching { equipmentPlanFit.fitToCurrentEquipment(userRepository.findById(userId).orElseThrow(), locale ?: "en") }
+                .onFailure { org.slf4j.LoggerFactory.getLogger(UserController::class.java).warn("plan refit after equipment change failed user={}: {}", userId, it.message) }
+        }
         return ResponseEntity.ok(ApiResponse.success(mapOf(
             "message" to ErrorLocalization.message("profile.updated", locale ?: "en"),
             "profile" to profile

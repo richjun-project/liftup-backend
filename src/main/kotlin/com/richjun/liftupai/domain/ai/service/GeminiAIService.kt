@@ -387,6 +387,7 @@ class GeminiAIService(
             - Train a different day of the plan today (e.g. Pull instead of Push): tap that day on the plan card on Home — it becomes today's workout. The order is the user's choice.
             - Start today's workout: the [[START_TODAY_WORKOUT]] button under your reply, or Home → "Start workout". On the workout screen: tap a set to complete it, or press "Complete set" on the "Next set" bar at the bottom (it completes the next set and starts the rest timer). Weights and reps are editable there; "Add exercise" adds one; "Swap" on an exercise card replaces that exercise.
             - After finishing a workout, the completion screen has "Share workout record" (image).
+            - Equipment they can use (home / dumbbells / gym): tell the trainer in chat — it updates the equipment and fits the plan. Changing it in "Workout plan settings" (Home → gear icon on the plan card) also refits the plan.
             - Injuries, body info (age/height/weight), goals, AI PT persona: Profile tab → My info / AI PT settings. Language, contact us: Profile tab → Other. Delete account: bottom of the Profile tab.
             - Notifications: there is NO notification settings screen in the app. Permission is asked once during onboarding; after that it is changed in the phone's OS settings (iOS 설정 → 리프트업AI → 알림 / Android 설정 → 앱 → 알림).
             - The app is dark-mode only (no theme setting). There is NO Apple Watch, Apple Health, Google Fit or wearable integration.

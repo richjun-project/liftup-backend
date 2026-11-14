@@ -25,7 +25,7 @@ class UserPlanDay(
     val workoutType: WorkoutType,
 
     @Column(name = "estimated_duration_minutes")
-    val estimatedDurationMinutes: Int = 60,
+    var estimatedDurationMinutes: Int = 60,
 
     @Column(name = "total_completions", nullable = false)
     var totalCompletions: Int = 0,

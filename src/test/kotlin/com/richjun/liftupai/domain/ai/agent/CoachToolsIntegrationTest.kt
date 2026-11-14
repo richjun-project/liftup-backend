@@ -35,6 +35,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import java.time.LocalTime
 import java.time.ZoneId
 
@@ -64,6 +65,8 @@ class CoachToolsIntegrationTest : ApiTestSupport() {
     @Autowired private lateinit var ptScheduledMessageService: PTScheduledMessageService
     @Autowired private lateinit var chatMessageRepository: ChatMessageRepository
     @Autowired private lateinit var coachAgentService: CoachAgentService
+    @Autowired private lateinit var planDayRepository: com.richjun.liftupai.domain.workout.repository.UserPlanDayRepository
+    @Autowired private lateinit var planDayExerciseRepository: com.richjun.liftupai.domain.workout.repository.UserPlanDayExerciseRepository
     private val model = ScriptedAgentModel()
 
     private val mapper = ObjectMapper()
@@ -297,5 +300,106 @@ class CoachToolsIntegrationTest : ApiTestSupport() {
     fun `운영 컨텍스트에서 챌린지 서비스가 에이전트에 주입된다(선택 인자라 빠지면 조용히 꺼진다)`() {
         val field = CoachAgentService::class.java.getDeclaredField("storeChallenge").apply { isAccessible = true }
         assertTrue(field.get(coachAgentService) != null)
+    }
+
+    /** 활성 플랜의 Day 별 저장된 종목 */
+    private fun planRows(): Map<Int, List<com.richjun.liftupai.domain.workout.entity.Exercise>> {
+        val plan = userPlanService.getActivePlan(user.id)!!
+        return planDayRepository.findByPlanIdOrderByDayNumber(plan.id).associate { d ->
+            d.dayNumber to planDayExerciseRepository.findByPlanDayIdWithExerciseOrderByOrderInDay(d.id).map { it.exercise }
+        }
+    }
+
+    private fun bodyweightOnly(ex: com.richjun.liftupai.domain.workout.entity.Exercise) =
+        com.richjun.liftupai.domain.workout.service.TemplatePlanAdapter.equipmentAllowed(ex, setOf("BODYWEIGHT"))
+
+    @Test
+    fun `장비 바꾸기 — 헬스장 플랜인데 기구가 없다고 하면 맨몸용 플랜으로 바꾼다(304)`() {
+        val noPlan = toolbox.execute("set_available_equipment", args("""{"equipment":["BARBELL","DUMBBELL","MACHINE","CABLE","OTHER"]}"""), ctx)
+        assertTrue(noPlan.ok, noPlan.result.toString())
+        assertEquals("no active plan", noPlan.result["plan"])
+
+        // 304 재현: 장비 제한 없이 받은 헬스장 분할(덤벨·머신·케이블)
+        userPlanService.applyTemplate(user, "beginner_split_5day", null, "ja")
+        val oldPlan = userPlanService.getActivePlan(user.id)!!
+        assertTrue(planRows().values.flatten().any { !bodyweightOnly(it) }, "준비: 기구가 필요한 종목이 있어야 한다")
+
+        val out = toolbox.execute("set_available_equipment", args("""{"equipment":["BODYWEIGHT"]}"""), ctx)
+        assertTrue(out.ok, out.result.toString())
+        assertTrue(out.changed, out.result.toString())
+        assertEquals(listOf("BODYWEIGHT"), out.result["equipment"])
+        assertTrue(out.result["plan"].toString().contains("replaced by a plan"), out.result.toString())
+        assertNotNull(out.result["today"], "바뀐 오늘 운동을 모델에게 돌려준다: ${out.result}")
+
+        val newPlan = userPlanService.getActivePlan(user.id)!!
+        assertTrue(newPlan.id != oldPlan.id && newPlan.sourceId != "beginner_split_5day", "${newPlan.sourceId}")
+        planRows().forEach { (day, exercises) ->
+            assertTrue(exercises.all { bodyweightOnly(it) }, "Day $day 에 기구 종목: ${exercises.map { it.name to it.equipment }}")
+            assertTrue(exercises.size >= 3, "Day $day 가 헐거워졌다: ${exercises.map { it.name }}")
+        }
+        assertEquals(setOf("BODYWEIGHT"), userPlanService.currentEquipment(user.id))
+
+        val rows = planRows()
+        val again = toolbox.execute("set_available_equipment", args("""{"equipment":["BODYWEIGHT"]}"""), ctx)
+        assertTrue(again.ok)
+        assertFalse(again.changed, "이미 맞는 플랜은 바뀐 게 아니다: ${again.result}")
+        assertEquals(rows, planRows())
+
+        val bad = toolbox.execute("set_available_equipment", args("""{"equipment":["SPACESHIP"]}"""), ctx)
+        assertFalse(bad.ok)
+        assertEquals("bad_arguments", bad.result["error"])
+    }
+
+    @Test
+    fun `장비 바꾸기 — 일부만 못 하게 되면 그 종목만 바꾸고 플랜·오늘 Day 는 그대로`() {
+        userPlanService.applyTemplate(user, "advanced_pplul", null, "ko")
+        userPlanService.setCurrentDay(user.id, com.richjun.liftupai.domain.workout.dto.request.SetCurrentDayRequest(2))
+        val planId = userPlanService.getActivePlan(user.id)!!.id
+        val before = planRows()
+        assertTrue(before.values.flatten().any { it.equipment?.name == "CABLE" }, "준비: 케이블 종목이 있어야 한다")
+
+        val out = toolbox.execute("set_available_equipment", args("""{"equipment":["BARBELL","DUMBBELL","MACHINE","OTHER"]}"""), ctx)
+        assertTrue(out.ok, out.result.toString())
+        assertTrue(out.changed, out.result.toString())
+        assertTrue(out.result["plan"].toString().contains("same plan"), out.result.toString())
+        val after = planRows()
+        assertEquals(planId, userPlanService.getActivePlan(user.id)!!.id, "새 플랜을 만들지 않는다")
+        assertEquals(2, userPlanService.getActivePlan(user.id)!!.currentDay, "진행 Day 는 그대로")
+        after.forEach { (day, exercises) ->
+            assertTrue(exercises.none { it.equipment?.name == "CABLE" }, "Day $day 케이블 남음: ${exercises.map { it.name }}")
+            assertEquals(exercises.size, exercises.map { it.id }.toSet().size, "Day $day 중복 종목")
+            val untouched = before.getValue(day).none { it.equipment?.name == "CABLE" }
+            if (untouched) assertEquals(before.getValue(day), exercises, "케이블이 없던 Day $day 는 그대로")
+        }
+    }
+
+    @Test
+    fun `프로필에서 장비를 바꾸면 플랜이 따라온다 — 장비를 안 건드린 저장은 플랜을 안 바꾼다`() {
+        userPlanService.applyTemplate(user, "beginner_split_5day", null, "ja")
+        val before = planRows()
+        call(put("/api/users/profile").contentType(MediaType.APPLICATION_JSON).content("""{"nickname":"こーら"}"""))
+        assertEquals(before, planRows(), "장비가 없는 저장은 플랜을 건드리지 않는다")
+
+        val res = call(put("/api/users/profile").contentType(MediaType.APPLICATION_JSON)
+            .content("""{"available_equipment":["BODYWEIGHT"],"weekly_workout_days":4,"workout_split":"upper_lower"}"""))
+        assertEquals(200, res.status, res.contentAsString)
+        val after = planRows()
+        after.forEach { (day, exercises) ->
+            assertTrue(exercises.all { bodyweightOnly(it) }, "Day $day: ${exercises.map { it.name to it.equipment }}")
+        }
+    }
+
+    @Test
+    fun `api-ai-chat — 장비를 바꾸면 모든 앱 버전에 플랜을 다시 받게 하는 기록을 덧붙인다`() {
+        userPlanService.applyTemplate(user, "beginner_split_5day", null, "ja")
+        model.queue.clear()
+        model.queue.add("""{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"set_available_equipment","args":{"equipment":["BODYWEIGHT"]}},"thoughtSignature":"s1"}]}}]}""")
+        model.queue.add("""{"candidates":[{"content":{"role":"model","parts":[{"text":"了解！器具なしのメニューに変えたよ。今日は自重のプッシュから。\n[[START_TODAY_WORKOUT]]"}]}}]}""")
+        val out = body(call(post("/api/ai/chat").header("X-App-Version", "1.1.43+60")
+            .contentType(MediaType.APPLICATION_JSON).content("""{"message":"器具はありません"}"""))).path("data")
+        assertTrue(out.path("reply").asText().contains("自重"), out.toString())
+        assertEquals(listOf("set_available_equipment", "swap_exercise_in_plan"), out.path("tools").map { it.path("name").asText() }, out.toString())
+        assertTrue(out.path("actions").map { it.asText() }.contains("START_TODAY_WORKOUT"), out.toString())
+        assertTrue(planRows().values.flatten().all { bodyweightOnly(it) })
     }
 }
