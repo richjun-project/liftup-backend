@@ -3990,6 +3990,261 @@
         "min_exercises_per_day": 4,
         "why": "64세 무릎 머신"
       }
+    },
+    {
+      "id": "p130_ja_expert_bw",
+      "locale": "ja",
+      "experience_level": "expert",
+      "goals": [
+        "bulk_up",
+        "strength"
+      ],
+      "weekly_days": 4,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 39,
+      "expect": {
+        "max_level": "expert",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "304 재현(11-13): 전문가·집·기구 없음·30분 — 초보 맨몸 템플릿(등 운동 0)이 나갔다"
+      }
+    },
+    {
+      "id": "p131_en_advanced_bw",
+      "locale": "en",
+      "experience_level": "advanced",
+      "goals": [
+        "bulk_up",
+        "general_fitness"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 28,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "상급자 맨몸: 변형 단계(아처·파이크·스케이터)로 과부하"
+      }
+    },
+    {
+      "id": "p132_ko_intermediate_bw",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "general_fitness",
+        "posture"
+      ],
+      "weekly_days": 3,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 34,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "중급 맨몸: 날마다 등 위쪽 운동"
+      }
+    },
+    {
+      "id": "p133_ja_expert_bw_54",
+      "locale": "ja",
+      "experience_level": "expert",
+      "goals": [
+        "strength",
+        "general_fitness"
+      ],
+      "weekly_days": 3,
+      "session_duration": 45,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 54,
+      "expect": {
+        "max_level": "expert",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "305 형(54세 전문가): 고령 상급 맨몸"
+      }
+    },
+    {
+      "id": "p134_ko_intermediate_bw_68",
+      "locale": "ko",
+      "experience_level": "intermediate",
+      "goals": [
+        "general_fitness"
+      ],
+      "weekly_days": 2,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 68,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "68세 중급 맨몸: 고령 안전(아처·폭발 동작 금지)"
+      }
+    },
+    {
+      "id": "p135_en_advanced_bar",
+      "locale": "en",
+      "experience_level": "advanced",
+      "goals": [
+        "wide_back",
+        "bulk_up"
+      ],
+      "weekly_days": 4,
+      "session_duration": 45,
+      "equipment": [
+        "BODYWEIGHT",
+        "OTHER"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 31,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "철봉 보유 상급: 당기기 날에 턱걸이"
+      }
+    },
+    {
+      "id": "p136_ja_intermediate_band",
+      "locale": "ja",
+      "experience_level": "intermediate",
+      "goals": [
+        "posture",
+        "general_fitness"
+      ],
+      "weekly_days": 3,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT",
+        "RESISTANCE_BAND"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 45,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "밴드 보유: 밴드 로우·풀어파트가 진짜 당기기"
+      }
+    },
+    {
+      "id": "p137_ko_expert_bw_2d",
+      "locale": "ko",
+      "experience_level": "expert",
+      "goals": [
+        "strength"
+      ],
+      "weekly_days": 2,
+      "session_duration": 60,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 41,
+      "expect": {
+        "max_level": "expert",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 4,
+        "why": "주 2일·60분 전문가 맨몸"
+      }
+    },
+    {
+      "id": "p138_en_intermediate_bw_knee",
+      "locale": "en",
+      "experience_level": "intermediate",
+      "goals": [
+        "general_fitness"
+      ],
+      "weekly_days": 3,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [
+        "knee"
+      ],
+      "gender": "female",
+      "age": 50,
+      "expect": {
+        "max_level": "intermediate",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "무릎 부상 중급 맨몸: 런지·스쿼트 변형 제한"
+      }
+    },
+    {
+      "id": "p139_ja_advanced_bw_5d",
+      "locale": "ja",
+      "experience_level": "advanced",
+      "goals": [
+        "bulk_up",
+        "six_pack"
+      ],
+      "weekly_days": 5,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT"
+      ],
+      "injuries": [],
+      "gender": "male",
+      "age": 26,
+      "expect": {
+        "max_level": "advanced",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "주 5일 상급 맨몸"
+      }
+    },
+    {
+      "id": "p140_ko_novice_band",
+      "locale": "ko",
+      "experience_level": "novice",
+      "goals": [
+        "posture",
+        "weight_loss"
+      ],
+      "weekly_days": 3,
+      "session_duration": 30,
+      "equipment": [
+        "BODYWEIGHT",
+        "RESISTANCE_BAND"
+      ],
+      "injuries": [],
+      "gender": "female",
+      "age": 60,
+      "expect": {
+        "max_level": "beginner",
+        "days_tolerance": 1,
+        "min_exercises_per_day": 3,
+        "why": "60세 노비스 밴드: 밴드 로우로 자세"
+      }
     }
   ]
 }

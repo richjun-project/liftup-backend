@@ -239,20 +239,52 @@ class ExerciseHistoryTool(
 
 @Component
 @org.springframework.transaction.annotation.Transactional(readOnly = true)
-class TodayWorkoutTool(private val userPlanService: UserPlanService) : CoachTool {
+class TodayWorkoutTool(
+    private val userPlanService: UserPlanService,
+    private val exerciseRepository: ExerciseRepository,
+    private val localization: ExerciseCatalogLocalizationService,
+    private val trainingContext: com.richjun.liftupai.domain.workout.service.UserTrainingContextResolver,
+) : CoachTool {
     override val name = "get_today_workout"
     override val mutating = false
     override fun declaration() = mapOf(
         "name" to name,
         "description" to "Today's session from the user's active plan: each exercise with sets, rep range, suggested weight and rest. " +
+            "Bodyweight exercises also carry harder_variant / easier_variant (the next step of the progression they can do with their equipment). " +
             "Use when they ask what to do today or want changes to today's session.",
         "parameters" to obj(emptyMap()),
     )
+
+    /** 맨몸 변형 사다리의 한 단계 위·아래(그 사람의 도구로 할 수 있는 것만). 사다리에 없는 운동이면 빈 맵 */
+    private fun ladderHints(exerciseIds: List<Long>, ctx: CoachToolContext): Map<Long, Map<String, Any?>> {
+        val exercises = exerciseRepository.findAllById(exerciseIds).filter { com.richjun.liftupai.domain.workout.util.BodyweightLadder.ladderOf(it.slug) != null }
+        if (exercises.isEmpty()) return emptyMap()
+        val equipment = runCatching { trainingContext.resolve(ctx.user.id).equipment }.getOrDefault(emptySet())
+        val bySlug = HashMap<String, com.richjun.liftupai.domain.workout.entity.Exercise?>()
+        fun load(slug: String) = bySlug.getOrPut(slug) { exerciseRepository.findBySlug(slug) }
+        fun canDo(slug: String): Boolean {
+            val ex = load(slug) ?: return false
+            return ex.isPlanEligible && com.richjun.liftupai.domain.workout.util.ExerciseRequirements.allows(ex, equipment)
+        }
+        val variants = exercises.associate { ex ->
+            ex.id to listOf(
+                "harder_variant" to com.richjun.liftupai.domain.workout.util.BodyweightLadder.harder(ex.slug, ::canDo)?.let(::load),
+                "easier_variant" to com.richjun.liftupai.domain.workout.util.BodyweightLadder.easier(ex.slug, ::canDo)?.let(::load),
+            )
+        }
+        val names = localization.translationMap(variants.values.flatMap { v -> v.mapNotNull { it.second } }, ctx.locale)
+        return variants.mapValues { (_, v) ->
+            v.filter { it.second != null }.associate { (key, ex) -> key to mapOf("exercise_id" to ex!!.id, "name" to localization.displayName(ex, ctx.locale, names)) }
+        }
+    }
 
     override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
         val plan = userPlanService.getActivePlan(ctx.user.id)
             ?: return mapOf("ok" to true, "has_plan" to false, "note" to "no active plan — suggest choosing one (OPEN_PLAN)")
         val day = userPlanService.getDayWorkout(ctx.user.id, plan.currentDay, locale = ctx.locale)
+        val ladder = runCatching { ladderHints(day.exercises.map { it.exerciseId }, ctx) }
+            .onFailure { LoggerFactory.getLogger(javaClass).warn("[AI-AGENT] ladder hints failed user={}: {}", ctx.user.id, it.message) }
+            .getOrDefault(emptyMap())
         return mapOf(
             "ok" to true,
             "has_plan" to true,
@@ -269,7 +301,7 @@ class TodayWorkoutTool(private val userPlanService: UserPlanService) : CoachTool
                     "reps" to if (e.minReps == e.maxReps) "${e.minReps}" else "${e.minReps}-${e.maxReps}",
                     "suggested_kg" to e.suggestedWeight?.takeIf { it > 0 }?.let { kg(it) },
                     "rest_seconds" to e.restSeconds,
-                )
+                ) + ladder[e.exerciseId].orEmpty()
             },
         )
     }
@@ -590,6 +622,39 @@ class SetEquipmentTool(
 
     companion object {
         val EQUIPMENT_VALUES = com.richjun.liftupai.domain.workout.entity.Equipment.values().map { it.name }
+    }
+}
+
+/**
+ * 트레이너가 먼저 보내는 메시지(PT 체크인·첫 운동 알림 같은 AI_MESSAGE 푸시)를 끄고 켠다(2026-11-14).
+ * 앱에는 알림 설정 화면이 없어 끄는 방법이 OS 알림 전체 끄기뿐이었다 — 그러면 운동 알림까지 사라진다.
+ * PT 스케줄러가 읽는 NotificationSettings.aiMessages 를 기존 설정 서비스로 바꾼다(UserSettings 쪽이 아니다).
+ */
+@Component
+class CoachMessagesTool(private val notificationService: com.richjun.liftupai.domain.notification.service.NotificationService) : CoachTool {
+    override val name = "set_coach_messages"
+    override val mutating = true
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "CHANGES THE USER'S SETTINGS: turns the trainer's own check-in messages (push check-ins you send first) off or on. " +
+            "Workout reminders they set themselves are not affected. Only when they ask you to stop or resume messaging them.",
+        "parameters" to obj(mapOf(
+            "enabled" to prop("BOOLEAN", "false to stop the trainer's check-in messages, true to resume them"),
+        ), listOf("enabled")),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        val node = args.get("enabled") ?: throw ToolArgumentException("enabled is required")
+        if (!node.isBoolean) throw ToolArgumentException("enabled must be true or false")
+        val enabled = node.asBoolean()
+        val before = notificationService.getNotificationSettings(ctx.user.id).aiMessages
+        if (before != enabled) {
+            notificationService.updateNotificationSettings(
+                ctx.user.id,
+                com.richjun.liftupai.domain.notification.dto.UpdateNotificationSettingsRequest(aiMessages = enabled),
+            )
+        }
+        return mapOf("ok" to true, "changed" to (before != enabled), "coach_messages" to if (enabled) "on" else "off")
     }
 }
 

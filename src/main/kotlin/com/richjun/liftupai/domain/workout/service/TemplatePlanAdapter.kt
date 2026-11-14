@@ -43,7 +43,8 @@ class TemplatePlanAdapter(
 
     data class SourceDay(val dayNumber: Int, val workoutType: String, val exercises: List<SourceExercise>)
 
-    enum class Origin { TEMPLATE, REFILL, FOCUS }
+    /** BALANCE: 등 위쪽 운동이 없거나 밀기에 비해 모자라 [balanceUpperBack] 이 넣은 운동 */
+    enum class Origin { TEMPLATE, REFILL, FOCUS, BALANCE }
 
     data class PlannedExercise(val source: SourceExercise, val origin: Origin) {
         val exercise: Exercise get() = source.exercise
@@ -141,14 +142,17 @@ class TemplatePlanAdapter(
             AdaptedDay(f.day.dayNumber, f.day.workoutType, f.kept.toList(), f.injury, f.equipment, f.suitability)
         }
         val focused = if (ctx.focus.isEmpty()) adapted else addFocusVolume(adapted, ctx)
-        val varied = diversify(focused, ctx)
+        val varied = balanceUpperBack(diversify(focused, ctx), ctx)
         val ordered = varied.map { it.copy(exercises = leadWithBestCompound(it.exercises)) }
         val finished = finishDays(ordered, ctx)
         // 시간 맞춤이 집중 부위 운동을 잘라 냈을 수 있다 — 모자라면 다시 채우고 한 번 더 맞춘다 (집중 볼륨은 시간 맞춤 뒤에도 지켜져야 한다)
-        if (ctx.focus.isEmpty() || ctx.sessionMinutes == null) return finished
+        if (ctx.focus.isEmpty() || ctx.sessionMinutes == null) return rebalanceAfterFit(finished, ctx)
         val refocused = addFocusVolume(finished, ctx)
-        return if (refocused == finished) finished
-        else finishDays(refocused.map { it.copy(exercises = leadWithBestCompound(it.exercises)) }, ctx)
+        return rebalanceAfterFit(
+            if (refocused == finished) finished
+            else finishDays(refocused.map { it.copy(exercises = leadWithBestCompound(it.exercises)) }, ctx),
+            ctx,
+        )
     }
 
     /**
@@ -295,7 +299,7 @@ class TemplatePlanAdapter(
     private fun swappableIndex(list: List<PlannedExercise>, focus: Set<FocusArea>, surplus: (FocusArea) -> Boolean): Int? =
         list.withIndex()
             .filter { (_, p) ->
-                !p.source.isCompound && p.origin != Origin.FOCUS &&
+                !p.source.isCompound && p.origin != Origin.FOCUS && p.origin != Origin.BALANCE &&
                     focus.filter { it.hits(p.exercise) }.all(surplus)
             }
             .minByOrNull { (_, p) -> p.exercise.popularity }
@@ -325,6 +329,113 @@ class TemplatePlanAdapter(
         RecommendationTier.ESSENTIAL -> 0
         RecommendationTier.STANDARD -> 1
         else -> 2
+    }
+
+    // ── 등 위쪽 균형 (플랜 불변 조건) ─────────────────────────────────────
+
+    /**
+     * 전신·상체·당기기 날에 등 위쪽 운동이 하나도 없거나, 주간 밀기 운동이 등 위쪽의 2배를 넘으면 등 위쪽 운동을 더한다.
+     * 2026-11-14: 초보 맨몸 템플릿은 3일 내내 푸시업이고 등 운동이 0이었고(맨몸 페르소나 대부분이 이 템플릿),
+     * 헬스장 템플릿도 일부 사람에게는 밀기 9 : 등 3 이 됐다. 템플릿마다 고치는 대신 적용 단계에서 [PlanInvariants] 를 지킨다.
+     * 진짜 당기기(로우·풀업)를 할 도구가 있으면 그것을, 없으면 맨몸 등 위쪽 운동(슈퍼맨 풀·Y 레이즈)을 쓴다. 후보가 없으면 그대로 둔다.
+     */
+    /** 이 사람이 할 수 있는 등 위쪽 운동(장비·필요 도구·수준·부상 통과) */
+    private fun upperBackPool(ctx: Context): List<Exercise> =
+        listOf(ExerciseCategory.BACK, ExerciseCategory.SHOULDERS, ExerciseCategory.CORE)
+            .flatMap { poolByCategory(it) }
+            .filter { ex ->
+                PlanInvariants.isUpperBack(ex) && equipmentAllowed(ex, ctx.allowedEquipment) && ctx.suitable(ex) &&
+                    (ctx.injuries.isEmpty() || !isRestricted(ex))
+            }
+            .distinctBy { it.id }
+
+    /** 등 위쪽 후보 하나: 플랜에서 덜 쓴 것 → (도구가 있으면) 진짜 당기기 → 난이도 상한 안 → 티어 → 인기. 주간 반복 상한은 넘기지 않는다. */
+    private fun chooseUpperBack(pool: List<Exercise>, inDay: Set<Long>, used: List<Long>, ctx: Context, realPullOnly: Boolean = false): Exercise? {
+        val preferRealPull = PlanInvariants.canDoRealPull(ctx.allowedEquipment) && pool.any(PlanInvariants::isRealPull)
+        val cap = ctx.repeatCap ?: Int.MAX_VALUE
+        return pool.filter { it.id !in inDay && used.count { id -> id == it.id } < cap && (!realPullOnly || PlanInvariants.isRealPull(it)) }
+            .minWithOrNull(compareBy<Exercise>(
+                { used.count { id -> id == it.id } },
+                { if (preferRealPull && !PlanInvariants.isRealPull(it)) 1 else 0 },
+                { if (ctx.maxDifficulty != null && it.difficulty > ctx.maxDifficulty) 1 else 0 },
+                { tierRank(it.recommendationTier) }, { -it.popularity }, { it.id },
+            ))
+    }
+
+    private fun balanceUpperBack(days: List<AdaptedDay>, ctx: Context): List<AdaptedDay> {
+        val pool = upperBackPool(ctx)
+        if (pool.isEmpty()) return days
+        val mutable = days.map { it.exercises.toMutableList() }
+        val used = days.flatMap { d -> d.exercises.map { it.exercise.id } }.toMutableList()
+
+        fun add(dayIdx: Int, realPullOnly: Boolean = false): Boolean {
+            val pick = chooseUpperBack(pool, mutable[dayIdx].map { it.exercise.id }.toSet(), used, ctx, realPullOnly) ?: return false
+            mutable[dayIdx] += PlannedExercise(refillSource(pick), Origin.BALANCE)
+            used += pick.id
+            return true
+        }
+
+        // 1) 등 운동이 필요한 날에 하나씩
+        days.forEachIndexed { i, d ->
+            if (d.workoutType.uppercase() in PlanInvariants.BACK_DAY_TYPES && mutable[i].isNotEmpty() &&
+                mutable[i].none { PlanInvariants.isUpperBack(it.exercise) }) add(i)
+        }
+        // 1b) 상체·당기기 날에는 도구가 있으면 진짜 당기기(로우·풀업·풀다운) — 페이스 풀·리어 델트만 있는 상체 날 방지
+        if (PlanInvariants.canDoRealPull(ctx.allowedEquipment)) days.forEachIndexed { i, d ->
+            if (d.workoutType.uppercase() in PlanInvariants.PULL_DAY_TYPES && mutable[i].isNotEmpty() &&
+                mutable[i].none { PlanInvariants.isRealPull(it.exercise) }) add(i, realPullOnly = true)
+        }
+        // 2) 주간 밀기:등 비율 — 밀기가 가장 많은 날부터, 하루 등 위쪽 2개까지
+        fun push() = mutable.sumOf { l -> l.count { PlanInvariants.isPush(it.exercise) } }
+        fun back() = mutable.sumOf { l -> l.count { PlanInvariants.isUpperBack(it.exercise) } }
+        while (push() >= 2 && push() > PlanInvariants.MAX_PUSH_PER_BACK * back()) {
+            val target = mutable.indices
+                .filter { i -> mutable[i].count { PlanInvariants.isUpperBack(it.exercise) } < MAX_UPPER_BACK_PER_DAY }
+                .maxWithOrNull(compareBy<Int>({ i -> mutable[i].count { PlanInvariants.isPush(it.exercise) } }, { -it }))
+                ?: break
+            if (!add(target)) break
+        }
+        return days.mapIndexed { i, d -> if (mutable[i].size == d.exercises.size) d else d.copy(exercises = mutable[i].toList()) }
+    }
+
+    /**
+     * 시간 맞춤·집중 볼륨이 밀기 운동을 다시 채워 넣어 주간 밀기:등 비율이 깨졌으면, 밀기 보조 종목을 등 위쪽 운동으로 바꾼다.
+     * 세트·휴식은 바뀌는 자리의 것을 이어받아 하루 시간이 거의 그대로다. 그날의 첫 운동, 집중 부위 최소량에 필요한 종목은 바꾸지 않는다.
+     * 바꿀 종목이나 후보가 없으면 그대로 둔다(하네스가 실패로 보인다).
+     */
+    private fun rebalanceAfterFit(days: List<AdaptedDay>, ctx: Context): List<AdaptedDay> {
+        fun push(l: List<List<PlannedExercise>>) = l.sumOf { d -> d.count { PlanInvariants.isPush(it.exercise) } }
+        fun back(l: List<List<PlannedExercise>>) = l.sumOf { d -> d.count { PlanInvariants.isUpperBack(it.exercise) } }
+        val mutable = days.map { it.exercises.toMutableList() }
+        if (push(mutable) < 2 || push(mutable) <= PlanInvariants.MAX_PUSH_PER_BACK * back(mutable)) return days
+        val pool = upperBackPool(ctx)
+        if (pool.isEmpty()) return days
+        val focusNeed = focusTargetPerWeek(days.size)
+        val used = mutable.flatMap { d -> d.map { it.exercise.id } }.toMutableList()
+        var guard = 0
+        while (push(mutable) > PlanInvariants.MAX_PUSH_PER_BACK * back(mutable) && guard++ < 20) {
+            // 바꿀 자리: 첫 운동이 아니고, 집중 부위 최소량을 깨지 않는 밀기 — 고립 → 템플릿 밖에서 들어온 것 → 인기 낮은 것
+            val slot = mutable.withIndex().flatMap { (di, list) ->
+                list.withIndex().filter { (ei, p) ->
+                    ei > 0 && PlanInvariants.isPush(p.exercise) &&
+                        ctx.focus.none { area -> area.hits(p.exercise) && mutable.sumOf { d -> d.count { area.hits(it.exercise) } } <= focusNeed }
+                }.map { (ei, p) -> Triple(di, ei, p) }
+            }.minWithOrNull(compareBy<Triple<Int, Int, PlannedExercise>>(
+                { if (it.third.source.isCompound) 1 else 0 },
+                { if (it.third.origin == Origin.TEMPLATE) 1 else 0 },
+                { -mutable[it.first].count { p -> PlanInvariants.isPush(p.exercise) } },
+                { it.third.exercise.popularity },
+            )) ?: break
+            val (di, ei, old) = slot
+            val pick = chooseUpperBack(pool, mutable[di].map { it.exercise.id }.toSet(), used, ctx) ?: break
+            val fresh = refillSource(pick)
+            val src = fresh.copy(sets = old.source.sets, restSeconds = maxOf(old.source.restSeconds, fresh.restSeconds.coerceAtMost(old.source.restSeconds + 15)))
+            mutable[di][ei] = prescribe(PlannedExercise(src, Origin.BALANCE), ctx)
+            used.remove(old.exercise.id)
+            used += pick.id
+        }
+        // 바꿔 넣은 등 운동이 그날의 대표 복합운동일 수 있다 — 첫 운동 순서를 다시 맞춘다
+        return days.mapIndexed { i, d -> if (mutable[i] == d.exercises) d else d.copy(exercises = leadWithBestCompound(mutable[i].toList())) }
     }
 
     // ── 다양화 (집/부상 사용자의 같은 운동 반복) ─────────────────────────────
@@ -492,7 +603,7 @@ class TemplatePlanAdapter(
             val before = current
             val res = SessionFit.fit(
                 current.map { slotOfPlanned(it, ctx, COMFORT_SETS) }, target, minExercises,
-                pickDrop = { kept, _ -> dropCandidate(kept.map { before[it] }, ctx, focusQuota) },
+                pickDrop = { kept, _ -> dropCandidate(kept.map { before[it] }, ctx, focusQuota, workoutType) },
             )
             current = res.keptIndices.mapIndexed { pos, orig -> applySlot(before[orig], res.slots[pos]) }
             val ratio = SessionFit.ratio(res.slots, target)
@@ -515,14 +626,18 @@ class TemplatePlanAdapter(
         else p.copy(source = p.source.copy(sets = slot.sets, restSeconds = slot.restSeconds))
 
     /** 시간이 넘칠 때 뺄 종목: 복합·집중 부위·ESSENTIAL 이 아닌 것 중 가치가 가장 낮은 것. 첫 종목은 지킨다. */
-    private fun dropCandidate(list: List<PlannedExercise>, ctx: Context, focusQuota: Int = 0): Int? {
+    private fun dropCandidate(list: List<PlannedExercise>, ctx: Context, focusQuota: Int = 0, workoutType: String? = null): Int? {
         if (list.size <= 1) return null
+        // 등 위쪽 균형(불변 조건)으로 들어간 운동, 그리고 등 운동이 필요한 날의 하나뿐인 등 위쪽 운동은 보조 종목보다 늦게 뺀다(복합운동보다는 먼저)
+        val backDay = workoutType?.uppercase() in PlanInvariants.BACK_DAY_TYPES
+        fun backProtected(p: PlannedExercise): Boolean = p.origin == Origin.BALANCE ||
+            (backDay && PlanInvariants.isUpperBack(p.exercise) && list.count { PlanInvariants.isUpperBack(it.exercise) } <= 1)
         // 그날 집중 부위 운동이 할당량 이하면 그 종목은 복합운동보다도 먼저 지킨다
         fun focusProtected(p: PlannedExercise): Boolean = focusQuota > 0 && ctx.focus.any { area ->
             area.hits(p.exercise) && list.count { area.hits(it.exercise) } <= focusQuota
         }
         fun keep(p: PlannedExercise): Double = RecoRules.keepValue(p.exercise, p.source.isCompound, ctx.focus, p.origin == Origin.TEMPLATE) +
-            if (focusProtected(p)) 200.0 else 0.0
+            (if (focusProtected(p)) 200.0 else 0.0) + (if (backProtected(p)) BACK_BALANCE_KEEP else 0.0)
         return (1 until list.size).minWithOrNull(compareBy<Int>({ keep(list[it]) }, { -it }))
     }
 
@@ -550,6 +665,9 @@ class TemplatePlanAdapter(
     }
 
     companion object {
+        /** 등 위쪽 균형 운동을 시간 맞춤에서 늦게 빼는 가중치 — 보조·집중 종목보다 크고 복합운동(100+)과 비슷하다 */
+        const val BACK_BALANCE_KEEP = 90.0
+        const val MAX_UPPER_BACK_PER_DAY = 2
         /** 템플릿 하루 운동 수 목표. 부상·장비로 빠진 만큼 여기까지 채운다. */
         const val TARGET_EXERCISES_PER_DAY = 5
         const val MAX_EXERCISES_PER_DAY = 6

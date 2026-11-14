@@ -61,6 +61,11 @@ object RecoFitChecks {
         .filter { (ex, w) -> ex.equipment == Equipment.BARBELL && w > 0.0 && w < RecoRules.BAR_WEIGHT }
         .map { (ex, w) -> "바벨 종목 ${ex.slug} 무게 ${w}kg (< 20kg 빈 봉)" }
 
+    /** 플랜 불변 조건(필요 도구·날마다 등 위쪽·당기기 날 진짜 당기기·주간 밀기:등 비율) — 운영과 같은 [PlanInvariants] */
+    fun invariants(days: List<Day>, equipment: Set<String>): List<String> =
+        PlanInvariants.check(days.map { d -> PlanInvariants.Day(d.dayNumber, d.workoutType, d.items.map { it.exercise }) }, equipment)
+            .map { it.toString() }
+
     /** 철봉 없는 사람에게 철봉 동작, 초보·고령·미성년에게 너무 어려운 동작이 있으면 위반 */
     fun suitability(days: List<Day>, equipment: Set<String>, level: ExperienceLevel?, age: Int?): List<String> {
         val strict = if (level == ExperienceLevel.NOVICE) ExperienceLevel.BEGINNER else level

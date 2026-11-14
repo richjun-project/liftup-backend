@@ -42,6 +42,9 @@ interface WorkoutSessionRepository : JpaRepository<WorkoutSession, Long> {
     @Query("SELECT COUNT(w) FROM WorkoutSession w WHERE w.user = :user AND w.status = :status")
     fun countByUserAndStatus(user: User, status: SessionStatus): Long
 
+    /** 데이터 품질 표시가 없는 세션만(첫 운동 판정 — 15세트를 46초에 누른 세션은 첫 운동이 아니다) */
+    fun countByUserAndStatusAndDataQualityIsNull(user: User, status: SessionStatus): Long
+
     // Removed findByIdWithExercises - no longer needed after removing lazy loaded exercises
 
     @Query("SELECT SUM(w.duration) FROM WorkoutSession w WHERE w.user = :user AND w.startTime BETWEEN :startDate AND :endDate")

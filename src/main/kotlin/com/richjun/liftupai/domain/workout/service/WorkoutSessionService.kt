@@ -56,7 +56,9 @@ class WorkoutSessionService(
     private val sharedSupport: WorkoutV2SharedSupport,
     private val workoutRecommendationServiceV2: WorkoutRecommendationServiceV2,
     private val workoutStatsService: WorkoutStatsService,
-    private val trainerMessageService: com.richjun.liftupai.domain.chat.service.TrainerMessageService? = null
+    private val trainerMessageService: com.richjun.liftupai.domain.chat.service.TrainerMessageService? = null,
+    /** 세션 데이터 품질 표시를 코드값 이벤트로 남긴다(없으면 생략 — 단위 테스트) */
+    private val appEventService: com.richjun.liftupai.domain.analytics.AppEventService? = null,
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -460,6 +462,16 @@ class WorkoutSessionService(
         session.duration = normalizedDuration
         session.notes = request.notes
         session.status = SessionStatus.COMPLETED
+        // 사람이 할 수 없는 속도로 끝난 세션(304: 15세트 46초)은 표시하고 PR 을 만들지 않는다 — 완료 기록은 남긴다
+        val completedSetCount = request.exercises.sumOf { e -> e.sets.count { it.completed } }
+        val implausible = com.richjun.liftupai.domain.workout.util.SessionQuality.implausible(session.startTime, completedAt, completedSetCount)
+        if (implausible) {
+            session.dataQuality = com.richjun.liftupai.domain.workout.util.SessionQuality.IMPLAUSIBLE_SPEED
+            logger.info("Session {} flagged {}: {} sets in {}s", session.id, session.dataQuality, completedSetCount,
+                java.time.Duration.between(session.startTime, completedAt).seconds)
+            runCatching { appEventService?.recordServer(userId, "session_quality_flag", mapOf("sets" to completedSetCount,
+                "seconds" to java.time.Duration.between(session.startTime, completedAt).seconds)) }
+        }
 
         var totalVolume = 0.0
         var totalSets = 0
@@ -519,7 +531,7 @@ class WorkoutSessionService(
                     exercise = exercise
                 )
 
-                if (previousRecord == null || safeWeight > previousRecord.weight) {
+                if (!implausible && (previousRecord == null || safeWeight > previousRecord.weight)) {
                     val newRecord = com.richjun.liftupai.domain.workout.entity.PersonalRecord(
                         user = session.user,
                         exercise = exercise,
@@ -666,7 +678,10 @@ class WorkoutSessionService(
             exercise
         )
 
-        val isPersonalRecord = request.completed && (previousRecord == null || request.weight > previousRecord.weight)
+        // 운동 중 세트 기록도 같은 판정 — 시작부터 지금까지 사람이 할 수 없는 속도로 세트가 쌓이면 PR 을 만들지 않는다
+        val setsSoFar = workoutExercises.sumOf { we -> we.sets.count { it.completed } } + if (workoutExercises.none { it === workoutExercise }) workoutExercise.sets.count { it.completed } else 0
+        val tooFast = com.richjun.liftupai.domain.workout.util.SessionQuality.implausible(session.startTime, AppTime.utcNow(), setsSoFar)
+        val isPersonalRecord = request.completed && !tooFast && (previousRecord == null || request.weight > previousRecord.weight)
 
         if (isPersonalRecord) {
             val newRecord = com.richjun.liftupai.domain.workout.entity.PersonalRecord(

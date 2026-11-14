@@ -55,6 +55,18 @@ class AppEventService(
         return Result(toSave.size, all.size - toSave.size)
     }
 
+    /**
+     * 서버가 남기는 이벤트(코치 판단·플랜 불변 조건·세션 품질, 2026-11-14). 파라미터는 같은 규칙으로 코드값만 남는다.
+     * 호출자의 트랜잭션과 분리한다 — 이벤트 저장 실패가 플랜 적용·채팅을 롤백시키면 안 된다. 호출자는 runCatching 으로 감싼다.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    fun recordServer(userId: Long, name: String, params: Map<String, Any?> = emptyMap()) {
+        if (!enabled || name !in SERVER_EVENTS) return
+        if (reserve(userId, 1) == 0) return
+        val now = AppTime.utcNow()
+        repository.save(AppEvent(userId = userId, name = name, params = sanitizeParams(params), platform = "server", occurredAt = now, createdAt = now))
+    }
+
     /** 사용자별 분당 상한 — 이번 요청에서 저장해도 되는 개수 */
     private fun reserve(userId: Long, wanted: Int): Int {
         if (wanted <= 0) return 0
@@ -127,6 +139,12 @@ class AppEventService(
             "trainer_action_tap", "notification_permission_result",
             "exercise_search", "exercise_add", "exercise_search_error",
             "paywall_view", "purchase_result"
+        )
+
+        /** 서버만 남기는 이벤트(앱은 보낼 수 없다) — growth/first_experience.py·KPI 가 읽는다 */
+        val SERVER_EVENTS: Set<String> = setOf(
+            "coach_deflection", "coach_missing_capability", "coach_tool_failed",
+            "plan_invariant_violation", "session_quality_flag", "coach_reminder_personalized",
         )
     }
 }

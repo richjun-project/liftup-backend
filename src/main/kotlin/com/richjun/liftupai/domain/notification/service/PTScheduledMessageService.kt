@@ -41,7 +41,10 @@ class PTScheduledMessageService(
     private val notificationService: NotificationService,
     private val ptMessageTemplates: PTMessageTemplates,
     private val appEventRepository: AppEventRepository,
-    private val notificationDeviceRepository: NotificationDeviceRepository
+    private val notificationDeviceRepository: NotificationDeviceRepository,
+    /** 첫 운동 전 사용자의 운동 알림을 그 사람의 오늘 플랜으로(2026-11-14). 없으면 예전 문구 — 단위 테스트 */
+    private val firstWorkoutReminder: FirstWorkoutReminderComposer? = null,
+    private val appEventService: com.richjun.liftupai.domain.analytics.AppEventService? = null,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -172,7 +175,7 @@ class PTScheduledMessageService(
         val daysInactive = daysSinceLastActivity(schedule.user, now)
         // 식사 체크일 때만 센다(운동 알림은 문구를 고를 때 resolveTemplateMessage 가 따로 센다)
         val firstWorkoutPending = PtMessagePolicy.isMealCheck(schedule.scheduleName) &&
-            workoutSessionRepository.countByUserAndStatus(schedule.user, SessionStatus.COMPLETED) == 0L
+            workoutSessionRepository.countByUserAndStatusAndDataQualityIsNull(schedule.user, SessionStatus.COMPLETED) == 0L
         if (!PtMessagePolicy.shouldSend(schedule.scheduleName, daysInactive, firstWorkoutPending)) {
             schedule.nextTriggerAt = notificationService.recalculateNextTrigger(schedule)
             notificationScheduleRepository.save(schedule)
@@ -253,20 +256,33 @@ class PTScheduledMessageService(
         return when (schedule.scheduleName) {
             "morning_meal_check" -> ptMessageTemplates.getMorningMealMessage(locale, style)
             "lunch_meal_check" -> ptMessageTemplates.getLunchMealMessage(locale, style)
-            "workout_reminder" ->
+            "workout_reminder" -> {
                 // 2026-09 실측: 최근 30일 실가입 23명 중 세트를 하나라도 완료한 사람이 0명이었다.
                 // 첫 운동 전인 사용자에게는 "한 세트만" 으로 문턱을 낮춘 문구를 보낸다.
                 // 문구가 "30분 안쪽으로 짜 놨어요"라 첫 세션 규칙 밖(상급·전문가 — 저장된 시간 그대로)이면 보통 알림.
-                if (FirstSessionRule.appliesTo(profile?.experienceLevel) &&
-                    workoutSessionRepository.countByUserAndStatus(schedule.user, SessionStatus.COMPLETED) == 0L) {
-                    ptMessageTemplates.getFirstWorkoutMessage(locale, style)
-                } else {
-                    ptMessageTemplates.getWorkoutReminderMessage(locale, style)
-                }
+                // 2026-11-14: 첫 운동 전이면 수준과 무관하게 오늘 첫 종목·실제 예상 시간·장소(기구 없음)를 넣은 문구 —
+                // 실제 분을 쓰니 상급·전문가(304)에게도 참이다. 플랜이 없거나 실패하면 예전 규칙 그대로.
+                val firstPending = workoutSessionRepository.countByUserAndStatusAndDataQualityIsNull(schedule.user, SessionStatus.COMPLETED) == 0L
+                (if (firstPending) personalizedFirstWorkout(schedule.user, locale) else null)
+                    ?: if (firstPending && FirstSessionRule.appliesTo(profile?.experienceLevel)) {
+                        ptMessageTemplates.getFirstWorkoutMessage(locale, style)
+                    } else {
+                        ptMessageTemplates.getWorkoutReminderMessage(locale, style)
+                    }
+            }
             "dinner_meal_check" -> ptMessageTemplates.getDinnerMealMessage(locale, style)
             "sleep_prep" -> ptMessageTemplates.getSleepPrepMessage(locale, style)
             else -> schedule.message
         }
+    }
+
+    private fun personalizedFirstWorkout(user: User, locale: String): String? {
+        val composer = firstWorkoutReminder ?: return null
+        val composed = runCatching { composer.compose(user, locale) }
+            .onFailure { logger.warn("[PTMessage] personalized first-workout reminder failed user={}: {}", user.id, it.message) }
+            .getOrNull() ?: return null
+        runCatching { appEventService?.recordServer(user.id, "coach_reminder_personalized", mapOf("variant" to composed.variant, "minutes" to composed.minutes)) }
+        return composed.text
     }
 
     /** 알림·채팅 메시지 아래 버튼: 운동 알림은 오늘 운동, 식사 체크는 식단 기록으로 바로 간다. */

@@ -2725,7 +2725,7 @@
     ],
     "recommendationTier": "STANDARD",
     "popularity": 60,
-    "difficulty": 45,
+    "difficulty": 65,
     "basicExercise": false,
     "translations": [
       {
@@ -2747,7 +2747,7 @@
         "tips": "1. 動作中のアンバランスを防ぐため、肩と腰が水平を保つようにする。\n2. 呼吸をゆっくりと安定させ、押し上げるときに息を吐き、体を下ろすときに息を吸う。\n3. 視線をやや前方に向け、背骨を自然な一直線に保って首への負担を防ぐ。"
       }
     ],
-    "isPlanEligible": false,
+    "isPlanEligible": true,
     "planCategory": null
   },
   {
@@ -12869,7 +12869,7 @@
     ],
     "recommendationTier": "STANDARD",
     "popularity": 55,
-    "difficulty": 70,
+    "difficulty": 45,
     "basicExercise": false,
     "translations": [
       {
@@ -12891,7 +12891,7 @@
         "tips": "1. バランスを取りやすくするため、姿勢を正して前方に視線を向ける。\n2. 膝のロックを防ぎ関節を保護するため、軸足の膝はわずかに曲げておく。\n3. 正しいフォームを保ち怪我を防ぐため、動作は常にスムーズかつ安定して行う。"
       }
     ],
-    "isPlanEligible": false,
+    "isPlanEligible": true,
     "planCategory": null
   },
   {
@@ -14379,7 +14379,7 @@
     ],
     "recommendationTier": "STANDARD",
     "popularity": 76,
-    "difficulty": 40,
+    "difficulty": 55,
     "basicExercise": false,
     "translations": [
       {
@@ -20590,7 +20590,7 @@
     ],
     "recommendationTier": "STANDARD",
     "popularity": 58,
-    "difficulty": 50,
+    "difficulty": 60,
     "basicExercise": false,
     "translations": [
       {
@@ -20612,7 +20612,7 @@
         "tips": "1. 安定性とバランスを保つため、動作中は常に体幹に力を入れておく。\n2. 正しいフォームを維持し怪我を防ぐため、胸を張り背筋をまっすぐに保つことを意識する。\n3. 動作中は一定のリズムで呼吸し、スクワットでしゃがむときに息を吐き、開始姿勢に戻るときに息を吸う。\n4. 関節への余計な負担を避けるため、スクワット中は膝がつま先と同じ方向を向くようにする。"
       }
     ],
-    "isPlanEligible": false,
+    "isPlanEligible": true,
     "planCategory": null
   },
   {
@@ -36175,7 +36175,7 @@
     ],
     "recommendationTier": "STANDARD",
     "popularity": 70,
-    "difficulty": 30,
+    "difficulty": 45,
     "basicExercise": false,
     "translations": [
       {
@@ -38836,7 +38836,7 @@
     ],
     "recommendationTier": "STANDARD",
     "popularity": 57,
-    "difficulty": 45,
+    "difficulty": 20,
     "basicExercise": false,
     "translations": [
       {
@@ -38858,7 +38858,7 @@
         "tips": "1. 首を痛めないよう、首は常に自然な位置（ニュートラル）を保つ。\n2. 不快感や怪我を防ぐため、快適で滑りにくい床面で行う。\n3. 上半身を持ち上げるのが難しい場合は、小さめの可動域から始め、筋力がつくにつれて徐々に可動域を広げていく。"
       }
     ],
-    "isPlanEligible": false,
+    "isPlanEligible": true,
     "planCategory": null
   },
   {
@@ -40183,7 +40183,7 @@
     ],
     "recommendationTier": "STANDARD",
     "popularity": 60,
-    "difficulty": 30,
+    "difficulty": 45,
     "basicExercise": false,
     "translations": [
       {
@@ -40205,7 +40205,7 @@
         "tips": "1. 首への負担を防ぐため、頭は両腕のラインと揃えておく。\n2. 肩（三角筋）にしっかり効かせるため、肘は外側に向けて曲げる。\n3. 滑って転倒するのを防ぎ安全に行うため、滑りにくい安定した床の上で実施する。"
       }
     ],
-    "isPlanEligible": false,
+    "isPlanEligible": true,
     "planCategory": null
   },
   {
@@ -46767,7 +46767,7 @@
     ],
     "recommendationTier": "SPECIALIZED",
     "popularity": 28,
-    "difficulty": 40,
+    "difficulty": 15,
     "basicExercise": false,
     "translations": [
       {
@@ -46789,7 +46789,7 @@
         "tips": "1. 筋肉の活性化を最大化し、怪我を防ぐため、ゆっくりとコントロールして動かす。\n2. 呼吸を一定に保つ。腕を上げるときに息を吐き、下ろすときに息を吸う。\n3. 反動を使わず、「Y」の字を作るように腕を斜め一直線に保つことを意識する。"
       }
     ],
-    "isPlanEligible": false,
+    "isPlanEligible": true,
     "planCategory": null
   },
   {
@@ -47286,7 +47286,7 @@
         "tips": "1. 下背部とお尻の筋肉を使って体を引き上げることに意識を集中させる。\n2. 首への負担を避けるため、首は自然な位置（ニュートラル）を保つ。\n3. 体へのクッション性とサポートを得るためにマットを使用する。"
       }
     ],
-    "isPlanEligible": false,
+    "isPlanEligible": true,
     "planCategory": null
   },
   {

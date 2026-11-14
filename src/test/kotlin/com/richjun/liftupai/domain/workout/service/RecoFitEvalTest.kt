@@ -321,6 +321,26 @@ class RecoFitEvalTest {
             }
         }
         val plan = RecoFitChecks.fromAdapted(outcome.adapted)
+        // 불변 조건(2026-11-14): 필요 도구·날마다 등 위쪽·당기기 날 진짜 당기기·주간 밀기:등 비율
+        // 날마다 등 위쪽(UPPER_BACK)은 할 수 있는 등 위쪽 운동이 주간 반복 상한 안에서 그 날 수만큼 있을 때만 요구한다
+        // (어깨·무릎 부상 맨몸 사용자는 후보가 Y 레이즈 하나뿐이라 3일을 다 채우면 같은 운동 반복 규칙과 부딪친다 — 밴드가 답이다)
+        val feasibleUpperBack = exercises.count { ex ->
+            ex.isPlanEligible && PlanInvariants.isUpperBack(ex) && TemplatePlanAdapter.equipmentAllowed(ex, p.equipment) &&
+                RecoRules.suitability(p.equipment, p.level ?: ExperienceLevel.BEGINNER, p.age)(ex) &&
+                (p.injuries.isEmpty() || !service.isRestrictedByRule(ex, p.injuries))
+        }
+        val backCap = TemplatePlanAdapter.repeatCapFor(p.equipment, p.injuries) ?: Int.MAX_VALUE
+        val backDays = plan.count { it.workoutType.uppercase() in PlanInvariants.BACK_DAY_TYPES }
+        val perDayBackFeasible = feasibleUpperBack.toLong() * backCap >= backDays
+        failures += RecoFitChecks.invariants(plan, p.equipment).filter { perDayBackFeasible || !it.startsWith("UPPER_BACK") }
+        // 수준 차이: 같은 수준(또는 한 단계 아래) 템플릿이 장비·부상 필터에 70% 이상 살아남는데 두 단계 아래 템플릿이 뽑히면 위반
+        // (304: 전문가에게 초보 맨몸 템플릿 — 맨몸 상급 템플릿이 없던 탓)
+        val gap = TemplateRecommendationEngine.rankOf(p.experience) - TemplateRecommendationEngine.rankOf(t.targetExperience)
+        if (gap >= 2) {
+            val closer = outcome.ranked.any { TemplateRecommendationEngine.rankOf(p.experience) - TemplateRecommendationEngine.rankOf(it.template.targetExperience) <= 1 && it.survival >= 0.7 }
+            if (closer) failures += "수준 차이 $gap 단계: ${p.experience} 에게 ${t.code}(${t.targetExperience})"
+            else failures += "수준 차이 $gap 단계이고 가까운 수준 템플릿이 없다: ${p.experience} 에게 ${t.code}(${t.targetExperience})"
+        }
         // 시간 적합 (85~110%). 모자란 날은 더 채울 여지(안 쓴 적합 운동·세트·휴식 안전 상한)가 있을 때만 위반
         val level = p.level ?: ExperienceLevel.BEGINNER
         val suitableAll = RecoRules.suitability(p.equipment, level, p.age)

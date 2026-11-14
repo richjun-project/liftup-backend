@@ -54,6 +54,7 @@ object ExerciseSuitability {
         return ex.difficulty > 55
     }
 
+    /** 필요한 도구(철봉·평행봉·낮은 바 — [ExerciseRequirements])가 있고, 수준·나이에 너무 어렵지 않은가 */
     fun suitable(ex: Exercise, availableEquipment: Collection<String>, level: ExperienceLevel?, age: Int?): Boolean =
-        (!needsBar(ex) || hasBarAccess(availableEquipment)) && !tooAdvanced(ex, level, age)
+        ExerciseRequirements.allows(ex, availableEquipment) && !tooAdvanced(ex, level, age)
 }

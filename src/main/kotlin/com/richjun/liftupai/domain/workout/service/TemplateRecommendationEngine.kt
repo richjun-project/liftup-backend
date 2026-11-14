@@ -129,7 +129,8 @@ class TemplateRecommendationEngine(
             dayGap == 0 -> 25.0
             dayGap == -1 -> 15.0
             dayGap == 1 -> 11.0
-            dayGap == -2 -> -4.0
+            // 2일 모자람은 2일 넘침(-12)과 거의 같게 — 맨몸 중급 3일 템플릿이 수준 점수로 주 5일 사용자에게 뽑혔다(2026-11-14)
+            dayGap == -2 -> -10.0
             dayGap == 2 -> -12.0
             else -> -30.0
         }

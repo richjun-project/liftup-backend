@@ -653,6 +653,87 @@ object PresetTemplates {
                     PresetExercise("russian-twist", 3, 15, 20, 45, false, 6.5)
                 ))
             )
+        ),
+
+        // ── 16~17. 맨몸 중급·상급 (2026-11-14 coach-autopilot-r1) ──
+        // 304(일본·전문가·집·기구 없음)에게 초보 맨몸 템플릿(3일 내내 푸시업, 등 운동 0)이 갔다. 맨몸 템플릿이 초보 하나뿐이었다.
+        // 맨몸 고급자는 무게 대신 더 어려운 변형으로 과부하한다(푸시업 → 디클라인 → 아처, 스쿼트 → 불가리안 → 스케이터).
+        // 날마다 등 위쪽 운동(슈퍼맨 풀·Y 레이즈)을 넣고, 철봉이 있으면 턱걸이가 들어간다(없으면 적용 단계가 등 운동으로 바꾼다).
+        PresetTemplate(
+            code = "home_bodyweight_intermediate",
+            name = "맨몸 홈트 중급 전신",
+            description = "기구 없이 집에서 하는 중급 전신 프로그램입니다. 주 3일, 더 어려운 변형(불가리안·디클라인·파이크)으로 강도를 올리고 날마다 등 운동을 넣었습니다.",
+            targetGoal = "general_fitness",
+            targetExperience = "intermediate",
+            splitType = SplitType.FULL_BODY,
+            totalDays = 3,
+            iconName = "home",
+            sortOrder = 16,
+            days = listOf(
+                PresetDay(1, "맨몸 전신 A (스쿼트·밀기)", WorkoutType.FULL_BODY, 35, listOf(
+                    PresetExercise("bulgarian-split-squat", 3, 8, 12, 60, true, 7.0, "한쪽 다리씩"),
+                    PresetExercise("decline-push-up", 3, 8, 15, 60, true, 7.0, "발을 의자에"),
+                    PresetExercise("superman-pulls", 3, 10, 12, 45, false, 6.5),
+                    PresetExercise("glute-bridge-with-abduction-bodyweight", 3, 12, 15, 45, false, 6.5),
+                    PresetExercise("dead-bug", 3, 10, 12, 45, false, 6.5)
+                )),
+                PresetDay(2, "맨몸 전신 B (힌지·어깨)", WorkoutType.FULL_BODY, 35, listOf(
+                    PresetExercise("bodyweight-single-leg-deadlift", 3, 8, 12, 60, true, 7.0, "한쪽 다리씩"),
+                    PresetExercise("pike-push-up", 3, 6, 10, 60, true, 7.0),
+                    PresetExercise("standing-y-raise", 3, 12, 15, 45, false, 6.5),
+                    PresetExercise("cossack-squat", 3, 6, 10, 60, true, 7.0, "한쪽씩"),
+                    PresetExercise("side-plank", 3, 30, 45, 30, false, 6.5, "초 단위")
+                )),
+                PresetDay(3, "맨몸 전신 C (런지·등)", WorkoutType.FULL_BODY, 35, listOf(
+                    PresetExercise("bodyweight-rear-lunge", 3, 10, 12, 60, true, 7.0, "한쪽 다리씩"),
+                    PresetExercise("diamond-push-up", 3, 8, 12, 60, true, 7.0),
+                    PresetExercise("superman-pulls", 3, 10, 12, 45, false, 6.5),
+                    PresetExercise("lying-back-extension", 3, 12, 15, 45, false, 6.5),
+                    PresetExercise("mountain-climbers", 3, 20, 30, 30, false, 7.0)
+                ))
+            )
+        ),
+        PresetTemplate(
+            code = "home_bodyweight_advanced",
+            name = "맨몸 홈트 상급 상하체",
+            description = "기구 없이 하는 상급자용 상·하체 분할입니다. 주 4일, 아처 푸시업·스케이터 스쿼트 같은 한쪽 변형으로 과부하하고, 철봉이 있으면 턱걸이를 합니다.",
+            targetGoal = "muscle_gain",
+            targetExperience = "advanced",
+            splitType = SplitType.UPPER_LOWER,
+            totalDays = 4,
+            iconName = "home",
+            sortOrder = 17,
+            days = listOf(
+                PresetDay(1, "상체 A (아처 푸시업·당기기)", WorkoutType.UPPER, 40, listOf(
+                    PresetExercise("archer-push-up", 4, 4, 8, 90, true, 8.0, "한쪽씩, 어려우면 디클라인 푸시업"),
+                    PresetExercise("pull-up-normal-grip", 4, 5, 8, 120, true, 8.0, "철봉이 있을 때"),
+                    PresetExercise("pike-push-up", 3, 6, 10, 75, true, 7.5),
+                    PresetExercise("superman-pulls", 3, 10, 15, 45, false, 7.0),
+                    PresetExercise("diamond-push-up", 3, 8, 12, 60, true, 7.5)
+                )),
+                PresetDay(2, "하체 A (스케이터 스쿼트)", WorkoutType.LOWER, 40, listOf(
+                    PresetExercise("counterbalanced-skater-squat", 4, 5, 8, 90, true, 8.0, "한쪽 다리씩"),
+                    PresetExercise("bodyweight-single-leg-deadlift", 3, 8, 12, 60, true, 7.5, "한쪽 다리씩"),
+                    PresetExercise("bulgarian-split-squat", 3, 8, 12, 60, true, 7.5, "한쪽 다리씩"),
+                    PresetExercise("bodyweight-standing-calf-raise", 3, 15, 20, 30, false, 7.0),
+                    PresetExercise("side-plank", 3, 30, 45, 30, false, 7.0, "초 단위")
+                )),
+                PresetDay(3, "상체 B (디클라인·어깨)", WorkoutType.UPPER, 40, listOf(
+                    PresetExercise("decline-push-up", 4, 10, 15, 75, true, 8.0, "발을 의자에"),
+                    PresetExercise("chin-up", 4, 5, 8, 120, true, 8.0, "철봉이 있을 때"),
+                    PresetExercise("pike-push-up", 3, 8, 12, 75, true, 7.5),
+                    PresetExercise("standing-y-raise", 3, 12, 15, 45, false, 7.0),
+                    PresetExercise("close-grip-push-up", 3, 8, 12, 60, true, 7.5)
+                )),
+                PresetDay(4, "하체 B (코사크·힌지)", WorkoutType.LOWER, 40, listOf(
+                    PresetExercise("cossack-squat", 3, 6, 10, 75, true, 7.5, "한쪽씩"),
+                    PresetExercise("walking-lunge", 3, 10, 12, 60, true, 7.5, "한쪽 다리씩"),
+                    PresetExercise("lying-back-extension", 3, 12, 15, 45, false, 7.0),
+                    PresetExercise("glute-bridge-with-abduction-bodyweight", 3, 15, 20, 45, false, 7.0),
+                    PresetExercise("dead-bug", 3, 10, 12, 45, false, 7.0)
+                ))
+            )
         )
+
     )
 }

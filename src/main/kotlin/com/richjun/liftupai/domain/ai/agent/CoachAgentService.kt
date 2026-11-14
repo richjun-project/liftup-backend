@@ -37,6 +37,8 @@ class CoachAgentService(
     private val objectMapper: ObjectMapper,
     /** App Store 이벤트 기간에만 챌린지 규칙·진행을 프롬프트에 넣는다(없으면 생략 — 단위 테스트) */
     private val storeChallenge: StoreChallengeService? = null,
+    /** 떠넘기기·없는 능력·도구 실패를 코드값 이벤트로 남긴다(없으면 생략 — 단위 테스트) */
+    private val appEvents: com.richjun.liftupai.domain.analytics.AppEventService? = null,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -126,85 +128,133 @@ class CoachAgentService(
         val contents = objectMapper.createArrayNode()
         contents.add(userTurn(prompt, prep.images))
         val trace = mutableListOf<ToolUse>()
-        var text: String? = null
         var rounds = 0
         var forced = false
 
-        while (rounds < maxRounds) {
-            rounds++
-            forced = rounds == maxRounds || elapsed() > softBudgetMs
-            // 호출 하나가 예산을 다 먹지 않게 상한을 둔다 — 첫 호출이 막히면 남은 시간으로 단발 경로가 답한다
-            val cap = if (rounds == 1) firstCallTimeoutMs else callTimeoutMs
-            val result = activeModel.generate(requestBody(contents, forceText = forced), minOf(cap, budgetMs - elapsed()).coerceAtLeast(2_000))
-            if (result !is AgentModelResult.Success) {
-                val f = result as AgentModelResult.Failure
-                log.warn("[AI-AGENT] model failed user={} round={} code={} ms={} msg={}", user.id, rounds, f.code, f.elapsedMs, f.message.take(200))
-                return fallback(user, message, history, trainerContext, imageUrls, prep, trace, elapsed(), "model_failed")
+        /** 도구 루프 한 번: 모델이 도구를 그만 부르거나 [limit] 번째가 되면(또는 예산이 차면) 도구 없이 답하게 한다 */
+        fun runLoop(limit: Int): LoopOutcome {
+            var local = 0
+            while (local < limit) {
+                local++
+                rounds++
+                forced = local == limit || elapsed() > softBudgetMs
+                // 호출 하나가 예산을 다 먹지 않게 상한을 둔다 — 첫 호출이 막히면 남은 시간으로 단발 경로가 답한다
+                val cap = if (rounds == 1) firstCallTimeoutMs else callTimeoutMs
+                val result = activeModel.generate(requestBody(contents, forceText = forced), minOf(cap, budgetMs - elapsed()).coerceAtLeast(2_000))
+                if (result !is AgentModelResult.Success) {
+                    val f = result as AgentModelResult.Failure
+                    log.warn("[AI-AGENT] model failed user={} round={} code={} ms={} msg={}", user.id, rounds, f.code, f.elapsedMs, f.message.take(200))
+                    return LoopOutcome(null, "model_failed")
+                }
+                val candidate = result.response.path("candidates").path(0)
+                val content = candidate.path("content")
+                val parts = content.path("parts")
+                val usage = result.response.path("usageMetadata")
+                log.info("[AI-AGENT] round user={} round={} ms={} finish={} calls={} promptTokens={} thoughts={} out={}",
+                    user.id, rounds, result.elapsedMs, candidate.path("finishReason").asText("-"), parts.count { it.has("functionCall") },
+                    usage.path("promptTokenCount").asInt(), usage.path("thoughtsTokenCount").asInt(), usage.path("candidatesTokenCount").asInt())
+                val calls = parts.filter { it.has("functionCall") }
+                if (calls.isEmpty() || forced) {
+                    val text = parts.filter { it.has("text") && !it.path("thought").asBoolean(false) }
+                        .joinToString("") { it.path("text").asText() }
+                        .takeIf { it.isNotBlank() }
+                    return LoopOutcome(text, if (text == null) "empty_answer" else null)
+                }
+                // 모델 턴은 받은 그대로 이어 붙인다(thoughtSignature 보존)
+                contents.add((content as ObjectNode).deepCopy().put("role", "model"))
+                val responses = objectMapper.createArrayNode()
+                calls.forEach { part ->
+                    val call = part.path("functionCall")
+                    val name = call.path("name").asText()
+                    val outcome = toolbox.execute(name, call.path("args"), ctx)
+                    trace += ToolUse(name, outcome.ok, outcome.changed)
+                    log.info("[AI-AGENT] tool user={} round={} name={} ok={} changed={} ms={}", user.id, rounds, name, outcome.ok, outcome.changed, outcome.elapsedMs)
+                    val fr = objectMapper.createObjectNode()
+                    fr.put("name", name)
+                    call.path("id").takeIf { !it.isMissingNode && !it.isNull }?.let { fr.set<JsonNode>("id", it) }
+                    fr.set<JsonNode>("response", objectMapper.valueToTree(mapOf("result" to outcome.result)))
+                    responses.add(objectMapper.createObjectNode().set<JsonNode>("functionResponse", fr))
+                }
+                contents.add(objectMapper.createObjectNode().put("role", "user").set<JsonNode>("parts", responses))
             }
-            val candidate = result.response.path("candidates").path(0)
-            val content = candidate.path("content")
-            val parts = content.path("parts")
-            val usage = result.response.path("usageMetadata")
-            log.info("[AI-AGENT] round user={} round={} ms={} finish={} calls={} promptTokens={} thoughts={} out={}",
-                user.id, rounds, result.elapsedMs, candidate.path("finishReason").asText("-"), parts.count { it.has("functionCall") },
-                usage.path("promptTokenCount").asInt(), usage.path("thoughtsTokenCount").asInt(), usage.path("candidatesTokenCount").asInt())
-            val calls = parts.filter { it.has("functionCall") }
-            if (calls.isEmpty() || forced) {
-                text = parts.filter { it.has("text") && !it.path("thought").asBoolean(false) }
-                    .joinToString("") { it.path("text").asText() }
-                    .takeIf { it.isNotBlank() }
-                break
-            }
-            // 모델 턴은 받은 그대로 이어 붙인다(thoughtSignature 보존)
-            contents.add((content as ObjectNode).deepCopy().put("role", "model"))
-            val responses = objectMapper.createArrayNode()
-            calls.forEach { part ->
-                val call = part.path("functionCall")
-                val name = call.path("name").asText()
-                val outcome = toolbox.execute(name, call.path("args"), ctx)
-                trace += ToolUse(name, outcome.ok, outcome.changed)
-                log.info("[AI-AGENT] tool user={} round={} name={} ok={} changed={} ms={}", user.id, rounds, name, outcome.ok, outcome.changed, outcome.elapsedMs)
-                val fr = objectMapper.createObjectNode()
-                fr.put("name", name)
-                call.path("id").takeIf { !it.isMissingNode && !it.isNull }?.let { fr.set<JsonNode>("id", it) }
-                fr.set<JsonNode>("response", objectMapper.valueToTree(mapOf("result" to outcome.result)))
-                responses.add(objectMapper.createObjectNode().set<JsonNode>("functionResponse", fr))
-            }
-            contents.add(objectMapper.createObjectNode().put("role", "user").set<JsonNode>("parts", responses))
+            return LoopOutcome(null, "empty_answer")
         }
 
+        val first = runLoop(maxRounds)
+        if (first.failure == "model_failed") {
+            return fallback(user, message, history, trainerContext, imageUrls, prep, trace, elapsed(), "model_failed")
+        }
+        val text = first.text
         if (text == null) {
             log.warn("[AI-AGENT] empty answer user={} rounds={} tools={}", user.id, rounds, trace.map { it.name })
             return fallback(user, message, history, trainerContext, imageUrls, prep, trace, elapsed(), "empty_answer")
         }
 
         var parsed = ChatActionParser.extract(text)
-        // 플랜·설정 변경 도구가 실제로 성공했으면 "바꿨어요"는 거짓 약속이 아니다 — 그 경우에만 그 검사를 뺀다
-        val realChange = trace.any { it.changed && it.name in SETTINGS_CHANGING_TOOLS }
-        fun check(t: String?) = gemini.chatSafety.validate(gemini.maskNickname(t, user.nickname), prep.risk)
-            .filterNot { realChange && it == ChatSafetyService.Violation.FALSE_PROMISE_OF_PLAN_CHANGE }
+        // 플랜·설정 변경 도구가 실제로 성공했으면 "바꿨어요"·"설정에도 저장했어요"는 거짓 약속·떠넘기기가 아니다 — 그 경우에만 두 검사를 뺀다
+        fun realChange() = trace.any { it.changed && it.name in SETTINGS_CHANGING_TOOLS }
+        fun check(t: String?) = gemini.chatSafety.validate(gemini.maskNickname(t, user.nickname), prep.risk, userMessage = message)
+            .filterNot { realChange() && (it == ChatSafetyService.Violation.FALSE_PROMISE_OF_PLAN_CHANGE || it == ChatSafetyService.Violation.DEFLECTION_TO_SETTINGS) }
         var violations = check(parsed.text)
+        val deflected = ChatSafetyService.Violation.DEFLECTION_TO_SETTINGS in violations
         if (violations.isNotEmpty() && elapsed() < budgetMs - 6_000) {
-            // 1회 재생성: 위반 사유를 붙여 도구 없이 다시 쓰게 한다(도구 결과는 대화에 남아 있다)
             log.warn("[AI-AGENT] reply rejected user={} violations={} — regenerating", user.id, violations)
             contents.add(objectMapper.createObjectNode().put("role", "model")
                 .set<JsonNode>("parts", objectMapper.createArrayNode().add(objectMapper.createObjectNode().put("text", text))))
             contents.add(userTurn(gemini.chatSafety.rejectionBlock(violations, prep.risk) + "\nRewrite your last answer following these rules.", emptyList()))
-            val retry = activeModel.generate(requestBody(contents, forceText = true), minOf(callTimeoutMs, budgetMs - elapsed()).coerceAtLeast(2_000))
-            val retryText = (retry as? AgentModelResult.Success)?.response?.path("candidates")?.path(0)?.path("content")?.path("parts")
-                ?.filter { it.has("text") && !it.path("thought").asBoolean(false) }?.joinToString("") { it.path("text").asText() }
+            val actionable = violations.all { it in TOOL_FIXABLE_VIOLATIONS }
+            val retryText = if (actionable) {
+                // 떠넘기기·거짓 약속은 도구를 쓰면 고쳐진다 — 글만 다시 쓰게 하면 바로 그 도구를 부를 수 없었다(2026-11-14)
+                runLoop(RETRY_TOOL_ROUNDS).text
+            } else {
+                // 1회 재생성: 위반 사유를 붙여 도구 없이 다시 쓰게 한다(도구 결과는 대화에 남아 있다)
+                val retry = activeModel.generate(requestBody(contents, forceText = true), minOf(callTimeoutMs, budgetMs - elapsed()).coerceAtLeast(2_000))
+                (retry as? AgentModelResult.Success)?.response?.path("candidates")?.path(0)?.path("content")?.path("parts")
+                    ?.filter { it.has("text") && !it.path("thought").asBoolean(false) }?.joinToString("") { it.path("text").asText() }
+            }
             if (!retryText.isNullOrBlank()) {
                 parsed = ChatActionParser.extract(retryText)
                 violations = check(parsed.text)
             }
         }
-        if (violations.isNotEmpty()) {
+        recordCoachSignals(user, message, parsed.text, deflected, violations, trace)
+        // 떠넘기기는 안전 문제가 아니다 — 다시 써도 남으면(또는 오탐이면) 그 답을 그대로 보낸다. 안전 대체 문구로 덮으면 멀쩡한 답이 사라진다
+        if (violations.any { it != ChatSafetyService.Violation.DEFLECTION_TO_SETTINGS }) {
             log.error("[AI-AGENT] reply rejected user={} violations={} — safe fallback", user.id, violations)
             return AgentReply(gemini.chatSafety.safeFallback(prep.risk, user.nickname), emptyList(), trace, "fallback")
         }
         val actions = gemini.safeActions(parsed.actions, prep.risk, message)
         log.info("[AI-AGENT] user={} rounds={} forced={} tools={} ms={}", user.id, rounds, forced, trace.map { if (it.ok) it.name else "${it.name}:fail" }, elapsed())
         return AgentReply(parsed.text, actions, trace, "agent")
+    }
+
+    private data class LoopOutcome(val text: String?, val failure: String?)
+
+    /**
+     * 트레이너가 "할 수 없었던 일"을 코드값으로 남긴다(app_events, 자유 글 없음) — 매일 루프가 다음에 만들 도구 후보로 본다.
+     *  - coach_deflection: 도구로 할 수 있는 요청을 설정 화면으로 떠넘겼다(재생성으로 고쳐졌는지 fixed)
+     *  - coach_missing_capability: 도구가 없는 요청에 설정 화면을 안내했다(예: 주 운동 일수 변경) — 진짜 설정 일(언어·구독)도 섞인다
+     *  - coach_tool_failed: 도구가 ok:false 를 돌려줬다
+     */
+    private fun recordCoachSignals(
+        user: User, message: String, reply: String?, deflected: Boolean,
+        finalViolations: List<ChatSafetyService.Violation>, trace: List<ToolUse>,
+    ) {
+        val events = appEvents ?: return
+        runCatching {
+            val topic = gemini.chatSafety.toolTopic(message)
+            if (deflected) {
+                events.recordServer(user.id, "coach_deflection", mapOf(
+                    "topic" to (topic ?: "unknown"),
+                    "fixed" to (ChatSafetyService.Violation.DEFLECTION_TO_SETTINGS !in finalViolations),
+                ))
+            } else if (topic == null && reply != null && gemini.chatSafety.pointsToSettings(reply)) {
+                events.recordServer(user.id, "coach_missing_capability", mapOf("kind" to "settings_pointer"))
+            }
+            trace.filter { !it.ok }.map { it.name }.distinct().forEach { tool ->
+                events.recordServer(user.id, "coach_tool_failed", mapOf("tool" to tool))
+            }
+        }.onFailure { log.warn("[AI-AGENT] coach signal record failed user={}: {}", user.id, it.message) }
     }
 
     private fun fallback(
@@ -249,7 +299,13 @@ class CoachAgentService(
 
     companion object {
         /** 사용자의 플랜·설정을 실제로 바꾸는 도구 — 성공했을 때만 "바꿨어요"를 허용한다 */
-        val SETTINGS_CHANGING_TOOLS = setOf("swap_exercise_in_plan", "set_workout_time", "set_today_workout_day", "set_available_equipment")
+        val SETTINGS_CHANGING_TOOLS = setOf("swap_exercise_in_plan", "set_workout_time", "set_today_workout_day", "set_available_equipment", "set_coach_messages")
+
+        /** 도구를 쓰면 고쳐지는 위반 — 재생성 때 도구를 다시 쓸 수 있게 한다 */
+        val TOOL_FIXABLE_VIOLATIONS = setOf(ChatSafetyService.Violation.FALSE_PROMISE_OF_PLAN_CHANGE, ChatSafetyService.Violation.DEFLECTION_TO_SETTINGS)
+
+        /** 떠넘기기·거짓 약속을 고칠 때 더 쓰는 도구 루프 횟수(도구 1번 + 답 1번) */
+        const val RETRY_TOOL_ROUNDS = 2
     }
 
     internal fun agentSection(nickname: String, memories: List<CoachMemory>, challenge: String? = null): String = buildString {
@@ -263,6 +319,9 @@ class CoachAgentService(
         appendLine("- Training another day of their plan today (\"today is pull day\", \"can I do legs instead?\") is the user's call, not a mistake to correct. Do not argue with the schedule or send them to settings: find the matching day (get_plan_overview), call set_today_workout_day, then say in one line what today's session is now and add [[START_TODAY_WORKOUT]]. If no day of the plan matches, say so and offer the closest day.")
         // 2026-11-13: "器具はありません"(기구 없음)에 '플랜 설정에서 새 플랜을 받으라'고만 답했고, 사용자가 프로필을 고쳐도 플랜은 헬스장 그대로였다(304)
         appendLine("- Equipment is a fact about the user, and telling you about it IS the request: when they say what they can or cannot train with (\"I have no equipment\", \"only dumbbells at home\", \"there's no machine\", or that today's exercises need gear they don't have), call set_available_equipment with the FULL list they can use now — it also fits their plan. Do not send them to settings or tell them to choose another plan. Then say in one line what changed and what today's session is now, and add [[START_TODAY_WORKOUT]]. Only if it sounds temporary (travelling, this week only) ask once before changing it.")
+        // 2026-11-14: 맨몸은 무게 대신 변형으로 과부하한다 — 오늘 운동 도구가 사다리 한 단계 위·아래를 준다
+        appendLine("- Bodyweight progression: if the user says an exercise is too easy or too hard, check get_today_workout for its harder_variant / easier_variant and offer that exact exercise; swap it (swap_exercise_in_plan) once they agree. For a weighted exercise, adjust reps or weight in words instead.")
+        appendLine("- Your own check-in messages: if the user asks you to stop messaging or nudging them (or to start again), call set_coach_messages — do not send them to their phone settings, which would also silence their workout reminders.")
         appendLine("- If a tool returns ok:false, say plainly that it could not be done and why, and offer another way. Never claim success without ok:true and changed:true.")
         appendLine("- Memory: when the user tells you a lasting fact about themselves (schedule, equipment at home, preferences, injury or health history, life context, goal details), call remember with a short note in their language. Not for passing moods, details of a single workout, or other people. If they ask you to forget something or a fact is outdated, call forget.")
         appendLine("- Use what you remember naturally, like a coach who knows them — do not recite the list.")

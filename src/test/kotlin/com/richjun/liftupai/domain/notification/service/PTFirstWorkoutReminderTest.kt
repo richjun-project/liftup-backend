@@ -68,6 +68,7 @@ class PTFirstWorkoutReminderTest {
         every { scheduleRepository.save(any<NotificationSchedule>()) } answers { firstArg() }
         every { userSettingsRepository.findByUser_Id(5L) } returns Optional.of(UserSettings(user = user, language = "ko"))
         every { workoutSessionRepository.countByUserAndStatus(user, SessionStatus.COMPLETED) } returns completedWorkouts
+        every { workoutSessionRepository.countByUserAndStatusAndDataQualityIsNull(user, SessionStatus.COMPLETED) } returns completedWorkouts
         every { chatMessageRepository.save(capture(saved)) } answers { firstArg() }
         every { userProfileRepository.findByUser(user) } returns
             if (level == null) Optional.empty()

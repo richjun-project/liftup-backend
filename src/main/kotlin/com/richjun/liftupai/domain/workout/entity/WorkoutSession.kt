@@ -51,5 +51,9 @@ data class WorkoutSession(
     var programDay: Int? = null,
 
     @Column
-    var programCycle: Int? = null
+    var programCycle: Int? = null,
+
+    /** 데이터 품질 표시(2026-11-14). IMPLAUSIBLE_SPEED: 사람이 할 수 없는 속도로 끝난 세션 — PR·첫 운동 판정에서 뺀다 */
+    @Column(name = "data_quality", length = 30)
+    var dataQuality: String? = null
 )

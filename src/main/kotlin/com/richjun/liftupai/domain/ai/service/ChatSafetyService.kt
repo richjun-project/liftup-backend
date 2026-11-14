@@ -51,6 +51,8 @@ class ChatSafetyService {
         RED_FLAG_WITHOUT_MEDICAL_REFERRAL,
         LANGUAGE_MISMATCH,
         FALSE_PROMISE_OF_PLAN_CHANGE,
+        /** 트레이너가 도구로 할 수 있는 일(장비·오늘 Day·운동 시간·종목 교체)을 설정·플랜 화면으로 떠넘겼다(에이전트 경로만) */
+        DEFLECTION_TO_SETTINGS,
         ERROR_TEXT_EXPOSED,
         EMPTY_REPLY,
     }
@@ -184,7 +186,8 @@ class ChatSafetyService {
                 Violation.RESTRICTED_EXERCISE_FOR_INJURY -> "You suggested an exercise that loads an injured area (${risk.injuries.joinToString(", ")}). Remove it and give a safe alternative."
                 Violation.RED_FLAG_WITHOUT_MEDICAL_REFERRAL -> "The user reported an emergency-type symptom but you did not tell them to stop and seek medical care first."
                 Violation.LANGUAGE_MISMATCH -> "You answered in the wrong language. Respond ONLY in ${AILocalization.responseLanguage(risk.locale)}."
-                Violation.FALSE_PROMISE_OF_PLAN_CHANGE -> "You claimed to change the user's plan/menu/weights. You cannot. Give the answer in chat and point to the plan screen instead."
+                Violation.FALSE_PROMISE_OF_PLAN_CHANGE -> "You said you changed the user's plan/menu/weights/settings, but nothing was changed. Do not claim a change that did not happen. If one of your tools can make this change, call it now; if none can, say plainly that it was not changed and answer in chat."
+                Violation.DEFLECTION_TO_SETTINGS -> "You sent the user to a settings/plan/profile screen for something you can do yourself with a tool (equipment → set_available_equipment, today's day → set_today_workout_day, workout time → set_workout_time, swapping an exercise → swap_exercise_in_plan). Do it now with the matching tool, then tell them in one line what changed. Only if it is temporary or unclear, ask one short question instead."
                 Violation.ERROR_TEXT_EXPOSED -> "Your reply contained internal error text. Answer the user normally."
                 Violation.EMPTY_REPLY -> "Your reply was empty."
             })
@@ -193,7 +196,11 @@ class ChatSafetyService {
 
     // ───────────────────────── 사후 검사 ─────────────────────────
 
-    fun validate(reply: String?, risk: RiskProfile): List<Violation> {
+    /**
+     * @param userMessage 이번 사용자 메시지 — 주면(에이전트 경로) 도구로 할 수 있는 요청을 설정 화면으로 떠넘겼는지도 본다.
+     *   단발 경로는 도구가 없어 설정 안내가 정답이므로 넘기지 않는다.
+     */
+    fun validate(reply: String?, risk: RiskProfile, userMessage: String? = null): List<Violation> {
         if (reply.isNullOrBlank()) return listOf(Violation.EMPTY_REPLY)
         val out = mutableListOf<Violation>()
         val lower = reply.lowercase()
@@ -205,8 +212,27 @@ class ChatSafetyService {
         else if (risk.noIntakeNumbers && containsIntakeTarget(reply)) out += Violation.INTAKE_NUMBER_TO_VULNERABLE_USER
         if (risk.injuries.isNotEmpty() && recommendsRestrictedExercise(reply, risk.injuries)) out += Violation.RESTRICTED_EXERCISE_FOR_INJURY
         if (risk.redFlagSymptoms && !containsAny(lower, MEDICAL_REFERRAL_KEYWORDS)) out += Violation.RED_FLAG_WITHOUT_MEDICAL_REFERRAL
+        if (userMessage != null && toolTopic(userMessage) != null && pointsToSettings(reply)) out += Violation.DEFLECTION_TO_SETTINGS
         return out
     }
+
+    /**
+     * 이 메시지가 트레이너 도구로 처리할 수 있는 요청인가(2026-11-14). equipment | today_day | workout_time | exercise_swap | null.
+     * 언어·구독·계정·OS 알림 같은 진짜 설정 일은 null — 그런 질문에 설정을 안내하는 것은 정답이다.
+     */
+    fun toolTopic(message: String): String? {
+        val m = message.lowercase()
+        return when {
+            TOPIC_WORKOUT_TIME.any { it.containsMatchIn(m) } -> "workout_time"
+            TOPIC_TODAY_DAY.any { it.containsMatchIn(m) } -> "today_day"
+            TOPIC_EQUIPMENT.any { it.containsMatchIn(m) } -> "equipment"
+            TOPIC_SWAP.any { it.containsMatchIn(m) } -> "exercise_swap"
+            else -> null
+        }
+    }
+
+    /** 답이 설정·플랜·프로필 화면에서 직접 바꾸라고 보내는가 */
+    fun pointsToSettings(reply: String): Boolean = DEFLECTION_PATTERNS.any { it.containsMatchIn(reply) }
 
     /**
      * 최종 안전 폴백(로케일별). 재생성까지 실패했을 때만 쓴다.
@@ -449,6 +475,33 @@ class ChatSafetyService {
         private val ERROR_TEXT_MARKERS = listOf(
             "ai 분석에 실패", "ai 응답을 받을 수", "gemini", "api key", "exception", "stack trace", "http 4", "http 5", "エラーが発生",
             "analysis failed", "response unavailable", "internal server error",
+        )
+        // ── 떠넘기기(2026-11-14): 296 '오늘 풀 데이' → 설정으로, 304 '器具はありません' → '플랜 설정에서' ──
+        private val TOPIC_EQUIPMENT = listOf(
+            Regex("(기구|장비|덤벨|바벨|케틀벨|밴드|철봉|맨몸|헬스장|집에서|홈트)"),
+            Regex("\\b(equipment|dumbbells?|barbell|kettlebell|resistance bands?|pull-?up bar|bodyweight|no gym|at home|home workouts?)\\b"),
+            Regex("(器具|道具|ダンベル|バーベル|ケトルベル|チューブ|バンド|懸垂|自重|ジム|家で|自宅)"),
+        )
+        private val TOPIC_TODAY_DAY = listOf(
+            Regex("오늘[^.?!\\n]{0,12}(하체|상체|가슴|등|어깨|팔|다리|풀|푸시|푸쉬|레그|데이|day)[^.?!\\n]{0,10}(할래|하고 싶|할게|해도|하면|바꿔|대신|날)"),
+            Regex("\\btoday\\b[^.?!\\n]{0,25}\\b(legs?|pull|push|upper|lower|chest|back|arms?)\\b[^.?!\\n]{0,10}\\b(day|instead)\\b"),
+            Regex("\\b(can i|i want to|i'?ll|let me|i'?d like to) (do|train) (legs|pull|push|upper|lower|chest|back) (today|instead)\\b"),
+            Regex("今日[はも]?[^。？！\\n]{0,12}(脚|下半身|上半身|胸|背中|肩|腕|プル|プッシュ|レッグ)[^。？！\\n]{0,10}(やりたい|にしたい|にする|やる|の日|デー)"),
+        )
+        private val TOPIC_WORKOUT_TIME = listOf(
+            Regex("(운동|알림|알람)\\s?시간[^.?!\\n]{0,12}(바꿔|바꾸|변경|옮겨|늦춰|당겨|으로 해)"),
+            Regex("\\b(change|move|set|update)\\b[^.?!\\n]{0,20}\\b(workout|training|reminder|notification) time\\b"),
+            Regex("(トレーニング|運動|通知)の?時間[^。？！\\n]{0,12}(変え|変更|ずらし|にして)"),
+        )
+        private val TOPIC_SWAP = listOf(
+            Regex("(대신|다른\\s?(운동|걸로|종목)|바꿔\\s?(줘|주세요|줄래)|교체|빼\\s?(줘|주세요))"),
+            Regex("\\b(swap|replace|substitute|instead of|switch (it|this|that) (out|for))\\b"),
+            Regex("(代わり|変えて|入れ替え|別の種目|外して)"),
+        )
+        private val DEFLECTION_PATTERNS = listOf(
+            Regex("(설정|플랜\\s?설정|프로필|플랜\\s?화면|플랜\\s?탭|설정\\s?화면|설정\\s?메뉴|마이\\s?페이지)[^.!?\\n]{0,8}(에서|으로|에 들어가|에 가서|을 열|를 열)[^.!?\\n]{0,24}(바꾸|바꿔|변경|수정|선택|설정|저장|고르|골라|조정|교체|새 플랜)"),
+            Regex("(?i)\\b(in|from|go to|open|head to|visit|under)\\b[^.!?\\n]{0,14}\\b(settings|plan settings|your profile|profile screen|plan screen|plan tab)\\b"),
+            Regex("(設定|プラン設定|プロフィール|プラン画面|マイページ)[^。！？\\n]{0,6}(から|で|画面|を開)[^。！？\\n]{0,24}(変更|変え|選|設定|保存|調整|入れ替え|差し替え|新しいプラン)"),
         )
         private val FALSE_PROMISE_PATTERNS = listOf(
             Regex("(플랜|메뉴|루틴|프로그램|무게|중량|설정)[^.!?\\n]{0,15}(바꿨|바꿔\\s?드렸|바꿔\\s?놓|바꿔\\s?줄게|바꿔\\s?드릴게|바꿀게|변경했|변경해\\s?드렸|변경해\\s?줄게|변경해\\s?드릴게|변경할게|수정했|수정해\\s?드렸|교체했|교체해\\s?드렸|적용했|적용해\\s?드렸|반영했|반영해\\s?드렸|업데이트했)"),
