@@ -80,6 +80,24 @@ class TemplateRecommendationService(
         )
     }
 
+    /**
+     * 지금 이 사람(저장된 장비·부상·나이 + [request])에게 [templateCode] 가 더는 '그 템플릿'이 아니면 — 헬스장 기구가 없고
+     * 원래 종목이 절반도 안 남으면 — 그 생존율을, 아니면 null 을 돌려준다. 추천의 생존 하한과 같은 판단이다.
+     * [EquipmentPlanFitService] 가 '장비로는 다 할 수 있게 채워졌지만 날 이름과 내용이 따로 노는' 헬스장 템플릿 플랜을 찾는 데 쓴다.
+     */
+    @Transactional(readOnly = true)
+    fun unfitSurvival(user: User, templateCode: String, request: RecommendTemplateRequest): Double? {
+        val profile = toProfile(request, trainingContext.resolve(user.id, overridesOf(request)))
+        if (TemplateRecommendationEngine.hasGymAccess(profile.equipment)) return null
+        val pool = catalogCache.get().planPool
+        val adapter = TemplatePlanAdapter(
+            poolByCategory = { pool[it].orEmpty() },
+            isRestricted = injuryFilterService.restrictionChecker(profile.injuries),
+        )
+        val survival = TemplateRecommendationEngine(snapshot().templates, adapter).survivalOf(templateCode, profile) ?: return null
+        return survival.takeIf { it < TemplateRecommendationEngine.SURVIVAL_FLOOR }
+    }
+
     internal fun overridesOf(request: RecommendTemplateRequest) = UserTrainingContextResolver.Overrides(
         equipment = request.equipment, injuries = request.injuries, experience = request.experienceLevel,
         focusGoals = null, sessionMinutes = request.sessionDuration, age = request.age, gender = request.gender, locale = request.locale,

@@ -9,6 +9,7 @@ import com.richjun.liftupai.domain.notification.entity.NotificationType
 import com.richjun.liftupai.domain.notification.repository.NotificationScheduleRepository
 import com.richjun.liftupai.domain.notification.service.PTScheduledMessageService
 import com.richjun.liftupai.domain.user.entity.ExperienceLevel
+import com.richjun.liftupai.domain.user.entity.FitnessGoal
 import com.richjun.liftupai.domain.user.entity.UserProfile
 import com.richjun.liftupai.domain.user.entity.UserSettings
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
@@ -407,6 +408,58 @@ class CoachToolsIntegrationTest : ApiTestSupport() {
         val fixed = userPlanService.getActivePlan(user.id)!!.id
         call(put("/api/users/settings?locale=ja").contentType(MediaType.APPLICATION_JSON).content("""{"app":{"language":"ja"}}"""))
         assertEquals(fixed, userPlanService.getActivePlan(user.id)!!.id, "맞는 플랜은 다시 건드리지 않는다")
+    }
+
+    /** 324(2026-11-16): 초보·주 5일·목표 4개 — 재추천이 헬스장 5일 분할을 다시 고르던 조건 */
+    private fun as324() {
+        org.springframework.transaction.support.TransactionTemplate(txManager).executeWithoutResult {
+            profileRepository.findByUser_Id(user.id).get().let { p ->
+                p.experienceLevel = ExperienceLevel.BEGINNER
+                p.weeklyWorkoutDays = 5
+                p.goals.addAll(listOf(FitnessGoal.WEIGHT_LOSS, FitnessGoal.STRENGTH, FitnessGoal.GENERAL_FITNESS, FitnessGoal.MUSCLE_GAIN))
+                profileRepository.save(p)
+            }
+        }
+    }
+
+    @Test
+    fun `장비 바꾸기 — 초보·주 5일이 기구가 없다고 하면 헬스장 5일 분할 대신 맨몸 템플릿(324)`() {
+        as324()
+        userPlanService.applyTemplate(user, "beginner_split_5day", null, "ko")
+        val out = toolbox.execute("set_available_equipment", args("""{"equipment":["BODYWEIGHT"]}"""), ctx)
+        assertTrue(out.ok, out.result.toString())
+        assertTrue(out.result["plan"].toString().contains("replaced by a plan"), "제자리 교체로 빠지면 안 된다: ${out.result}")
+        val plan = userPlanService.getActivePlan(user.id)!!
+        assertTrue(plan.sourceId != "beginner_split_5day", "${plan.sourceId}")
+        planRows().forEach { (day, exercises) -> assertTrue(exercises.all { bodyweightOnly(it) }, "Day $day: ${exercises.map { it.name }}") }
+    }
+
+    @Test
+    fun `앱 실행 때 — 맨몸으로 제자리 교체돼 날 이름과 내용이 따로 노는 헬스장 템플릿 플랜을 맨몸 템플릿으로(324 운영 상태)`() {
+        as324()
+        userPlanService.applyTemplate(user, "beginner_split_5day", null, "ko")
+        // 헬스장 기구를 쓸 수 있는 사람(장비 제한 없음)의 플랜은 건드리지 않는다
+        val gymPlan = userPlanService.getActivePlan(user.id)!!.id
+        call(put("/api/users/settings?locale=ko").contentType(MediaType.APPLICATION_JSON).content("""{"app":{"language":"ko"}}"""))
+        assertEquals(gymPlan, userPlanService.getActivePlan(user.id)!!.id, "헬스장 이용자 플랜이 바뀌었다")
+
+        // 11-16 운영 상태: 장비는 맨몸, 플랜은 beginner_split_5day 그대로인데 종목만 맨몸으로 제자리 교체됨
+        org.springframework.transaction.support.TransactionTemplate(txManager).executeWithoutResult {
+            settingsRepository.findByUser_Id(user.id).get().let { st -> st.availableEquipment.clear(); st.availableEquipment.add("BODYWEIGHT"); settingsRepository.save(st) }
+        }
+        org.springframework.transaction.support.TransactionTemplate(txManager).executeWithoutResult { userPlanService.refitActivePlanToEquipment(user.id) }
+        val drifted = userPlanService.getActivePlan(user.id)!!
+        assertEquals("beginner_split_5day", drifted.sourceId)
+        assertTrue(planRows().values.flatten().all { bodyweightOnly(it) }, "준비: 종목은 이미 다 맨몸")
+
+        val res = call(put("/api/users/settings?locale=ko").contentType(MediaType.APPLICATION_JSON).content("""{"app":{"language":"ko"}}"""))
+        assertEquals(200, res.status, res.contentAsString)
+        val fixed = userPlanService.getActivePlan(user.id)!!
+        assertTrue(fixed.id != drifted.id && fixed.sourceId != "beginner_split_5day", "${fixed.sourceId}")
+        planRows().forEach { (day, exercises) -> assertTrue(exercises.all { bodyweightOnly(it) }, "Day $day: ${exercises.map { it.name }}") }
+
+        call(put("/api/users/settings?locale=ko").contentType(MediaType.APPLICATION_JSON).content("""{"app":{"language":"ko"}}"""))
+        assertEquals(fixed.id, userPlanService.getActivePlan(user.id)!!.id, "맞는 플랜은 다시 건드리지 않는다")
     }
 
     @Test

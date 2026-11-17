@@ -52,6 +52,32 @@ class BodyweightTemplateTest {
     }
 
     @Test
+    @DisplayName("324 재현(초보·주 5일·30분·집·기구 없음·목표 4개·집중 하체·둔근·코어): 원래 종목이 대부분 사라지는 헬스장 5일 분할 대신 맨몸 템플릿")
+    fun replay324() {
+        // 2026-11-16 운영: 일수 점수(+25)가 장비 생존(30×0.24)을 이겨 beginner_split_5day 가 뽑혔고(score=67.6, survival=0.24),
+        // 남은 종목 19개가 제자리 교체돼 '당기기 등·이두' 날이 런지·크런치·플랭크, '밀기' 날이 글루트 브리지로 시작했다.
+        val goals = listOf("weight_loss", "strength", "general_fitness", "muscle_gain")
+        val p = TemplateRecommendationEngine.RecoProfile(
+            experience = "beginner", goals = goals, weeklyDays = 5, sessionDuration = 30,
+            equipment = setOf("BODYWEIGHT"), injuries = emptySet(),
+            focus = listOf(FocusArea.LEGS, FocusArea.CORE, FocusArea.GLUTES), age = null,
+        )
+        val out = recommend(p)
+        val top = out.ranked.take(4).joinToString { "${it.template.code}=${"%.1f".format(it.total)}/s${"%.2f".format(it.survival)}" }
+        assertTrue(out.best.survival >= 0.5, "원래 종목이 절반도 안 남는 템플릿이 뽑혔다: $top")
+        assertTrue(out.best.template.code.startsWith("home_") || out.best.template.code == "glute_leg_home", top)
+        val days = out.adapted.map { d -> PlanInvariants.Day(d.dayNumber, d.workoutType, d.exercises.map { it.exercise }) }
+        assertTrue(PlanInvariants.check(days, p.equipment).isEmpty(), "${PlanInvariants.check(days, p.equipment)}")
+    }
+
+    @Test
+    @DisplayName("헬스장을 쓰는 초보 주 5일은 그대로 5일 분할 — 생존 하한은 맞는 템플릿이 있을 때만 건다")
+    fun gymBeginnerFiveDaysKeepsSplit() {
+        val out = recommend(profile("beginner", 5, 45, emptySet(), 28, listOf("bulk_up")))
+        assertEquals("beginner_split_5day", out.best.template.code, out.ranked.take(3).joinToString { "${it.template.code}=${"%.1f".format(it.total)}" })
+    }
+
+    @Test
     @DisplayName("철봉이 있는 상급자는 같은 템플릿에서 턱걸이를 받는다")
     fun advancedWithBarKeepsPullUps() {
         val out = recommend(profile("advanced", 4, 45, setOf("BODYWEIGHT", "OTHER"), 31, listOf("wide_back", "bulk_up")))

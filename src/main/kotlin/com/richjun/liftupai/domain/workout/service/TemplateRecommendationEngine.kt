@@ -77,11 +77,26 @@ class TemplateRecommendationEngine(
         val personRank = rankOf(profile.experience)
         val eligible = templates.filter { rankOf(it.targetExperience) <= personRank }
             .ifEmpty { templates.filter { rankOf(it.targetExperience) == templates.minOf { t -> rankOf(t.targetExperience) } } }
-        val scored = eligible.map { score(it, profile, personRank) }
-            .sortedWith(compareByDescending<Scored> { it.total }.thenBy { it.template.sortOrder })
+        val raw = eligible.map { score(it, profile, personRank) }
+        // 생존 하한: 원래 종목이 절반도 안 남는 템플릿은 날 이름(밀기·당기기·레그프레스)과 내용이 따로 논다 —
+        // 절반 넘게 남는 템플릿이 하나라도 있으면 그 아래로 내린다. 2026-11-16 운영(324, 초보·주 5일·맨몸): 일수 점수(+25)가
+        // 장비 생존(30×0.24)을 이겨 헬스장 5일 분할이 뽑혔고, 빈자리를 채운 맨몸 종목으로 '당기기' 날이 런지·크런치가 됐다.
+        // 바벨·머신·케이블이 있는 사람은 빈자리가 같은 부위 기구 종목(머신 로우 등)으로 채워져 날이 어긋나지 않으니 걸지 않는다
+        // (걸면 머신·케이블만 고른 헬스장 이용자가 맨몸 템플릿으로 밀려난다 — 페르소나 p23·p54·p75·p100 확인).
+        // 모든 템플릿이 하한 아래면(밴드만 있는 사람 등) 순위는 그대로다.
+        val anyIntact = !hasGymAccess(profile.equipment) && raw.any { it.survival >= SURVIVAL_FLOOR }
+        val scored = raw.map {
+            if (anyIntact && it.survival < SURVIVAL_FLOOR) {
+                it.copy(total = it.total - LOW_SURVIVAL_PENALTY, breakdown = it.breakdown + ("survival" to -LOW_SURVIVAL_PENALTY))
+            } else it
+        }.sortedWith(compareByDescending<Scored> { it.total }.thenBy { it.template.sortOrder })
         val best = scored.first()
         return Outcome(best, scored, adaptWithFocus(best.template, profile))
     }
+
+    /** 템플릿 하나가 이 사람(장비·부상·나이)에게 원래 종목을 얼마나 남기나(0..1) — 추천 점수의 survival 과 같은 값. 없는 템플릿이면 null */
+    fun survivalOf(code: String, profile: RecoProfile): Double? =
+        templates.firstOrNull { it.code == code }?.let { score(it, profile, rankOf(profile.experience)).survival }
 
     /** 템플릿 하나를 이 사람에게 적용한 결과(집중 볼륨 포함). 추천 후 실제 플랜과 같다. */
     fun adaptWithFocus(template: RecoTemplate, profile: RecoProfile): List<TemplatePlanAdapter.AdaptedDay> =
@@ -193,8 +208,6 @@ class TemplateRecommendationEngine(
         )
     }
 
-    private fun hasGymAccess(equipment: Set<String>) = equipment.isEmpty() || equipment.any { it in GYM_EQUIPMENT }
-
     /** 템플릿 운동 중 바벨·머신·케이블 비중 */
     private fun gymFraction(t: RecoTemplate): Double {
         val all = t.days.flatMap { it.exercises }
@@ -249,10 +262,16 @@ class TemplateRecommendationEngine(
         private const val STRENGTH = "strength"
         private const val GENERAL = "general_fitness"
         private const val MIN_COMFORTABLE_PER_DAY = 4
+        /** 원래 종목이 이 비율보다 적게 남으면 그 템플릿이 아니다 — EquipmentPlanFitService 의 '절반 넘게 못 함'과 같은 선 */
+        const val SURVIVAL_FLOOR = 0.5
+        private const val LOW_SURVIVAL_PENALTY = 30.0
         private const val FOCUS_FULL_SHARE = 0.45
         /** 한 부위가 이 비율 이상이면 그 부위 전용 템플릿으로 본다 */
         private const val DOMINANT_SHARE = 0.5
         private val GYM_EQUIPMENT = setOf("BARBELL", "MACHINE", "CABLE")
+
+        /** 바벨·머신·케이블 중 하나라도 있거나 장비 제한이 없으면 헬스장 기구를 쓸 수 있는 사람 */
+        fun hasGymAccess(equipment: Set<String>) = equipment.isEmpty() || equipment.any { it in GYM_EQUIPMENT }
 
         /** 경험 → 순위. 초보·노비스 0, 중급 1, 고급·전문가 2 */
         fun rankOf(experience: String?): Int = when (experience?.trim()?.lowercase()) {

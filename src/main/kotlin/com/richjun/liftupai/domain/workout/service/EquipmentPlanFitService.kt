@@ -4,6 +4,7 @@ import com.richjun.liftupai.domain.auth.entity.User
 import com.richjun.liftupai.domain.user.repository.UserProfileRepository
 import com.richjun.liftupai.domain.workout.dto.request.RecommendTemplateRequest
 import com.richjun.liftupai.domain.workout.entity.PlanSourceType
+import com.richjun.liftupai.domain.workout.entity.UserWorkoutPlan
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional
  *    새 장비로 템플릿을 다시 추천해 적용한다. 제자리 교체만 하면 '당기기(등·이두)' 날이 맨몸 복근 운동으로 채워진다
  *    (맨몸 등 운동은 카탈로그에 거의 없다 — 2026-11-14 확인).
  *  - 그 밖(일부만 바뀜, AI·직접 만든 플랜)은 못 하는 종목만 같은 부위의 할 수 있는 종목으로 바꾼다(플랜·진행 Day 유지).
+ *  - 종목은 이미 다 할 수 있어도, 헬스장 기구가 없는 사람의 템플릿 플랜인데 그 템플릿이 이 사람 장비로는 원래 종목의 절반도
+ *    못 남기면(헬스장 분할을 맨몸으로 채운 플랜) 맞는 템플릿으로 바꾼다 — [replaceUnfitTemplate].
  */
 @Service
 class EquipmentPlanFitService(
@@ -50,7 +53,7 @@ class EquipmentPlanFitService(
         val plan = userPlanService.getActivePlan(user.id) ?: return null
         if (plan.sourceType != PlanSourceType.TEMPLATE) return null
         val preview = userPlanService.refitActivePlanToEquipment(user.id, dryRun = true) ?: return null
-        if (preview.daysChanged.isEmpty()) return null
+        if (preview.daysChanged.isEmpty()) return replaceUnfitTemplate(user, plan, locale)
         log.info("User {} template plan {} ({}) has exercises needing equipment they no longer have ({}/{}) — fitting on app open",
             user.id, plan.id, plan.sourceId, preview.removed, preview.totalBefore)
         return fitToCurrentEquipment(user, locale)
@@ -60,22 +63,11 @@ class EquipmentPlanFitService(
     fun fitToCurrentEquipment(user: User, locale: String): Fit {
         val plan = userPlanService.getActivePlan(user.id) ?: return Fit(Mode.NO_PLAN)
         val preview = userPlanService.refitActivePlanToEquipment(user.id, dryRun = true) ?: return Fit(Mode.NO_PLAN)
-        if (preview.daysChanged.isEmpty()) return Fit(Mode.UNCHANGED)
+        if (preview.daysChanged.isEmpty()) return replaceUnfitTemplate(user, plan, locale) ?: Fit(Mode.UNCHANGED)
 
         val mostlyUnusable = preview.totalBefore > 0 && preview.removed * 2 > preview.totalBefore
         if (plan.sourceType == PlanSourceType.TEMPLATE && mostlyUnusable) {
-            val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
-            val pick = runCatching {
-                templateRecommendationService.recommend(
-                    user,
-                    RecommendTemplateRequest(
-                        goals = profile?.goals?.map { it.name.lowercase() },
-                        weeklyDays = profile?.weeklyWorkoutDays,
-                        locale = locale,
-                    ),
-                    locale,
-                ).templateCode
-            }.onFailure { log.warn("template re-recommend after equipment change failed user={}: {}", user.id, it.message) }.getOrNull()
+            val pick = reRecommend(user, locale)
             if (pick != null && pick != plan.sourceId) {
                 userPlanService.applyTemplate(user, pick, null, locale)
                 log.info("User {} equipment changed: plan {} ({}) mostly unusable ({}/{}) -> new template {}",
@@ -87,4 +79,36 @@ class EquipmentPlanFitService(
         return if (done.daysChanged.isEmpty()) Fit(Mode.UNCHANGED)
         else Fit(Mode.REFIT, done.daysChanged, done.removed)
     }
+
+    /**
+     * 종목은 다 할 수 있지만 템플릿 자체가 이 사람 장비에 안 맞는 플랜을 맞는 템플릿으로 바꾼다.
+     * 2026-11-16 운영(324, 초보·주 5일·맨몸): 장비를 말하자 재추천이 같은 헬스장 5일 분할을 골라(일수 점수가 장비 생존을 이김)
+     * 제자리 교체로 빠졌고, 19종목이 바뀌어 '당기기 등·이두' 날이 런지·크런치·플랭크, '밀기' 날이 글루트 브리지로 시작했다.
+     * 헬스장 기구가 있는 사람·원래 종목이 절반 넘게 남는 템플릿·재추천이 같은 템플릿이면 그대로 둔다(null).
+     */
+    private fun replaceUnfitTemplate(user: User, plan: UserWorkoutPlan, locale: String): Fit? {
+        if (plan.sourceType != PlanSourceType.TEMPLATE) return null
+        val code = plan.sourceId ?: return null
+        val survival = runCatching { templateRecommendationService.unfitSurvival(user, code, recommendRequest(user, locale)) }
+            .onFailure { log.warn("template survival check failed user={}: {}", user.id, it.message) }.getOrNull() ?: return null
+        val pick = reRecommend(user, locale) ?: return null
+        if (pick == code) return null
+        userPlanService.applyTemplate(user, pick, null, locale)
+        log.info("User {} template plan {} ({}) does not fit their equipment (survival {}) -> new template {}",
+            user.id, plan.id, code, "%.2f".format(survival), pick)
+        return Fit(Mode.NEW_TEMPLATE, templateCode = pick, previousTemplateCode = code)
+    }
+
+    private fun recommendRequest(user: User, locale: String): RecommendTemplateRequest {
+        val profile = userProfileRepository.findByUser_Id(user.id).orElse(null)
+        return RecommendTemplateRequest(
+            goals = profile?.goals?.map { it.name.lowercase() },
+            weeklyDays = profile?.weeklyWorkoutDays,
+            locale = locale,
+        )
+    }
+
+    private fun reRecommend(user: User, locale: String): String? = runCatching {
+        templateRecommendationService.recommend(user, recommendRequest(user, locale), locale).templateCode
+    }.onFailure { log.warn("template re-recommend after equipment change failed user={}: {}", user.id, it.message) }.getOrNull()
 }
