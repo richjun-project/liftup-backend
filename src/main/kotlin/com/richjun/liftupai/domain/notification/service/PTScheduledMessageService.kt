@@ -262,8 +262,9 @@ class PTScheduledMessageService(
                 // 문구가 "30분 안쪽으로 짜 놨어요"라 첫 세션 규칙 밖(상급·전문가 — 저장된 시간 그대로)이면 보통 알림.
                 // 2026-11-14: 첫 운동 전이면 수준과 무관하게 오늘 첫 종목·실제 예상 시간·장소(기구 없음)를 넣은 문구 —
                 // 실제 분을 쓰니 상급·전문가(304)에게도 참이다. 플랜이 없거나 실패하면 예전 규칙 그대로.
+                // 2026-11-18: 첫 운동을 끝낸 사람도 일반 문구 대신 오늘 Day·첫 종목·시간(FirstWorkoutReminderComposer.composeNext).
                 val firstPending = workoutSessionRepository.countByUserAndStatusAndDataQualityIsNull(schedule.user, SessionStatus.COMPLETED) == 0L
-                (if (firstPending) personalizedFirstWorkout(schedule.user, locale) else null)
+                (if (firstPending) personalizedFirstWorkout(schedule.user, locale) else personalizedNextWorkout(schedule.user, locale))
                     ?: if (firstPending && FirstSessionRule.appliesTo(profile?.experienceLevel)) {
                         ptMessageTemplates.getFirstWorkoutMessage(locale, style)
                     } else {
@@ -280,6 +281,15 @@ class PTScheduledMessageService(
         val composer = firstWorkoutReminder ?: return null
         val composed = runCatching { composer.compose(user, locale) }
             .onFailure { logger.warn("[PTMessage] personalized first-workout reminder failed user={}: {}", user.id, it.message) }
+            .getOrNull() ?: return null
+        runCatching { appEventService?.recordServer(user.id, "coach_reminder_personalized", mapOf("variant" to composed.variant, "minutes" to composed.minutes)) }
+        return composed.text
+    }
+
+    private fun personalizedNextWorkout(user: User, locale: String): String? {
+        val composer = firstWorkoutReminder ?: return null
+        val composed = runCatching { composer.composeNext(user, locale) }
+            .onFailure { logger.warn("[PTMessage] personalized next-workout reminder failed user={}: {}", user.id, it.message) }
             .getOrNull() ?: return null
         runCatching { appEventService?.recordServer(user.id, "coach_reminder_personalized", mapOf("variant" to composed.variant, "minutes" to composed.minutes)) }
         return composed.text

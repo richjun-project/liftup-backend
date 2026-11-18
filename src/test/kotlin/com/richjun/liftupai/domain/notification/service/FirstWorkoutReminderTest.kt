@@ -42,12 +42,13 @@ class FirstWorkoutReminderTest {
     private fun composer(mode: String = "on", allow: String = "") =
         FirstWorkoutReminderComposer(planService, trainingContext).apply { this.mode = mode; this.allowlist = allow }
 
-    private fun givenPlan(firstExercise: String?, minutes: Int, equipment: Set<String>) {
+    private fun givenPlan(firstExercise: String?, minutes: Int, equipment: Set<String>, dayTitle: String = "Day 1") {
         val plan = mockk<UserWorkoutPlan> { every { currentDay } returns 1 }
         every { planService.getActivePlan(304L) } returns plan
         every { planService.getDayWorkout(304L, 1, any(), any()) } returns mockk {
             every { exercises } returns listOfNotNull(firstExercise?.let { n -> mockk { every { exerciseName } returns n } })
             every { estimatedDuration } returns minutes
+            every { dayName } returns dayTitle
         }
         every { trainingContext.resolve(304L, any()) } returns mockk { every { this@mockk.equipment } returns equipment }
     }
@@ -158,8 +159,44 @@ class FirstWorkoutReminderTest {
         }
         every { planService.getActivePlan(304L) } throws IllegalStateException("db down")
         assertThat(sendReminder(composer(), completed = 0, level = ExperienceLevel.EXPERT)).isIn(styled("workout_reminder"))
-        givenPlan("スクワット", 30, setOf("BODYWEIGHT"))
+        // 첫 운동을 한 사람도 플랜을 못 읽으면 예전 일반 문구
+        assertThat(sendReminder(composer(), completed = 3, level = ExperienceLevel.BEGINNER)).isIn(styled("workout_reminder"))
+        // Day 이름이 비었거나 너무 길면 예전 일반 문구
+        givenPlan("スクワット", 30, setOf("BODYWEIGHT"), dayTitle = " ")
+        assertThat(sendReminder(composer(), completed = 3, level = ExperienceLevel.BEGINNER)).isIn(styled("workout_reminder"))
+        givenPlan("スクワット", 30, setOf("BODYWEIGHT"), dayTitle = "あ".repeat(31))
         assertThat(sendReminder(composer(), completed = 3, level = ExperienceLevel.BEGINNER)).isIn(styled("workout_reminder"))
         assertThat(sendReminder(null, completed = 0, level = ExperienceLevel.BEGINNER)).isIn(styled("first_workout"))
+        assertThat(sendReminder(null, completed = 3, level = ExperienceLevel.BEGINNER)).isIn(styled("workout_reminder"))
+    }
+
+    // ── 2026-11-18: 첫 운동을 끝낸 사람(324)의 다음 운동 알림 ──
+
+    @Test
+    @DisplayName("324 형(첫 운동 완료): 일반 문구 대신 오늘 Day 이름·첫 종목·시간이 든 알림이 간다(variant=next)")
+    fun afterFirstWorkoutGetsNextPersonalized() {
+        givenPlan("グルートブリッジ", 20, setOf("BODYWEIGHT"), dayTitle = "全身 A")
+        val sent = sendReminder(composer(), completed = 1, level = ExperienceLevel.BEGINNER)!!
+        assertThat(sent).contains("全身 A").contains("グルートブリッジ").contains("20").doesNotContain("{")
+        verify { events.recordServer(304L, "coach_reminder_personalized", match { it["variant"] == "next" }) }
+    }
+
+    @Test
+    @DisplayName("composeNext ko·ja·en: Day·종목·분이 모두 들어가고, 스위치가 꺼지면 null")
+    fun composeNextInAllLanguages() {
+        givenPlan("푸시업", 25, setOf("BODYWEIGHT"), dayTitle = "전신 A")
+        val ko = composer().composeNext(user, "ko")!!
+        assertThat(ko.variant).isEqualTo("next")
+        assertThat(ko.text).contains("전신 A").contains("푸시업").contains("25")
+        assertThat(ko.text).isIn(NotificationLocalization.messages("pt.template.next_workout_personal.default", "ko")
+            .map { it.replace("{day}", "전신 A").replace("{exercise}", "푸시업").replace("{minutes}", "25") })
+        givenPlan("Push-up", 25, setOf("BODYWEIGHT"), dayTitle = "Full Body A")
+        assertThat(composer().composeNext(user, "en")!!.text).contains("Full Body A").contains("Push-up").contains("25")
+        assertThat(composer(mode = "off").composeNext(user, "en")).isNull()
+        listOf("ko", "ja", "en").forEach { lang ->
+            val list = NotificationLocalization.messages("pt.template.next_workout_personal.default", lang)
+            assertThat(list).hasSizeGreaterThanOrEqualTo(2)
+            list.forEach { assertThat(it).contains("{day}").contains("{exercise}").contains("{minutes}") }
+        }
     }
 }
