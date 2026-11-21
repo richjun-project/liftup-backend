@@ -62,10 +62,13 @@ class CoachActionsIntegrationTest : ApiTestSupport() {
         return ex.map { (it["exercise_id"] as Number).toLong() }
     }
 
+    /** 검색은 한 답에 2번 상한(2026-11-21) — 테스트의 검색 하나하나는 서로 다른 답이다 */
+    private fun freshCtx() = ctx.copy(searchCalls = java.util.concurrent.atomic.AtomicInteger())
+
     private fun swapFirst(query: String = "레그 프레스"): Pair<Long, Long> {
         val ids = todayIds()
         @Suppress("UNCHECKED_CAST")
-        val to = ((toolbox.execute("search_exercises", args("""{"query":"$query"}"""), ctx).result["results"]) as List<Map<String, Any?>>)
+        val to = ((toolbox.execute("search_exercises", args("""{"query":"$query"}"""), freshCtx()).result["results"]) as List<Map<String, Any?>>)
             .map { (it["exercise_id"] as Number).toLong() }.first { it !in ids }
         val out = toolbox.execute("swap_exercise_in_plan", args("""{"from_exercise_id":${ids.first()},"to_exercise_id":$to}"""), ctx)
         assertTrue(out.ok && out.changed, out.result.toString())
@@ -177,7 +180,7 @@ class CoachActionsIntegrationTest : ApiTestSupport() {
         val manualTarget = ids.last()
         val planIds = actions.capture(user.id).plan!!.rows.map { it.exerciseId }.toSet()
         @Suppress("UNCHECKED_CAST")
-        val alt = ((toolbox.execute("search_exercises", args("""{"query":"플랭크"}"""), ctx).result["results"]) as List<Map<String, Any?>>)
+        val alt = ((toolbox.execute("search_exercises", args("""{"query":"플랭크"}"""), freshCtx()).result["results"]) as List<Map<String, Any?>>)
             .map { (it["exercise_id"] as Number).toLong() }.first { it !in planIds }
         userPlanService.substituteExerciseInActivePlan(user.id, manualTarget, alt)
         val last = actions.list(user.id).first()

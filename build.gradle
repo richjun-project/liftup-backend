@@ -63,6 +63,8 @@ allOpen {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// 2026-11-21: 테스트 2,100개를 한 실행기에서 돌리다 기본 힙(512MB)이 모자라 OOM(카탈로그를 읽는 테스트에서) — 넉넉히
+	maxHeapSize = '1536m'
 	// 검색 평가셋 파일 오버라이드(-DsearchEval.file=...)를 테스트 JVM 으로 전달
 	['searchEval.file', 'searchDump.in', 'searchDump.out', 'searchDump.qvec', 'searchDump.rewrites', 'recoEval.file'].each { key ->
 		def value = System.getProperty(key)

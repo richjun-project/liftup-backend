@@ -77,7 +77,7 @@ class ChatFirstSessionTest {
         val h = ChatHarness(level = ExperienceLevel.BEGINNER, completedSessions = 0L)
         val r = h.chat.getAIWorkoutRecommendation(1L)
         assertEquals("초급", r.recommendation.difficulty)
-        verify { h.geminiMock.generateRecommendations(match { it.contains("Difficulty code: beginner") }) }
+        verify { h.geminiMock.generateRecommendations(match { it.contains("Difficulty code: beginner") }, any()) }
     }
 
     @Test
