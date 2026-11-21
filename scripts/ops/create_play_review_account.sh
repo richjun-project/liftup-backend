@@ -30,5 +30,5 @@ if s in (200, 201):
 else:
     print('가입 응답', s, '(이미 있는 계정이면 아래 로그인 확인만 보면 됩니다)')
 s, r = post('login', {'email': email, 'password': pw})
-print('로그인 확인:', 'OK — 이 비밀번호를 Play Console 앱 액세스의 비밀번호 칸에 넣으세요' if s == 200 else f'실패 {s}')
+print('로그인 확인:', '성공 — 이 비밀번호를 플레이 콘솔 「앱 액세스」의 비밀번호 칸에 넣으세요' if s == 200 else f'실패 {s}')
 EOF
