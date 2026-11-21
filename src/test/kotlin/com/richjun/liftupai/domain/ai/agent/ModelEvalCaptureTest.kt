@@ -88,8 +88,34 @@ class ModelEvalCaptureTest : ApiTestSupport() {
 
     companion object {
         val MUTATING = listOf("swap_exercise_in_plan", "set_today_workout_day", "set_available_equipment", "set_workout_time", "set_coach_messages", "remember", "forget")
+        /** 11-21 '채팅으로 다 되게' 도구까지 포함한 행동 도구 전부 */
+        val MUTATING_ALL = MUTATING + listOf("log_meal", "delete_meal_log", "update_my_profile", "change_plan", "pause_or_resume_plan", "log_completed_workout", "undo_last_coach_change")
         private val GYM = setOf("BARBELL", "DUMBBELL", "MACHINE", "CABLE", "OTHER", "BODYWEIGHT")
     }
+
+    /** 11-21 새 행동 도구를 실제 모델이 고르는지(MODEL_EVAL_SET=features) */
+    private fun featureScenarios(): List<Scenario> = listOf(
+        Scenario("ko_meal_text", "ko", "점심에 김치찌개랑 밥 한 공기 먹었어", PTStyle.BURNOUT, ExperienceLevel.BEGINNER, 31, GYM, emptySet(), "beginner_fullbody", meals = true,
+            expect = Expect(required = listOf(listOf("log_meal")), forbidden = MUTATING_ALL - setOf("log_meal", "remember"))),
+        Scenario("en_weight_now", "en", "Update: I weigh 72 kg now", PTStyle.INFLUENCER, ExperienceLevel.INTERMEDIATE, 29, GYM, emptySet(), "beginner_fullbody",
+            run = { _ -> "update_my_profile" to """{"weight_kg":72}""" },
+            expect = Expect(required = listOf(listOf("update_my_profile")), forbidden = MUTATING_ALL - setOf("update_my_profile", "remember"))),
+        Scenario("ja_knee_injury", "ja", "膝を痛めてしまいました", PTStyle.OFFICE_MASTER, ExperienceLevel.BEGINNER, 41, GYM, emptySet(), "beginner_fullbody",
+            run = { _ -> "update_my_profile" to """{"injuries":["knee"]}""" },
+            expect = Expect(required = listOf(listOf("update_my_profile")), forbidden = MUTATING_ALL - setOf("update_my_profile", "remember", "swap_exercise_in_plan"))),
+        Scenario("ko_trip_pause", "ko", "다음 주에 출장이라 운동을 못 할 것 같아", PTStyle.RETIRED_TEACHER, ExperienceLevel.BEGINNER, 46, GYM, emptySet(), "beginner_fullbody",
+            run = { _ -> "pause_or_resume_plan" to """{"paused":true}""" },
+            expect = Expect(forbidden = MUTATING_ALL - setOf("pause_or_resume_plan", "remember"), groundingAny = listOf("쉬", "멈", "일시", "중지", "pause"))),
+        Scenario("ko_easier_plan", "ko", "지금 플랜이 너무 힘들어. 더 쉬운 플랜으로 바꿔줘", PTStyle.LA_KOREAN, ExperienceLevel.BEGINNER, 33, GYM, emptySet(), "beginner_split_5day",
+            run = { _ -> "change_plan" to """{"template_code":"beginner_fullbody"}""" },
+            expect = Expect(required = listOf(listOf("get_plan_options")), forbidden = MUTATING_ALL - setOf("change_plan", "remember"))),
+        Scenario("ko_outside_workout", "ko", "오늘 회사 헬스장에서 스쿼트 100kg으로 5회씩 5세트 했어", PTStyle.SPARTAN, ExperienceLevel.INTERMEDIATE, 34, GYM, emptySet(), "beginner_fullbody",
+            searchQuery = "barbell squat",
+            expect = Expect(required = listOf(listOf("log_completed_workout")), forbidden = MUTATING_ALL - setOf("log_completed_workout", "remember"))),
+        Scenario("en_undo_change", "en", "Please put back the change you just made to my plan", PTStyle.INFLUENCER, ExperienceLevel.BEGINNER, 26, GYM, emptySet(), "beginner_fullbody",
+            run = { _ -> "undo_last_coach_change" to "{}" },
+            expect = Expect(required = listOf(listOf("undo_last_coach_change")), forbidden = MUTATING_ALL - setOf("undo_last_coach_change", "remember"))),
+    )
 
     private fun scenarios(): List<Scenario> = listOf(
         Scenario("ja_equipment_none", "ja", "器具はありません", PTStyle.GAME_MASTER, ExperienceLevel.EXPERT, 39, GYM, emptySet(), "beginner_split_5day",
@@ -154,8 +180,9 @@ class ModelEvalCaptureTest : ApiTestSupport() {
         val dir = File(outDir!!).apply { mkdirs() }
         // 캡처용 가짜 모델은 "OK" 로만 답해 언어 검사 → 안전 대체 문구 오류 로그가 남는다(캡처와 무관)
         allowedErrorLoggers += CoachAgentService::class.java.name
-        val all = scenarios()
-        assertEquals(14, all.size)
+        val featureSet = (System.getenv("MODEL_EVAL_SET") ?: "") == "features"
+        val all = if (featureSet) featureScenarios() else scenarios()
+        assertEquals(if (featureSet) 7 else 14, all.size)
         all.forEach { sc ->
             val user = newUser("eval-${sc.id}".take(20))
             loginAs(user)
@@ -202,6 +229,7 @@ class ModelEvalCaptureTest : ApiTestSupport() {
                 "get_nutrition_today" to exec("get_nutrition_today", "{}"),
                 "get_progress_stats" to exec("get_progress_stats", """{"period":"month"}"""),
                 "search_exercises" to exec("search_exercises", mapper.writeValueAsString(mapOf("query" to sc.searchQuery))),
+                "get_plan_options" to exec("get_plan_options", "{}"),
             )
             val plan = userPlanService.getActivePlan(user.id)
             val days = if (plan == null) emptyMap() else (1..plan.totalDays).associate { d ->
@@ -227,6 +255,6 @@ class ModelEvalCaptureTest : ApiTestSupport() {
             File(dir, "${sc.id}.json").writeText(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(dump))
             coachAgentService.modelOverride = null
         }
-        assertTrue(dir.listFiles { f -> f.name.endsWith(".json") }!!.size >= 14)
+        assertTrue(dir.listFiles { f -> f.name.endsWith(".json") }!!.size >= all.size)
     }
 }

@@ -786,3 +786,295 @@ class ForgetTool(private val memoryRepository: CoachMemoryRepository) : CoachToo
         return mapOf("ok" to true, "changed" to true, "forgotten" to memory.content)
     }
 }
+
+// ── 채팅으로 다 되게(2026-11-21 대표 "우리 기능은 챗으로 안 되는 게 없게, 에이전트 서비스답게") ─────────────────────
+// 기능 목록과 도구 대응표: growth/coach/FEATURES.md. 새 행동 도구는 앱 refreshAfterCoachChanges·칩 라벨도 같이 바꾼다.
+
+private fun todayNutrition(nutritionContextService: NutritionContextService, ctx: CoachToolContext): Map<String, Any?> =
+    runCatching { NutritionTodayTool(nutritionContextService).run(ctx, com.fasterxml.jackson.databind.node.NullNode.instance) }
+        .getOrElse { mapOf("ok" to false) }.filterKeys { it != "ok" }
+
+@Component
+class LogMealTool(
+    private val nutritionService: com.richjun.liftupai.domain.nutrition.service.NutritionService,
+    private val nutritionContextService: NutritionContextService,
+) : CoachTool {
+    override val name = "log_meal"
+    override val mutating = true
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "SAVES A MEAL to the user's food log from what they told you they ate (\"점심에 김치찌개랑 밥 한 공기\", \"I had two eggs and toast\", " +
+            "\"お昼はラーメン\"). The server estimates calories and macros and returns them with today's totals. Telling you what they ate IS the request — " +
+            "do not send them to the meal screen. Not for food they only plan to eat. One call per meal. Photos are analysed separately — do not call this for a photo.",
+        "parameters" to obj(mapOf(
+            "description" to prop("STRING", "What they ate, with amounts in their own words."),
+            "meal_type" to prop("STRING", "Leave out to use the time of day.", listOf("breakfast", "lunch", "dinner", "snack")),
+        ), listOf("description")),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        val description = args.requireText("description", 400)
+        val type = args.get("meal_type")?.asText()?.trim()?.takeIf { it.isNotEmpty() }
+        val meal = nutritionService.logMealFromText(ctx.user.id, description, type)
+            ?: return mapOf("ok" to false, "error" to "could_not_estimate", "detail" to "Could not estimate this meal. Ask what and how much they ate.")
+        return mapOf(
+            "ok" to true, "changed" to true, "meal_log_id" to meal.mealLogId, "meal_type" to meal.mealType.lowercase(),
+            "meal" to meal.name, "items" to meal.items, "portion" to meal.portion,
+            "calories_kcal" to meal.calories, "protein_g" to meal.protein.roundToInt(), "carbs_g" to meal.carbs.roundToInt(), "fat_g" to meal.fat.roundToInt(),
+            "today" to todayNutrition(nutritionContextService, ctx),
+            "note" to "Numbers are estimates. If they correct the amount, call delete_meal_log with this meal_log_id, then log_meal again.",
+        )
+    }
+}
+
+@Component
+class DeleteMealLogTool(
+    private val nutritionService: com.richjun.liftupai.domain.nutrition.service.NutritionService,
+    private val nutritionContextService: NutritionContextService,
+) : CoachTool {
+    override val name = "delete_meal_log"
+    override val mutating = true
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "REMOVES ONE MEAL from the user's food log — to fix a wrong entry or when they say they did not eat it. " +
+            "Pass meal_log_id from log_meal; leave it out to remove their most recent meal.",
+        "parameters" to obj(mapOf("meal_log_id" to prop("INTEGER", "meal_log_id to remove (optional)."))),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        val id = args.firstPositiveLong("meal_log_id", "id") ?: nutritionService.latestMealLogId(ctx.user.id)
+            ?: return mapOf("ok" to false, "error" to "no_meal", "detail" to "There is no meal in their log.")
+        return try {
+            nutritionService.deleteMealLog(ctx.user.id, id)
+            mapOf("ok" to true, "changed" to true, "removed_meal_log_id" to id, "today" to todayNutrition(nutritionContextService, ctx))
+        } catch (e: com.richjun.liftupai.global.exception.ResourceNotFoundException) {
+            mapOf("ok" to false, "error" to "not_found", "detail" to "That meal is not in their log.")
+        }
+    }
+}
+
+@Component
+class UpdateProfileTool(
+    private val userService: UserService,
+    private val userPlanService: UserPlanService,
+) : CoachTool {
+    override val name = "update_my_profile"
+    override val mutating = true
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "CHANGES THE USER'S PROFILE: body weight, height, age, goals, experience level, training days per week, minutes per session, " +
+            "injuries (the FULL current list — [] when none; their plan swaps out exercises that load a new injury), or your trainer persona. " +
+            "Use when they tell you any of these facts (\"I weigh 72 kg now\", \"무릎을 다쳤어\", \"I can only train 3 days\", \"말투를 바꿔줘\"). " +
+            "Send only the fields that changed.",
+        "parameters" to obj(mapOf(
+            "weight_kg" to prop("NUMBER", "Body weight in kg."),
+            "height_cm" to prop("NUMBER", "Height in cm."),
+            "age" to prop("INTEGER", "Age in years."),
+            "goals" to arrProp("Their goals now (full list).", GOAL_VALUES),
+            "experience_level" to prop("STRING", "Training experience.", LEVEL_VALUES),
+            "weekly_workout_days" to prop("INTEGER", "Training days per week (1-7)."),
+            "session_minutes" to prop("INTEGER", "Minutes per session (10-180)."),
+            "injuries" to arrProp("FULL list of current injuries; [] = none.", INJURY_VALUES),
+            "trainer_style" to prop("STRING", "Your persona/voice.", PT_STYLE_VALUES),
+        )),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        fun num(n: String) = args.get(n)?.takeIf { !it.isNull }?.let { if (it.isNumber) it.asDouble() else it.asText().trim().toDoubleOrNull() }
+        fun list(n: String): List<String>? = args.get(n)?.takeIf { !it.isNull }?.let { v -> if (v.isArray) v.map { it.asText() } else v.asText().split(',') }
+            ?.map { it.trim().lowercase() }?.filter { it.isNotEmpty() }
+        fun inRange(n: String, v: Double?, lo: Double, hi: Double) = v?.also { if (it < lo || it > hi) throw ToolArgumentException("$n must be between $lo and $hi") }
+        val weight = inRange("weight_kg", num("weight_kg"), 25.0, 300.0)
+        val height = inRange("height_cm", num("height_cm"), 100.0, 250.0)
+        val age = inRange("age", num("age"), 13.0, 100.0)?.toInt()
+        val days = inRange("weekly_workout_days", num("weekly_workout_days"), 1.0, 7.0)?.toInt()
+        val minutes = inRange("session_minutes", num("session_minutes"), 10.0, 180.0)?.toInt()
+        val goals = list("goals")?.onEach { if (it !in GOAL_VALUES) throw ToolArgumentException("unknown goal $it (use ${GOAL_VALUES.joinToString()})") }
+        val injuries = list("injuries")?.onEach { if (it !in INJURY_VALUES) throw ToolArgumentException("unknown injury $it (use ${INJURY_VALUES.joinToString()})") }
+        val level = args.get("experience_level")?.asText()?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }
+            ?.also { if (it !in LEVEL_VALUES) throw ToolArgumentException("unknown experience_level $it") }
+        val style = args.get("trainer_style")?.asText()?.trim()?.uppercase()?.takeIf { it.isNotEmpty() }
+            ?.also { if (it !in PT_STYLE_VALUES) throw ToolArgumentException("unknown trainer_style $it") }
+        val changedFields = listOfNotNull(
+            weight?.let { "weight_kg" }, height?.let { "height_cm" }, age?.let { "age" }, goals?.let { "goals" }, level?.let { "experience_level" },
+            days?.let { "weekly_workout_days" }, minutes?.let { "session_minutes" }, injuries?.let { "injuries" }, style?.let { "trainer_style" },
+        )
+        if (changedFields.isEmpty()) throw ToolArgumentException("send at least one field to change")
+        val injuriesBefore = if (injuries != null) userService.getProfileV4(ctx.user.id).let { p -> runCatching { p.injuries.toSet() }.getOrDefault(emptySet()) } else null
+        userService.updateProfileV4(ctx.user.id, ProfileUpdateRequest(
+            weight = weight, height = height, age = age, goals = goals, experienceLevel = level,
+            weeklyWorkoutDays = days, workoutDuration = minutes, injuries = injuries, ptStyle = style,
+        ))
+        // 새 부상이 생기면 그 부위에 부담인 운동을 플랜에서 바꾼다(장비 맞춤과 같은 경로, 부상 기준 포함)
+        val refit = if (injuries != null && injuries.toSet() != injuriesBefore) {
+            runCatching { userPlanService.refitActivePlanToEquipment(ctx.user.id, includeInjuries = true) }.getOrNull()
+        } else null
+        return buildMap {
+            put("ok", true); put("changed", true); put("updated", changedFields)
+            if (refit != null) put("plan_days_changed", refit.daysChanged.size).also { put("exercises_replaced_for_injury_or_equipment", refit.removed) }
+            if (days != null) put("note", "If their plan has a different number of days, offer get_plan_options / change_plan — do not change the plan unless they agree.")
+            if (style != null) put("note_style", "Your persona changes from the next message.")
+        }
+    }
+
+    companion object {
+        val GOAL_VALUES = listOf("muscle_gain", "weight_loss", "strength", "endurance", "general_fitness", "athletic_performance")
+        val LEVEL_VALUES = listOf("beginner", "novice", "intermediate", "advanced", "expert")
+        val INJURY_VALUES = listOf("shoulder", "knee", "lower_back", "hip", "wrist", "elbow")
+        val PT_STYLE_VALUES = com.richjun.liftupai.domain.user.entity.PTStyle.values().map { it.name }
+    }
+}
+
+@Component
+@org.springframework.transaction.annotation.Transactional(readOnly = true)
+class PlanOptionsTool(
+    private val templateRecommendationService: com.richjun.liftupai.domain.workout.service.TemplateRecommendationService,
+    private val templateService: com.richjun.liftupai.domain.workout.service.TemplateService,
+    private val userPlanService: UserPlanService,
+) : CoachTool {
+    override val name = "get_plan_options"
+    override val mutating = false
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "Lists the plans that fit this user best right now (recommended first) with template_code, name, days per week and level, " +
+            "and marks their current plan. Use before change_plan, or when they ask for a different / easier / shorter plan.",
+        "parameters" to obj(emptyMap()),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        val rec = templateRecommendationService.recommend(ctx.user, com.richjun.liftupai.domain.workout.dto.request.RecommendTemplateRequest(locale = ctx.locale), ctx.locale)
+        val current = userPlanService.getActivePlan(ctx.user.id)?.sourceId
+        val codes = (listOf(rec.templateCode) + rec.alternatives).distinct().take(4)
+        return mapOf(
+            "ok" to true, "current_template_code" to current, "why_first" to rec.reason,
+            "options" to codes.mapNotNull { code ->
+                runCatching { templateService.getTemplateDetail(code, ctx.locale) }.getOrNull()?.let { t ->
+                    mapOf("template_code" to t.code, "name" to t.name, "days_per_week" to t.totalDays, "level" to t.targetExperience,
+                        "goal" to t.targetGoal, "is_current" to (t.code == current))
+                }
+            },
+        )
+    }
+}
+
+@Component
+class ChangePlanTool(private val userPlanService: UserPlanService) : CoachTool {
+    override val name = "change_plan"
+    override val mutating = true
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "REPLACES THE USER'S ACTIVE PLAN with another plan (template_code from get_plan_options). Only after they agree to that plan. " +
+            "Their workout history stays; today's session becomes Day 1 of the new plan.",
+        "parameters" to obj(mapOf("template_code" to prop("STRING", "template_code from get_plan_options")), listOf("template_code")),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        val code = args.requireText("template_code", 80)
+        val dash = try { userPlanService.applyTemplate(ctx.user, code, null, ctx.locale) }
+        catch (e: com.richjun.liftupai.global.exception.ResourceNotFoundException) {
+            return mapOf("ok" to false, "error" to "unknown_template", "detail" to "No plan with that template_code. Call get_plan_options.")
+        }
+        val plan = userPlanService.getActivePlan(ctx.user.id)
+        return mapOf("ok" to true, "changed" to true, "template_code" to code, "plan_name" to plan?.planName, "days_per_week" to plan?.totalDays,
+            "today_day" to plan?.currentDay, "dashboard_ok" to (dash != null))
+    }
+}
+
+@Component
+class PausePlanTool(private val userPlanService: UserPlanService) : CoachTool {
+    override val name = "pause_or_resume_plan"
+    override val mutating = true
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "PAUSES or RESUMES the user's plan (travel, illness, a busy week). Paused plans keep their place; reminders for it stop until resumed.",
+        "parameters" to obj(mapOf("paused" to prop("BOOLEAN", "true = pause, false = resume")), listOf("paused")),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        val paused = args.get("paused")?.takeIf { !it.isNull }?.let { if (it.isBoolean) it.asBoolean() else it.asText().trim().lowercase() in setOf("true", "1", "yes") }
+            ?: throw ToolArgumentException("paused is required")
+        // 쉬는 중인 플랜은 getActivePlan 에 안 잡힌다 — 서비스가 상태별로 찾게 두고 없으면 사실대로 돌려준다
+        return try {
+            if (paused) userPlanService.pausePlan(ctx.user.id) else userPlanService.resumePlan(ctx.user.id)
+            mapOf("ok" to true, "changed" to true, "paused" to paused)
+        } catch (e: com.richjun.liftupai.global.exception.ResourceNotFoundException) {
+            mapOf("ok" to false, "error" to if (paused) "no_active_plan" else "no_paused_plan",
+                "detail" to if (paused) "They have no active plan to pause." else "Their plan is not paused.")
+        }
+    }
+}
+
+@Component
+class LogWorkoutTool(
+    private val workoutSessionService: com.richjun.liftupai.domain.workout.service.WorkoutSessionService,
+    private val workoutSessionRepository: WorkoutSessionRepository,
+    private val exerciseRepository: ExerciseRepository,
+) : CoachTool {
+    override val name = "log_completed_workout"
+    override val mutating = true
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "SAVES A WORKOUT the user already did TODAY outside the app (\"오늘 헬스장에서 스쿼트 100kg 5회 5세트 했어\") into their history, " +
+            "so stats, PRs and recovery count it. Get exercise_id values from search_exercises or get_today_workout. Today only.",
+        "parameters" to obj(mapOf(
+            "exercises" to mapOf("type" to "ARRAY", "description" to "Exercises done, in order.", "items" to obj(mapOf(
+                "exercise_id" to prop("INTEGER", "exercise_id"),
+                "sets" to mapOf("type" to "ARRAY", "description" to "Each set done.", "items" to obj(mapOf(
+                    "weight_kg" to prop("NUMBER", "0 for bodyweight"),
+                    "reps" to prop("INTEGER", "reps"),
+                ), listOf("reps"))),
+            ), listOf("exercise_id", "sets"))),
+            "duration_minutes" to prop("INTEGER", "How long the workout took."),
+        ), listOf("exercises", "duration_minutes")),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        val items = args.get("exercises")?.takeIf { it.isArray && it.size() > 0 } ?: throw ToolArgumentException("exercises is required")
+        if (items.size() > 15) throw ToolArgumentException("at most 15 exercises")
+        val minutes = args.firstPositiveLong("duration_minutes")?.toInt()?.coerceIn(5, 300) ?: throw ToolArgumentException("duration_minutes is required")
+        val done = items.map { e ->
+            val id = e.firstPositiveLong("exercise_id") ?: throw ToolArgumentException("exercise_id is required")
+            val sets = e.get("sets")?.takeIf { it.isArray && it.size() in 1..20 } ?: throw ToolArgumentException("1-20 sets per exercise")
+            com.richjun.liftupai.domain.workout.dto.CompletedExerciseV2(id, sets.map { s ->
+                val reps = s.firstPositiveLong("reps")?.toInt()?.takeIf { it <= 100 } ?: throw ToolArgumentException("reps must be 1-100")
+                val w = s.get("weight_kg")?.takeIf { !it.isNull }?.asDouble() ?: 0.0
+                if (w < 0 || w > 500) throw ToolArgumentException("weight_kg must be 0-500")
+                com.richjun.liftupai.domain.workout.dto.ExerciseSetV2(weight = w, reps = reps)
+            })
+        }
+        val known = exerciseRepository.findAllById(done.map { it.exerciseId }).map { it.id }.toSet()
+        val unknown = done.map { it.exerciseId }.filter { it !in known }
+        if (unknown.isNotEmpty()) throw ToolArgumentException("unknown exercise_id ${unknown.joinToString()} — use search_exercises")
+        if (workoutSessionRepository.findFirstByUserAndStatusOrderByStartTimeDesc(ctx.user, SessionStatus.IN_PROGRESS).isPresent) {
+            return mapOf("ok" to false, "error" to "workout_open", "detail" to "They have a workout open in the app. Ask them to finish or close it there first.")
+        }
+        val started = workoutSessionService.startNewWorkout(ctx.user.id, com.richjun.liftupai.domain.workout.dto.StartWorkoutRequestV2(workoutType = "empty"))
+        val result = workoutSessionService.completeWorkout(ctx.user.id, started.sessionId,
+            com.richjun.liftupai.domain.workout.dto.CompleteWorkoutRequestV2(exercises = done, duration = minutes, notes = "logged by AI PT chat"))
+        return mapOf("ok" to true, "changed" to true, "session_id" to started.sessionId,
+            "total_sets" to result.summary.totalSets, "total_volume_kg" to result.summary.totalVolume.roundToInt(), "exercises" to result.summary.exerciseCount)
+    }
+}
+
+@Component
+class UndoCoachChangeTool(
+    private val coachActionService: CoachActionService,
+    private val coachActionRepository: CoachActionRepository,
+) : CoachTool {
+    override val name = "undo_last_coach_change"
+    override val mutating = true
+    override fun declaration() = mapOf(
+        "name" to name,
+        "description" to "UNDOES the most recent change you (the coach) made to their plan or settings (swap, today's day, equipment, workout time, " +
+            "check-in messages), when they ask to put it back. Only the latest change, within its time window.",
+        "parameters" to obj(emptyMap()),
+    )
+
+    override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        val latest = coachActionRepository.findFirstByUserIdOrderByIdDesc(ctx.user.id)
+            ?: return mapOf("ok" to false, "error" to "nothing_to_undo", "detail" to "You have not changed anything for them yet.")
+        val r = coachActionService.undo(ctx.user.id, latest.id, ctx.locale)
+            ?: return mapOf("ok" to false, "error" to "nothing_to_undo")
+        return mapOf("ok" to r.ok, "changed" to r.ok, "undone" to latest.summary, "code" to r.code, "message" to r.message)
+    }
+}

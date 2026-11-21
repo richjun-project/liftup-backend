@@ -397,14 +397,20 @@ class UserPlanService(
      * 플랜은 그대로였다 — 결국 15세트를 7초 만에 눌러 넘기고 끝냈다. 장비를 말하거나 바꾸면 플랜이 따라와야 한다.
      */
     @Transactional
-    fun refitActivePlanToEquipment(userId: Long, dryRun: Boolean = false): EquipmentRefit? {
+    fun refitActivePlanToEquipment(userId: Long, dryRun: Boolean = false, includeInjuries: Boolean = false): EquipmentRefit? {
         val plan = getActivePlan(userId) ?: return null
         val ctx = trainingContext.resolve(userId)
         val equipment = ctx.equipment
         val days = userPlanDayRepository.findByPlanIdOrderByDayNumber(plan.id)
         val rowsByDay = days.associate { it.id to userPlanDayExerciseRepository.findByPlanDayIdWithExerciseOrderByOrderInDay(it.id) }
-        val needsRefit = if (equipment.isEmpty()) emptyList() else days.filter { d ->
-            rowsByDay.getValue(d.id).any { !TemplatePlanAdapter.equipmentAllowed(it.exercise, equipment) }
+        // includeInjuries(채팅에서 부상을 새로 말했을 때 — 2026-11-21): 그 부위에 부담인 운동이 있는 Day 도 다시 맞춘다.
+        // 앱 실행 때 자동 맞춤은 예전처럼 장비만 본다(묻지 않은 플랜 변경을 늘리지 않게).
+        val injuryRestricted = if (includeInjuries && ctx.injuries.isNotEmpty()) injuryFilterService.restrictionChecker(ctx.injuries) else null
+        val needsRefit = days.filter { d ->
+            rowsByDay.getValue(d.id).any { r ->
+                (equipment.isNotEmpty() && !TemplatePlanAdapter.equipmentAllowed(r.exercise, equipment)) ||
+                    (injuryRestricted?.invoke(r.exercise) == true)
+            }
         }
         val totalBefore = rowsByDay.values.sumOf { it.size }
         if (needsRefit.isEmpty()) return EquipmentRefit(plan.id, emptyList(), 0, 0, totalBefore)

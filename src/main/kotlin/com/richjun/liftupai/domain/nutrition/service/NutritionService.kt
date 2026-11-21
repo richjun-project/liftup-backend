@@ -169,6 +169,43 @@ class NutritionService(
         }!!
     }
 
+    /** AI PT 도구 log_meal 의 결과 */
+    data class LoggedMeal(
+        val mealLogId: Long, val mealType: String, val name: String, val items: List<String>, val portion: String,
+        val calories: Int, val protein: Double, val carbs: Double, val fat: Double,
+    )
+
+    /**
+     * 채팅에서 글로 말한 식사를 추정해 기록한다(AI PT 도구 log_meal, 2026-11-21 대표 "채팅으로 바로 식단 입력").
+     * 추정을 못 하면(빈 값·파싱 실패) 아무것도 저장하지 않고 null.
+     */
+    @Transactional
+    fun logMealFromText(userId: Long, description: String, mealType: String?): LoggedMeal? {
+        val user = userRepository.findById(userId).orElseThrow { ResourceNotFoundException("User not found") }
+        val locale = resolveLocale(userId)
+        val parsed = parseMealAnalysisResponse(geminiAIService.analyzeMealText(description, user), locale, userId)
+        val m = parsed.macros
+        if (parsed.calories <= 0 || (m.protein + m.carbs + m.fat) <= 0.0) return null
+        val type = mealType?.trim()?.uppercase()?.let { t -> MealType.values().firstOrNull { it.name == t } } ?: determineMealType(userId)
+        val items = parsed.mealInfo.ingredients.map { it.trim() }.filter { it.isNotEmpty() }
+        val saved = mealLogRepository.save(MealLog(
+            user = user,
+            mealType = type,
+            foods = (items.ifEmpty { listOf(parsed.mealInfo.name) }).joinToString(", "),
+            calories = parsed.calories,
+            protein = m.protein,
+            carbs = m.carbs,
+            fat = m.fat,
+            timestamp = AppTime.utcNow(),
+        ))
+        return LoggedMeal(saved.id, type.name, parsed.mealInfo.name, items, parsed.mealInfo.portion, parsed.calories, m.protein, m.carbs, m.fat)
+    }
+
+    /** 가장 최근 식사 기록 id(AI PT 도구 delete_meal_log 가 id 없이 불렸을 때) */
+    @Transactional(readOnly = true)
+    fun latestMealLogId(userId: Long): Long? =
+        userRepository.findById(userId).orElse(null)?.let { mealLogRepository.findTopByUserOrderByTimestampDesc(it)?.id }
+
     @Transactional(readOnly = true)
     fun getTodaySummary(userId: Long): TodayNutritionSummaryResponse {
         val user = userRepository.findById(userId)

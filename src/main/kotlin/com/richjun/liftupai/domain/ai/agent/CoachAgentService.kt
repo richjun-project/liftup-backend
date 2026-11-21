@@ -299,7 +299,8 @@ class CoachAgentService(
 
     companion object {
         /** 사용자의 플랜·설정을 실제로 바꾸는 도구 — 성공했을 때만 "바꿨어요"를 허용한다 */
-        val SETTINGS_CHANGING_TOOLS = setOf("swap_exercise_in_plan", "set_workout_time", "set_today_workout_day", "set_available_equipment", "set_coach_messages")
+        val SETTINGS_CHANGING_TOOLS = setOf("swap_exercise_in_plan", "set_workout_time", "set_today_workout_day", "set_available_equipment", "set_coach_messages",
+            "log_meal", "delete_meal_log", "update_my_profile", "change_plan", "pause_or_resume_plan", "log_completed_workout", "undo_last_coach_change")
 
         /** 도구를 쓰면 고쳐지는 위반 — 재생성 때 도구를 다시 쓸 수 있게 한다 */
         val TOOL_FIXABLE_VIOLATIONS = setOf(ChatSafetyService.Violation.FALSE_PROMISE_OF_PLAN_CHANGE, ChatSafetyService.Violation.DEFLECTION_TO_SETTINGS)
@@ -326,6 +327,14 @@ class CoachAgentService(
         // 2026-11-14: 맨몸은 무게 대신 변형으로 과부하한다 — 오늘 운동 도구가 사다리 한 단계 위·아래를 준다
         appendLine("- Bodyweight progression: if the user says an exercise is too easy or too hard, check get_today_workout for its harder_variant / easier_variant and offer that exact exercise; swap it (swap_exercise_in_plan) once they agree. For a weighted exercise, adjust reps or weight in words instead.")
         appendLine("- Your own check-in messages: if the user asks you to stop messaging or nudging them (or to start again), call set_coach_messages — do not send them to their phone settings, which would also silence their workout reminders.")
+        // 2026-11-21 대표: "우리 기능은 챗으로 안 되는 게 없게" — 기능 목록 growth/coach/FEATURES.md
+        appendLine("- You can do what the app's screens do. Never tell them to go to a screen for something a tool does:")
+        appendLine("  - Food they say they ate → log_meal (one call per meal; telling you IS the request). Wrong entry or 'I didn't eat that' → delete_meal_log.")
+        appendLine("  - Facts about themselves (weight, height, age, goals, level, days per week, minutes per session, injuries, wanting a different coach voice) → update_my_profile with only the changed fields. A new injury also fits their plan.")
+        appendLine("  - A different or easier plan → get_plan_options, describe 1-2 options, and change_plan only after they pick one. Travel / sick / busy week → offer pause_or_resume_plan.")
+        appendLine("  - A workout they already did today outside the app → log_completed_workout (exercise_id from search_exercises or get_today_workout).")
+        appendLine("  - 'Put it back' / 'undo that' about something you changed → undo_last_coach_change.")
+        appendLine("  - Only these need a screen: buying Pro (store payment), deleting the account, and a brand-new AI plan (takes about a minute) — for the last one add [[OPEN_PLAN]].")
         appendLine("- If a tool returns ok:false, say plainly that it could not be done and why, and offer another way. Never claim success without ok:true and changed:true.")
         appendLine("- Memory: when the user tells you a lasting fact about themselves (schedule, equipment at home, preferences, injury or health history, life context, goal details), call remember with a short note in their language. Not for passing moods, details of a single workout, or other people. If they ask you to forget something or a fact is outdated, call forget.")
         appendLine("- Use what you remember naturally, like a coach who knows them — do not recite the list.")
