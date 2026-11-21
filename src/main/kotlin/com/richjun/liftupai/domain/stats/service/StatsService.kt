@@ -4,6 +4,8 @@ import com.richjun.liftupai.domain.auth.repository.UserRepository
 import com.richjun.liftupai.domain.notification.util.NotificationLocalization
 import com.richjun.liftupai.domain.stats.dto.*
 import com.richjun.liftupai.domain.user.repository.UserSettingsRepository
+import com.richjun.liftupai.domain.workout.entity.ExerciseCategory
+import com.richjun.liftupai.domain.workout.entity.MuscleGroup
 import com.richjun.liftupai.domain.workout.entity.SessionStatus
 import com.richjun.liftupai.domain.workout.repository.ExerciseSetRepository
 import com.richjun.liftupai.domain.workout.repository.WorkoutExerciseRepository
@@ -133,7 +135,52 @@ class StatsService(
             )
         }.sortedByDescending { it.percentage }
 
-        return MuscleDistributionResponse(distribution = distribution)
+        val (muscles, groups) = muscleSets(sessions)
+        return MuscleDistributionResponse(distribution = distribution, muscles = muscles, groups = groups)
+    }
+
+    /**
+     * 완료한 세트를 부위별로 센다(2026-11-21 통계 디자인 A — 몸 지도 색·부위별 세트 막대).
+     * 운동 분류(category)에 속한 부위는 주 부위 1세트, 나머지 부위는 보조 0.5세트.
+     * 묶음은 한 세트가 그 묶음의 여러 부위에 걸쳐도 가장 큰 값 한 번만 센다(스쿼트 1세트 = 하체 1세트, 3.5세트가 아니다).
+     */
+    internal fun muscleSets(sessions: List<com.richjun.liftupai.domain.workout.entity.WorkoutSession>): Pair<List<MuscleSets>, List<MuscleSets>> {
+        val perMuscle = mutableMapOf<MuscleGroup, Double>()
+        val perGroup = mutableMapOf<String, Double>()
+        sessions.forEach { session ->
+            workoutExerciseRepository.findBySessionIdOrderByOrderInSession(session.id).forEach { we ->
+                val done = we.sets.count { it.completed }
+                if (done == 0) return@forEach
+                val credit = we.exercise.muscleGroups.associateWith { m -> if (m in PRIMARY[we.exercise.category].orEmpty()) 1.0 else 0.5 }
+                credit.forEach { (m, c) -> perMuscle.merge(m, c * done, Double::plus) }
+                credit.entries.groupBy { GROUP_OF[it.key] }.forEach { (g, es) ->
+                    if (g != null) perGroup.merge(g, es.maxOf { it.value } * done, Double::plus)
+                }
+            }
+        }
+        return perMuscle.map { MuscleSets(it.key.name, it.value) }.sortedByDescending { it.sets } to
+            GROUP_ORDER.map { MuscleSets(it, perGroup[it] ?: 0.0) }
+    }
+
+    companion object {
+        private val PRIMARY: Map<ExerciseCategory, Set<MuscleGroup>> = mapOf(
+            ExerciseCategory.CHEST to setOf(MuscleGroup.CHEST),
+            ExerciseCategory.BACK to setOf(MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.TRAPS),
+            ExerciseCategory.SHOULDERS to setOf(MuscleGroup.SHOULDERS),
+            ExerciseCategory.LEGS to setOf(MuscleGroup.LEGS, MuscleGroup.QUADRICEPS, MuscleGroup.HAMSTRINGS, MuscleGroup.GLUTES, MuscleGroup.CALVES),
+            ExerciseCategory.ARMS to setOf(MuscleGroup.BICEPS, MuscleGroup.TRICEPS, MuscleGroup.FOREARMS),
+            ExerciseCategory.CORE to setOf(MuscleGroup.CORE, MuscleGroup.ABS),
+            ExerciseCategory.FULL_BODY to MuscleGroup.entries.toSet(),
+        )
+        val GROUP_ORDER = listOf("chest", "back", "shoulders", "legs", "arms", "core")
+        private val GROUP_OF: Map<MuscleGroup, String> = mapOf(
+            MuscleGroup.CHEST to "chest",
+            MuscleGroup.BACK to "back", MuscleGroup.LATS to "back", MuscleGroup.TRAPS to "back", MuscleGroup.NECK to "back",
+            MuscleGroup.SHOULDERS to "shoulders",
+            MuscleGroup.LEGS to "legs", MuscleGroup.QUADRICEPS to "legs", MuscleGroup.HAMSTRINGS to "legs", MuscleGroup.GLUTES to "legs", MuscleGroup.CALVES to "legs",
+            MuscleGroup.BICEPS to "arms", MuscleGroup.TRICEPS to "arms", MuscleGroup.FOREARMS to "arms",
+            MuscleGroup.CORE to "core", MuscleGroup.ABS to "core",
+        )
     }
 
     fun getPersonalRecords(userId: Long): PersonalRecordsResponse {
