@@ -53,14 +53,25 @@ object NutritionTargetCalculator {
         return baseTarget + workoutBurnedToday.coerceAtLeast(0)
     }
 
+    /**
+     * 단백질 목표(g/일). 체중이 없으면 성별 기준 체중(남 70·여 57·모름 64kg)으로 같은 배수를 쓴다.
+     * 2026-11-21: 체중 없는 사용자(운영 63명 중 17명)는 목표 무관하게 60~80g 고정이라 근력 목표 남성에게도 60g 이 나왔다.
+     */
     fun calculateProteinTarget(profile: UserProfile?): Double {
         val goals = profile?.goals ?: emptySet()
-        val weight = profile?.bodyInfo?.weight
+        val weight = profile?.bodyInfo?.weight?.takeIf { it in 25.0..300.0 } ?: referenceWeight(profile?.gender)
         return when {
-            FitnessGoal.MUSCLE_GAIN in goals -> weight?.times(2.2) ?: 80.0
-            FitnessGoal.WEIGHT_LOSS in goals -> weight?.times(2.0) ?: 70.0
-            else -> weight?.times(1.5) ?: 60.0
+            FitnessGoal.MUSCLE_GAIN in goals -> weight * 2.2
+            FitnessGoal.WEIGHT_LOSS in goals -> weight * 2.0
+            else -> weight * 1.5
         }
+    }
+
+    /** 체중을 모를 때 쓰는 기준 체중(kg) — 한·일 성인 평균 근처 */
+    fun referenceWeight(gender: String?): Double = when (gender?.lowercase()) {
+        "male", "m" -> 70.0
+        "female", "f" -> 57.0
+        else -> 64.0
     }
 
     fun calculateCarbTarget(profile: UserProfile?, calories: Int): Double {

@@ -78,6 +78,12 @@ object ChatComputedFacts {
             }
         }
 
+        if (profile != null && profileWeight == null && !risk.noIntakeNumbers && !risk.minor) {
+            // 체중을 모르는 사용자(2026-11-21 운영 27%): 목표를 지어내지 말고 기준 체중 목표임을 밝히고, 한 번 물어 저장하게 한다
+            val protein = NutritionTargetCalculator.calculateProteinTarget(profile).roundToInt()
+            lines += "Body weight unknown — the protein target ~${protein} g/day uses a reference body weight. If nutrition comes up, ask their weight once and save it with update_my_profile."
+        }
+
         // 활동 칼로리 — 칼로리 얘기가 나올 때만
         val calorieTopic = CALORIE_TOPIC.any { lower.contains(it) }
         val activities = ACTIVITIES.filter { (keys, _) -> keys.any { lower.contains(it) } }.map { it.second }.distinctBy { it.label }

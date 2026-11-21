@@ -108,7 +108,7 @@ class VectorWorkoutRecommendationService(
             vectorBasedRecommendation(user, profile, duration, targetMuscle, equipment, availableEquipment, difficulty, workoutType, limit)
         } catch (e: Exception) {
             logger.warn("Vector search failed: ${e.message}, using fallback")
-            fallbackRecommendation(user, targetMuscle, equipment, limit)
+            fallbackRecommendation(user, targetMuscle, equipment, availableEquipment, limit)
         }
     }
 
@@ -201,14 +201,26 @@ class VectorWorkoutRecommendationService(
     /**
      * 폴백: ExerciseRecommendationService 사용
      */
-    private fun fallbackRecommendation(user: User, targetMuscle: String?, equipment: String?, limit: Int): List<Exercise> {
+    /** 벡터 검색이 안 될 때. 사용자 장비도 지킨다(2026-11-21 complex-model-r4: 맨몸 사용자 후보 앞 20개가 바벨·머신이었다). */
+    private fun fallbackRecommendation(user: User, targetMuscle: String?, equipment: String?, availableEquipment: Set<String>, limit: Int): List<Exercise> {
         logger.info("Using fallback recommendation service")
-        return exerciseRecommendationService.getRecommendedExercises(
+        val raw = exerciseRecommendationService.getRecommendedExercises(
             user = user,
             targetMuscle = targetMuscle,
             equipment = equipment,
-            limit = limit
+            limit = limit * 3
         )
+        // 여기서는 엄격하게 거른다 — filterByEquipment 는 남는 게 적으면 안 거른 목록을 돌려주는데, 폴백 목록에선 그게 바벨이었다.
+        // 모자라면 AIAnalysisService 가 장비로 거른 추천 가능 종목을 보탠다.
+        val allowed = availableEquipment.mapNotNull { parseEquipment(it) }.toSet()
+        val explicit = parseEquipment(equipment)
+        return raw.filter { ex ->
+            when {
+                explicit != null -> ex.equipment == explicit || ex.equipment == Equipment.BODYWEIGHT || ex.equipment == null
+                allowed.isEmpty() -> true
+                else -> ex.equipment == null || ex.equipment == Equipment.BODYWEIGHT || ex.equipment in allowed
+            }
+        }.take(limit)
     }
 
     // === 컨텍스트 빌더 ===
