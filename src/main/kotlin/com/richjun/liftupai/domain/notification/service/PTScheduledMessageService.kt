@@ -45,6 +45,9 @@ class PTScheduledMessageService(
     /** 첫 운동 전 사용자의 운동 알림을 그 사람의 오늘 플랜으로(2026-11-14). 없으면 예전 문구 — 단위 테스트 */
     private val firstWorkoutReminder: FirstWorkoutReminderComposer? = null,
     private val appEventService: com.richjun.liftupai.domain.analytics.AppEventService? = null,
+    /** 유료 구독자는 운동 알림 대신 코치가 실제 데이터로 먼저 거는 한마디(2026-11-21) — 없으면 예전 문구 */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private val proactiveCoach: com.richjun.liftupai.domain.ai.proactive.ProactiveCoachService? = null,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -256,7 +259,7 @@ class PTScheduledMessageService(
         return when (schedule.scheduleName) {
             "morning_meal_check" -> ptMessageTemplates.getMorningMealMessage(locale, style)
             "lunch_meal_check" -> ptMessageTemplates.getLunchMealMessage(locale, style)
-            "workout_reminder" -> {
+            "workout_reminder" -> proactiveCheckin(schedule.user) ?: run {
                 // 2026-09 실측: 최근 30일 실가입 23명 중 세트를 하나라도 완료한 사람이 0명이었다.
                 // 첫 운동 전인 사용자에게는 "한 세트만" 으로 문턱을 낮춘 문구를 보낸다.
                 // 문구가 "30분 안쪽으로 짜 놨어요"라 첫 세션 규칙 밖(상급·전문가 — 저장된 시간 그대로)이면 보통 알림.
@@ -275,6 +278,15 @@ class PTScheduledMessageService(
             "sleep_prep" -> ptMessageTemplates.getSleepPrepMessage(locale, style)
             else -> schedule.message
         }
+    }
+
+    /** 유료 구독자의 매일 체크인(LLM). 못 쓰면 null → 예전 개인화·템플릿 문구 */
+    private fun proactiveCheckin(user: User): String? {
+        val coach = proactiveCoach?.takeIf { it.enabledFor(user) } ?: return null
+        val composed = runCatching { coach.compose(user, com.richjun.liftupai.domain.ai.proactive.ProactiveCoachService.Kind.DAILY_CHECKIN) }
+            .onFailure { logger.warn("[PTMessage] proactive check-in failed user={}: {}", user.id, it.message) }.getOrNull()
+        runCatching { appEventService?.recordServer(user.id, "coach_proactive", mapOf("kind" to "daily", "result" to if (composed != null) "sent" else "fallback")) }
+        return composed?.text
     }
 
     private fun personalizedFirstWorkout(user: User, locale: String): String? {

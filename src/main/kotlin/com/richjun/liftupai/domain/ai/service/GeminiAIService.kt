@@ -336,6 +336,34 @@ class GeminiAIService(
 
     fun analyzeMeal(prompt: String): String = callGeminiAPI(prompt)
 
+    /** 트레이너 페르소나 말투 지시(먼저 말 걸기 등 채팅 밖에서 같은 목소리로 쓸 때) */
+    fun personaInstruction(ptStyle: PTStyle, locale: String): String = styleInstruction(ptStyle, AILocalization.responseLanguage(locale))
+
+    /**
+     * 짧은 코치 메시지 한 통(먼저 말 걸기). 실패하면 null — 오류 문구를 사용자에게 보내지 않게 호출자가 예전 문구로 대신한다.
+     * 일반 호출(callGeminiAPI)은 실패해도 사람에게 보여 줄 오류 문장을 돌려주므로 따로 둔다.
+     */
+    fun generateCoachMessage(prompt: String): String? = try {
+        val body = objectMapper.writeValueAsString(GeminiRequest(
+            contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
+            generationConfig = nonChatGenerationConfig(0.6, null, maxTokens, chatThinkingLevel.ifBlank { null }),
+        ))
+        val request = Request.Builder().url("$baseUrl/v1beta/models/$model:generateContent?key=$apiKey")
+            .post(body.toRequestBody("application/json".toMediaType())).build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) { log.warn("[AI-CALL] coach message HTTP {}", response.code); null }
+            else {
+                val r = objectMapper.readValue(response.body?.string(), GeminiResponse::class.java)
+                val cand = r.candidates?.firstOrNull()
+                r.usageMetadata?.let { u -> log.info("[AI-CALL] model={} coach_message finish={} promptTokens={} out={}", r.modelVersion ?: model, cand?.finishReason, u.promptTokenCount, u.candidatesTokenCount) }
+                cand?.content?.parts?.mapNotNull { it.text }?.joinToString("")?.trim()?.takeIf { it.isNotBlank() }
+            }
+        }
+    } catch (e: Exception) {
+        log.warn("[AI-CALL] coach message failed: {}", e.message)
+        null
+    }
+
     /** 채팅에서 글로 말한 식사(AI PT 도구 log_meal)를 칼로리·매크로로 추정한다. 응답은 사진 분석과 같은 JSON 모양. */
     fun analyzeMealText(description: String, user: User): String {
         val locale = resolveLocale(user)
