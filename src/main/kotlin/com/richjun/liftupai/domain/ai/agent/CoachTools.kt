@@ -31,7 +31,17 @@ data class CoachToolContext(
     val locale: String,
     val zoneId: ZoneId,
     val risk: ChatSafetyService.RiskProfile,
+    /** 이번 답에서 search_exercises 를 부른 횟수 — 교체에서 검색만 반복하다 시간이 끝나던 것(실측 11-21)을 막는다 */
+    val searchCalls: java.util.concurrent.atomic.AtomicInteger = java.util.concurrent.atomic.AtomicInteger(),
 )
+
+/** 한 답에서 search_exercises 를 부를 수 있는 횟수 */
+const val MAX_SEARCHES_PER_REPLY = 2
+
+/** 모델이 지어내는 인자 이름(old_exercise_id 등 — 실측 11-21)도 받는다. 앞의 이름이 우선. */
+internal fun JsonNode.firstPositiveLong(vararg names: String): Long? =
+    names.asSequence().mapNotNull { n -> get(n)?.takeIf { !it.isNull }?.let { v -> if (v.isNumber) v.asLong() else v.asText().trim().toLongOrNull() } }
+        .firstOrNull { it > 0 }
 
 /**
  * AI PT 가 부를 수 있는 함수 하나. 결과는 모델에게 JSON 으로 돌려준다 — 숫자는 서버가 계산해 넣는다
@@ -468,6 +478,13 @@ class SearchExercisesTool(
     )
 
     override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
+        if (ctx.searchCalls.incrementAndGet() > MAX_SEARCHES_PER_REPLY) {
+            return mapOf(
+                "ok" to false, "error" to "search_limit",
+                "detail" to "You already searched $MAX_SEARCHES_PER_REPLY times in this reply. Do not search again. Pick the best fitting exercise " +
+                    "from the earlier results and call swap_exercise_in_plan, or name 2-3 of those options to the user and ask which one they want.",
+            )
+        }
         val query = args.requireText("query", 80)
         val hits = searchIndex.engine().search(query, locale = ctx.locale).take(6)
         return mapOf(
@@ -507,8 +524,10 @@ class SwapExerciseTool(
     )
 
     override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
-        val from = args.get("from_exercise_id")?.asLong()?.takeIf { it > 0 } ?: throw ToolArgumentException("from_exercise_id is required")
-        val to = args.get("to_exercise_id")?.asLong()?.takeIf { it > 0 } ?: throw ToolArgumentException("to_exercise_id is required")
+        val from = args.firstPositiveLong("from_exercise_id", "old_exercise_id", "current_exercise_id", "exercise_id", "from")
+            ?: throw ToolArgumentException("from_exercise_id is required")
+        val to = args.firstPositiveLong("to_exercise_id", "new_exercise_id", "replacement_exercise_id", "target_exercise_id", "to")
+            ?: throw ToolArgumentException("to_exercise_id is required")
         val exercises = exerciseRepository.findAllById(listOf(from, to)).associateBy { it.id }
         val names = localization.translationMap(exercises.values, ctx.locale)
         fun nameOf(id: Long) = exercises[id]?.let { localization.displayName(it, ctx.locale, names) } ?: "#$id"

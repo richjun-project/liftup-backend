@@ -1,0 +1,58 @@
+{
+ "en_getting_stronger": {
+  "A": "new",
+  "B": "old"
+ },
+ "en_protein_general": {
+  "A": "old",
+  "B": "new"
+ },
+ "en_pushup_too_easy": {
+  "A": "old",
+  "B": "new"
+ },
+ "ja_equipment_none": {
+  "A": "old",
+  "B": "new"
+ },
+ "ja_greeting": {
+  "A": "old",
+  "B": "new"
+ },
+ "ja_pull_day": {
+  "A": "old",
+  "B": "new"
+ },
+ "ja_stop_messages": {
+  "A": "new",
+  "B": "old"
+ },
+ "ja_weekends_busy": {
+  "A": "new",
+  "B": "old"
+ },
+ "ko_bench_history": {
+  "A": "old",
+  "B": "new"
+ },
+ "ko_legpress_opinion": {
+  "A": "new",
+  "B": "old"
+ },
+ "ko_lowback_deadlift": {
+  "A": "new",
+  "B": "old"
+ },
+ "ko_protein_today": {
+  "A": "old",
+  "B": "new"
+ },
+ "ko_swap_squat_knee": {
+  "A": "old",
+  "B": "new"
+ },
+ "ko_workout_time": {
+  "A": "new",
+  "B": "old"
+ }
+}

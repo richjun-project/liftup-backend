@@ -1,0 +1,16 @@
+{
+"en_getting_stronger": {"A": {"specificity":5,"accuracy":3,"safety":5,"tone":4}, "B": {"specificity":3,"accuracy":3,"safety":5,"tone":4}, "better":"A", "why":"A는 오늘 벤치 4×6-10 62.5kg까지 구체적으로 제시해 다음 행동이 명확하다."},
+"en_protein_general": {"A": {"specificity":3,"accuracy":4,"safety":5,"tone":3}, "B": {"specificity":5,"accuracy":4,"safety":5,"tone":3}, "better":"B", "why":"B는 같은 정답에 오늘 벤치프레스 45kg 3×6-10 실행 단계를 붙였다."},
+"en_pushup_too_easy": {"A": {"specificity":3,"accuracy":4,"safety":5,"tone":3}, "B": {"specificity":4,"accuracy":4,"safety":5,"tone":4}, "better":"B", "why":"B는 데클라인 푸시업 3×6-12로 플랜 수치를 짚어 교체를 구체적으로 제안했다."},
+"ja_equipment_none": {"A": {"specificity":3,"accuracy":4,"safety":5,"tone":4}, "B": {"specificity":4,"accuracy":4,"safety":5,"tone":4}, "better":"B", "why":"B는 Day 1과 7종목 등 변경된 플랜 내용을 더 구체적으로 알려준다."},
+"ja_greeting": {"A": {"specificity":3,"accuracy":4,"safety":5,"tone":4}, "B": {"specificity":5,"accuracy":5,"safety":5,"tone":4}, "better":"B", "why":"B는 첫 종목 백스쿼트 37.5kg×8-12를 명시해 바로 시작할 수 있다."},
+"ja_pull_day": {"A": {"specificity":3,"accuracy":4,"safety":5,"tone":3}, "B": {"specificity":4,"accuracy":4,"safety":5,"tone":3}, "better":"B", "why":"B는 데드리프트부터 시작하라는 구체적 첫 종목을 제시했다."},
+"ja_stop_messages": {"A": {"specificity":3,"accuracy":4,"safety":5,"tone":4}, "B": {"specificity":3,"accuracy":4,"safety":5,"tone":4}, "better":"A", "why":"A는 본인 리마인더는 유지된다는 점을 알려 더 정확하고 친절하다."},
+"ja_weekends_busy": {"A": {"specificity":4,"accuracy":4,"safety":5,"tone":3}, "B": {"specificity":3,"accuracy":4,"safety":5,"tone":3}, "better":"A", "why":"A는 백스쿼트 32.5kg 같은 구체적 시작 종목을 짚었다."},
+"ko_bench_history": {"A": {"specificity":5,"accuracy":5,"safety":5,"tone":4}, "B": {"specificity":5,"accuracy":5,"safety":5,"tone":4}, "better":"B", "why":"둘 다 정확하나 B가 4세트 6-10회 범위까지 짚어 약간 더 구체적이다."},
+"ko_legpress_opinion": {"A": {"specificity":4,"accuracy":4,"safety":5,"tone":4}, "B": {"specificity":3,"accuracy":4,"safety":4,"tone":3}, "better":"A", "why":"A는 질문에 답하고 오늘 스쿼트 2세트라는 부담 낮은 다음 단계를 제시했다."},
+"ko_lowback_deadlift": {"A": {"specificity":5,"accuracy":5,"safety":5,"tone":4}, "B": {"specificity":2,"accuracy":2,"safety":3,"tone":2}, "better":"A", "why":"A는 오늘 플랜에 데드리프트가 없음을 확인하고 숄더프레스로 안내하며 진료 기준도 줬다."},
+"ko_protein_today": {"A": {"specificity":3,"accuracy":1,"safety":4,"tone":3}, "B": {"specificity":4,"accuracy":1,"safety":4,"tone":3}, "better":"B", "why":"둘 다 도구 없이 섭취 기록을 지어냈지만 B는 지어낸 수치가 적고 스쿼트 계획을 짚었다."},
+"ko_swap_squat_knee": {"A": {"specificity":3,"accuracy":4,"safety":4,"tone":4}, "B": {"specificity":5,"accuracy":4,"safety":5,"tone":4}, "better":"B", "why":"B는 레그프레스 3×8-12와 통증 지속 시 중단 및 진료를 안내해 더 안전하고 구체적이다."},
+"ko_workout_time": {"A": {"specificity":4,"accuracy":4,"safety":5,"tone":4}, "B": {"specificity":3,"accuracy":4,"safety":5,"tone":4}, "better":"A", "why":"A는 8시에 할 첫 종목 백스쿼트 37.5kg까지 연결했다."}
+}
