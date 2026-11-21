@@ -46,10 +46,11 @@ class MuscleSetsStatsTest : ApiTestSupport() {
     fun `부위별 완료 세트 — 주 부위 1·보조 0_5, 묶음은 한 번, 미완료·지난주·진행 중은 뺀다`() {
         val bench = exercise(ExerciseCategory.CHEST, MuscleGroup.CHEST, MuscleGroup.TRICEPS, MuscleGroup.SHOULDERS)
         val squat = exercise(ExerciseCategory.LEGS, MuscleGroup.QUADRICEPS, MuscleGroup.GLUTES, MuscleGroup.HAMSTRINGS)
-        val row = exercise(ExerciseCategory.BACK, MuscleGroup.LATS, MuscleGroup.BICEPS)
+        val row = exercise(ExerciseCategory.BACK, MuscleGroup.BACK, MuscleGroup.LATS, MuscleGroup.BICEPS) // BACK·LATS 는 지도에서 한 부위
+        val plank = exercise(ExerciseCategory.CORE, MuscleGroup.CORE, MuscleGroup.ABS, MuscleGroup.SHOULDERS)
         val user = newUser("msets")
         session(user, 1, SessionStatus.COMPLETED, bench to listOf(true, true, true, false), squat to listOf(true, true))
-        session(user, 3, SessionStatus.COMPLETED, row to listOf(true, true, true, true))
+        session(user, 3, SessionStatus.COMPLETED, row to listOf(true, true, true, true), plank to listOf(true, false))
         session(user, 10, SessionStatus.COMPLETED, bench to listOf(true, true, true, true, true)) // 7일 밖
         session(user, 0, SessionStatus.IN_PROGRESS, squat to listOf(true, true, true))          // 아직 안 끝남
         loginAs(user)
@@ -58,11 +59,11 @@ class MuscleSetsStatsTest : ApiTestSupport() {
         val muscles = r["muscles"].associate { it["key"].asText() to it["sets"].asDouble() }
         val groups = r["groups"].associate { it["key"].asText() to it["sets"].asDouble() }
 
-        assertEquals(mapOf("CHEST" to 3.0, "TRICEPS" to 1.5, "SHOULDERS" to 1.5, "QUADRICEPS" to 2.0, "GLUTES" to 2.0,
-            "HAMSTRINGS" to 2.0, "LATS" to 4.0, "BICEPS" to 2.0), muscles)
+        assertEquals(mapOf("CHEST" to 3.0, "TRICEPS" to 1.5, "SHOULDERS" to 2.0, "QUADRICEPS" to 2.0, "GLUTES" to 2.0,
+            "HAMSTRINGS" to 2.0, "LATS" to 4.0, "BICEPS" to 2.0, "ABS" to 1.0), muscles, "BACK·LATS 4세트는 LATS 4(8 아님), 플랭크 CORE·ABS 1세트는 ABS 1")
         // 스쿼트 2세트는 하체 2세트(사두·둔근·햄 세 번 더해 6세트가 아니다), 팔은 삼두 1.5 + 이두 2.0
         assertEquals(listOf("chest", "back", "shoulders", "legs", "arms", "core"), r["groups"].map { it["key"].asText() })
-        assertEquals(mapOf("chest" to 3.0, "back" to 4.0, "shoulders" to 1.5, "legs" to 2.0, "arms" to 3.5, "core" to 0.0), groups)
+        assertEquals(mapOf("chest" to 3.0, "back" to 4.0, "shoulders" to 2.0, "legs" to 2.0, "arms" to 3.5, "core" to 1.0), groups)
         assertEquals(true, r["distribution"].size() > 0, "예전 필드는 그대로")
     }
 

@@ -31,7 +31,7 @@ data class MuscleSets(
 
 data class MuscleDistributionResponse(
     val distribution: List<MuscleDistribution>,
-    /** MuscleGroup 이름(CHEST·LATS…)별 세트 — 몸 지도 색 */
+    /** MuscleGroup 이름(CHEST·LATS…)별 세트 — 몸 지도 색. BACK→LATS·LEGS→QUADRICEPS·CORE→ABS 로 합친 13부위 */
     val muscles: List<MuscleSets> = emptyList(),
     /** 여섯 묶음(chest·back·shoulders·legs·arms·core)별 세트 — 한 세트가 한 묶음에 두 번 세지지 않는다 */
     val groups: List<MuscleSets> = emptyList()

@@ -152,7 +152,8 @@ class StatsService(
                 val done = we.sets.count { it.completed }
                 if (done == 0) return@forEach
                 val credit = we.exercise.muscleGroups.associateWith { m -> if (m in PRIMARY[we.exercise.category].orEmpty()) 1.0 else 0.5 }
-                credit.forEach { (m, c) -> perMuscle.merge(m, c * done, Double::plus) }
+                // 같은 부위의 다른 이름(BACK·LATS, LEGS·QUADRICEPS, CORE·ABS)은 한 부위로 — 한 세트를 두 번 세지 않는다
+                credit.entries.groupBy { CANONICAL[it.key] ?: it.key }.forEach { (m, es) -> perMuscle.merge(m, es.maxOf { it.value } * done, Double::plus) }
                 credit.entries.groupBy { GROUP_OF[it.key] }.forEach { (g, es) ->
                     if (g != null) perGroup.merge(g, es.maxOf { it.value } * done, Double::plus)
                 }
@@ -173,6 +174,10 @@ class StatsService(
             ExerciseCategory.FULL_BODY to MuscleGroup.entries.toSet(),
         )
         val GROUP_ORDER = listOf("chest", "back", "shoulders", "legs", "arms", "core")
+        /** 몸 지도에서 같은 자리인 이름들 — 앱 지도 13부위와 맞춘다 */
+        private val CANONICAL: Map<MuscleGroup, MuscleGroup> = mapOf(
+            MuscleGroup.BACK to MuscleGroup.LATS, MuscleGroup.LEGS to MuscleGroup.QUADRICEPS, MuscleGroup.CORE to MuscleGroup.ABS,
+        )
         private val GROUP_OF: Map<MuscleGroup, String> = mapOf(
             MuscleGroup.CHEST to "chest",
             MuscleGroup.BACK to "back", MuscleGroup.LATS to "back", MuscleGroup.TRAPS to "back", MuscleGroup.NECK to "back",
