@@ -39,6 +39,9 @@ class CoachAgentService(
     private val storeChallenge: StoreChallengeService? = null,
     /** 떠넘기기·없는 능력·도구 실패를 코드값 이벤트로 남긴다(없으면 생략 — 단위 테스트) */
     private val appEvents: com.richjun.liftupai.domain.analytics.AppEventService? = null,
+    /** 시간이 다 돼 답이 비었는데 바꾸는 도구가 이미 성공했으면 그 한 줄 요약으로 답한다(없으면 예전 대체 문구) */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private val coachActions: CoachActionService? = null,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -130,6 +133,7 @@ class CoachAgentService(
         val trace = mutableListOf<ToolUse>()
         var rounds = 0
         var forced = false
+        var lastChange: Pair<String, Map<String, Any?>>? = null
 
         /** 도구 루프 한 번: 모델이 도구를 그만 부르거나 [limit] 번째가 되면(또는 예산이 차면) 도구 없이 답하게 한다 */
         fun runLoop(limit: Int): LoopOutcome {
@@ -158,7 +162,14 @@ class CoachAgentService(
                     val text = parts.filter { it.has("text") && !it.path("thought").asBoolean(false) }
                         .joinToString("") { it.path("text").asText() }
                         .takeIf { it.isNotBlank() }
-                    return LoopOutcome(text, if (text == null) "empty_answer" else null)
+                    // 2026-11-21 실측: 느린 날 마지막(도구 끔) 회차에도 모델이 글 대신 도구를 불러 답이 비었다 — 교체는 이미 됐는데
+                    // 일반 대체 문구가 나갔다. 바꾸는 도구가 성공했으면 그 요약 한 줄로 답한다.
+                    val summary = if (text == null && forced) lastChange?.let { (n, r) ->
+                        runCatching { coachActions?.summarize(n, r, prep.locale) }.getOrNull()?.takeIf { it.isNotBlank() }
+                    } else null
+                    if (summary != null) log.warn("[AI-AGENT] forced round returned no text — answering with the change summary user={} tool={}", user.id, lastChange?.first)
+                    val answer = text ?: summary
+                    return LoopOutcome(answer, if (answer == null) "empty_answer" else null)
                 }
                 // 모델 턴은 받은 그대로 이어 붙인다(thoughtSignature 보존)
                 contents.add((content as ObjectNode).deepCopy().put("role", "model"))
@@ -168,6 +179,7 @@ class CoachAgentService(
                     val name = call.path("name").asText()
                     val outcome = toolbox.execute(name, call.path("args"), ctx)
                     trace += ToolUse(name, outcome.ok, outcome.changed)
+                    if (outcome.changed) lastChange = name to outcome.result
                     log.info("[AI-AGENT] tool user={} round={} name={} ok={} changed={} ms={}", user.id, rounds, name, outcome.ok, outcome.changed, outcome.elapsedMs)
                     val fr = objectMapper.createObjectNode()
                     fr.put("name", name)
@@ -315,9 +327,9 @@ class CoachAgentService(
         appendLine("- Look before you speak: when the answer depends on THIS user's data (past sessions, weights, PRs, progress, today's plan, recovery, today's meals), call the matching get_* tool first and use the exact numbers it returns. Never invent sessions, weights or dates.")
         appendLine("- For greetings, small talk or general knowledge, answer directly — no tools.")
         appendLine("- You may call several tools in one step. Keep it to what the question needs.")
-        appendLine("- Act only when asked: swap_exercise_in_plan, set_today_workout_day, set_available_equipment and set_workout_time change the user's app. Call them only when the user explicitly asks for that change or clearly agrees to your proposal. For a swap: get the current exercise_id (get_today_workout), find candidates (search_exercises — at most 2 searches per reply), pick one that fits their equipment and injuries, then swap. If nothing you found fits, name the 2-3 best options and ask which one; do not keep searching.")
+        appendLine("- Act only when asked: swap_exercise_in_plan, set_today_workout_day, set_available_equipment and set_workout_time change the user's app. Call them only when the user explicitly asks for that change or clearly agrees to your proposal. For a swap they asked for: get the current exercise_id (get_today_workout), find candidates (search_exercises — at most 2 searches per reply), pick the best fit for their equipment and injuries and call swap_exercise_in_plan in the SAME reply — they already asked, so do not ask again. Only if nothing you found fits, name the 2-3 best options and ask which one; do not keep searching.")
         // 2026-11-21 실측(model_r3): 허리 통증 + 데드리프트 질문에 모든 모델이 플랜을 보지 않고 "절대 안 돼"라고 단정했다(오늘 플랜엔 데드리프트가 없었다)
-        appendLine("- Pain or injury questions (\"my lower back hurts, can I deadlift?\", \"my knee aches on squats\"): first call get_today_workout (and get_plan_overview if the exercise is not today) to see whether that exercise or body part is actually in their plan. Answer about THEIR plan: say what is affected and what is fine, offer a specific safer swap from the plan (swap it once they agree). Speak about today, not forever: say to skip or swap it today and how to test it again later — no absolute words like 'never' / '절대' / '絶対'. Tell them to stop and see a professional if the pain is sharp, getting worse or lasts.")
+        appendLine("- Pain or injury questions (\"my lower back hurts, can I deadlift?\", \"my knee aches on squats\"): first call get_today_workout (and get_plan_overview if the exercise is not today) to see whether that exercise or body part is actually in their plan. Answer about THEIR plan: say what is affected and what is fine, offer a specific safer swap from the plan (swap it once they agree). Speak about today, not forever: say to skip or swap it today and how to test it again later — no absolute words like 'never' / '절대' / '絶対' (say \"오늘은 데드리프트를 쉬어요\" / \"skip deadlifts today\", not \"절대 하지 마세요\"). If they report an injury (they hurt / injured a body part — not just soreness after training), ALSO save it with update_my_profile (injuries = their full list) in the same reply so the whole plan stops loading it. Tell them to stop and see a professional if the pain is sharp, getting worse or lasts.")
         // 2026-11-21 실측: 3.8 Flash 답의 구체성 3.14/5 — 일반론으로 끝났다
         appendLine("- End every answer about training, recovery or progress with ONE concrete next step taken from their actual plan or records: the exercise name with weight, reps or sets, or the plan Day (get_today_workout gives these). One sentence, numbers from tools only. Skip it for greetings, small talk and questions that are not about their training.")
         // 2026-11-13: "오늘 풀 데이"를 두 번 말한 사용자에게 "오늘은 푸시"라고 반박하고 설정 화면으로 보냈다(296) — 순서는 사용자가 정한다

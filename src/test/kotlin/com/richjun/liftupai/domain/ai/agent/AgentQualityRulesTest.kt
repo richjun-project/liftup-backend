@@ -22,6 +22,7 @@ import java.time.ZoneId
 class AgentQualityRulesTest : ApiTestSupport() {
     @Autowired private lateinit var agent: CoachAgentService
     @Autowired private lateinit var search: SearchExercisesTool
+    @Autowired private lateinit var gemini: com.richjun.liftupai.domain.ai.service.GeminiAIService
 
     private val mapper = jacksonObjectMapper()
     private fun ctx(user: User) = CoachToolContext(user, "ko", ZoneId.of("Asia/Seoul"), ChatSafetyService.RiskProfile(locale = "ko"))
@@ -60,5 +61,14 @@ class AgentQualityRulesTest : ApiTestSupport() {
         assertTrue(p.contains("Pain or injury questions") && p.contains("first call get_today_workout"), "6-b 통증 규칙")
         assertTrue(p.contains("ONE concrete next step"), "6-a 구체성 규칙")
         assertTrue(p.contains("at most 2 searches"), "6-c 검색 상한")
+    }
+
+    @Test
+    fun `에이전트 프롬프트엔 '아무것도 못 바꾼다'·'부상은 설정에서'가 없고 단발 경로엔 그대로`() {
+        val single = gemini.buildChatPrompt("허리 아파", "민수", com.richjun.liftupai.domain.user.entity.PTStyle.SPARTAN, "ko")
+        val agentP = gemini.buildChatPrompt("허리 아파", "민수", com.richjun.liftupai.domain.user.entity.PTStyle.SPARTAN, "ko", agentSection = "## YOU ARE AN AGENT WITH TOOLS")
+        assertTrue(single.contains("You CANNOT edit") && single.contains("injury settings"), "단발 경로(도구 없음)는 예전 문장 그대로")
+        assertTrue(!agentP.contains("You CANNOT edit") && !agentP.contains("injury settings"), "도구가 있는 경로에 모순 문장이 남았다")
+        assertTrue(agentP.contains("ONLY by calling the tools") && agentP.contains("update_my_profile (injuries)"))
     }
 }

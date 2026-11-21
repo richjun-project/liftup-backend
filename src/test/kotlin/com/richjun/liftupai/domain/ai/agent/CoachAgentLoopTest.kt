@@ -240,4 +240,21 @@ class CoachAgentLoopTest {
         val r = run(stuck, clock = { now })
         assertEquals("legacy", r.path, "12초 뒤에도 단발 경로를 부를 시간(9초)이 남는다")
     }
+
+    @Test
+    fun `느려서 마지막 회차에도 도구만 부르면 — 바꾼 게 있으면 그 요약으로 답한다(빈 답·대체 문구 대신)`() {
+        val actions = io.mockk.mockk<CoachActionService>()
+        every { actions.summarize("swap_exercise_in_plan", any(), "ja") } returns "スクワット → レッグプレス に入れ替えました"
+        var t = 0L
+        val model = ScriptedModel(
+            calls("swap_exercise_in_plan" to """{"from_exercise_id":11,"to_exercise_id":22}"""),
+            calls("get_today_workout" to "{}"), // 도구를 끈 회차인데도 도구를 부름(운영 final_r5 #3)
+        )
+        model.onCall = { t += 14_000 }
+        val svc = CoachAgentService(gemini, model, CoachToolbox(listOf(recent, today, swap, boom)), memories, mapper, coachActions = actions).also { it.clock = { t } }
+        val r = svc.reply(user, "スクワットを別のに変えて", emptyList(), trainerContext = null)
+        assertEquals("スクワット → レッグプレス に入れ替えました", r.text)
+        assertEquals("agent", r.path)
+        assertTrue(r.tools.any { it.name == "swap_exercise_in_plan" && it.changed })
+    }
 }

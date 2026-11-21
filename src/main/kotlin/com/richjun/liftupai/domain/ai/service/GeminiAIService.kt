@@ -402,6 +402,18 @@ class GeminiAIService(
      * 프롬프트 순서가 곧 우선순위다. 하드 규칙 → 계산값 → 프로필 → 대화 → 페르소나 → 가이드 → 메시지.
      * 페르소나 예시가 뒤에 오는 이유: 모델은 구체적 예시를 강하게 따르므로, 예시가 규칙 앞에 오면 규칙이 밀린다.
      */
+        /**
+     * 에이전트(도구가 있는) 경로에서는 공통 페르소나 블록의 "당신은 아무것도 못 바꾼다"·"부상은 설정에서" 문장이 도구와 모순된다
+     * (2026-11-21 채팅으로 다 되게 — 프로필·식단·운동 기록 도구 추가). 그 문장만 도구 기준으로 바꾼다. 단발 경로는 그대로.
+     */
+    internal fun agentCapabilities(prompt: String): String = prompt
+        .replace(Regex("""You are a chat assistant\. You CANNOT edit[\s\S]*?Nothing you say changes stored data\."""),
+            "You can change their plan, profile, food log and workout log ONLY by calling the tools in YOU ARE AN AGENT WITH TOOLS. Nothing changes unless a tool returns changed:true.")
+        .replace(Regex("""Instead: give the concrete answer or routine in the chat, then attach the matching button[\s\S]*?load is edited in the weight field on the workout screen\."""),
+            "Do it with the matching tool when one exists; attach a button only for what needs a screen.")
+        .replace(Regex("""tell them to set it in the injury settings\s+so their plan reflects it\."""),
+            "save it with update_my_profile (injuries) so their plan reflects it.")
+
     internal fun buildChatPrompt(
         message: String,
         nickname: String,
@@ -504,7 +516,7 @@ class GeminiAIService(
 
             ## User message
             $message
-        """.trimIndent().replace(Regex("\\n{3,}"), "\n\n")
+        """.trimIndent().replace(Regex("\\n{3,}"), "\n\n").let { if (agentSection != null) agentCapabilities(it) else it }
     }
 
     private fun languageReminder(responseLanguage: String): String =
