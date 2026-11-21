@@ -1,0 +1,114 @@
+{
+ "plan__en_inter_f_glutes_knee": {
+  "A": "gemini-4-hydrogen",
+  "B": "gemini-4-carbon",
+  "C": "gemini-3.8-flash",
+  "D": "gemini-4-neon",
+  "E": "gemini-3.1-pro-preview"
+ },
+ "plan__en_novice_68": {
+  "A": "gemini-4-neon",
+  "B": "gemini-4-carbon",
+  "C": "gemini-3.1-pro-preview",
+  "D": "gemini-4-hydrogen",
+  "E": "gemini-3.8-flash"
+ },
+ "plan__ja_advanced_5day_back": {
+  "A": "gemini-3.1-pro-preview",
+  "B": "gemini-4-hydrogen",
+  "C": "gemini-4-neon",
+  "D": "gemini-4-carbon",
+  "E": "gemini-3.8-flash"
+ },
+ "plan__ja_expert_bodyweight": {
+  "A": "gemini-3.1-pro-preview",
+  "B": "gemini-4-neon",
+  "C": "gemini-4-carbon",
+  "D": "gemini-3.8-flash",
+  "E": "gemini-4-hydrogen"
+ },
+ "plan__ja_inter_f_home_shoulder": {
+  "A": "gemini-3.1-pro-preview",
+  "B": "gemini-4-hydrogen",
+  "C": "gemini-4-carbon",
+  "D": "gemini-3.8-flash",
+  "E": "gemini-4-neon"
+ },
+ "plan__ko_beginner_16_bulk": {
+  "A": "gemini-3.1-pro-preview",
+  "B": "gemini-4-hydrogen",
+  "C": "gemini-3.8-flash",
+  "D": "gemini-4-neon",
+  "E": "gemini-4-carbon"
+ },
+ "plan__ko_beginner_f_lose": {
+  "A": "gemini-3.8-flash",
+  "B": "gemini-3.1-pro-preview",
+  "C": "gemini-4-carbon",
+  "D": "gemini-4-neon",
+  "E": "gemini-4-hydrogen"
+ },
+ "plan__ko_inter_m_lowback": {
+  "A": "gemini-3.1-pro-preview",
+  "B": "gemini-4-neon",
+  "C": "gemini-3.8-flash",
+  "D": "gemini-4-hydrogen",
+  "E": "gemini-4-carbon"
+ },
+ "reco__en_inter_f_glutes_knee": {
+  "A": "gemini-4-carbon",
+  "B": "gemini-3.1-pro-preview",
+  "C": "gemini-4-hydrogen",
+  "D": "gemini-4-neon",
+  "E": "gemini-3.8-flash"
+ },
+ "reco__en_novice_68": {
+  "A": "gemini-3.1-pro-preview",
+  "B": "gemini-4-hydrogen",
+  "C": "gemini-3.8-flash",
+  "D": "gemini-4-neon",
+  "E": "gemini-4-carbon"
+ },
+ "reco__ja_advanced_5day_back": {
+  "A": "gemini-3.1-pro-preview",
+  "B": "gemini-3.8-flash",
+  "C": "gemini-4-neon",
+  "D": "gemini-4-hydrogen",
+  "E": "gemini-4-carbon"
+ },
+ "reco__ja_expert_bodyweight": {
+  "A": "gemini-4-carbon",
+  "B": "gemini-3.1-pro-preview",
+  "C": "gemini-4-neon",
+  "D": "gemini-4-hydrogen",
+  "E": "gemini-3.8-flash"
+ },
+ "reco__ja_inter_f_home_shoulder": {
+  "A": "gemini-4-hydrogen",
+  "B": "gemini-4-carbon",
+  "C": "gemini-3.8-flash",
+  "D": "gemini-4-neon",
+  "E": "gemini-3.1-pro-preview"
+ },
+ "reco__ko_beginner_16_bulk": {
+  "A": "gemini-4-neon",
+  "B": "gemini-3.8-flash",
+  "C": "gemini-4-carbon",
+  "D": "gemini-3.1-pro-preview",
+  "E": "gemini-4-hydrogen"
+ },
+ "reco__ko_beginner_f_lose": {
+  "A": "gemini-4-hydrogen",
+  "B": "gemini-4-carbon",
+  "C": "gemini-3.1-pro-preview",
+  "D": "gemini-3.8-flash",
+  "E": "gemini-4-neon"
+ },
+ "reco__ko_inter_m_lowback": {
+  "A": "gemini-4-carbon",
+  "B": "gemini-3.1-pro-preview",
+  "C": "gemini-3.8-flash",
+  "D": "gemini-4-neon",
+  "E": "gemini-4-hydrogen"
+ }
+}
