@@ -1,0 +1,100 @@
+{
+  "en_getting_stronger": {
+    "A": "gemini-3.8-flash",
+    "B": "gemini-4-carbon",
+    "C": "gemini-4-neon",
+    "D": "gemini-4-hydrogen",
+    "E": "gemini-4-argon"
+  },
+  "en_protein_general": {
+    "A": "gemini-4-argon",
+    "B": "gemini-3.8-flash",
+    "C": "gemini-4-neon",
+    "D": "gemini-4-carbon",
+    "E": "gemini-4-hydrogen"
+  },
+  "en_pushup_too_easy": {
+    "A": "gemini-4-hydrogen",
+    "B": "gemini-4-neon",
+    "C": "gemini-4-carbon",
+    "D": "gemini-4-argon",
+    "E": "gemini-3.8-flash"
+  },
+  "ja_equipment_none": {
+    "A": "gemini-3.8-flash",
+    "B": "gemini-4-carbon",
+    "C": "gemini-4-argon",
+    "D": "gemini-4-neon",
+    "E": "gemini-4-hydrogen"
+  },
+  "ja_greeting": {
+    "A": "gemini-4-argon",
+    "B": "gemini-4-hydrogen",
+    "C": "gemini-4-carbon",
+    "D": "gemini-4-neon",
+    "E": "gemini-3.8-flash"
+  },
+  "ja_pull_day": {
+    "A": "gemini-3.8-flash",
+    "B": "gemini-4-argon",
+    "C": "gemini-4-hydrogen",
+    "D": "gemini-4-carbon",
+    "E": "gemini-4-neon"
+  },
+  "ja_stop_messages": {
+    "A": "gemini-4-argon",
+    "B": "gemini-3.8-flash",
+    "C": "gemini-4-neon",
+    "D": "gemini-4-hydrogen",
+    "E": "gemini-4-carbon"
+  },
+  "ja_weekends_busy": {
+    "A": "gemini-4-argon",
+    "B": "gemini-3.8-flash",
+    "C": "gemini-4-carbon",
+    "D": "gemini-4-neon",
+    "E": "gemini-4-hydrogen"
+  },
+  "ko_bench_history": {
+    "A": "gemini-4-hydrogen",
+    "B": "gemini-4-carbon",
+    "C": "gemini-3.8-flash",
+    "D": "gemini-4-neon",
+    "E": "gemini-4-argon"
+  },
+  "ko_legpress_opinion": {
+    "A": "gemini-4-argon",
+    "B": "gemini-4-neon",
+    "C": "gemini-4-hydrogen",
+    "D": "gemini-4-carbon",
+    "E": "gemini-3.8-flash"
+  },
+  "ko_lowback_deadlift": {
+    "A": "gemini-3.8-flash",
+    "B": "gemini-4-hydrogen",
+    "C": "gemini-4-neon",
+    "D": "gemini-4-argon",
+    "E": "gemini-4-carbon"
+  },
+  "ko_protein_today": {
+    "A": "gemini-4-carbon",
+    "B": "gemini-4-argon",
+    "C": "gemini-4-hydrogen",
+    "D": "gemini-3.8-flash",
+    "E": "gemini-4-neon"
+  },
+  "ko_swap_squat_knee": {
+    "A": "gemini-4-argon",
+    "B": "gemini-4-hydrogen",
+    "C": "gemini-4-carbon",
+    "D": "gemini-4-neon",
+    "E": "gemini-3.8-flash"
+  },
+  "ko_workout_time": {
+    "A": "gemini-4-carbon",
+    "B": "gemini-4-argon",
+    "C": "gemini-4-neon",
+    "D": "gemini-4-hydrogen",
+    "E": "gemini-3.8-flash"
+  }
+}

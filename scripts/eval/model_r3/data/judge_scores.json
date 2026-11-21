@@ -1,0 +1,520 @@
+{
+ "en_getting_stronger": {
+  "A": {
+   "accuracy": 3,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 5,
+   "reason": "Clean Spartan voice, but 60->62.5 claim thin and vague; short, no rep target."
+  },
+  "B": {
+   "accuracy": 3,
+   "specificity": 5,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Rich detail and rep target, but leaked 'eval-en_getting_stro' name and unverified 57.5 kg Nov 6 figure."
+  },
+  "C": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Accurate sets/dates, notes 3-day gap; leaked user id garbles opening."
+  },
+  "D": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 5,
+   "reason": "Accurate PR, squat, volume totals; clean tough voice, no id leak."
+  },
+  "E": {
+   "accuracy": 3,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Leaked id; 'last 11 days' and challenge 5/12 counts unverifiable; good 4-set push at 62.5."
+  }
+ },
+ "en_protein_general": {
+  "A": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Correct 1.6-2.2 g/kg, worked 75 kg example, flags 60 g default; leaked id and clumsy 'Uh...'."
+  },
+  "B": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Correct range; invented 'Private Kim'; leaked id; no example, little next step."
+  },
+  "C": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Correct range, notes 60 g target likely low; leaked id, 'Uh' filler."
+  },
+  "D": {
+   "accuracy": 3,
+   "specificity": 5,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Range, example and workout link are strong; suggested 2-set light start deviates from plan; leaked id."
+  },
+  "E": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Correct but generic; asks for weight; leaked id."
+  }
+ },
+ "en_pushup_too_easy": {
+  "A": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Offers Decline push-up matching harder_variant; asks before swapping; leaked id, emoji heavy."
+  },
+  "B": {
+   "accuracy": 5,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Correct variant; no start button or tempo/rep guidance; leaked id."
+  },
+  "C": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Correct variant plus option to slow tempo; leaked id."
+  },
+  "D": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Correct variant, practical chair/bed tip; leaked id."
+  },
+  "E": {
+   "accuracy": 5,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Correct variant, offers swap; generic otherwise; leaked id."
+  }
+ },
+ "ja_equipment_none": {
+  "A": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Correct switch; names new Day 1 but fewer details, no plan name."
+  },
+  "B": {
+   "accuracy": 5,
+   "specificity": 5,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Plan name, Day 1, ~56 min, 7 exercises all match tool result."
+  },
+  "C": {
+   "accuracy": 5,
+   "specificity": 5,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Accurate plan name, 7 exercises, 56 min; good game-master voice."
+  },
+  "D": {
+   "accuracy": 5,
+   "specificity": 5,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Accurate, names several exercises; good voice."
+  },
+  "E": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Accurate but terse, awkward line breaks, less detail."
+  }
+ },
+ "ja_greeting": {
+  "A": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Greets, names Day 1 quest and light start; slightly generic."
+  },
+  "B": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Correct quest name, concise; little concrete detail."
+  },
+  "C": {
+   "accuracy": 3,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Suggests first 3 exercises x 2 sets; plan has 4 exercises, mild invention."
+  },
+  "D": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Names quest, light start option; fits persona."
+  },
+  "E": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Includes ~30 min accurately and light-start option; good voice."
+  }
+ },
+ "ja_pull_day": {
+  "A": {
+   "accuracy": 5,
+   "specificity": 2,
+   "safety": 4,
+   "voice": 4,
+   "reason": "Correct Day 2 change; terse with no exercise detail."
+  },
+  "B": {
+   "accuracy": 5,
+   "specificity": 5,
+   "safety": 4,
+   "voice": 5,
+   "reason": "Lists deadlift, row, pulldown, 6 exercises, 56 min; strong Spartan tone."
+  },
+  "C": {
+   "accuracy": 5,
+   "specificity": 2,
+   "safety": 4,
+   "voice": 4,
+   "reason": "Correct switch but minimal content."
+  },
+  "D": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 4,
+   "voice": 5,
+   "reason": "Correct change, exercises named, 6 total; fits persona."
+  },
+  "E": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 4,
+   "voice": 5,
+   "reason": "Correct, ~56 min, deadlift to rear delt; crisp Spartan."
+  }
+ },
+ "ja_stop_messages": {
+  "A": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Correct off setting, reminders stay; leaked id, 'bro' mix."
+  },
+  "B": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Correct off; omits reminders and how to resume; leaked id."
+  },
+  "C": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Off confirmed, reminders stay, can ask again; natural hip-hop."
+  },
+  "D": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Off, reminders retained, resume offered; good voice."
+  },
+  "E": {
+   "accuracy": 5,
+   "specificity": 5,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Off, reminders retained, tells how to resume; good voice."
+  }
+ },
+ "ja_weekends_busy": {
+  "A": {
+   "accuracy": 4,
+   "specificity": 5,
+   "safety": 4,
+   "voice": 3,
+   "reason": "Used plan overview (3-day), correct Saturday date, asks equipment; long, stuffed anecdote."
+  },
+  "B": {
+   "accuracy": 2,
+   "specificity": 2,
+   "safety": 4,
+   "voice": 3,
+   "reason": "Says do first workout on a 'weekday' today though it is Saturday; start button inconsistent."
+  },
+  "C": {
+   "accuracy": 4,
+   "specificity": 5,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Plan 3 days Mon/Wed/Fri idea, rest today or bodyweight 10x2-3; concrete and well voiced."
+  },
+  "D": {
+   "accuracy": 3,
+   "specificity": 2,
+   "safety": 4,
+   "voice": 3,
+   "reason": "Remembers fact; generic weekday advice; no plan check."
+  },
+  "E": {
+   "accuracy": 2,
+   "specificity": 2,
+   "safety": 4,
+   "voice": 3,
+   "reason": "Names a plan without checking it; generic advice."
+  }
+ },
+ "ko_bench_history": {
+  "A": {
+   "accuracy": 3,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 2,
+   "reason": "Says 60 kg 8x3 both days (actual 8,7,6 / 8,8,7); little burnout tone."
+  },
+  "B": {
+   "accuracy": 5,
+   "specificity": 5,
+   "safety": 5,
+   "voice": 5,
+   "reason": "Accurate set-by-set, 62.5 6,6 and 60x8; tired voice, clear plan for today."
+  },
+  "C": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Accurate but omits Nov 10; solid push for 62.5 today."
+  },
+  "D": {
+   "accuracy": 3,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Same 8x3 flattening as others; mentions 1RM 76 correctly."
+  },
+  "E": {
+   "accuracy": 5,
+   "specificity": 5,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Accurate sets and 1RM 75-76; leaked id slightly; good persona."
+  }
+ },
+ "ko_legpress_opinion": {
+  "A": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 4,
+   "voice": 4,
+   "reason": "Clear differences, ties to today's squat 37.5 kg, offers swap."
+  },
+  "B": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 4,
+   "voice": 4,
+   "reason": "Concise correct explanation, notes squat in plan; little action."
+  },
+  "C": {
+   "accuracy": 4,
+   "specificity": 2,
+   "safety": 4,
+   "voice": 3,
+   "reason": "Correct but no start button and vague next step."
+  },
+  "D": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 4,
+   "voice": 4,
+   "reason": "Names muscles, balance difference, offers swap if squat hurts."
+  },
+  "E": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 4,
+   "voice": 3,
+   "reason": "Accurate but long; bold formatting; pushes squat first."
+  }
+ },
+ "ko_lowback_deadlift": {
+  "A": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 3,
+   "voice": 4,
+   "reason": "Says never; alt exercises; alarmist 'very high risk', misses deadlift not in today's plan."
+  },
+  "B": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 3,
+   "voice": 4,
+   "reason": "Ties to today's upper routine with start button; 'big trouble' is alarmist."
+  },
+  "C": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 3,
+   "voice": 4,
+   "reason": "Avoids deadlift, alternatives, doctor if persistent; leg curl chosen oddly."
+  },
+  "D": {
+   "accuracy": 3,
+   "specificity": 5,
+   "safety": 2,
+   "voice": 3,
+   "reason": "Detailed alternative routine, but alarmist, contradictory ('do not train' then do it) and long."
+  },
+  "E": {
+   "accuracy": 3,
+   "specificity": 3,
+   "safety": 3,
+   "voice": 3,
+   "reason": "Alternatives given; confusing 'sit on bench for standing moves'; alarmist."
+  }
+ },
+ "ko_protein_today": {
+  "A": {
+   "accuracy": 5,
+   "specificity": 5,
+   "safety": 5,
+   "voice": 5,
+   "reason": "Exact 60/60, remaining carbs 70, fat 23; dialect fits; pushes workout."
+  },
+  "B": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Accurate kcal and macros; good dialect and workout nudge."
+  },
+  "C": {
+   "accuracy": 4,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 3,
+   "reason": "Accurate gist but no tool; weaker dialect; no button."
+  },
+  "D": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Accurate, good dialect, workout nudge; no tool call."
+  },
+  "E": {
+   "accuracy": 5,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Accurate; dinner tip and meal-log button; good dialect."
+  }
+ },
+ "ko_swap_squat_knee": {
+  "A": {
+   "accuracy": 1,
+   "specificity": 1,
+   "safety": 1,
+   "voice": 1,
+   "reason": "Empty answer."
+  },
+  "B": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 4,
+   "voice": 5,
+   "reason": "Swapped squat for leg press, foot-placement tip; no doctor mention but natural tone."
+  },
+  "C": {
+   "accuracy": 1,
+   "specificity": 1,
+   "safety": 1,
+   "voice": 1,
+   "reason": "Empty answer."
+  },
+  "D": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Swap plus doctor advice if pain persists and injury setting; long but safe."
+  },
+  "E": {
+   "accuracy": 4,
+   "specificity": 4,
+   "safety": 4,
+   "voice": 5,
+   "reason": "Swap to leg press, knee-alignment cue, good teacher voice."
+  }
+ },
+ "ko_workout_time": {
+  "A": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 5,
+   "reason": "Correct 20:00, 19:30 reminder, workout named; strong LA voice."
+  },
+  "B": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 5,
+   "reason": "Correct time and reminder, plan named, remembers pref."
+  },
+  "C": {
+   "accuracy": 5,
+   "specificity": 4,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Correct 20:00/19:30 with workout contents."
+  },
+  "D": {
+   "accuracy": 5,
+   "specificity": 2,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Correct but short, no workout detail or button."
+  },
+  "E": {
+   "accuracy": 5,
+   "specificity": 3,
+   "safety": 5,
+   "voice": 4,
+   "reason": "Correct and remembered; generic encouragement."
+  }
+ }
+}
