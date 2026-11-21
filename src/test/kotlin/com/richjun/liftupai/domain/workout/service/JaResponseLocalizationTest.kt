@@ -96,7 +96,7 @@ class JaResponseLocalizationTest {
         // AI 응답이 깨졌을 때의 폴백 경로
         val broken = ChatHarness(language = ja)
         val gemini = broken.geminiMock
-        every { gemini.generateRecommendations(any()) } returns "not json"
+        every { gemini.generateRecommendations(any(), any()) } returns "not json"
         assertNoHangul("chat fallback", broken.chat.getAIWorkoutRecommendation(1L, 45, localeOverride = ja))
     }
 

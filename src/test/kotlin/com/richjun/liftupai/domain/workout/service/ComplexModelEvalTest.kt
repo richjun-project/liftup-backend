@@ -99,9 +99,9 @@ class ComplexModelEvalTest : ApiTestSupport() {
                 var planPrompt: String? = null
                 var recoPrompt: String? = null
                 val spy = mockk<GeminiAIService>(relaxed = true)
-                every { spy.generatePlanContent(any()) } answers { if (planPrompt == null) planPrompt = firstArg(); throw IllegalStateException("captured") }
-                every { spy.generatePlanContentStreaming(any(), any()) } answers { if (planPrompt == null) planPrompt = firstArg(); throw IllegalStateException("captured") }
-                every { spy.generateRecommendations(any()) } answers { if (recoPrompt == null) recoPrompt = firstArg(); "{}" }
+                every { spy.generatePlanContent(any(), any()) } answers { if (planPrompt == null) planPrompt = firstArg(); throw IllegalStateException("captured") }
+                every { spy.generatePlanContentStreaming(any(), any(), any()) } answers { if (planPrompt == null) planPrompt = firstArg(); throw IllegalStateException("captured") }
+                every { spy.generateRecommendations(any(), any()) } answers { if (recoPrompt == null) recoPrompt = firstArg(); "{}" }
                 ReflectionTestUtils.setField(planTarget, "geminiAIService", spy)
                 ReflectionTestUtils.setField(recoTarget, "geminiAIService", spy)
                 val user = setUpUser(p)

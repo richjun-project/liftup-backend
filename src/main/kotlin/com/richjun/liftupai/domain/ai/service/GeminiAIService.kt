@@ -31,11 +31,29 @@ class GeminiAIService(
     @Value("\${gemini.api-key}")
     private lateinit var apiKey: String
 
-    @Value("\${gemini.model:gemini-flash-latest}")
+    /** 채팅·식단·기본 호출 모델. 2026-11-21 대표 승인으로 이름 고정 — `-latest` 별칭은 Google 이 평가 없이 바꾼다. */
+    @Value("\${gemini.model:gemini-3.8-flash}")
     private lateinit var model: String
 
-    @Value("\${gemini.plan-model:gemini-pro-latest}")
+    /** 무료 사용자의 AI 주간 플랜 모델 */
+    @Value("\${gemini.plan-model:gemini-3.8-flash}")
     private lateinit var planModel: String
+
+    /** 유료(구독 중) 사용자의 AI 주간 플랜 모델 — complex-model-r4 독립 심사 1등(4.28, 지금 모델 3.38) */
+    @Value("\${gemini.plan-model-pro:gemini-4-carbon}")
+    private lateinit var planModelPro: String
+
+    /** 유료 사용자의 AI 오늘 운동 추천 모델 — 같은 실측 3.78(flash 3.44), 최대 13초라 앱 30초 한도 안 */
+    @Value("\${gemini.reco-model-pro:gemini-4-hydrogen}")
+    private lateinit var recoModelPro: String
+
+    /** 테스트에서 가짜 서버로 바꾸려고 둔 주소. 운영은 기본값. */
+    @Value("\${gemini.base-url:https://generativelanguage.googleapis.com}")
+    private var baseUrl: String = "https://generativelanguage.googleapis.com"
+
+    /** 유료·무료에 따른 모델 고르기(한 곳). */
+    internal fun planModelFor(pro: Boolean): String = if (pro) planModelPro else planModel
+    internal fun recoModelFor(pro: Boolean): String = if (pro) recoModelPro else model
 
     @Value("\${gemini.max-tokens:2048}")
     private var maxTokens: Int = 2048
@@ -212,28 +230,46 @@ class GeminiAIService(
 
     fun analyzeContent(prompt: String): String = callGeminiAPI(prompt)
 
-    /** 플랜 생성 전용 — Pro latest 모델 사용 */
-    fun generatePlanContent(prompt: String): String = callGeminiAPI(
+    /** 플랜 생성 — 유료는 [planModelPro], 무료는 [planModel]. 유료 모델이 실패하면 무료 모델로 한 번 더. */
+    fun generatePlanContent(prompt: String, pro: Boolean = false): String = callGeminiAPI(
         prompt = prompt,
-        targetModel = planModel,
+        targetModel = planModelFor(pro),
         targetMaxTokens = planMaxTokens,
         targetTemperature = planTemperature,
+        fallbackModel = if (pro) planModel else null,
     )
 
     /** 플랜 생성 스트리밍 — 토큰 생성 진행률 콜백 */
     fun generatePlanContentStreaming(
         prompt: String,
-        onChunk: (accumulated: String, chunkSize: Int) -> Unit
+        onChunk: (accumulated: String, chunkSize: Int) -> Unit,
+        pro: Boolean = false,
     ): String {
-        val useModel = planModel
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/$useModel:streamGenerateContent?alt=sse&key=$apiKey"
+        if (!pro) return streamPlan(prompt, onChunk, planModel)
+        // 유료 모델이 실패하면(모델 없음·과부하·끊김) 무료 모델로 처음부터 다시 — 플랜을 못 받는 것보다 낫다
+        return try {
+            streamPlan(prompt, onChunk, planModelPro)
+        } catch (e: Exception) {
+            log.warn("[AI-CALL] plan model {} failed ({}), falling back to {}", planModelPro, e.message, planModel)
+            streamPlan(prompt, onChunk, planModel)
+        }
+    }
+
+    private fun streamPlan(
+        prompt: String,
+        onChunk: (accumulated: String, chunkSize: Int) -> Unit,
+        useModel: String,
+    ): String {
+        val url = "$baseUrl/v1beta/models/$useModel:streamGenerateContent?alt=sse&key=$apiKey"
+        // 생각 수준은 동기 경로(nonChatGenerationConfig)와 같게 — 실측(complex-model-r4)이 low 로 쟀다. 예전엔 빠져 모델 기본값(높음)이었다.
         val requestBody = GeminiRequest(
             contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
             generationConfig = GenerationConfig(
                 temperature = planTemperature,
                 maxOutputTokens = planMaxTokens,
                 topP = 0.95,
-                topK = 40
+                topK = 40,
+                thinkingConfig = chatThinkingLevel.ifBlank { null }?.let { ThinkingConfig(it) },
             )
         )
 
@@ -291,7 +327,12 @@ class GeminiAIService(
         return accumulated.toString()
     }
 
-    fun generateRecommendations(prompt: String): String = callGeminiAPI(prompt)
+    /** AI 오늘 운동 추천 — 유료는 [recoModelPro], 무료는 기본 모델. 유료 모델이 실패하면 기본 모델로 한 번 더. */
+    fun generateRecommendations(prompt: String, pro: Boolean = false): String = callGeminiAPI(
+        prompt = prompt,
+        targetModel = recoModelFor(pro),
+        fallbackModel = if (pro) model else null,
+    )
 
     fun analyzeMeal(prompt: String): String = callGeminiAPI(prompt)
 
@@ -1013,7 +1054,7 @@ class GeminiAIService(
 
     private fun callGeminiAPIWithImage(prompt: String, imageData: String, locale: String): String {
         return try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+            val url = "$baseUrl/v1beta/models/$model:generateContent?key=$apiKey"
             val requestBody = GeminiRequest(
                 contents = listOf(
                     GeminiContent(
@@ -1110,7 +1151,7 @@ class GeminiAIService(
     private fun executeChatRequest(prompt: String, thinkingLevel: String?, images: List<InlineData> = emptyList()): ChatCallResult {
         val started = System.currentTimeMillis()
         return try {
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey"
+            val url = "$baseUrl/v1beta/models/$model:generateContent?key=$apiKey"
             val body = objectMapper.writeValueAsString(buildChatRequest(prompt, temperature, maxTokens, thinkingLevel, images))
             val request = Request.Builder()
                 .url(url)
@@ -1137,10 +1178,16 @@ class GeminiAIService(
         targetMaxTokens: Int? = null,
         targetTemperature: Double? = null,
         thinkingLevel: String? = chatThinkingLevel.ifBlank { null },
+        fallbackModel: String? = null,
     ): String {
+        val useModel = targetModel ?: model
+        // 유료 모델 실패 시 한 번만 기본 모델로(모델 이름 오타·서비스 중단·과부하). 생각 설정 재시도와는 별개.
+        fun fallback(reason: String): String? = fallbackModel?.takeIf { it != useModel }?.let {
+            log.warn("[AI-CALL] model {} failed ({}), falling back to {}", useModel, reason, it)
+            callGeminiAPI(prompt, locale, it, targetMaxTokens, targetTemperature, thinkingLevel, fallbackModel = null)
+        }
         return try {
-            val useModel = targetModel ?: model
-            val url = "https://generativelanguage.googleapis.com/v1beta/models/$useModel:generateContent?key=$apiKey"
+            val url = "$baseUrl/v1beta/models/$useModel:generateContent?key=$apiKey"
             val requestBody = GeminiRequest(
                 contents = listOf(
                     GeminiContent(
@@ -1162,8 +1209,9 @@ class GeminiAIService(
                 if (!response.isSuccessful) {
                     val errorBody = response.body?.string()
                     if (shouldRetryWithoutThinking(response.code, errorBody.orEmpty(), thinkingLevel)) {
-                        return callGeminiAPI(prompt, locale, targetModel, targetMaxTokens, targetTemperature, thinkingLevel = null)
+                        return callGeminiAPI(prompt, locale, targetModel, targetMaxTokens, targetTemperature, thinkingLevel = null, fallbackModel = fallbackModel)
                     }
+                    fallback("HTTP ${response.code}")?.let { return it }
                     println("Gemini API Error (${targetModel ?: model}): $errorBody")
                     return AILocalization.message("ai.error.analysis_failed", locale)
                 }
@@ -1178,6 +1226,7 @@ class GeminiAIService(
                 text ?: AILocalization.message("ai.error.response_unavailable", locale)
             }
         } catch (e: Exception) {
+            fallback(e.javaClass.simpleName)?.let { return it }
             println("Error calling Gemini API: ${e.message}")
             e.printStackTrace()
             AILocalization.message("ai.error.analysis_failed_detail", locale, e.message ?: "unknown error")

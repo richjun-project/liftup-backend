@@ -42,7 +42,7 @@ class AIRecoResponseSchemaTest {
         val h = ChatHarness(completedSessions = 3L)
         val ids = listOf("barbell-full-squat", "barbell-bench-press", "cable-pulldown", "dumbbell-curls")
             .map { RecoTestKit.bySlug.getValue(it).id }
-        every { h.geminiMock.generateRecommendations(any()) } returns """{"workout_name":"전신 기초","difficulty":"beginner",
+        every { h.geminiMock.generateRecommendations(any(), any()) } returns """{"workout_name":"전신 기초","difficulty":"beginner",
             "estimated_calories":220,"target_muscles":[],"equipment":[],
             "exercises":[${ids.mapIndexed { i, id -> """{"id":$id,"sets":3,"reps":"10-12","rest_seconds":90,"order":${i + 1}}""" }.joinToString(",")}],
             "tips":["팁 하나","팁 둘"],

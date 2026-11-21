@@ -140,7 +140,7 @@ class QueryRewriter(
     }
 
     companion object {
-        const val DEFAULT_MODEL = "gemini-flash-lite-latest"
+        const val DEFAULT_MODEL = "gemini-3.5-flash-lite" // 이름 고정(11-21) — 별칭은 몰래 바뀐다
         private const val MAX_RAW_CHARS = 1000
         private const val MAX_KEY_CHARS = 200
         private val WHITESPACE = Regex("\\s+")

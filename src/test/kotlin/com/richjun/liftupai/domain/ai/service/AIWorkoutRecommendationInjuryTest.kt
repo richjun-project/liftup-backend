@@ -96,7 +96,7 @@ class AIWorkoutRecommendationInjuryTest {
             weight = 50.0, sets = 3, reps = "8-10", restSeconds = 90, intensity = 75, reason = "r", coachingTip = "t", focus = "f")
         val json = """{"workout_name":"x","difficulty":"intermediate","estimated_calories":300,"target_muscles":[],"equipment":[],
             "exercises":[${aiPicks.mapIndexed { i, e -> """{"id":${e.id},"sets":3,"reps":"8-10","rest_seconds":90,"order":${i + 1}}""" }.joinToString(",")}]}"""
-        every { geminiAIService.generateRecommendations(any()) } returns json
+        every { geminiAIService.generateRecommendations(any(), any()) } returns json
     }
 
     @Test
@@ -177,7 +177,7 @@ class AIWorkoutRecommendationInjuryTest {
     @DisplayName("AI 응답이 중간에 잘려도(JSON 미완성) 추천은 예외 없이 나가고, 건질 수 있는 인사이트는 건진다")
     fun truncatedAiResponseDoesNotThrow() {
         stubKneeUser(aiPicks = listOf(bench, row, ohp, pulldown))
-        every { geminiAIService.generateRecommendations(any()) } returns
+        every { geminiAIService.generateRecommendations(any(), any()) } returns
             """{"workout_name":"x","exercises":[{"id":5,"sets":3},{"id":6,"sets":3}],"ai_insights":{"workout_rationale":"상체 위주로 구성했어요","key_point":"어깨를 내리고"""
 
         val result = service.getAIWorkoutRecommendation(userId = 1L, duration = 45)

@@ -119,10 +119,10 @@ class AIPlanGenerationRetryFallbackTest {
 
     @Test
     fun `정상 응답은 한 번에 저장된다`() {
-        every { gemini.generatePlanContent(any()) } returns goodPlanJson()
+        every { gemini.generatePlanContent(any(), any()) } returns goodPlanJson()
         val res = service.generateAndApplyPlan(user, request())
         assertEquals(dashboard, res)
-        verify(exactly = 1) { gemini.generatePlanContent(any()) }
+        verify(exactly = 1) { gemini.generatePlanContent(any(), any()) }
         verify(exactly = 0) { userPlanService.applyTemplate(any(), any(), any(), any()) }
     }
 
@@ -138,7 +138,7 @@ class AIPlanGenerationRetryFallbackTest {
 
     @Test
     fun `두 번 다 파싱 실패면 에러 대신 템플릿 플랜이 적용된다`() {
-        every { gemini.generatePlanContent(any()) } returns "not json at all"
+        every { gemini.generatePlanContent(any(), any()) } returns "not json at all"
         val res = service.generateAndApplyPlan(user, request(days = 3, exp = "beginner"))
         assertEquals(templateDashboard, res)
         val code = slot<String>()
@@ -148,7 +148,7 @@ class AIPlanGenerationRetryFallbackTest {
 
     @Test
     fun `Gemini 호출 자체가 계속 실패해도 템플릿 플랜이 간다`() {
-        every { gemini.generatePlanContent(any()) } throws RuntimeException("503")
+        every { gemini.generatePlanContent(any(), any()) } throws RuntimeException("503")
         val res = service.generateAndApplyPlan(user, request(days = 5, exp = "advanced"))
         assertEquals(templateDashboard, res)
         val code = slot<String>()

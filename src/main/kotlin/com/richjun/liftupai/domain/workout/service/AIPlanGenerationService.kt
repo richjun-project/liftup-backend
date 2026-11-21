@@ -44,6 +44,9 @@ class AIPlanGenerationService(
     /** AI 가 못 쓰면 쓰는 폴백 템플릿을 새 추천 엔진으로 고른다 (없으면 옛 경험·일수 거리 규칙) */
     @Autowired(required = false)
     private val templateRecommendationService: TemplateRecommendationService? = null,
+    /** 유료 여부로 플랜 모델을 고른다(없으면 무료로 본다 — 테스트 생성자 호환) */
+    @Autowired(required = false)
+    private val subscriptionService: com.richjun.liftupai.domain.subscription.service.SubscriptionService? = null,
 ) {
     private val log = LoggerFactory.getLogger(AIPlanGenerationService::class.java)
 
@@ -78,6 +81,8 @@ class AIPlanGenerationService(
         streamChunk: ((String, Int) -> Unit)?
     ): PlanDashboardResponse {
         log.info("Generating AI plan for user {} with goals: {}", user.id, request.goals)
+        // 유료(구독 중) 사용자는 더 좋은 플랜 모델(gemini.plan-model-pro), 무료는 기본 플랜 모델 — 11-21 대표 결정
+        val pro = subscriptionService?.hasActiveSubscription(user.id) ?: false
 
         // 장비·부상(프로필 ∪ 설정 ∪ 요청)·수준·나이·집중 부위는 단일 해석기에서 한 번만 읽는다. 한쪽만 보면 필터가 조용히 무력화된다(UserPlanService 와 같은 이유).
         val ctx = resolveContext(user, request)
@@ -114,7 +119,7 @@ class AIPlanGenerationService(
         // 2. Call Gemini AI
         progress(2, "designing")
         val firstRaw = try {
-            if (streamChunk != null) callGeminiStreamingWithRetry(prompt, 3, streamChunk) else callGeminiWithRetry(prompt, 3)
+            if (streamChunk != null) callGeminiStreamingWithRetry(prompt, 3, streamChunk, pro) else callGeminiWithRetry(prompt, 3, pro)
         } catch (e: Exception) {
             log.error("Gemini call failed for user {}: {} — falling back to template", user.id, e.message)
             return fallbackToTemplate(user, effectiveRequest, injuries, onProgress, "AI 호출 실패")
@@ -125,7 +130,7 @@ class AIPlanGenerationService(
         var parsed = tryParse(firstRaw)
         if (parsed == null) {
             log.warn("First AI response unparsable — retrying once with JSON-only instruction")
-            val retryRaw = try { callGeminiWithRetry(prompt + PARSE_FIX_INSTRUCTION, 1) } catch (e: Exception) { "" }
+            val retryRaw = try { callGeminiWithRetry(prompt + PARSE_FIX_INSTRUCTION, 1, pro) } catch (e: Exception) { "" }
             parsed = tryParse(retryRaw)
             if (parsed == null) {
                 return fallbackToTemplate(user, effectiveRequest, injuries, onProgress, "AI 응답 파싱 실패")
@@ -141,7 +146,7 @@ class AIPlanGenerationService(
             log.warn("Quality validation failed ({} errors), regenerating with fix instructions", attempt.report.errors.size)
             progress(5, "redesigning")
             val fixPrompt = prompt + buildFixInstructions(attempt.report)
-            val retryParsed = try { tryParse(callGeminiWithRetry(fixPrompt, 1)) } catch (e: Exception) { null }
+            val retryParsed = try { tryParse(callGeminiWithRetry(fixPrompt, 1, pro)) } catch (e: Exception) { null }
             if (retryParsed != null) {
                 val retryAttempt = runPipeline(retryParsed, constraints, targets)
                 // 재시도가 더 나으면 채택, 아니면 첫 시도를 유지
@@ -514,11 +519,11 @@ class AIPlanGenerationService(
         return fallback
     }
 
-    private fun callGeminiWithRetry(prompt: String, maxRetries: Int): String {
+    private fun callGeminiWithRetry(prompt: String, maxRetries: Int, pro: Boolean = false): String {
         var lastException: Exception? = null
         repeat(maxRetries) { attempt ->
             try {
-                val response = geminiAIService.generatePlanContent(prompt)
+                val response = geminiAIService.generatePlanContent(prompt, pro)
                 log.info("Gemini attempt ${attempt + 1} response length: ${response.length}")
                 if (response.isNotBlank()) return response
                 log.warn("Gemini attempt ${attempt + 1} returned blank response")
@@ -536,12 +541,13 @@ class AIPlanGenerationService(
     private fun callGeminiStreamingWithRetry(
         prompt: String,
         maxRetries: Int,
-        onChunk: (accumulated: String, chunkSize: Int) -> Unit
+        onChunk: (accumulated: String, chunkSize: Int) -> Unit,
+        pro: Boolean = false,
     ): String {
         var lastException: Exception? = null
         repeat(maxRetries) { attempt ->
             try {
-                val response = geminiAIService.generatePlanContentStreaming(prompt, onChunk)
+                val response = geminiAIService.generatePlanContentStreaming(prompt, onChunk, pro)
                 if (response.isNotBlank()) return response
             } catch (e: Exception) {
                 log.warn("Gemini Streaming API attempt ${attempt + 1} failed: ${e.message}")

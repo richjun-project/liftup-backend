@@ -334,7 +334,7 @@ class ChatHarness(
         val ids = picks.map { RecoTestKit.bySlug.getValue(it).id }
         val json = """{"workout_name":"x","difficulty":"intermediate","estimated_calories":300,"target_muscles":[],"equipment":[],
             "exercises":[${ids.mapIndexed { i, id -> """{"id":$id,"sets":4,"reps":"8-10","rest_seconds":90,"order":${i + 1}}""" }.joinToString(",")}]}"""
-        every { g.generateRecommendations(any()) } returns json
+        every { g.generateRecommendations(any(), any()) } returns json
     }
     private val userRepository = mockk<UserRepository>().also { every { it.findById(1L) } returns Optional.of(user) }
 

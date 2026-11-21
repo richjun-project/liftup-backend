@@ -61,8 +61,11 @@ ai:
 # Google Gemini API 설정
 gemini:
   api-key: ${GEMINI_API_KEY}
-  model: gemini-flash-latest
-  plan-model: gemini-pro-latest
+  # 2026-11-21 대표 승인: 모델은 이름으로 고정(별칭 -latest 는 Google 이 평가 없이 바꾼다). 근거 scripts/eval/model_r3·complex_r4.
+  model: gemini-3.8-flash            # 채팅 에이전트·식단·무료 사용자 오늘 추천
+  plan-model: gemini-3.8-flash       # 무료 사용자 AI 주간 플랜
+  plan-model-pro: gemini-4-carbon    # 유료(구독 중) 사용자 AI 주간 플랜 — 12/1 부터 1회 약 $0.08
+  reco-model-pro: gemini-4-hydrogen  # 유료 사용자 AI 오늘 운동 추천
   max-tokens: 2048
   plan-max-tokens: 16384
   temperature: 0.7
@@ -82,7 +85,7 @@ search:
   # 실패·시간 초과·차단기 열림이면 하이브리드 결과 그대로. 기본은 꺼짐, prod·local 프로파일에서 켠다.
   rewrite:
     enabled: ${QUERY_REWRITE_ENABLED:false}
-    model: ${QUERY_REWRITE_MODEL:gemini-flash-lite-latest}
+    model: ${QUERY_REWRITE_MODEL:gemini-3.5-flash-lite}
     timeout-ms: 2500
     cache-size: 4096
     breaker-failures: 5

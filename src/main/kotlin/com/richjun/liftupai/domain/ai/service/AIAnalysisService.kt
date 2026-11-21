@@ -73,6 +73,9 @@ class AIAnalysisService(
     private val userExerciseOverrideRepository: UserExerciseOverrideRepository,
     private val trainerContextBuilder: TrainerContextBuilder,
     private val coachAgentService: com.richjun.liftupai.domain.ai.agent.CoachAgentService,
+    /** 유료 여부로 오늘 운동 추천 모델을 고른다(없으면 무료로 본다 — 테스트 생성자 호환) */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private val subscriptionService: com.richjun.liftupai.domain.subscription.service.SubscriptionService? = null
 ) {
 
 
@@ -482,7 +485,9 @@ class AIAnalysisService(
 
         // 3단계: AI가 후보 중에서 선택
         val t1 = System.nanoTime()
-        val aiResponse = geminiAIService.generateRecommendations(prompt)
+        // 유료(구독 중)는 더 좋은 추천 모델(gemini.reco-model-pro), 무료는 기본 모델 — 11-21 대표 결정
+        val pro = subscriptionService?.hasActiveSubscription(userId) ?: false
+        val aiResponse = geminiAIService.generateRecommendations(prompt, pro)
         val t2 = System.nanoTime()
 
         // AI 응답을 WorkoutRecommendationDetail로 파싱

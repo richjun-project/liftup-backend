@@ -34,8 +34,11 @@ class GeminiAgentModel(
     @Value("\${gemini.api-key}")
     private lateinit var apiKey: String
 
-    @Value("\${ai.agent.model:\${gemini.model:gemini-flash-latest}}")
+    @Value("\${ai.agent.model:\${gemini.model:gemini-3.8-flash}}")
     private lateinit var model: String
+
+    @Value("\${gemini.base-url:https://generativelanguage.googleapis.com}")
+    private var baseUrl: String = "https://generativelanguage.googleapis.com"
 
     private val baseClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
@@ -49,7 +52,7 @@ class GeminiAgentModel(
             // 남은 예산만큼만 기다린다 — 앱은 30초에서 끊는다
             val client = baseClient.newBuilder().callTimeout(timeoutMs.coerceAtLeast(1_000), TimeUnit.MILLISECONDS).build()
             val request = Request.Builder()
-                .url("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey")
+                .url("$baseUrl/v1beta/models/$model:generateContent?key=$apiKey")
                 .post(objectMapper.writeValueAsString(body).toRequestBody("application/json".toMediaType()))
                 .build()
             client.newCall(request).execute().use { response ->
