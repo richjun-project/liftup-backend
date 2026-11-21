@@ -57,6 +57,10 @@ ai:
     max-rounds: 5
     soft-budget-ms: 13000
     budget-ms: 21000
+  coach:
+    # 유료 구독자에게 먼저 말 걸기(매일 체크인·월요일 주간 리뷰, 2026-11-21) — 문제 시 env AI_COACH_PROACTIVE_MODE=off
+    proactive:
+      mode: ${AI_COACH_PROACTIVE_MODE:on}
 
 # Google Gemini API 설정
 gemini:
