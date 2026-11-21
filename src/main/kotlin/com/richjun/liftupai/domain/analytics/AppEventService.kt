@@ -138,7 +138,10 @@ class AppEventService(
             "first_workout_exit_prompt", "first_workout_exit_reason", "first_workout_reminder_prompt",
             "trainer_action_tap", "notification_permission_result",
             "exercise_search", "exercise_add", "exercise_search_error",
-            "paywall_view", "purchase_result"
+            "paywall_view", "purchase_result",
+            // 앱 안정성(2026-11-21): 화면이 떠 있는 채로 꺼진 지난 실행(크래시·강제 종료 구분)·Dart 오류 종류.
+            // 351(iOS 1.1.48)이 홈에 온 지 9초 만에 앱이 처음부터 다시 켜졌는데 크래시인지 알 길이 없었다.
+            "app_unclean_exit", "app_error"
         )
 
         /** 서버만 남기는 이벤트(앱은 보낼 수 없다) — growth/first_experience.py·KPI 가 읽는다 */

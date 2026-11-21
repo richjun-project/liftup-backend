@@ -59,6 +59,23 @@ class AppEventApiTest : ApiTestSupport() {
     }
 
     @Test
+    fun `앱 안정성 이벤트 - 지난 실행이 화면이 떠 있는 채로 꺼졌는지와 Dart 오류 종류를 남긴다`() {
+        val r = send("""{"events":[
+            {"name":"app_unclean_exit","params":{"state":"active","route":"home","uptime_s":12,"gap_s":9,"prev_version":"1.1.48+65"}},
+            {"name":"app_error","params":{"kind":"flutter","type":"_TypeError","lib":"widgets_library","route":"home"}}
+        ]}""")
+        assertEquals(202, r.status, r.contentAsString)
+        val rows = repository.findByUserIdOrderByIdAsc(user.id)
+        assertEquals(listOf("app_unclean_exit", "app_error"), rows.map { it.name })
+        val exit = objectMapper.readTree(rows[0].params)
+        assertEquals("active", exit.path("state").asText())
+        assertEquals("home", exit.path("route").asText())
+        assertEquals(9, exit.path("gap_s").asInt())
+        assertEquals("1.1.48+65", exit.path("prev_version").asText())
+        assertEquals("_TypeError", objectMapper.readTree(rows[1].params).path("type").asText())
+    }
+
+    @Test
     fun `자유 입력 문자열·중첩 값·규칙에 맞지 않는 키는 버린다`() {
         val r = send("""{"events":[{"name":"exercise_search","params":{
             "query_length":7,"result_count":12,"locale":"ja",

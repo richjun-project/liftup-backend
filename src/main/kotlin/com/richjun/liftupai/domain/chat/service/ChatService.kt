@@ -17,6 +17,7 @@ import com.richjun.liftupai.global.time.AppTime
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionTemplate
 import java.time.LocalDateTime
@@ -92,7 +93,10 @@ class ChatService(
         }
     }
 
-    @Transactional(readOnly = true)
+    // READ COMMITTED(2026-11-21): 아래 ensureWelcome 은 따로 커밋되는데, MySQL 기본(REPEATABLE READ)에선 이 트랜잭션의
+    // 첫 읽기(사용자 조회) 때 스냅샷이 잡혀 방금 만든 첫 인사를 못 본다 — 10-06 도입 뒤 신규 사용자의 첫 채팅 기록이 늘 비어
+    // 앱이 일반 인사를 띄웠다(플랜 소개·[알림 받기] 대신). H2 테스트로는 안 잡힌다 → 운영 스모크 scripts/smoke/first-welcome-smoke.mjs
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     fun getChatHistory(
         userId: Long,
         page: Int,

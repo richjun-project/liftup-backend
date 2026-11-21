@@ -299,6 +299,21 @@ class CoachToolsIntegrationTest : ApiTestSupport() {
     }
 
     @Test
+    fun `신규 사용자의 첫 채팅 기록 응답에 트레이너 첫 인사(플랜 소개·알림 받기)가 바로 들어 있다`() {
+        // 운영(MySQL REPEATABLE READ)에선 첫 응답이 비었다(2026-11-21) — 인사는 따로 커밋되고 조회는 옛 스냅샷이었다.
+        // H2 는 그 격리 차이를 재현하지 못하므로 격리 수준도 함께 지킨다.
+        userPlanService.applyTemplate(user, "beginner_fullbody", null, "ko")
+        chatMessageRepository.deleteAll(chatMessageRepository.findAll().filter { it.user.id == user.id })
+        val first = body(call(get("/api/chat/history"))).path("data").path("messages")
+        assertEquals(1, first.size(), first.toString())
+        assertTrue(first[0].path("actions").toString().contains("SET_REMINDER"), first.toString())
+        val tx = com.richjun.liftupai.domain.chat.service.ChatService::class.java.methods
+            .first { it.name == "getChatHistory" }
+            .getAnnotation(org.springframework.transaction.annotation.Transactional::class.java)
+        assertEquals(org.springframework.transaction.annotation.Isolation.READ_COMMITTED, tx.isolation)
+    }
+
+    @Test
     fun `운영 컨텍스트에서 챌린지 서비스가 에이전트에 주입된다(선택 인자라 빠지면 조용히 꺼진다)`() {
         val field = CoachAgentService::class.java.getDeclaredField("storeChallenge").apply { isAccessible = true }
         assertTrue(field.get(coachAgentService) != null)
