@@ -162,9 +162,17 @@ class ComplexModelEvalTest : ApiTestSupport() {
         val disallowed = picked.mapNotNull { byId[it.exerciseId] }.count { ex ->
             !constraints.equipmentAllowed(ex) || constraints.isRestricted(ex) || !constraints.isSuitable(ex) || !ExerciseRequirements.allows(ex, p.equipment)
         }
+        // 날 유형과 어긋난 종목(보정 전·후)과 세션 시간 넘침(+10%) — 11-22 검사기 규칙의 실측
+        val validator = ReflectionTestUtils.getField(target, "planQualityValidator") as PlanQualityValidator
+        fun mismatches(ds: List<AIPlanDayEntry>, byIdAll: Map<Long, Exercise>) =
+            ds.sumOf { d -> d.exercises.count { e -> byIdAll[e.exerciseId]?.let { !validator.fitsDayType(it, d.workoutType) } ?: false } }
+        val rawMismatch = mismatches(parsed.days, byId)
         val attempt = target.runPipeline(parsed, constraints, targets)
         val days = attempt.plan.days
+        val byIdAfter = exerciseRepository.findAllById(days.flatMap { d -> d.exercises.map { it.exerciseId } }).associateBy { it.id }
         return mapOf(
+            "type_mismatch_raw" to rawMismatch, "type_mismatch_after" to mismatches(days, byIdAfter),
+            "over_time_days" to days.count { it.estimatedDurationMinutes > p.minutes * 1.1 }, "max_min" to (days.maxOfOrNull { it.estimatedDurationMinutes } ?: 0),
             "parsed" to true, "valid" to attempt.report.isValid, "errors" to attempt.report.errors.size,
             "error_messages" to attempt.report.errors.map { it.message }.take(5),
             "warning_messages" to attempt.report.issues.filter { it.severity == IssueSeverity.WARNING }.map { it.message }.take(5),

@@ -687,7 +687,7 @@ ${buildRPETargets(request.experienceLevel, trainingStyle)}
 15. Injuries listed above are hard constraints: never include an exercise that loads an injured area.
 16. Never schedule the same workoutType on two consecutive days (except FULL_BODY). Across the week include upper body, lower body AND core.
 17. Never list the same exercise, or two exercises with the same movement pattern, in one day.
-18. The sum of set×(reps×3s + rest) per day must fit the session duration (${request.sessionDuration} min ±20%).
+18. The sum of set×(reps×3s + rest) per day must fit the session duration (${request.sessionDuration} min, at most +10% over).
 
 ## JSON Schema (respond EXACTLY in this format)
 {

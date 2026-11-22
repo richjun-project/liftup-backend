@@ -117,7 +117,10 @@ class PlanQualityValidator(
         val allIds = plan.days.flatMap { d -> d.exercises.map { it.exerciseId } }.toSet()
         val exerciseById = if (allIds.isEmpty()) emptyMap() else exerciseRepository.findAllById(allIds).associateBy { it.id }
 
-        var days = plan.days.map { day ->
+        // 0. 날 유형(밀기·당기기·하체·상체)과 어긋난 종목을 맞는 날로 옮기거나 뺀다 (11-22 실측: 밀기 날 슈러그, 하체 날 벤트오버 로우)
+        val fitted = fitDayTypes(plan.days, exerciseById, notes)
+
+        var days = fitted.map { day ->
             var exercises = day.exercises
 
             // 1. 특수 집단 고위험 동작 제거
@@ -136,7 +139,7 @@ class PlanQualityValidator(
             // 3. 하루 세트 상한
             exercises = capDailySets(exercises, targets.dailySetCap, notes, day.dayNumber)
 
-            // 4. 세션 시간 ±20% 맞춤
+            // 4. 세션 시간 맞춤(넘침 +10%·모자람 −20%)
             exercises = fitToDuration(exercises, targets, notes, day.dayNumber)
 
             day.copy(exercises = exercises.mapIndexed { i, e -> e.copy(order = i + 1) })
@@ -303,7 +306,8 @@ class PlanQualityValidator(
     ): List<AIPlanExerciseEntry> {
         val target = t.sessionDurationMinutes
         if (target <= 0 || exercises.isEmpty()) return exercises
-        val upper = target * 1.2
+        // 넘침은 10% 까지만 — 30분을 고른 사람에게 34~35분 세션이 나갔다(11-21 실측, 예전 +20%). 모자람은 −20% 그대로.
+        val upper = target * OVER_TOLERANCE
         val lower = target * 0.8
         var list = exercises
         val before = estimateDurationMinutes(list)
@@ -329,8 +333,90 @@ class PlanQualityValidator(
             list = list.toMutableList().also { it[idx] = it[idx].copy(sets = it[idx].sets + 1) }
             est = estimateDurationMinutes(list)
         }
-        if (est != before) notes.add("Day $day: estimated ${before}min → ${est}min to fit ${target}min (±20%)")
+        if (est != before) notes.add("Day $day: estimated ${before}min → ${est}min to fit ${target}min (+10%/−20%)")
         return list
+    }
+
+    /**
+     * 날 유형과 어긋난 종목: 그 종목이 맞는 다른 날(같은 종목·같은 동작 패턴이 없는 날, 전용 날 먼저 그다음 전신)로
+     * ① 그날이 [MIN_DAY_EXERCISES] 종목보다 많으면 옮기고 ② 아니면 그 날의 종목과 맞바꾸고(종목 수 그대로)
+     * ③ 둘 다 안 되면 넉넉할 때만 뺀다. 그래도 남으면 validate 가 경고한다(얇은 날을 만들지 않는다 — 11-22 실측 3종목 29분).
+     */
+    internal fun fitDayTypes(days: List<AIPlanDayEntry>, byId: Map<Long, Exercise>, notes: MutableList<String>): List<AIPlanDayEntry> {
+        val work = days.map { it.copy(exercises = it.exercises.toMutableList()) }
+        // 같은 종목이거나 검사기(7-b)와 같은 기준으로 같은 동작 패턴이면 "이미 있음" — 옮기고 바꿔서 7-b 오류를 만들지 않는다
+        fun patternOf(id: Long) = byId[id]?.let { exercisePatternClassifier.classifyExercise(it) }
+        fun MutableList<AIPlanExerciseEntry>.hasSame(id: Long, @Suppress("UNUSED_PARAMETER") pattern: String?, except: AIPlanExerciseEntry? = null): Boolean {
+            val p = patternOf(id)
+            return any { o -> o !== except && (o.exerciseId == id || (p != null && patternOf(o.exerciseId) == p)) }
+        }
+        for (d in work) {
+            val list = d.exercises as MutableList<AIPlanExerciseEntry>
+            for (e in list.toList()) {
+                if (e !in list) continue
+                val ex = byId[e.exerciseId] ?: continue
+                if (fitsDayType(ex, d.workoutType)) continue
+                val dests = work.filter { o ->
+                    o !== d && fitsDayType(ex, o.workoutType) && !(o.exercises as MutableList<AIPlanExerciseEntry>).hasSame(e.exerciseId, ex.movementPattern)
+                }.sortedBy { o -> if (o.workoutType.uppercase() == "FULL_BODY") 1 else 0 }
+                // ① 그날이 넉넉하면(5종목 초과) 맞는 날로 옮긴다
+                val move = dests.firstOrNull().takeIf { list.size > MIN_DAY_EXERCISES }
+                if (move != null) {
+                    list.remove(e)
+                    (move.exercises as MutableList<AIPlanExerciseEntry>).add(e)
+                    notes.add("Day ${d.dayNumber}: moved '${e.exerciseName}' (${ex.category}) from ${d.workoutType} to Day ${move.dayNumber} (${move.workoutType})")
+                    continue
+                }
+                // ② 아니면 맞는 날의 종목 하나와 맞바꾼다(두 날 종목 수 그대로) — 그쪽에서도 어긋난 종목을 먼저, 그다음 코어처럼 양쪽 다 맞는 종목
+                val swap = dests.asSequence().flatMap { o ->
+                    val other = o.exercises as MutableList<AIPlanExerciseEntry>
+                    other.asSequence().mapNotNull { y ->
+                        val yx = byId[y.exerciseId] ?: return@mapNotNull null
+                        if (!fitsDayType(yx, d.workoutType) || list.hasSame(y.exerciseId, yx.movementPattern, except = e)) return@mapNotNull null
+                        val rank = when {
+                            !fitsDayType(yx, o.workoutType) -> 0
+                            yx.category == ExerciseCategory.CORE -> 1
+                            else -> 2
+                        }
+                        Triple(o, y, rank)
+                    }
+                }.minByOrNull { it.third }
+                if (swap != null) {
+                    val (o, y, _) = swap
+                    val other = o.exercises as MutableList<AIPlanExerciseEntry>
+                    list[list.indexOf(e)] = y
+                    other[other.indexOf(y)] = e
+                    notes.add("Day ${d.dayNumber}: swapped '${e.exerciseName}' (${ex.category}) with '${y.exerciseName}' from Day ${o.dayNumber} (${o.workoutType})")
+                    continue
+                }
+                // ③ 옮길 곳도 바꿀 것도 없으면 넉넉할 때만 뺀다
+                if (list.size > MIN_DAY_EXERCISES) {
+                    list.remove(e)
+                    notes.add("Day ${d.dayNumber}: removed '${e.exerciseName}' (${ex.category}) — does not fit ${d.workoutType}")
+                }
+            }
+        }
+        return work.map { it.copy(exercises = it.exercises.toList()) }
+    }
+
+    /**
+     * 이 종목이 그날 유형에 맞는가. 밀기 날 = 등·당기기 동작·이두 아님, 당기기 날 = 가슴·밀기 동작·삼두 아님,
+     * 하체 날 = 다리·코어·유산소·힙힌지(데드리프트·RDL), 상체 날 = 다리 아님. 그 밖(전신·부위 날)은 다 맞다.
+     * 다리는 밀기·당기기 날에 넣어도 된다(밀기/당기기 2분할은 스쿼트·데드리프트를 그 날에 둔다).
+     */
+    internal fun fitsDayType(ex: Exercise, workoutType: String): Boolean {
+        val pattern = ex.movementPattern?.uppercase().orEmpty()
+        val c = ex.category
+        val pulling = c == ExerciseCategory.BACK || pattern in PULL_PATTERNS || pattern.startsWith("BICEP_CURL")
+        val pushing = c == ExerciseCategory.CHEST || pattern in PUSH_PATTERNS || pattern.startsWith("TRICEP") ||
+            pattern.startsWith("HORIZONTAL_PRESS") || pattern.startsWith("INCLINE_PRESS") || pattern.startsWith("VERTICAL_PRESS")
+        return when (workoutType.uppercase()) {
+            "PUSH" -> !pulling
+            "PULL" -> !pushing
+            "LOWER", "LEGS" -> c == ExerciseCategory.LEGS || c == ExerciseCategory.CORE || c == ExerciseCategory.CARDIO || pattern in HINGE_PATTERNS
+            "UPPER" -> c != ExerciseCategory.LEGS
+            else -> true
+        }
     }
 
     // ───────────────────────────── 검증 (validate) ─────────────────────────────
@@ -396,6 +482,13 @@ class PlanQualityValidator(
 
         // 7. 하루 안의 운동 중복 — 동일 운동 / 동일 동작 패턴 / 후보군 이탈
         val exerciseById = validateWithinDayDuplicates(plan, issues)
+
+        // 7-d. 날 유형과 어긋난 종목(정규화가 옮기지도 빼지도 못하고 남은 것)
+        plan.days.forEach { d ->
+            d.exercises.mapNotNull { exerciseById[it.exerciseId] }.filterNot { fitsDayType(it, d.workoutType) }.forEach { ex ->
+                issues.add(QualityIssue(IssueSeverity.WARNING, "Day ${d.dayNumber} (${d.workoutType}): '${ex.name}' does not fit the day type"))
+            }
+        }
 
         // 8. 주간 균형 + 연속 같은 부위 + 목표 반복 범위 (targets 가 있을 때)
         if (targets != null) {
@@ -519,7 +612,7 @@ class PlanQualityValidator(
         if (t.sessionDurationMinutes <= 0) return
         plan.days.forEach { d ->
             val est = estimateDurationMinutes(d.exercises)
-            if (est > t.sessionDurationMinutes * 1.2 || est < t.sessionDurationMinutes * 0.8) {
+            if (est > t.sessionDurationMinutes * OVER_TOLERANCE || est < t.sessionDurationMinutes * 0.8) {
                 issues.add(QualityIssue(IssueSeverity.WARNING,
                     "Day ${d.dayNumber}: estimated ${est}min vs requested ${t.sessionDurationMinutes}min"))
             }
@@ -538,6 +631,14 @@ class PlanQualityValidator(
 
     companion object {
         const val TEMPO_SECONDS_PER_REP = 3.0
+        /** 날 유형 맞추기로 옮기거나 뺀 뒤에도 남아야 할 하루 종목 수 */
+        const val MIN_DAY_EXERCISES = 5
+        /** 세션 시간 넘침 허용(목표 × 1.1) */
+        const val OVER_TOLERANCE = 1.1
+        private val PULL_PATTERNS = setOf("SHRUG", "FACE_PULL", "REAR_DELT", "BARBELL_ROW", "DUMBBELL_ROW", "CABLE_ROW", "INVERTED_ROW",
+            "LAT_PULLDOWN", "PULLUP_CHINUP", "DEADLIFT", "HIP_HINGE")
+        private val PUSH_PATTERNS = setOf("PUSHUP", "DIPS", "FLY", "DECLINE_PRESS", "FRONT_RAISE")
+        private val HINGE_PATTERNS = setOf("DEADLIFT", "HIP_HINGE", "GLUTE_FOCUSED")
         const val SETUP_SECONDS_PER_EXERCISE = 60.0
         const val WARMUP_MINUTES = 5.0
 
