@@ -138,17 +138,24 @@ class FcmNotificationService(
     }
 
     private fun configureIOSMessage(builder: Message.Builder) {
-        builder.setApnsConfig(
-            ApnsConfig.builder()
-                .setAps(
-                    Aps.builder()
-                        .setSound("default")
-                        .setBadge(1)
-                        .setContentAvailable(true)
-                        .build()
-                )
-                .build()
-        )
+        builder.setApnsConfig(iosApnsConfig())
+    }
+
+    companion object {
+        /**
+         * iOS 알림 APNs 설정. content-available 은 넣지 않는다(2026-11-22) — 넣으면 iOS 가 알림마다 앱을 백그라운드에서 켜고
+         * (앱의 백그라운드 핸들러는 Firebase 초기화뿐이라 할 일이 없다) main() 이 API 를 불러 토큰을 갱신한 뒤 곧바로 재워져,
+         * 갱신 응답을 잃은 앱이 다음 실행에서 로그아웃됐다(339: 알림 2.4초 뒤 백그라운드 실행 → 갱신 401).
+         * 알림 표시·탭(onMessageOpenedApp·getInitialMessage)·앱이 켜져 있을 때(onMessage)는 그대로 동작한다.
+         */
+        fun iosApnsConfig(): ApnsConfig = ApnsConfig.builder()
+            .setAps(
+                Aps.builder()
+                    .setSound("default")
+                    .setBadge(1)
+                    .build()
+            )
+            .build()
     }
 
     private fun configureWebMessage(builder: Message.Builder) {

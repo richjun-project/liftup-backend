@@ -114,6 +114,7 @@ class AuthService(
 
         // Refresh token 저장
         savedUser.refreshToken = refreshToken
+        savedUser.refreshFloorAt = null // 새 로그인 = 새 세션: 다른 기기의 옛 리프레시 토큰은 안 받는다(옛 동작 유지, RefreshTokenFamily)
         userRepository.save(savedUser)
 
         return AuthResponse(
@@ -151,6 +152,7 @@ class AuthService(
 
         // Refresh token 저장
         user.refreshToken = refreshToken
+        user.refreshFloorAt = null // 새 로그인 = 새 세션: 다른 기기의 옛 리프레시 토큰은 안 받는다(옛 동작 유지, RefreshTokenFamily)
         userRepository.save(user)
 
         val profileDto = user.profile?.let { profile ->
@@ -183,13 +185,24 @@ class AuthService(
         if (!jwtTokenProvider.validateToken(request.refreshToken)) {
             throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_refresh_token", locale))
         }
+        // 액세스 토큰(수명 1시간)은 여기서 걸린다
+        val claims = jwtTokenProvider.parseRefreshToken(request.refreshToken)
+            ?: throw InvalidCredentialsException(ErrorLocalization.message("error.invalid_refresh_token", locale))
 
-        val user = userRepository.findByRefreshToken(request.refreshToken)
-            .orElseThrow { InvalidCredentialsException(ErrorLocalization.message("error.refresh_token_mismatch", locale)) }
+        // 저장된 토큰과 같으면 그대로, 아니면 '가족' 규칙(갱신 응답을 못 받은 앱의 직전 토큰) — RefreshTokenFamily
+        val user = userRepository.findByRefreshToken(request.refreshToken).orElse(null)
+            ?: userRepository.findById(claims.userId).orElse(null)
+                ?.takeIf { RefreshTokenFamily.accepts(it, claims) }
+                ?.also { log.info("[AUTH] refresh accepted by family user={} iat={} floor={}", it.id, claims.issuedAt, it.refreshFloorAt) }
+            ?: run {
+                log.info("[AUTH] refresh rejected user={} iat={}", claims.userId, claims.issuedAt)
+                throw InvalidCredentialsException(ErrorLocalization.message("error.refresh_token_mismatch", locale))
+            }
 
         val accessToken = jwtTokenProvider.generateAccessToken(user.id, user.email ?: user.deviceId ?: user.id.toString())
         val newRefreshToken = jwtTokenProvider.generateRefreshToken(user.id, user.email ?: user.deviceId ?: user.id.toString())
 
+        user.refreshFloorAt = RefreshTokenFamily.nextFloor(user.refreshFloorAt, claims.issuedAt)
         user.refreshToken = newRefreshToken
         // 리프레시는 활성 사용자의 유일한 주기적 인증 접점 — DAU 측정을 위해 여기서도 갱신한다
         user.lastLoginAt = AppTime.utcNow()
@@ -209,6 +222,7 @@ class AuthService(
             .orElseThrow { ResourceNotFoundException(ErrorLocalization.message("error.user_not_found", locale)) }
 
         user.refreshToken = null
+        user.refreshFloorAt = null // 로그아웃 뒤엔 어떤 옛 리프레시 토큰도 안 받는다
         userRepository.save(user)
     }
 
@@ -340,6 +354,7 @@ class AuthService(
 
         // Refresh token 저장
         savedUser.refreshToken = refreshToken
+        savedUser.refreshFloorAt = null // 새 로그인 = 새 세션: 다른 기기의 옛 리프레시 토큰은 안 받는다(옛 동작 유지, RefreshTokenFamily)
         userRepository.save(savedUser)
 
         return DeviceAuthResponse(
@@ -375,6 +390,7 @@ class AuthService(
 
         // Refresh token 저장
         user.refreshToken = refreshToken
+        user.refreshFloorAt = null // 새 로그인 = 새 세션: 다른 기기의 옛 리프레시 토큰은 안 받는다(옛 동작 유지, RefreshTokenFamily)
         userRepository.save(user)
 
         // 디바이스 세션 업데이트

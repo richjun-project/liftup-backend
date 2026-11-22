@@ -194,6 +194,8 @@ class OAuthService(
         val refreshToken = jwtTokenProvider.generateRefreshToken(user.id, identifier)
 
         user.refreshToken = refreshToken
+
+        user.refreshFloorAt = null // 새 로그인 = 새 세션: 다른 기기의 옛 리프레시 토큰은 안 받는다(옛 동작 유지, RefreshTokenFamily)
         user.lastLoginAt = AppTime.utcNow()
         userRepository.save(user)
 

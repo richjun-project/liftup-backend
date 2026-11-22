@@ -93,7 +93,10 @@ class AuthServiceTest {
     @Test
     fun `refresh token 형식은 유효하지만 저장된 사용자가 없으면 InvalidCredentialsException이 발생한다`() {
         every { jwtTokenProvider.validateToken("stale-refresh-token") } returns true
+        every { jwtTokenProvider.parseRefreshToken("stale-refresh-token") } returns
+            com.richjun.liftupai.global.security.RefreshTokenClaims(99L, java.time.LocalDateTime.of(2026, 11, 1, 0, 0))
         every { userRepository.findByRefreshToken("stale-refresh-token") } returns Optional.empty()
+        every { userRepository.findById(99L) } returns Optional.empty()
 
         val request = RefreshTokenRequest(refreshToken = "stale-refresh-token")
 

@@ -40,6 +40,11 @@ class User(
     @Column(length = 1024)
     var refreshToken: String? = null,
 
+    // 이 시각(UTC, 초) 이후 발급된 이 사용자의 리프레시 토큰은 받아 준다 — 갱신 응답을 못 받은 앱이
+    // 직전 토큰으로 다시 와도 로그아웃되지 않게(V20261122001, RefreshTokenFamily). null 이면 저장된 토큰과 같아야만.
+    @Column(name = "refresh_floor_at")
+    var refreshFloorAt: LocalDateTime? = null,
+
     @Column(name = "device_id", unique = true)
     var deviceId: String? = null,
 
