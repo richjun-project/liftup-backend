@@ -453,7 +453,17 @@ class AIAnalysisService(
             .flatMap { cat -> try { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(cat).take(12) } catch (e: Exception) { emptyList() } }
             .let { if (userInjuries.isEmpty()) it else injuryFilterService.filterExercises(it, userInjuries) }
             .filter { equipmentUsable(it, normalizedEquipment) }
-        val candidateExercises = applyExerciseOverrides(user, (injuryFilteredCandidates + planEligibleExtra).distinctBy { it.id }, userInjuries)
+        // 집중 부위 후보(11-22): 오늘 목표가 허락하는 집중 부위의 추천 가능 종목을 인기순으로 몇 개 보탠다 — 몫(약 1/3)을 채울 재료
+        // 거르기(부상·장비·할 수 있는지) 다음에 자른다 — 먼저 자르면 무릎 부상·홈트 사용자는 인기 상위(스쿼트·바벨)가 다 걸러져 글루트 후보가 1개였다(11-22 실측)
+        val focusExtra = focusShare(ctx.focusAreas, adjustedTargetMuscle, targetExerciseCount(resolvedDuration)).areas
+            .flatMap { area ->
+                area.candidateCategories()
+                    .flatMap { cat -> try { exerciseRepository.findPlanEligibleByCategoryOrderByPopularity(cat) } catch (e: Exception) { emptyList() } }
+                    .filter { area.hits(it) && equipmentUsable(it, normalizedEquipment) && suitable(it) }
+                    .let { if (userInjuries.isEmpty()) it else injuryFilterService.filterExercises(it, userInjuries) }
+                    .take(6)
+            }
+        val candidateExercises = applyExerciseOverrides(user, (injuryFilteredCandidates + planEligibleExtra + focusExtra).distinctBy { it.id }, userInjuries)
             .let { list -> list.filter(suitable).ifEmpty { list } }
             // 벡터 후보에는 "햄스트링 컬 펀치", "사이드 킥 스쿼트" 같은 특수·킥복싱 동작이 섞인다 — 전문 파워리프터의
             // 첫 종목으로 나갔다(골든셋 2026-09-28). 추천 가능(plan-eligible) 종목이 충분하면 그것만, 아니면 SPECIALIZED 만 뺀다.
@@ -674,6 +684,12 @@ class AIAnalysisService(
         // 프롬프트도 후처리와 같은 부상 집합(프로필 ∪ 설정)을 본다 — 예전엔 설정이 비어 있으면 "Injuries: none" 이 나갔다
         val userInjuries = if (ctx === UserTrainingContextResolver.Context.EMPTY) resolveUserInjuries(settings, profile) else ctx.injuries
         val focusAreasText = ctx.focusAreas.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.name.lowercase() }
+        // 집중 부위 몫을 숫자로(11-22) — 예전 "최소 하나"는 글루트 집중 사용자에게 글루트 1종목만 나오게 했다
+        val share = focusShare(ctx.focusAreas, targetMuscle, targetExerciseCount(workoutDuration))
+        val focusRule = if (share.quota <= 0) "No focus areas are listed; balance the session normally."
+            else if (share.quota == 1) "Include at least one exercise that directly trains the focus areas (${share.areas.joinToString(", ") { it.name.lowercase() }})."
+            else "Focus areas get priority: at least ${share.quota} of the exercises must directly train ${share.areas.joinToString(" / ") { it.name.lowercase() }}" +
+                (if (share.areas.size > 1) " (at least one for each)" else "") + ". Keep the rest of the session balanced."
 
         val profileInfo = """
             User profile:
@@ -884,7 +900,7 @@ class AIAnalysisService(
             6. Order exercises from large muscle groups to small, and compound to isolation.
             7. At least 70% of the selected exercises should be CORE exercises when available.
             8. All exercise IDs must come from the provided candidate list.
-            9. If focus areas are listed, include at least one exercise that trains them (when today's target allows it).
+            9. $focusRule
             10. Keep phase names and periodization jargon (accumulation, intensification, realization, deload) out of workout_name; describe the session in plain words.
 
             Respond with this JSON schema only:
@@ -1058,9 +1074,10 @@ class AIAnalysisService(
             // AI 가 목표 개수보다 적게(흔히 3종목 중 2개가 코어) 고르면 이미 안전 필터를 통과한 후보에서 코어가 아닌 종목으로 채운다.
             // 골든셋 2026-09-28: 75분 요청에 3종목(플랭크 2개) → 세트를 5로 늘려도 33분 분량이었다.
             val target = targetExerciseCount(workoutDuration)
-            // 집중 부위(굵은 팔·힙업 …)가 하나도 안 들어갔으면 안전 필터를 통과한 후보에서 집중 부위 운동 하나를 보장한다 (F09)
-            val focusPick = ensureFocusPick(equipmentSafeById, topUpPool, focus, availableEquipment, suitable)
-            val withFocus = equipmentSafeById + listOfNotNull(focusPick).associateBy { it.id }
+            // 집중 부위(굵은 팔·힙업 …) 몫: 오늘 목표가 허락하면 종목의 약 1/3, 아니면 하나 — 모자라면 안전 필터를 통과한 후보에서 채운다 (F09 → 11-22)
+            val share = focusShare(focus, targetMuscle, maxExercises ?: target)
+            val focusPicks = ensureFocusPicks(equipmentSafeById, topUpPool, share, availableEquipment, suitable, targetMuscle)
+            val withFocus = equipmentSafeById + focusPicks.associateBy { it.id }
             val firstPass = topUpPicks(withFocus, topUpPool, target, availableEquipment, suitable, focus)
             // 벡터 후보가 작으면(부상·맨몸 사용자) 추천 가능 종목 전체에서 더 채운다 — 부상 필터 통과분만
             val topUps = if (withFocus.size + firstPass.size >= target) firstPass else {
@@ -1070,7 +1087,7 @@ class AIAnalysisService(
                 firstPass + topUpPicks(withFocus + firstPass.associateBy { it.id }, wider, target, availableEquipment, suitable, focus)
             }
             val exerciseById = withFocus + topUps.associateBy { it.id }
-            val exercisesList = aiExercisesList + (replacements + listOfNotNull(focusPick) + topUps).map { mapOf<String, Any>("id" to it.id, "sets" to 3) }
+            val exercisesList = aiExercisesList + (replacements + focusPicks + topUps).map { mapOf<String, Any>("id" to it.id, "sets" to 3) }
             val translations = translationMap(exerciseById.values, locale)
             val usedExerciseIds = mutableSetOf<Long>()
             val minRestById = mutableMapOf<String, Int>()
@@ -1192,7 +1209,7 @@ class AIAnalysisService(
                 throw IllegalStateException("AI returned insufficient exercises: ${exercises.size} < $minExercises")
             }
 
-            val fittedExercises = fitToDuration(exercises, minRestById, workoutDuration, maxSetsById, exerciseById, focus)
+            val fittedExercises = fitToDuration(exercises, minRestById, workoutDuration, maxSetsById, exerciseById, focus, focusKeep = share.quota)
             println("AI workout recommendation completed with ${exercises.size} exercises (${fittedExercises.size} after fitting ${workoutDuration}min)")
 
             val workoutName = (jsonResponse["workout_name"] as? String)
@@ -1501,30 +1518,67 @@ class AIAnalysisService(
         return out
     }
 
+    /** 오늘 집중 부위 몫: 허락된 부위와 최소 종목 수 */
+    internal data class FocusShare(val areas: List<FocusArea>, val quota: Int)
+
     /**
-     * 집중 부위(굵은 팔·힙업 …)를 하나도 다루지 않는 추천이면, 안전 필터를 통과한 후보에서 집중 부위 운동 하나를 고른다.
-     * 이미 하나라도 들어 있거나 후보가 없으면 null. 코어 집중(six_pack)은 코어 운동도 후보로 인정한다.
+     * 집중 부위 몫(11-22): 오늘 목표(전신·하체 날의 글루트, 상체·밀기·당기기 날의 팔 …)가 그 부위를 허락하면
+     * 종목 수의 35%(반올림, 허락된 부위 수 이상, 종목 수 − 1 이하), 허락하지 않으면 예전처럼 하나.
+     * 예: 30분 4종목 → 1, 45~75분 5~7종목 → 2, 90분 8종목 → 3. 실측: 60분 글루트 집중 사용자에게 글루트 1종목(complex_r4 심사).
      */
-    internal fun ensureFocusPick(
+    internal fun focusShare(focus: List<FocusArea>, targetMuscle: String?, exerciseCount: Int): FocusShare {
+        if (focus.isEmpty() || exerciseCount <= 0) return FocusShare(emptyList(), 0)
+        val today = WorkoutTargetResolver.resolveFocus(targetMuscle) ?: WorkoutFocus.FULL_BODY
+        val allowed = focus.filter { allowsFocus(it, today) }
+        if (allowed.isEmpty()) return FocusShare(focus, 1)
+        val quota = maxOf(allowed.size, kotlin.math.round(exerciseCount * 0.35).toInt(), 1).coerceAtMost(maxOf(1, exerciseCount - 1))
+        return FocusShare(allowed, quota)
+    }
+
+    private fun allowsFocus(area: FocusArea, today: WorkoutFocus): Boolean = when (today) {
+        WorkoutFocus.FULL_BODY -> true
+        else -> when (area) {
+            FocusArea.GLUTES, FocusArea.LEGS -> today in setOf(WorkoutFocus.LEGS, WorkoutFocus.LOWER)
+            FocusArea.ARMS -> today in setOf(WorkoutFocus.ARMS, WorkoutFocus.UPPER, WorkoutFocus.PUSH, WorkoutFocus.PULL)
+            FocusArea.CHEST -> today in setOf(WorkoutFocus.CHEST, WorkoutFocus.PUSH, WorkoutFocus.UPPER)
+            FocusArea.BACK -> today in setOf(WorkoutFocus.BACK, WorkoutFocus.PULL, WorkoutFocus.UPPER)
+            FocusArea.SHOULDERS -> today in setOf(WorkoutFocus.SHOULDERS, WorkoutFocus.PUSH, WorkoutFocus.UPPER)
+            FocusArea.CORE -> true
+        }
+    }
+
+    /**
+     * 집중 부위 종목이 몫보다 적으면 후보에서 채운다 — 가장 덜 채운 부위부터, 이미 고른 것과 다른 동작 패턴, 대표(ESSENTIAL)·인기순.
+     * 밀기 날의 팔은 삼두, 당기기 날의 팔은 이두([FocusArea.fitsExerciseOnDay]).
+     */
+    internal fun ensureFocusPicks(
         chosen: Map<Long, Exercise>,
         pool: List<Exercise>,
-        focus: List<FocusArea>,
+        share: FocusShare,
         availableEquipment: Set<String>,
         suitable: (Exercise) -> Boolean,
-    ): Exercise? {
-        if (focus.isEmpty() || chosen.values.any { ex -> focus.any { it.hits(ex) } }) return null
+        targetMuscle: String? = null,
+    ): List<Exercise> {
+        if (share.quota <= 0 || share.areas.isEmpty()) return emptyList()
+        val dayType = (WorkoutTargetResolver.resolveFocus(targetMuscle) ?: WorkoutFocus.FULL_BODY).name
         val available = normalizeAvailableEquipment(availableEquipment)
-        val usedNames = chosen.values.map { it.name.trim().lowercase() }.toSet()
+        val picks = mutableListOf<Exercise>()
+        fun current() = chosen.values + picks
+        fun total() = current().count { ex -> share.areas.any { it.hits(ex) } }
         val candidates = pool.filter { c ->
-            c.id !in chosen.keys && c.name.trim().lowercase() !in usedNames && c.category != ExerciseCategory.CARDIO &&
-                equipmentUsable(c, available) && suitable(c)
+            c.id !in chosen.keys && c.category != ExerciseCategory.CARDIO && equipmentUsable(c, available) && suitable(c)
+        }.distinctBy { it.id }
+        while (total() < share.quota) {
+            val usedNames = current().map { it.name.trim().lowercase() }.toSet()
+            val usedPatterns = current().mapNotNull { it.movementPattern }.filter { it != "OTHER" }.toSet()
+            val pick = share.areas.sortedBy { area -> current().count { area.hits(it) } }.firstNotNullOfOrNull { area ->
+                candidates.filter { it !in picks && it.name.trim().lowercase() !in usedNames && area.hits(it) && area.fitsExerciseOnDay(it, dayType) }
+                    .minWithOrNull(compareBy<Exercise>({ if (it.movementPattern in usedPatterns) 1 else 0 },
+                        { if (it.recommendationTier == RecommendationTier.ESSENTIAL) 0 else 1 }, { -it.popularity }, { it.id }))
+            } ?: break
+            picks += pick
         }
-        for (area in focus) {
-            candidates.filter { area.hits(it) }
-                .minWithOrNull(compareBy<Exercise>({ if (it.recommendationTier == RecommendationTier.ESSENTIAL) 0 else 1 }, { -it.popularity }, { it.id }))
-                ?.let { return it }
-        }
-        return null
+        return picks
     }
 
     /**
@@ -1539,7 +1593,10 @@ class AIAnalysisService(
         maxSetsById: Map<String, Int> = emptyMap(),
         exerciseById: Map<Long, Exercise> = emptyMap(),
         focus: List<FocusArea> = emptyList(),
+        /** 시간 때문에 빼더라도 집중 부위 종목은 이만큼 남긴다(11-22 집중 부위 몫) */
+        focusKeep: Int = 0,
     ): List<AIExerciseDetail> {
+        fun isFocus(i: Int) = exerciseById[exercises[i].exerciseId.toLongOrNull() ?: 0L]?.let { ex -> focus.any { it.hits(ex) } } ?: false
         val slots = exercises.map {
             val ex = exerciseById[it.exerciseId.toLongOrNull() ?: 0L]
             val restUp = if (ex != null) RecoRules.maxRestFor(ex, RecoRules.isCompound(ex), it.reps.substringBefore('-').trim().toIntOrNull() ?: 10) else 90
@@ -1550,7 +1607,10 @@ class AIAnalysisService(
             )
         }
         val result = SessionFit.fit(slots, durationMinutes, minExercises = 3, pickDrop = { kept, _ ->
-            val candidates = (1 until kept.size).toList()
+            val all = (1 until kept.size).toList()
+            val focusKept = kept.count { isFocus(it) }
+            // 집중 부위 종목이 몫 이하로 남았으면 그것들은 빼지 않는다(다른 종목이 없을 때만)
+            val candidates = if (focusKept <= focusKeep) all.filterNot { isFocus(kept[it]) }.ifEmpty { all } else all
             candidates.minWithOrNull(compareBy<Int>({ pos ->
                 val d = exercises[kept[pos]]
                 val ex = exerciseById[d.exerciseId.toLongOrNull() ?: 0L]

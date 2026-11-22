@@ -76,6 +76,8 @@ class ComplexModelEvalTest : ApiTestSupport() {
         settingsRepository.save(UserSettings(user = user).apply {
             language = p.locale; timeZone = mapOf("ko" to "Asia/Seoul", "ja" to "Asia/Tokyo").getOrDefault(p.locale, "America/Los_Angeles")
             availableEquipment = p.equipment.toMutableSet(); injuries = p.injuries.toMutableSet(); weeklyWorkoutDays = p.days; workoutDuration = p.minutes
+            // 온보딩이 저장하는 세부 집중 목표(UserService.storeFocusGoals)와 같게 — 없으면 추천 프롬프트가 "Focus areas: none"(11-22 발견)
+            focusGoals = p.goals.filter { FocusArea.isFocusGoal(it) }.toMutableSet()
         })
         return user
     }
