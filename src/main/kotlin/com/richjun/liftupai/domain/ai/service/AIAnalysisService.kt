@@ -1198,7 +1198,7 @@ class AIAnalysisService(
                         categoryPriority[exOf(detail)?.category?.name] ?: 99
                     }.thenByDescending { detail -> exOf(detail)?.popularity ?: 0 }
                 ).mapIndexed { idx, ex -> ex.copy(order = idx + 1) }
-            }.let { sorted -> if (maxExercises != null) sorted.take(maxExercises) else sorted }
+            }.let { sorted -> if (maxExercises != null) takeKeepingFocus(sorted, maxExercises, share.areas) { exerciseById[it.exerciseId.toLongOrNull() ?: 0L] } else sorted }
 
             // AI 가 3~5종목을 고르면 세트 수로 시간을 채운다(fitToDuration). 예전 하한(30분 5·45분 6·그 이상 7종목)은
             // 정상적인 AI 선택을 버리고 규칙 폴백으로 보냈다 — 골든셋 2026-09-28 맞춤 추천 60건 중 38건.
@@ -1209,7 +1209,7 @@ class AIAnalysisService(
                 throw IllegalStateException("AI returned insufficient exercises: ${exercises.size} < $minExercises")
             }
 
-            val fittedExercises = fitToDuration(exercises, minRestById, workoutDuration, maxSetsById, exerciseById, focus, focusKeep = share.quota)
+            val fittedExercises = fitToDuration(exercises, minRestById, workoutDuration, maxSetsById, exerciseById, share.areas.ifEmpty { focus }, focusKeep = share.quota)
             println("AI workout recommendation completed with ${exercises.size} exercises (${fittedExercises.size} after fitting ${workoutDuration}min)")
 
             val workoutName = (jsonResponse["workout_name"] as? String)
@@ -1518,6 +1518,25 @@ class AIAnalysisService(
         return out
     }
 
+    /**
+     * 첫 세션처럼 종목 수를 자를 때 집중 부위마다 하나는 남긴다 — 정렬(복합 먼저)대로 자르면 팔 고립 종목이 늘 잘렸다(11-22).
+     * 빠진 부위가 있으면 잘린 쪽에서 그 부위 종목을 가져오고, 남은 쪽 뒤에서 집중 아닌 종목(없으면 같은 부위가 2개 이상인 종목)과 바꾼다.
+     */
+    internal fun takeKeepingFocus(sorted: List<AIExerciseDetail>, n: Int, areas: List<FocusArea>, exOf: (AIExerciseDetail) -> Exercise?): List<AIExerciseDetail> {
+        if (sorted.size <= n || areas.isEmpty()) return sorted.take(n)
+        val head = sorted.take(n).toMutableList()
+        fun hits(d: AIExerciseDetail, a: FocusArea) = exOf(d)?.let { a.hits(it) } == true
+        for (area in areas) {
+            if (head.any { hits(it, area) }) continue
+            val add = sorted.drop(n).firstOrNull { d -> hits(d, area) && d !in head } ?: continue
+            val idx = head.indices.reversed().firstOrNull { i -> areas.none { hits(head[i], it) } }
+                ?: head.indices.reversed().firstOrNull { i -> areas.filter { hits(head[i], it) }.all { a -> head.count { hits(it, a) } > 1 } }
+                ?: continue
+            head[idx] = add
+        }
+        return head.sortedBy { sorted.indexOf(it) }.mapIndexed { i, d -> d.copy(order = i + 1) }
+    }
+
     /** 오늘 집중 부위 몫: 허락된 부위와 최소 종목 수 */
     internal data class FocusShare(val areas: List<FocusArea>, val quota: Int)
 
@@ -1568,10 +1587,13 @@ class AIAnalysisService(
         val candidates = pool.filter { c ->
             c.id !in chosen.keys && c.category != ExerciseCategory.CARDIO && equipmentUsable(c, available) && suitable(c)
         }.distinctBy { it.id }
-        while (total() < share.quota) {
+        // 몫을 채우고, 부위마다 하나씩도 — 팔·글루트 집중인데 글루트 2개로 몫이 차서 팔 0이던 것(11-22 운영 스모크)
+        while (total() < share.quota || share.areas.any { a -> current().none { a.hits(it) } }) {
             val usedNames = current().map { it.name.trim().lowercase() }.toSet()
             val usedPatterns = current().mapNotNull { it.movementPattern }.filter { it != "OTHER" }.toSet()
-            val pick = share.areas.sortedBy { area -> current().count { area.hits(it) } }.firstNotNullOfOrNull { area ->
+            val missing = share.areas.filter { a -> current().none { a.hits(it) } }
+            val order = if (total() >= share.quota) missing else share.areas.sortedBy { area -> current().count { area.hits(it) } }
+            val pick = order.firstNotNullOfOrNull { area ->
                 candidates.filter { it !in picks && it.name.trim().lowercase() !in usedNames && area.hits(it) && area.fitsExerciseOnDay(it, dayType) }
                     .minWithOrNull(compareBy<Exercise>({ if (it.movementPattern in usedPatterns) 1 else 0 },
                         { if (it.recommendationTier == RecommendationTier.ESSENTIAL) 0 else 1 }, { -it.popularity }, { it.id }))
@@ -1609,8 +1631,16 @@ class AIAnalysisService(
         val result = SessionFit.fit(slots, durationMinutes, minExercises = 3, pickDrop = { kept, _ ->
             val all = (1 until kept.size).toList()
             val focusKept = kept.count { isFocus(it) }
-            // 집중 부위 종목이 몫 이하로 남았으면 그것들은 빼지 않는다(다른 종목이 없을 때만)
-            val candidates = if (focusKept <= focusKeep) all.filterNot { isFocus(kept[it]) }.ifEmpty { all } else all
+            fun exAt(i: Int) = exerciseById[exercises[i].exerciseId.toLongOrNull() ?: 0L]
+            // 그 부위의 마지막 종목이면 지킨다(부위마다 하나), 집중 종목이 몫 이하로 남았으면 그것들도 지킨다 — 다른 종목이 없을 때만 예외
+            fun guarded(pos: Int): Boolean {
+                val ex = exAt(kept[pos]) ?: return false
+                val areasHit = focus.filter { it.hits(ex) }
+                if (areasHit.isEmpty()) return false
+                if (focusKeep > 0 && focusKept <= focusKeep) return true
+                return areasHit.any { a -> kept.count { k -> exAt(k)?.let { a.hits(it) } == true } <= 1 }
+            }
+            val candidates = all.filterNot { guarded(it) }.ifEmpty { all }
             candidates.minWithOrNull(compareBy<Int>({ pos ->
                 val d = exercises[kept[pos]]
                 val ex = exerciseById[d.exerciseId.toLongOrNull() ?: 0L]

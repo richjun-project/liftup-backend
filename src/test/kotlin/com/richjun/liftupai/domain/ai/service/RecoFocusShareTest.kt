@@ -63,6 +63,30 @@ class RecoFocusShareTest {
     }
 
     @Test
+    fun `첫 세션(4종목)도 팔·글루트 집중이면 팔 1·글루트 1 — 운영 스모크 모양(모델이 스쿼트·로우·벤치·플랭크)`() {
+        val h = ChatHarness(focusGoals = listOf("big_arms", "glutes"), completedSessions = 0L, equipment = listOf("DUMBBELL", "RESISTANCE_BAND", "BODYWEIGHT"),
+            // 운영 스모크에서 모델이 고른 모양: 글루트 종목 둘(스쿼트·브리지)로 몫이 차서 팔이 0이었다
+            picks = listOf("dumbbell-goblet-squat", RecoTestKit.catalog.first { it.isPlanEligible && it.movementPattern == "GLUTE_FOCUSED" && it.equipment?.name == "BODYWEIGHT" }.slug,
+                "dumbbell-bench-press", "high-plank"))
+        val r = h.chat.getAIWorkoutRecommendation(1L)
+        val ex = r.recommendation.exercises.map { RecoTestKit.byId[it.exerciseId.toLong()]!! }
+        assertTrue(ex.count { it.category == ExerciseCategory.ARMS } >= 1, "팔 0: ${ex.map { it.slug }}")
+        assertTrue(ex.count { MuscleGroup.GLUTES in it.muscleGroups } >= 1, "글루트 0: ${ex.map { it.slug }}")
+    }
+
+    @Test
+    fun `자를 때 부위마다 하나는 남긴다 — 정렬대로 자르면 팔 고립 종목이 늘 잘렸다`() {
+        fun d(slug: String) = RecoTestKit.bySlug.getValue(slug).let { com.richjun.liftupai.domain.ai.dto.AIExerciseDetail(exerciseId = it.id.toString(), name = it.name, sets = 3, reps = "8-12", rest = 90, order = 0) }
+        val sorted = listOf("dumbbell-goblet-squat", "dumbbell-bench-press", "dumbbell-bent-over-row", "high-plank", "dumbbell-curls").map { d(it) }
+        val out = svc.takeKeepingFocus(sorted, 4, listOf(FocusArea.ARMS, FocusArea.GLUTES)) { RecoTestKit.byId[it.exerciseId.toLong()] }
+        val slugs = out.map { RecoTestKit.byId[it.exerciseId.toLong()]!!.slug }
+        assertTrue("dumbbell-curls" in slugs && "dumbbell-goblet-squat" in slugs && out.size == 4, slugs.toString())
+        assertEquals((1..4).toList(), out.map { it.order })
+        // 양성 대조: 부위가 다 들어 있으면 그냥 앞에서 자른다
+        assertEquals(sorted.take(4).map { it.exerciseId }, svc.takeKeepingFocus(sorted, 4, listOf(FocusArea.GLUTES)) { RecoTestKit.byId[it.exerciseId.toLong()] }.map { it.exerciseId })
+    }
+
+    @Test
     fun `양성 대조 — 집중 부위가 없으면 예전과 같다(프롬프트 문구·종목)`() {
         val h = ChatHarness(savedMinutes = 60)
         val r = h.chat.getAIWorkoutRecommendation(1L)
