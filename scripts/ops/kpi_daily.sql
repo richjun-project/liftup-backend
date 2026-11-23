@@ -3,7 +3,9 @@
 -- 실사용자: 개발자 계정(22) 제외. 매일 오는 Google 테스트 기기(Google 로그인 → 온보딩 없음)는 가입 수에서 따로 센다(signups_no_onboarding).
 -- 테스트 사용자(tu): 테스트 기기 이벤트가 하나라도 있는 사용자 — Play 사전 출시 로봇·Play 심사자(Google 망 IP, 2026-10-26 서버가 표시)는
 -- 온보딩·첫 세트·채팅까지 해서 실가입으로 세지고 있었다(30일 16명 중 5명). 사용자 단위 지표에서 뺀다.
-WITH tu AS (SELECT DISTINCT user_id FROM app_events WHERE test_device = 1 AND user_id IS NOT NULL),
+-- Play 심사 계정(play.review@liftupai.net, 2026-11-22 대표가 만듦)은 스크립트로 온보딩까지 채워 실가입으로 세졌다 → 테스트로 뺀다.
+WITH tu AS (SELECT DISTINCT user_id FROM app_events WHERE test_device = 1 AND user_id IS NOT NULL
+            UNION SELECT id FROM users WHERE email LIKE 'play.review@%'),
 ev AS (
   SELECT 'signups_all' m, FLOOR(TIMESTAMPDIFF(SECOND, u.join_date, UTC_TIMESTAMP()) / 86400) d, u.id k
     FROM users u WHERE u.id <> 22

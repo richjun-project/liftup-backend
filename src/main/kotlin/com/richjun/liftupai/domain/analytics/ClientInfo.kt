@@ -23,12 +23,17 @@ data class ClientInfo(
         private val VERSION = Regex("^[0-9A-Za-z.+_-]{1,32}$")
         private val PLATFORMS = setOf("ios", "android", "web")
 
-        /** Google 자체 망(검색 로봇·Firebase Test Lab·Play 심사). Google Cloud 고객 대역(34.x·35.x)은 넣지 않는다 — 일반 VPN 사용자가 섞인다. */
+        /** 스토어 심사·테스트 망: Google 자체 망(검색 로봇·Firebase Test Lab·Play 심사)과 Apple 사내망(App Store 심사).
+         *  Google Cloud 고객 대역(34.x·35.x)은 넣지 않는다 — 일반 VPN 사용자가 섞인다. */
         private val GOOGLE_TEST_NETWORKS = listOf(
             "66.249.64.0/19", "64.233.160.0/19", "74.125.0.0/16", "72.14.192.0/18", "209.85.128.0/17",
             "108.177.0.0/17", "172.253.0.0/16", "173.194.0.0/16", "216.239.32.0/19",
             "192.178.0.0/15", // 2026-10-27: 1.1.34 사전 출시 로봇이 192.178.11.x 에서 왔다(ARIN: Google LLC)
-            "66.102.0.0/20" // 2026-11-02: 1.1.37 Play 심사 기기가 66.102.6.x 에서 Google 로그인·온보딩(ARIN: Google LLC)
+            "66.102.0.0/20", // 2026-11-02: 1.1.37 Play 심사 기기가 66.102.6.x 에서 Google 로그인·온보딩(ARIN: Google LLC)
+            // App Store 심사 기기(Apple 사내망). 2026-11-22 iOS 1.1.50 심사자가 144.178.28.x 에서 Apple 로그인·온보딩까지 해
+            // '영어 실가입'으로 세졌다(377, RIPE: Apple-144-178-0-0-18). 11-13~22 출시마다 17.x 에서도 왔다. iCloud 비공개 릴레이는
+            // Apple 대역이 아니라(Akamai·Cloudflare 등) 실사용자는 섞이지 않는다.
+            "17.0.0.0/8", "144.178.0.0/18"
         ).map { cidr ->
             val (net, bits) = cidr.split("/")
             ipv4ToLong(net)!! to bits.toInt()

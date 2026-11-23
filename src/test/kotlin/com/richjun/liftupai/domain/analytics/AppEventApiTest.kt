@@ -166,6 +166,11 @@ class AppEventApiTest : ApiTestSupport() {
         assertTrue(!ClientInfo.isGoogleTestNetwork("35.200.1.1"), "Google Cloud 고객 대역은 실사용자일 수 있다")
         assertTrue(!ClientInfo.isGoogleTestNetwork("2001:db8::1"))
         assertTrue(!ClientInfo.isGoogleTestNetwork("not-an-ip"))
+        // App Store 심사 기기(Apple 사내망) — 2026-11-22 1.1.50 심사자 377
+        assertTrue(ClientInfo.isGoogleTestNetwork("144.178.28.134"), "1.1.50 App Store 심사자")
+        assertTrue(ClientInfo.isGoogleTestNetwork("17.32.111.33"), "Apple 17.0.0.0/8")
+        assertTrue(!ClientInfo.isGoogleTestNetwork("144.178.64.1"), "Apple /18 밖")
+        assertTrue(!ClientInfo.isGoogleTestNetwork("172.224.226.1"), "iCloud 비공개 릴레이(Akamai) 는 실사용자")
     }
 
     @Test
