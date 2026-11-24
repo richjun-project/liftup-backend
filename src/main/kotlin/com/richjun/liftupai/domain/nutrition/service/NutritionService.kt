@@ -206,6 +206,14 @@ class NutritionService(
     fun latestMealLogId(userId: Long): Long? =
         userRepository.findById(userId).orElse(null)?.let { mealLogRepository.findTopByUserOrderByTimestampDesc(it)?.id }
 
+    /**
+     * 그 사용자의 식사 기록이면 id, 아니면 null(던지지 않음). AI PT 도구가 없는 id 로 [deleteMealLog] 를 불러
+     * 예외가 채팅 트랜잭션을 rollback-only 로 만들면 채팅 전체가 500 이고 같은 요청의 다른 삭제·기록도 사라진다(2026-11-23).
+     */
+    @Transactional(readOnly = true)
+    fun ownedMealLogId(userId: Long, mealLogId: Long): Long? =
+        mealLogRepository.findById(mealLogId).orElse(null)?.takeIf { it.user.id == userId }?.id
+
     @Transactional(readOnly = true)
     fun getTodaySummary(userId: Long): TodayNutritionSummaryResponse {
         val user = userRepository.findById(userId)

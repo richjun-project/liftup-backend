@@ -42,6 +42,7 @@ class AgentQualityRulesTest : ApiTestSupport() {
     fun `교체 도구는 모델이 지어낸 인자 이름도 받는다`() {
         val plans = mockk<UserPlanService>(relaxed = true)
         every { plans.substituteExerciseInActivePlan(any(), any(), any()) } returns 2
+        every { plans.substitutionRefusal(any(), any(), any()) } returns null // 사전 검사 통과(relaxed 목은 null 대신 가짜 객체를 돌려준다)
         val tool = SwapExerciseTool(plans, mockk(relaxed = true), mockk(relaxed = true))
         val user = newUser("swp")
         val r1 = tool.run(ctx(user), mapper.readTree("""{"old_exercise_id": 11, "new_exercise_id": 22}"""))

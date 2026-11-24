@@ -593,6 +593,37 @@ class UserPlanService(
      *
      * @return 교체된 행 수 (플랜의 여러 날에 같은 운동이 있으면 모두 교체)
      */
+    /** 교체를 받지 않는 이유 — [noActivePlan] 이면 활성 플랜이 없음 */
+    data class SubstitutionRefusal(val noActivePlan: Boolean, val reason: String)
+
+    /**
+     * [substituteExerciseInActivePlan] 과 같은 검사를 **던지지 않고** 돌려준다(받으면 null).
+     * AI PT 도구는 채팅 트랜잭션 안에서 돈다 — 그 안에서 @Transactional 메서드가 예외를 던지면 도구가 잡아도
+     * 트랜잭션이 rollback-only 가 되어 채팅 전체가 500 이 되고 앞서 한 변경까지 사라진다(2026-11-23 식단 삭제 실사례).
+     */
+    fun substitutionRefusal(userId: Long, originalExerciseId: Long, substituteExerciseId: Long): SubstitutionRefusal? {
+        if (originalExerciseId == substituteExerciseId) return SubstitutionRefusal(false, "Cannot substitute an exercise with itself")
+        if (getActivePlan(userId) == null) return SubstitutionRefusal(true, "No active plan found")
+        val substitute = exerciseRepository.findById(substituteExerciseId).orElse(null)
+            ?: return SubstitutionRefusal(false, "Substitute exercise not found: $substituteExerciseId")
+        return substituteRefusalReason(substitute, trainingContext.resolve(userId))?.let { SubstitutionRefusal(false, it) }
+    }
+
+    private fun substituteRefusalReason(substitute: Exercise, ctx: UserTrainingContextResolver.Context): String? = when {
+        ctx.injuries.isNotEmpty() && injuryFilterService.restrictionChecker(ctx.injuries)(substitute) ->
+            "Substitute exercise ${substitute.id} is restricted by your injuries"
+        !TemplatePlanAdapter.equipmentAllowed(substitute, ctx.equipment) -> "Substitute exercise ${substitute.id} needs equipment you do not have"
+        !RecoRules.suitable(substitute, ctx.equipment, ctx.level, ctx.age) -> "Substitute exercise ${substitute.id} is not suitable for your level"
+        else -> null
+    }
+
+    /** 쉬는 플랜이 있나 — [resumePlan] 이 던지기 전에 도구가 먼저 본다 */
+    fun hasPausedPlan(userId: Long): Boolean =
+        userWorkoutPlanRepository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, PlanStatus.PAUSED) != null
+
+    /** 그 코드의 템플릿이 있나 — [applyTemplate] 이 던지기 전에 도구가 먼저 본다 */
+    fun templateExists(templateCode: String): Boolean = templateRepository.findByCode(templateCode) != null
+
     @Transactional
     fun substituteExerciseInActivePlan(
         userId: Long,
@@ -609,15 +640,7 @@ class UserPlanService(
 
         // 대체 후보 목록(C3)과 같은 규칙으로 직접 지정한 대체도 막는다 — 부상 부위·없는 장비·수준에 안 맞는 동작은 받지 않는다.
         val ctx = trainingContext.resolve(userId)
-        if (ctx.injuries.isNotEmpty() && injuryFilterService.restrictionChecker(ctx.injuries)(substitute)) {
-            throw BadRequestException("Substitute exercise $substituteExerciseId is restricted by your injuries")
-        }
-        if (!TemplatePlanAdapter.equipmentAllowed(substitute, ctx.equipment)) {
-            throw BadRequestException("Substitute exercise $substituteExerciseId needs equipment you do not have")
-        }
-        if (!RecoRules.suitable(substitute, ctx.equipment, ctx.level, ctx.age)) {
-            throw BadRequestException("Substitute exercise $substituteExerciseId is not suitable for your level")
-        }
+        substituteRefusalReason(substitute, ctx)?.let { throw BadRequestException(it) }
         val goals = userProfileRepository.findByUser_Id(userId).orElse(null)?.goals.orEmpty()
 
         val days = userPlanDayRepository.findByPlanIdOrderByDayNumber(plan.id)

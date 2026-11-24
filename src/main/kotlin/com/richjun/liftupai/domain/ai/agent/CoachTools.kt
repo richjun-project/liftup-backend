@@ -79,6 +79,7 @@ class CoachToolbox(
             runCatching { rec.capture(ctx.user.id) }
                 .onFailure { log.warn("[AI-AGENT] capture before {} failed user={}: {}", name, ctx.user.id, it.message) }.getOrNull()
         } else null
+        val poisonedBefore = rollbackOnly()
         return try {
             val result = tool.run(ctx, args)
             val ok = result["ok"] != false
@@ -92,8 +93,19 @@ class CoachToolbox(
         } catch (e: Exception) {
             log.warn("[AI-AGENT] tool {} failed user={}: {}", name, ctx.user.id, e.message)
             Outcome(name, false, false, mapOf("ok" to false, "error" to "tool_failed", "detail" to (e.message ?: e.javaClass.simpleName).take(200)), System.currentTimeMillis() - started)
+        }.also {
+            // 도구가 잡은 예외라도 @Transactional 서비스 경계를 지나 던져졌으면 채팅 트랜잭션은 이미 rollback-only —
+            // 커밋에서 UnexpectedRollbackException(500)이 나고 같은 요청의 변경이 모두 사라진다. 원인 도구를 바로 찾게 남긴다.
+            if (!poisonedBefore && rollbackOnly()) {
+                log.error("[AI-AGENT] tool {} left the chat transaction rollback-only user={} ok={} — this chat will fail; pre-check its failure path instead of throwing",
+                    name, ctx.user.id, it.ok)
+            }
         }
     }
+
+    private fun rollbackOnly(): Boolean = try {
+        org.springframework.transaction.interceptor.TransactionAspectSupport.currentTransactionStatus().isRollbackOnly
+    } catch (_: org.springframework.transaction.NoTransactionException) { false }
 
     /**
      * 도구가 바깥 트랜잭션 안에서 돌았으면(채팅 AIAnalysisService.chat 은 클래스 전체가 @Transactional) 그 커밋 뒤에 기록한다.
@@ -407,7 +419,8 @@ class NutritionTodayTool(private val nutritionContextService: NutritionContextSe
     override val mutating = false
     override fun declaration() = mapOf(
         "name" to name,
-        "description" to "What the user logged eating today (meals) and, when appropriate, calories and macros vs their targets.",
+        "description" to "What the user logged eating today (meals, each with its meal_log_id for delete_meal_log) and, when appropriate, " +
+            "calories and macros vs their targets.",
         "parameters" to obj(emptyMap()),
     )
 
@@ -416,11 +429,21 @@ class NutritionTodayTool(private val nutritionContextService: NutritionContextSe
         val meals = c.mealsByType.mapKeys { it.key.name.lowercase() }
             .mapValues { (_, logs) -> logs.joinToString(" / ") { it.foods.take(80) } }
             .filterValues { it.isNotBlank() }
+        // 지난 대화의 log_meal 결과(id)는 다음 요청에 안 남는다 — 오늘 기록마다 id 를 줘야 "아까 그거 지워"를 맞게 지운다(2026-11-23 대표 테스트:
+        // 모델이 id 를 지어내 delete_meal_log 가 실패했다)
+        val logs = c.mealsByType.entries.flatMap { (type, list) -> list.map { type to it } }.sortedBy { it.second.timestamp }.take(12)
+        fun entries(withKcal: Boolean) = logs.map { (type, m) ->
+            buildMap {
+                put("meal_log_id", m.id); put("meal_type", type.name.lowercase()); put("foods", m.foods.take(60))
+                if (withKcal) put("kcal", m.calories)
+            }
+        }
         // 취약 사용자(미성년·저체중·섭식장애 신호)에게는 목표·섭취 칼로리 숫자를 주지 않는다 — 단발 경로와 같은 규칙
-        if (ctx.risk.noIntakeNumbers) return mapOf("ok" to true, "meals_logged" to meals, "numbers" to "withheld for safety")
+        if (ctx.risk.noIntakeNumbers) return mapOf("ok" to true, "meals_logged" to meals, "meal_logs" to entries(false), "numbers" to "withheld for safety")
         return mapOf(
             "ok" to true,
             "meals_logged" to meals,
+            "meal_logs" to entries(true),
             "consumed_kcal" to c.consumedKcal,
             "target_kcal" to c.targetKcal,
             "remaining_kcal" to c.remainingKcal,
@@ -537,6 +560,11 @@ class SwapExerciseTool(
                 userPlanService.getDayWorkout(ctx.user.id, plan.currentDay, locale = ctx.locale).exercises.map { it.exerciseId }.toSet()
             }.orEmpty()
         } catch (e: Exception) { emptySet() }
+        // 거절될 교체는 서비스에 넘기기 전에 거른다 — 트랜잭션 메서드가 던지면 잡아도 채팅 전체가 500(2026-11-23 운영)
+        userPlanService.substitutionRefusal(ctx.user.id, from, to)?.let { refusal ->
+            return if (refusal.noActivePlan) mapOf("ok" to false, "error" to "no_active_plan")
+            else mapOf("ok" to false, "error" to "refused", "detail" to refusal.reason)
+        }
         val before = todayIds()
         return try {
             val replaced = userPlanService.substituteExerciseInActivePlan(ctx.user.id, from, to)
@@ -844,6 +872,10 @@ class DeleteMealLogTool(
     override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
         val id = args.firstPositiveLong("meal_log_id", "id") ?: nutritionService.latestMealLogId(ctx.user.id)
             ?: return mapOf("ok" to false, "error" to "no_meal", "detail" to "There is no meal in their log.")
+        // 없는 id 는 서비스에 넘기기 전에 거른다 — 트랜잭션 메서드가 던지면 잡아도 채팅 전체가 500(2026-11-23 운영)
+        if (nutritionService.ownedMealLogId(ctx.user.id, id) == null) {
+            return mapOf("ok" to false, "error" to "not_found", "detail" to "That meal is not in their log. Call get_nutrition_today for the current meal_log_ids.")
+        }
         return try {
             nutritionService.deleteMealLog(ctx.user.id, id)
             mapOf("ok" to true, "changed" to true, "removed_meal_log_id" to id, "today" to todayNutrition(nutritionContextService, ctx))
@@ -970,6 +1002,9 @@ class ChangePlanTool(private val userPlanService: UserPlanService) : CoachTool {
 
     override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
         val code = args.requireText("template_code", 80)
+        if (!userPlanService.templateExists(code)) {
+            return mapOf("ok" to false, "error" to "unknown_template", "detail" to "No plan with that template_code. Call get_plan_options.")
+        }
         val dash = try { userPlanService.applyTemplate(ctx.user, code, null, ctx.locale) }
         catch (e: com.richjun.liftupai.global.exception.ResourceNotFoundException) {
             return mapOf("ok" to false, "error" to "unknown_template", "detail" to "No plan with that template_code. Call get_plan_options.")
@@ -993,7 +1028,13 @@ class PausePlanTool(private val userPlanService: UserPlanService) : CoachTool {
     override fun run(ctx: CoachToolContext, args: JsonNode): Map<String, Any?> {
         val paused = args.get("paused")?.takeIf { !it.isNull }?.let { if (it.isBoolean) it.asBoolean() else it.asText().trim().lowercase() in setOf("true", "1", "yes") }
             ?: throw ToolArgumentException("paused is required")
-        // 쉬는 중인 플랜은 getActivePlan 에 안 잡힌다 — 서비스가 상태별로 찾게 두고 없으면 사실대로 돌려준다
+        // 쉬는 중인 플랜은 getActivePlan 에 안 잡힌다 — 없으면 서비스에 넘기기 전에 사실대로 돌려준다
+        // (서비스가 던지면 잡아도 채팅 트랜잭션이 rollback-only 가 되어 500, 2026-11-23)
+        val exists = if (paused) userPlanService.getActivePlan(ctx.user.id) != null else userPlanService.hasPausedPlan(ctx.user.id)
+        if (!exists) {
+            return mapOf("ok" to false, "error" to if (paused) "no_active_plan" else "no_paused_plan",
+                "detail" to if (paused) "They have no active plan to pause." else "Their plan is not paused.")
+        }
         return try {
             if (paused) userPlanService.pausePlan(ctx.user.id) else userPlanService.resumePlan(ctx.user.id)
             mapOf("ok" to true, "changed" to true, "paused" to paused)

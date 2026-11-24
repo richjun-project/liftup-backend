@@ -88,7 +88,7 @@ class ChatSafetyService {
             storedInjuries = stored,
             mentionedInjuries = mentioned,
             redFlagSymptoms = containsAny(message, RED_FLAG_KEYWORDS),
-            eatingDisorderCues = containsAny(recentUserText, EATING_DISORDER_KEYWORDS) || extremeCalorieIntake(recentUserText),
+            eatingDisorderCues = eatingDisorderCue(history.takeLast(2).map { it.first } + message) || extremeCalorieIntake(recentUserText),
             pregnancy = containsAny(recentUserText, PREGNANCY_KEYWORDS),
             medicationOrSupplement = containsAny(message, MEDICATION_KEYWORDS),
             locale = AILocalization.normalizeLocale(locale),
@@ -368,6 +368,16 @@ class ChatSafetyService {
         }
     }
 
+    /**
+     * 섭식장애 신호. '안 먹었어'·'食べてない' 같은 부정형은 식단 기록을 고치는 말과 같다 — 2026-11-24 운영 스모크:
+     * "점심 샐러드는 안 먹었어. 그것만 지워줘"가 신호로 잡혀 도구 없는 단발 경로로 가서 "채팅에서는 식단을 지울 수 없다"(거짓)와
+     * 끼니 거르지 말라는 훈계를 받았다. 같은 말 안에 기록 지우기 요청이 있을 때만 그 부정형을 빼고, 강한 신호(굶·토·폭식·단식·두려움)는 그대로 본다.
+     */
+    internal fun eatingDisorderCue(userTurns: List<String>): Boolean = userTurns.any { turn ->
+        val strong = EATING_DISORDER_KEYWORDS.filter { it !in AMBIGUOUS_NOT_EATEN }
+        containsAny(turn, strong) || (containsAny(turn, AMBIGUOUS_NOT_EATEN) && !containsAny(turn, LOG_DELETE_REQUEST))
+    }
+
     private fun containsAny(text: String, keywords: Collection<String>): Boolean {
         val lower = text.lowercase()
         return keywords.any { lower.contains(it) }
@@ -429,6 +439,14 @@ class ChatSafetyService {
             "starv", "purge", "purging", "vomit", "throw up", "binge", "fasting for days", "not eating", "skip all meals", "afraid of gaining",
             "afraid to eat", "scared to eat", "scared of gaining", "can't eat because", "guilty after eating",
             "断食", "絶食", "吐い", "吐く", "過食", "食べない", "食べてない", "太るのが怖", "食べるのが怖", "太りそうで怖", "食べると罪悪感",
+        )
+        /** 식단 기록을 고칠 때도 쓰는 부정형 — 같은 말에 [LOG_DELETE_REQUEST] 가 있으면 신호로 보지 않는다 */
+        private val AMBIGUOUS_NOT_EATEN = setOf("안 먹", "안먹", "not eating", "食べない", "食べてない")
+        /** 기록 지우기 요청(동사) — '기록'만으로는 안 뺀다("요즘 밥을 안 먹어, 기록 봐 줘"는 그대로 신호) */
+        private val LOG_DELETE_REQUEST = listOf(
+            "지워", "지우", "삭제", "빼줘", "빼 줘", "취소해",
+            "消して", "消す", "削除", "取り消",
+            "delete", "remove", "undo",
         )
         private val PREGNANCY_KEYWORDS = listOf("임신", "임산부", "출산", "pregnan", "postpartum", "trimester", "妊娠", "妊婦", "産後")
         private val MEDICATION_KEYWORDS = listOf(

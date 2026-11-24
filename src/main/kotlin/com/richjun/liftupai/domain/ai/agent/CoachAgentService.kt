@@ -133,7 +133,8 @@ class CoachAgentService(
         val trace = mutableListOf<ToolUse>()
         var rounds = 0
         var forced = false
-        var lastChange: Pair<String, Map<String, Any?>>? = null
+        // 이 요청에서 성공한 변경 — 마지막 회차가 글 없이 끝나면 이것들의 요약으로 답한다(세 끼를 기록했으면 세 줄)
+        val changes = mutableListOf<Pair<String, Map<String, Any?>>>()
 
         /** 도구 루프 한 번: 모델이 도구를 그만 부르거나 [limit] 번째가 되면(또는 예산이 차면) 도구 없이 답하게 한다 */
         fun runLoop(limit: Int): LoopOutcome {
@@ -164,10 +165,11 @@ class CoachAgentService(
                         .takeIf { it.isNotBlank() }
                     // 2026-11-21 실측: 느린 날 마지막(도구 끔) 회차에도 모델이 글 대신 도구를 불러 답이 비었다 — 교체는 이미 됐는데
                     // 일반 대체 문구가 나갔다. 바꾸는 도구가 성공했으면 그 요약 한 줄로 답한다.
-                    val summary = if (text == null && forced) lastChange?.let { (n, r) ->
-                        runCatching { coachActions?.summarize(n, r, prep.locale) }.getOrNull()?.takeIf { it.isNotBlank() }
+                    val summary = if (text == null && forced) {
+                        changes.mapNotNull { (n, r) -> runCatching { coachActions?.summarize(n, r, prep.locale) }.getOrNull()?.takeIf { it.isNotBlank() } }
+                            .distinct().takeLast(MAX_SUMMARY_LINES).joinToString("\n").takeIf { it.isNotBlank() }
                     } else null
-                    if (summary != null) log.warn("[AI-AGENT] forced round returned no text — answering with the change summary user={} tool={}", user.id, lastChange?.first)
+                    if (summary != null) log.warn("[AI-AGENT] forced round returned no text — answering with the change summary user={} tools={}", user.id, changes.map { it.first })
                     val answer = text ?: summary
                     return LoopOutcome(answer, if (answer == null) "empty_answer" else null)
                 }
@@ -179,7 +181,7 @@ class CoachAgentService(
                     val name = call.path("name").asText()
                     val outcome = toolbox.execute(name, call.path("args"), ctx)
                     trace += ToolUse(name, outcome.ok, outcome.changed)
-                    if (outcome.changed) lastChange = name to outcome.result
+                    if (outcome.changed) changes += name to outcome.result
                     log.info("[AI-AGENT] tool user={} round={} name={} ok={} changed={} ms={}", user.id, rounds, name, outcome.ok, outcome.changed, outcome.elapsedMs)
                     val fr = objectMapper.createObjectNode()
                     fr.put("name", name)
@@ -310,6 +312,9 @@ class CoachAgentService(
     }
 
     companion object {
+        /** 마지막 회차가 글 없이 끝났을 때 변경 요약 답의 최대 줄 수 */
+        const val MAX_SUMMARY_LINES = 4
+
         /** 사용자의 플랜·설정을 실제로 바꾸는 도구 — 성공했을 때만 "바꿨어요"를 허용한다 */
         val SETTINGS_CHANGING_TOOLS = setOf("swap_exercise_in_plan", "set_workout_time", "set_today_workout_day", "set_available_equipment", "set_coach_messages",
             "log_meal", "delete_meal_log", "update_my_profile", "change_plan", "pause_or_resume_plan", "log_completed_workout", "undo_last_coach_change")

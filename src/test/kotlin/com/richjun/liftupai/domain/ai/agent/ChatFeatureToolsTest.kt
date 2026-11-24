@@ -47,6 +47,8 @@ class ChatFeatureToolsTest : ApiTestSupport() {
     @Autowired private lateinit var sessionRepository: WorkoutSessionRepository
     @Autowired private lateinit var injuryFilterService: InjuryFilterService
     @Autowired private lateinit var userService: com.richjun.liftupai.domain.user.service.UserService
+    @Autowired private lateinit var txManager: org.springframework.transaction.PlatformTransactionManager
+    @Autowired private lateinit var coachActionService: CoachActionService
 
     private val mapper = jacksonObjectMapper()
     private fun ctx(user: User) = CoachToolContext(user, "ko", ZoneId.of("Asia/Seoul"), ChatSafetyService.RiskProfile(locale = "ko"))
@@ -156,6 +158,76 @@ class ChatFeatureToolsTest : ApiTestSupport() {
         val u = run(user, "undo_last_coach_change", "{}")
         assertTrue(u.ok && u.changed, "undo: ${u.result}")
         assertEquals(day, userPlanService.getActivePlan(user.id)!!.currentDay, "오늘 Day 가 원래대로")
+    }
+
+    /**
+     * 2026-11-23 운영: 대표가 채팅으로 식단을 지우다 모델이 없는 meal_log_id 를 넘겼다 → deleteMealLog(@Transactional)가 던진 예외를
+     * 도구가 잡았지만 채팅 트랜잭션(AIAnalysisService.chat, 클래스 @Transactional)이 rollback-only 가 되어 커밋에서
+     * UnexpectedRollbackException → 500, 같은 요청의 삭제 두 건도 사라졌다. 예상된 실패는 채팅과 같은 트랜잭션 안에서도 깨끗해야 한다.
+     */
+    @Test
+    fun `예상된 실패는 채팅 트랜잭션을 rollback-only 로 만들지 않는다`() {
+        val user = seeded("txsafe")
+        val noPlan = seeded("txsafe-noplan", template = null)
+        val ids = userPlanService.getDayWorkout(user.id, 1, locale = "ko").exercises.map { it.exerciseId }
+        val other = exerciseRepository.findAll().map { it.id }.first { it !in ids }
+        val tx = org.springframework.transaction.support.TransactionTemplate(txManager)
+        val outcomes = tx.execute { status ->
+            val list = listOf(
+                run(user, "delete_meal_log", """{"meal_log_id":987654321}"""),
+                run(user, "pause_or_resume_plan", """{"paused":false}"""),
+                run(noPlan, "pause_or_resume_plan", """{"paused":true}"""),
+                run(user, "change_plan", """{"template_code":"no_such_plan"}"""),
+                run(user, "swap_exercise_in_plan", """{"from_exercise_id":${ids[0]},"to_exercise_id":${ids[0]}}"""),
+                run(noPlan, "swap_exercise_in_plan", """{"from_exercise_id":${ids[0]},"to_exercise_id":$other}"""),
+            )
+            assertFalse(status.isRollbackOnly, "도구 실패가 채팅 트랜잭션을 rollback-only 로 만들었다: ${list.map { it.name to it.result["error"] }}")
+            list
+        }!!
+        assertEquals(listOf("not_found", "no_paused_plan", "no_active_plan", "unknown_template", "refused", "no_active_plan"),
+            outcomes.map { it.result["error"] })
+    }
+
+    @Test
+    fun `오늘 식단 조회가 기록 id 를 주고 그 id 로 지난 끼니를 지운다 — 채팅 트랜잭션 안에서`() {
+        allowedErrorLoggers += NutritionService::class.java.name
+        val user = seeded("mealids", template = null)
+        val first = withMealAnalysis("""{"meal_name":"오트밀","ingredients":["오트밀 1그릇"],"portion":"1그릇","calories":300,"protein":10,"carbs":50,"fat":6}""") {
+            run(user, "log_meal", """{"description":"아침에 오트밀","meal_type":"breakfast"}""")
+        }
+        val second = withMealAnalysis("""{"meal_name":"닭가슴살 샐러드","ingredients":["닭가슴살 100g"],"portion":"1접시","calories":350,"protein":35,"carbs":12,"fat":10}""") {
+            run(user, "log_meal", """{"description":"점심 샐러드","meal_type":"lunch"}""")
+        }
+        val firstId = (first.result["meal_log_id"] as Number).toLong()
+        val today = run(user, "get_nutrition_today", "{}")
+        @Suppress("UNCHECKED_CAST") val logs = today.result["meal_logs"] as List<Map<String, Any?>>
+        assertEquals(setOf(firstId, (second.result["meal_log_id"] as Number).toLong()), logs.map { (it["meal_log_id"] as Number).toLong() }.toSet())
+        val tx = org.springframework.transaction.support.TransactionTemplate(txManager)
+        val del = tx.execute { run(user, "delete_meal_log", """{"meal_log_id":$firstId}""") }!!
+        assertTrue(del.ok && del.changed, "delete: ${del.result}")
+        val secondId = (second.result["meal_log_id"] as Number).toLong()
+        assertEquals(listOf(secondId), mealLogRepository.findAll().filter { it.user.id == user.id }.map { it.id }, "지목한 아침만 지우고 점심은 남긴다")
+    }
+
+    @Test
+    fun `마지막 회차 요약은 도구 이름이 아니라 그 언어의 문장 — 모르는 도구는 빈 값`() {
+        val results = mapOf(
+            "log_meal" to mapOf("meal" to "김치찌개", "calories_kcal" to 650),
+            "delete_meal_log" to mapOf("removed_meal_log_id" to 1),
+            "update_my_profile" to mapOf("updated" to listOf("weight_kg")),
+            "change_plan" to mapOf("plan_name" to "초급자 전신"),
+            "pause_or_resume_plan" to mapOf("paused" to true),
+            "log_completed_workout" to mapOf("exercises" to 2, "total_sets" to 6),
+            "undo_last_coach_change" to mapOf("undone" to "스쿼트 → 레그 프레스 교체"),
+        )
+        listOf("ko", "ja", "en").forEach { loc ->
+            results.forEach { (tool, r) ->
+                val text = coachActionService.summarize(tool, r, loc)
+                assertTrue(text.isNotBlank() && tool !in text && "{" !in text, "$loc $tool → '$text'")
+            }
+        }
+        assertEquals("식단 기록에서 지웠어요.", coachActionService.summarize("delete_meal_log", emptyMap(), "ko"))
+        assertEquals("", coachActionService.summarize("remember", mapOf("memory_id" to 1), "ko"))
     }
 
     @Test

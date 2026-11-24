@@ -210,7 +210,17 @@ class CoachActionService(
             }
             "set_workout_time" -> WorkoutLocalization.message("coach.action.workout_time", locale, s("workout_time"))
             "set_coach_messages" -> WorkoutLocalization.message(if (s("coach_messages") == "off") "coach.action.messages_off" else "coach.action.messages_on", locale)
-            else -> tool
+            // 아래는 되돌리기 기록에는 안 남고, 느린 날 마지막 회차가 글 없이 끝났을 때의 답으로만 쓴다(2026-11-23: 'delete_meal_log' 라는
+            // 도구 이름이 답으로 나가려다 언어 검사에 걸려 안전 문구로 바뀌었다)
+            "log_meal" -> WorkoutLocalization.message("coach.action.meal_logged", locale, s("meal"), s("calories_kcal"))
+            "delete_meal_log" -> WorkoutLocalization.message("coach.action.meal_deleted", locale)
+            "update_my_profile" -> WorkoutLocalization.message("coach.action.profile_updated", locale)
+            "change_plan" -> WorkoutLocalization.message("coach.action.plan_changed", locale, s("plan_name"))
+            "pause_or_resume_plan" -> WorkoutLocalization.message(if (r["paused"] == true) "coach.action.plan_paused" else "coach.action.plan_resumed", locale)
+            "log_completed_workout" -> WorkoutLocalization.message("coach.action.workout_logged", locale, s("exercises"), s("total_sets"))
+            "undo_last_coach_change" -> WorkoutLocalization.message("coach.action.undone", locale, s("undone"))
+            // 모르는 도구는 빈 값 — 도구 이름이 사용자에게 답으로 나가면 안 된다
+            else -> ""
         }
     }
 

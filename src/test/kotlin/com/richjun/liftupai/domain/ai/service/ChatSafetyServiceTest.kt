@@ -221,6 +221,22 @@ class ChatSafetyServiceTest {
         }
 
         @Test
+        fun notEatenInALogCorrectionIsNotACue() {
+            // 2026-11-24 운영 스모크: 식단 기록을 고치는 말이 섭식장애 신호로 잡혀 도구 없는 경로로 갔다
+            for ((msg, loc) in listOf("아 점심 샐러드는 안 먹었어. 그것만 지워줘" to "ko", "サラダは食べてないので消して" to "ja", "I'm not eating that salad, delete it" to "en")) {
+                assertThat(svc.assess(profile(), emptyList(), msg, emptyList(), loc).eatingDisorderCues).`as`(msg).isFalse()
+            }
+            // 지우기 요청이 없거나, 강한 신호가 같이 있으면 그대로 신호
+            for ((msg, loc) in listOf("요즘 밥을 안 먹어요. 기록 좀 봐 줘" to "ko", "最近何も食べてない" to "ja", "이틀째 굶었어 기록 지워줘" to "ko",
+                    "폭식해서 토했어 기록 삭제해줘" to "ko")) {
+                assertThat(svc.assess(profile(), emptyList(), msg, emptyList(), loc).eatingDisorderCues).`as`(msg).isTrue()
+            }
+            // 앞 턴의 신호는 다음 턴이 지우기 요청이어도 남는다
+            val hist = listOf("요즘 일부러 밥을 안 먹어" to "…")
+            assertThat(svc.assess(profile(), emptyList(), "아까 기록한 거 지워줘", hist, "ko").eatingDisorderCues).isTrue()
+        }
+
+        @Test
         @DisplayName("'살찔까봐 무서워서 밥을 못 먹겠어요' 는 정상 체중 성인이어도 섭식장애 신호다 — 숫자를 주지 않는다")
         fun fearOfEatingIsACue() {
             for ((msg, loc) in listOf("살찔까봐 무서워서 밥을 못 먹겠어요" to "ko", "I'm scared to eat because I might gain weight" to "en", "太るのが怖くて食べられません" to "ja")) {
