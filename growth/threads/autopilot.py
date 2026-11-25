@@ -39,6 +39,10 @@ GEMINI_MODEL = "gemini-3.7-flash"
 BRAND = {
     "name": "리프트업 AI",
     "landing": "https://liftupai.net",
+    # 2026-11-25: 댓글 링크는 기기별로 스토어에 바로 보내는 추적 링크(랜딩 /go/<출처>: iPhone → App Store ct=threads,
+    # Android → Play utm_source=threads, 링크 미리보기 크롤러 → 랜딩). 맨 주소였을 때 30일 링크 클릭 2회 —
+    # 한 단계(랜딩 → 스토어 버튼)를 줄이고 설치까지 이어졌는지 스토어 보고서로 본다. 프롬프트의 '랜딩'은 그대로.
+    "reply_link": "https://liftupai.net/go/threads",
     # 2026-10-29: App Store 설명 새 판과 같은 사실로 — 기록을 확인하고 답하고, 말하면 플랜·알림이 실제로 바뀐다
     "desc": "내 운동 기록을 먼저 확인하고 답하는 AI 퍼스널 트레이너 앱 — 말하면 플랜의 운동·알림 시간이 실제로 바뀌고, "
             "알려준 부상·취향을 기억한다. 말투가 다른 AI 트레이너 10명(무료 4명)",
@@ -472,7 +476,7 @@ def main():
     # '스레드에 추가' — 본문 조회수 부스트 + 링크는 본문이 아닌 댓글에 (노출 페널티 회피)
     th_reply_id = None
     try:
-        landing = BRAND["landing"] if LANG == "ko" else BRAND_JA["landing"]
+        landing = BRAND["reply_link"] if LANG == "ko" else BRAND_JA["landing"]
         reply_text = gen["threads_reply"] + f"\n\n🔗 {landing}"
         time.sleep(20)
         th_reply_id = th_post(reply_text, reply_to=th_id)

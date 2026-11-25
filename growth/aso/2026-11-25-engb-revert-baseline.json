@@ -1,0 +1,62 @@
+{
+ "window": "2026-10-28..2026-11-23 (27일, en-GB 한국어 이름 기간 11-09~)",
+ "note": "iOS 1.1.52 에서 en-GB 이름·부제·키워드를 en-US 값으로 되돌림. 판정: 공개 2주 뒤 같은 길이 창과 비교",
+ "by_territory": {
+  "GB": {
+   "search_impr": 5,
+   "search_tap": 0,
+   "all_impr": 7,
+   "page_view": 0,
+   "first_dl": 0
+  },
+  "CA": {
+   "search_impr": 3,
+   "search_tap": 0,
+   "all_impr": 3,
+   "page_view": 0,
+   "first_dl": 0
+  },
+  "AU": {
+   "search_impr": 4,
+   "search_tap": 0,
+   "all_impr": 4,
+   "page_view": 0,
+   "first_dl": 0
+  },
+  "IN": {
+   "search_impr": 0,
+   "search_tap": 0,
+   "all_impr": 1,
+   "page_view": 0,
+   "first_dl": 0
+  },
+  "SG": {
+   "search_impr": 0,
+   "search_tap": 0,
+   "all_impr": 0,
+   "page_view": 0,
+   "first_dl": 0
+  },
+  "NZ": {
+   "search_impr": 0,
+   "search_tap": 0,
+   "all_impr": 2,
+   "page_view": 0,
+   "first_dl": 0
+  },
+  "IE": {
+   "search_impr": 0,
+   "search_tap": 0,
+   "all_impr": 0,
+   "page_view": 0,
+   "first_dl": 0
+  }
+ },
+ "total": {
+  "search_impr": 12,
+  "search_tap": 0,
+  "all_impr": 17,
+  "page_view": 0,
+  "first_dl": 0
+ }
+}
