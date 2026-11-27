@@ -4,6 +4,9 @@
 
 1. **읽기** — `~/Develop/liftupai/growth/GROWTH.md` 전체, 메모리(MEMORY.md 와 liftupai-* 메모), 오늘 KPI `~/Develop/liftupai/growth/kpi/<오늘>.json`(실행 스크립트가 미리 모은다), 최근 일지.
 2. **이상 대응 먼저** — ERROR·5xx·채팅 실패·결제 이상·컨테이너 정지·디스크가 보이면 원인을 찾아 고친다(운영 로그·DB 는 읽기 전용으로 확인 → 코드 수정 → 테스트 → 배포).
+   **대표 손 대기 항목 자동 확인(2026-11-27 — Slack 봇이 대표 답장을 못 읽으니, 대표는 키 등록만 하면 된다)**: `kw list` 에
+   `liftupai-asa-ids` 가 새로 보이면 그날 오늘의 일보다 먼저 검색 광고를 연다(`growth/asa/PLAN.md` 3단계: `asa.py acls → launch(일시정지 생성) → status → enable`, 상태 `growth/asa/state.json` 에 캠페인이 이미 있으면 report 만).
+   `liftupai-rc-setup`(RevenueCat v2 쓰기 키)이 보이면 Android 자동 갱신·7일 체험 전환(GROWTH.md 5절 'Android 자동 갱신 전환')을 한다.
 3. **오늘의 일** — GROWTH.md "지금 할 일"에서 매출 목표에 가장 효과 큰 일 1~2개를 골라 끝까지 한다: 개발·테스트·배포·앱 출시·스토어 문구·가격·콘텐츠·CS. 반쯤 하고 멈추지 말 것. 큰 일은 오늘 끝낼 수 있는 단위로 쪼갠다.
 4. **기록** — GROWTH.md 일지에 오늘 숫자(실가입·첫 세트·결제 화면·체험·유료·MRR·Threads 조회·평점)와 한 일·결정·배운 것을 적고, 할 일 목록을 갱신하고, 커밋·푸시한다.
 5. **대표 보고** — `~/Develop/liftupai/growth/reports/<오늘>.md` 를 쓰고 `kw run slack-bot-token -- python3 ~/Develop/liftupai/growth/slack_report.py send <파일>` 로 보낸다. 형식은 아래.
